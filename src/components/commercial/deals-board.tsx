@@ -1,0 +1,821 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCurrentMember } from "@/lib/use-current-member";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Trash2, Edit, Building2, User, Calendar, X, Upload, FileText, Download } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
+import type { DealStage } from "@/types/database";
+
+interface Deal {
+  id: string;
+  name: string;
+  stage: string;
+  amount: number | null;
+  training_days: number | null;
+  probability: number;
+  expected_close_date: string | null;
+  notes: string | null;
+  owner_id: string | null;
+  company_id: string | null;
+  contact_id: string | null;
+  source_id: string | null;
+  contacts: { first_name: string; last_name: string } | null;
+  created_at: string;
+  companies: { name: string } | null;
+  team_members: { first_name: string; last_name: string } | null;
+}
+
+interface Ref { id: string; first_name?: string; last_name?: string; name?: string; }
+
+interface DealDocument {
+  id: string;
+  deal_id: string;
+  name: string;
+  file_path: string;
+  file_size: number | null;
+  file_type: string | null;
+  document_type: string;
+  created_at: string;
+}
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  devis: "Devis",
+  convention: "Convention",
+  programme: "Programme",
+  convocation: "Convocation",
+  facture: "Facture",
+  emargements: "Émargements",
+  bilan_initial: "Bilan de positionnement initial",
+  bilan_intermediaire: "Bilan de positionnement intermédiaire",
+  bilan_final: "Bilan de positionnement final",
+  autre: "Autre",
+};
+
+const DOC_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
+  devis: { bg: "#fff3e0", text: "#e65100" },
+  convention: { bg: "#e8f0fe", text: "#0d4f7a" },
+  programme: { bg: "#e8f5e9", text: "#2e7d32" },
+  convocation: { bg: "#f3e5f5", text: "#6a1b9a" },
+  facture: { bg: "#fce4ec", text: "#c62828" },
+  emargements: { bg: "#e0f2f1", text: "#00695c" },
+  bilan_initial: { bg: "#e3f2fd", text: "#1565c0" },
+  bilan_intermediaire: { bg: "#fff8e1", text: "#f57f17" },
+  bilan_final: { bg: "#fce4ec", text: "#ad1457" },
+  autre: { bg: "#f5f5f5", text: "#555" },
+};
+
+function fmt(n: number | null | undefined) {
+  if (!n && n !== 0) return "0 €";
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+}
+
+const stageColors: Record<string, { bg: string; text: string; bar: string }> = {
+  opportunities: { bg: "#e3f2fd", text: "#1565c0", bar: "#1a6b9c" },
+  quote_to_send: { bg: "#fff3e0", text: "#e65100", bar: "#FF6B35" },
+  quote_sent: { bg: "#f3e5f5", text: "#6a1b9a", bar: "#8e44ad" },
+  opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a", bar: "#0d4f7a" },
+  quote_signed: { bg: "#e0f2f1", text: "#00695c", bar: "#1abc9c" },
+  ordered: { bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" },
+  closed_won: { bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" },
+  closed_lost: { bg: "#fce4ec", text: "#c62828", bar: "#e74c3c" },
+};
+
+const kanbanStages: DealStage[] = ["opportunities", "quote_to_send", "quote_sent", "quote_signed", "opco_deposit", "closed_won", "closed_lost"];
+
+export function DealsBoard({
+  deals, teamMembers, companies, contacts, sources,
+}: {
+  deals: Deal[];
+  teamMembers: Ref[];
+  companies: Ref[];
+  contacts: Ref[];
+  sources: Ref[];
+}) {
+  const router = useRouter();
+  const currentMemberId = useCurrentMember();
+  const [open, setOpen] = useState(false);
+  const [editingDealId, setEditingDealId] = useState<string | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [customFrom, setCustomFrom] = useState("2025-09-01");
+  const [customTo, setCustomTo] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
+  const [form, setForm] = useState({
+    name: "", company_id: "", contact_id: "", owner_id: "", source_id: "",
+    stage: "opportunities" as DealStage, amount: "", training_days: "",
+    expected_close_date: "", notes: "",
+  });
+
+  // Documents state
+  const [documents, setDocuments] = useState<DealDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docType, setDocType] = useState("devis");
+
+  // Invoices state for deal
+  const [dealInvoices, setDealInvoices] = useState<{ id: string; amount: number; month: string; status: string; is_paid: boolean }[]>([]);
+
+  async function loadDealData(dealId: string) {
+    setLoadingDocs(true);
+    const supabase = createClient();
+    const [{ data: docs }, { data: invs }] = await Promise.all([
+      supabase.from("deal_documents").select("*").eq("deal_id", dealId).order("created_at", { ascending: false }),
+      supabase.from("invoices").select("id, amount, month, status, is_paid").eq("deal_id", dealId).order("month", { ascending: false }),
+    ]);
+    setDocuments(docs ?? []);
+    setDealInvoices(invs ?? []);
+    setLoadingDocs(false);
+  }
+
+  // Keep old name for compatibility
+  async function loadDocuments(dealId: string) {
+    return loadDealData(dealId);
+  }
+
+  async function handleUploadDoc(e: React.ChangeEvent<HTMLInputElement>, dealId: string) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${dealId}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } = await supabase.storage.from("deal-documents").upload(path, file);
+    if (!uploadError) {
+      await supabase.from("deal_documents").insert({
+        deal_id: dealId,
+        name: file.name,
+        file_path: path,
+        file_size: file.size,
+        file_type: file.type,
+        document_type: docType,
+      });
+      await loadDocuments(dealId);
+    }
+    setUploadingDoc(false);
+    e.target.value = "";
+  }
+
+  async function handleDownloadDoc(doc: DealDocument) {
+    const supabase = createClient();
+    const { data } = await supabase.storage.from("deal-documents").createSignedUrl(doc.file_path, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
+  async function handleDeleteDoc(doc: DealDocument, dealId: string) {
+    if (!confirm(`Supprimer "${doc.name}" ?`)) return;
+    const supabase = createClient();
+    await supabase.storage.from("deal-documents").remove([doc.file_path]);
+    await supabase.from("deal_documents").delete().eq("id", doc.id);
+    await loadDocuments(dealId);
+  }
+
+  function formatFileSize(bytes: number | null) {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function openEditDeal(deal: Deal) {
+    setEditingDealId(deal.id);
+    setForm({
+      name: deal.name,
+      company_id: deal.company_id ?? "",
+      contact_id: deal.contact_id ?? "",
+      owner_id: deal.owner_id ?? "",
+      source_id: deal.source_id ?? "",
+      stage: (deal.stage as DealStage) ?? "opportunities",
+      amount: deal.amount ? String(deal.amount) : "",
+      training_days: deal.training_days ? String(deal.training_days) : "",
+      expected_close_date: deal.expected_close_date ?? "",
+      notes: deal.notes ?? "",
+    });
+    setOpen(true);
+  }
+
+  // Auto-open edit for newest deal when redirected
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const editId = params.get("edit");
+    if (editId) {
+      const deal = deals.find((d) => d.id === editId);
+      if (deal) openEditDeal(deal);
+      // Clean URL
+      window.history.replaceState({}, "", "/deals");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
+  async function handleDeleteDeal(id: string) {
+    const supabase = createClient();
+    const deal = deals.find((d) => d.id === id);
+    await supabase.from("deals").delete().eq("id", id);
+    router.refresh();
+  }
+
+  async function handleDrop(targetStage: DealStage) {
+    if (!draggedDealId) return;
+    const supabase = createClient();
+    await supabase.from("deals").update({
+      stage: targetStage,
+      probability: DEAL_STAGE_PROBABILITY[targetStage],
+      close_date: targetStage === "closed_won" ? new Date().toISOString().split("T")[0] : null,
+    }).eq("id", draggedDealId);
+
+    const deal = deals.find((d) => d.id === draggedDealId);
+
+    // Si gagné → passer le contact en "signed" + entreprise en "customer"
+    if (targetStage === "closed_won" && deal) {
+      if (deal.contact_id) {
+        await supabase.from("contacts").update({ lead_status: "signed", lifecycle_stage: "customer", is_client: true }).eq("id", deal.contact_id);
+      }
+      if (deal.company_id) {
+        await supabase.from("companies").update({ lifecycle_stage: "customer" }).eq("id", deal.company_id);
+        // Also set is_client on all contacts of this company
+        await supabase.from("contacts").update({ is_client: true }).eq("company_id", deal.company_id);
+      }
+    }
+
+    setDraggedDealId(null);
+    setDragOverStage(null);
+    router.refresh();
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    const supabase = createClient();
+    const stage = form.stage as DealStage;
+    const payload = {
+      name: form.name,
+      company_id: form.company_id || null,
+      contact_id: form.contact_id || null,
+      owner_id: form.owner_id || null,
+      source_id: form.source_id || null,
+      stage,
+      amount: form.amount ? parseFloat(form.amount) : null,
+      training_days: form.training_days ? parseFloat(form.training_days) : null,
+      probability: DEAL_STAGE_PROBABILITY[stage],
+      expected_close_date: form.expected_close_date || null,
+      notes: form.notes || null,
+    };
+    if (editingDealId) {
+      await supabase.from("deals").update({ ...payload, close_date: stage === "closed_won" ? new Date().toISOString().split("T")[0] : null }).eq("id", editingDealId);
+
+      const originalDeal = deals.find((d) => d.id === editingDealId);
+
+      // Si passé en gagné via édition → passer le contact en "signed" + entreprise en "customer"
+      if (stage === "closed_won" && originalDeal && originalDeal.stage !== "closed_won") {
+        if (form.contact_id) {
+          await supabase.from("contacts").update({ lead_status: "signed", lifecycle_stage: "customer", is_client: true }).eq("id", form.contact_id);
+        }
+        if (form.company_id) {
+          await supabase.from("companies").update({ lifecycle_stage: "customer" }).eq("id", form.company_id);
+          await supabase.from("contacts").update({ is_client: true }).eq("company_id", form.company_id);
+        }
+      }
+    } else {
+      await supabase.from("deals").insert(payload);
+    }
+    setSaving(false);
+    setOpen(false);
+    setEditingDealId(null);
+    setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" });
+    router.refresh();
+  }
+
+  // Period filter logic
+  const periodRange = (() => {
+    if (periodMode === "fiscal") return { from: "2025-09-01", to: "2026-08-31" };
+    if (periodMode === "month") {
+      const [y, m] = filterMonth.split("-").map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      return { from: `${filterMonth}-01`, to: `${filterMonth}-${String(lastDay).padStart(2, "0")}` };
+    }
+    return { from: customFrom, to: customTo };
+  })();
+
+  const filteredDeals = deals.filter((d) => {
+    const created = (d.created_at as string)?.slice(0, 10) ?? "";
+    return created >= periodRange.from && created <= periodRange.to;
+  });
+
+  // Use filtered deals for display but keep all deals for drag operations
+  const displayDeals = filteredDeals;
+  const openDeals = displayDeals.filter(d => !["closed_won", "closed_lost"].includes(d.stage));
+  const totalPipeline = openDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const opportunityDeals = displayDeals.filter(d => d.stage === "opportunities");
+  const totalOpportunities = opportunityDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const pipeDisplayDeals = displayDeals.filter(d => ["quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage));
+  const totalPipe = pipeDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const wonDisplayDeals = displayDeals.filter(d => d.stage === "closed_won");
+  const totalWon = wonDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
+  const periodLabel = periodMode === "fiscal" ? "Année fiscale 2025/2026"
+    : periodMode === "month" ? new Date(filterMonth + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+    : `${new Date(customFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} — ${new Date(customTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
+
+  return (
+    <>
+      <div className="p-6 space-y-5">
+        {/* Period filter */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <select
+              style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 12px", fontSize: 13, color: "#1a2a3a" }}
+              value={periodMode}
+              onChange={(e) => setPeriodMode(e.target.value as "fiscal" | "month" | "custom")}
+            >
+              <option value="fiscal">Année fiscale (Sept — Août)</option>
+              <option value="month">Par mois</option>
+              <option value="custom">Période personnalisée</option>
+            </select>
+            {periodMode === "month" && (
+              <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a" }} />
+            )}
+            {periodMode === "custom" && (
+              <div className="flex items-center gap-1.5">
+                <span style={{ fontSize: 12, color: "#8399a9" }}>Du</span>
+                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12 }} />
+                <span style={{ fontSize: 12, color: "#8399a9" }}>au</span>
+                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12 }} />
+              </div>
+            )}
+            <span style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>{periodLabel}</span>
+          </div>
+          <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+            <Plus className="h-4 w-4 mr-2" /> Nouveau deal
+          </Button>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid gap-3 md:grid-cols-5">
+          <div className="lca-card" style={{ padding: "10px 14px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Pipeline total</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{fmt(totalPipeline)}</div>
+            <div style={{ fontSize: 11, color: "#8399a9" }}>{openDeals.length} deals ouverts</div>
+          </div>
+          <div className="lca-card" style={{ padding: "10px 14px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Opportunités</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totalOpportunities)}</div>
+            <div style={{ fontSize: 11, color: "#8399a9" }}>{opportunityDeals.length} opportunité{opportunityDeals.length > 1 ? "s" : ""}</div>
+          </div>
+          <div className="lca-card" style={{ padding: "10px 14px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Pipe</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{fmt(totalPipe)}</div>
+            <div style={{ fontSize: 11, color: "#8399a9" }}>{pipeDisplayDeals.length} deal{pipeDisplayDeals.length > 1 ? "s" : ""}</div>
+          </div>
+          <div className="lca-card" style={{ padding: "10px 14px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Deals gagnés</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#27ae60" }}>{fmt(totalWon)}</div>
+            <div style={{ fontSize: 11, color: "#8399a9" }}>{wonDisplayDeals.length} deal{wonDisplayDeals.length > 1 ? "s" : ""}</div>
+          </div>
+          <div className="lca-card" style={{ padding: "10px 14px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Taux de conversion</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{displayDeals.length > 0 ? Math.round((wonDisplayDeals.length / displayDeals.length) * 100) + "%" : "—"}</div>
+            <div style={{ fontSize: 11, color: "#8399a9" }}>{wonDisplayDeals.length}/{displayDeals.length} deals</div>
+          </div>
+        </div>
+
+      {/* Kanban Board */}
+      <div style={{ display: "flex", gap: 12, minHeight: 400, overflowX: "auto", paddingBottom: 8 }}>
+        {kanbanStages.map((stage) => {
+          const stageDeals = displayDeals.filter((d) => d.stage === stage);
+          const total = stageDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+          const colors = stageColors[stage];
+          return (
+            <div
+              key={stage}
+              onDragOver={(e) => { e.preventDefault(); setDragOverStage(stage); }}
+              onDragLeave={() => setDragOverStage(null)}
+              onDrop={(e) => { e.preventDefault(); handleDrop(stage); }}
+              style={{
+                background: dragOverStage === stage ? "#e6f0f7" : "#f5f7fa",
+                borderRadius: 8,
+                padding: 12,
+                border: dragOverStage === stage ? "2px dashed #1a6b9c" : "2px solid transparent",
+                transition: "all 0.2s ease",
+                minWidth: 220,
+                flex: "1 0 220px",
+              }}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+                <div>
+                  <span style={{ background: colors.bg, color: colors.text, padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+                    {DEAL_STAGE_LABELS[stage]}
+                  </span>
+                </div>
+                <span style={{ fontSize: 11, color: "#7a8bab", fontWeight: 600 }}>{stageDeals.length}</span>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1b2a4a", marginBottom: 8 }}>
+                {fmt(total)}
+              </div>
+              <div className="space-y-2">
+                {stageDeals.map((deal) => (
+                  <div
+                    key={deal.id}
+                    className="lca-card"
+                    draggable
+                    onDragStart={() => setDraggedDealId(deal.id)}
+                    onDragEnd={() => { setDraggedDealId(null); setDragOverStage(null); }}
+                    onClick={() => { setSelectedDeal(deal); loadDealData(deal.id); }}
+                    style={{
+                      padding: 12,
+                      cursor: "grab",
+                      borderLeft: `4px solid ${colors.bar}`,
+                      position: "relative",
+                      opacity: draggedDealId === deal.id ? 0.5 : 1,
+                      transition: "opacity 0.2s ease",
+                    }}
+                  >
+                    <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 0 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditDeal(deal); }}
+                        style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                      >
+                        <Edit style={{ width: 12, height: 12 }} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm("Supprimer ce deal ? Cette action est irréversible.")) {
+                            handleDeleteDeal(deal.id);
+                          }
+                        }}
+                        style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                      >
+                        <Trash2 style={{ width: 12, height: 12 }} />
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1b2a4a", paddingRight: 50 }}>{deal.name}</div>
+                    {deal.companies && (
+                      <div style={{ fontSize: 11, marginTop: 2 }}>
+                        <span
+                          onClick={(e) => { e.stopPropagation(); router.push(`/clients/${deal.company_id}`); }}
+                          style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        >
+                          {deal.companies.name}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{fmt(deal.amount)}</span>
+                      <span style={{ fontSize: 10, color: "#7a8bab" }}>{deal.probability}%</span>
+                    </div>
+                    {deal.team_members && (
+                      <div style={{ fontSize: 10, color: "#7a8bab", marginTop: 4 }}>
+                        {deal.team_members.first_name} {deal.team_members.last_name}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {stageDeals.length === 0 && (
+                  <div style={{ fontSize: 12, color: "#aab5cc", textAlign: "center", padding: 20 }}>
+                    Aucun deal
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      </div>
+
+      {/* New Deal Sheet */}
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" }); } }}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>{editingDealId ? "Modifier le deal" : "Nouveau deal"}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-6 px-4 pb-8 overflow-y-auto max-h-[calc(100vh-120px)]">
+            <div className="space-y-2">
+              <Label>Nom du deal *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Formation Excellence WSE Nantes" />
+            </div>
+            <div className="space-y-2">
+              <Label>Entreprise</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value })}>
+                <option value="">Sélectionner</option>
+                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Contact</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.contact_id} onChange={(e) => setForm({ ...form, contact_id: e.target.value })}>
+                <option value="">Sélectionner</option>
+                {contacts.map((c) => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Propriétaire</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.owner_id} onChange={(e) => setForm({ ...form, owner_id: e.target.value })}>
+                <option value="">Sélectionner</option>
+                {teamMembers.map((m) => <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.source_id} onChange={(e) => setForm({ ...form, source_id: e.target.value })}>
+                <option value="">Sélectionner</option>
+                {sources.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Étape</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value as DealStage })}>
+                {Object.entries(DEAL_STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Montant (€)</Label>
+                <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Jours formation</Label>
+                <Input type="number" step="0.1" value={form.training_days} onChange={(e) => setForm({ ...form, training_days: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Date de closing prévue</Label>
+              <Input type="date" value={form.expected_close_date} onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+            <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full" style={{ background: "#e8632b", color: "white" }}>
+              {saving ? "Enregistrement..." : (editingDealId ? "Sauvegarder" : "Créer le deal")}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Deal Detail Popup */}
+      <Dialog open={!!selectedDeal} onOpenChange={(o) => { if (!o) setSelectedDeal(null); }}>
+        <DialogContent style={{ maxWidth: 600 }}>
+          <DialogHeader>
+            <DialogTitle style={{ fontSize: 18, color: "#1a2a3a" }}>
+              {selectedDeal?.name}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedDeal && (() => {
+            const sc = stageColors[selectedDeal.stage] ?? { bg: "#f0f0f0", text: "#666", bar: "#999" };
+            return (
+              <div className="space-y-4" style={{ marginTop: 8 }}>
+                {/* Stage badge */}
+                <div className="flex items-center gap-2">
+                  <span style={{ background: sc.bg, color: sc.text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
+                    {DEAL_STAGE_LABELS[selectedDeal.stage as DealStage] ?? selectedDeal.stage}
+                  </span>
+                  <span style={{ fontSize: 12, color: "#8399a9" }}>{selectedDeal.probability}% de probabilité</span>
+                </div>
+
+                {/* Infos */}
+                <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }} className="space-y-3">
+                  {selectedDeal.companies && selectedDeal.company_id && (
+                    <div className="flex items-center gap-2">
+                      <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
+                      <span
+                        onClick={() => router.push(`/clients/${selectedDeal.company_id}`)}
+                        style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                      >
+                        {selectedDeal.companies.name}
+                      </span>
+                    </div>
+                  )}
+                  {selectedDeal.contacts && selectedDeal.contact_id && (
+                    <div className="flex items-center gap-2">
+                      <User style={{ width: 14, height: 14, color: "#8399a9" }} />
+                      <span
+                        onClick={() => router.push(`/contacts/${selectedDeal.contact_id}`)}
+                        style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                      >
+                        {selectedDeal.contacts.first_name} {selectedDeal.contacts.last_name}
+                      </span>
+                    </div>
+                  )}
+                  {selectedDeal.team_members && (
+                    <div className="flex items-center gap-2">
+                      <User style={{ width: 14, height: 14, color: "#8399a9" }} />
+                      <span style={{ fontSize: 12, color: "#8399a9" }}>Propriétaire : {selectedDeal.team_members.first_name} {selectedDeal.team_members.last_name}</span>
+                    </div>
+                  )}
+                  {selectedDeal.expected_close_date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar style={{ width: 14, height: 14, color: "#8399a9" }} />
+                      <span style={{ fontSize: 12, color: "#8399a9" }}>Closing prévu : {new Date(selectedDeal.expected_close_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Montant + Jours */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Montant</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a", marginTop: 2 }}>{fmt(selectedDeal.amount)}</div>
+                  </div>
+                  <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Jours formation</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a", marginTop: 2 }}>{selectedDeal.training_days ? `${Number(selectedDeal.training_days).toFixed(1)}j` : "—"}</div>
+                  </div>
+                </div>
+
+                {/* Facturation */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Facturation</div>
+                  {(() => {
+                    const dealAmount = Number(selectedDeal.amount) || 0;
+                    const totalInvoiced = dealInvoices.reduce((s, inv) => s + (Number(inv.amount) || 0), 0);
+                    const remaining = dealAmount - totalInvoiced;
+                    const allFacture = dealInvoices.length > 0 && dealInvoices.every(inv => inv.status === "facture" || inv.status === "paye");
+                    const allPaye = dealInvoices.length > 0 && dealInvoices.every(inv => inv.status === "paye");
+                    const isFullyInvoiced = totalInvoiced >= dealAmount && allFacture;
+                    const isFullyPaid = totalInvoiced >= dealAmount && allPaye;
+
+                    const statusBadge = isFullyPaid
+                      ? { label: "Entièrement payé", bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" }
+                      : isFullyInvoiced
+                        ? { label: "Entièrement facturé", bg: "#e8f0fe", text: "#0d4f7a", bar: "#1a6b9c" }
+                        : { label: "Facturation en cours", bg: "#fff3e0", text: "#e65100", bar: "#FF6B35" };
+
+                    return (
+                      <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }}>
+                        {/* Progress bar */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 10,
+                            background: statusBadge.bg, color: statusBadge.text,
+                          }}>
+                            {statusBadge.label}
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a" }}>{fmt(totalInvoiced)} / {fmt(dealAmount)}</span>
+                        </div>
+                        <div style={{ height: 6, background: "#e8ecf1", borderRadius: 3, overflow: "hidden", marginBottom: 10 }}>
+                          <div style={{
+                            height: "100%", borderRadius: 3, transition: "width 0.5s",
+                            width: `${Math.min(100, dealAmount > 0 ? (totalInvoiced / dealAmount) * 100 : 0)}%`,
+                            background: statusBadge.bar,
+                          }} />
+                        </div>
+
+                        {dealInvoices.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {dealInvoices.map(inv => (
+                              <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                                <span style={{ color: "#5a6f80" }}>
+                                  {new Date(inv.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                                </span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontWeight: 700, color: "#1a2a3a" }}>{fmt(Number(inv.amount))}</span>
+                                  {(() => {
+                                    const ist = inv.status === "paye"
+                                      ? { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" }
+                                      : inv.status === "facture"
+                                        ? { label: "Facturé", bg: "#e8f0fe", text: "#0d4f7a" }
+                                        : { label: "Facturable", bg: "#fff3e0", text: "#e65100" };
+                                    return <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: ist.bg, color: ist.text }}>{ist.label}</span>;
+                                  })()}
+                                </div>
+                              </div>
+                            ))}
+                            {remaining > 0 && (
+                              <div style={{ fontSize: 11, color: "#e65100", marginTop: 4, borderTop: "1px solid #e8ecf1", paddingTop: 6 }}>
+                                Reste à facturer : <strong>{fmt(remaining)}</strong>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>Aucune facture émise</div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Notes */}
+                {selectedDeal.notes && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Notes</div>
+                    <p style={{ fontSize: 13, color: "#1a2a3a", whiteSpace: "pre-wrap" }}>{selectedDeal.notes}</p>
+                  </div>
+                )}
+
+                {/* Documents */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Documents</div>
+
+                  {/* Upload */}
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                    <label style={{
+                      height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600,
+                      padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer",
+                      opacity: uploadingDoc ? 0.6 : 1,
+                    }}>
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploadingDoc ? "Envoi..." : "Importer"}
+                      <input
+                        type="file"
+                        style={{ display: "none" }}
+                        disabled={uploadingDoc}
+                        onChange={(e) => handleUploadDoc(e, selectedDeal.id)}
+                      />
+                    </label>
+                    <button style={{ height: 32, borderRadius: 6, background: "white", border: "1px solid #2ecc71", color: "#2e7d32", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                      Pennylane
+                    </button>
+                  </div>
+
+                  {/* Document list */}
+                  {loadingDocs ? (
+                    <div style={{ fontSize: 12, color: "#8399a9", padding: 8 }}>Chargement...</div>
+                  ) : documents.length === 0 ? (
+                    <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic", padding: 8 }}>Aucun document</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {documents.map(doc => {
+                        const dtc = DOC_TYPE_COLORS[doc.document_type] ?? DOC_TYPE_COLORS.autre;
+                        return (
+                          <div key={doc.id} style={{
+                            display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+                            background: "#f8fbfd", borderRadius: 8, border: "1px solid #e8ecf1",
+                          }}>
+                            <FileText className="h-4 w-4" style={{ color: "#8399a9", flexShrink: 0 }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
+                                <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10, background: dtc.bg, color: dtc.text }}>
+                                  {DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}
+                                </span>
+                                {doc.file_size && <span style={{ fontSize: 11, color: "#8399a9" }}>{formatFileSize(doc.file_size)}</span>}
+                                <span style={{ fontSize: 11, color: "#8399a9" }}>{new Date(doc.created_at).toLocaleDateString("fr-FR")}</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDownloadDoc(doc)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
+                              title="Télécharger"
+                            >
+                              <Download className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDoc(doc, selectedDeal.id)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => { setSelectedDeal(null); openEditDeal(selectedDeal); }}
+                    style={{ background: "#FF6B35", color: "white", flex: 1 }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" /> Modifier le deal
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm("Supprimer ce deal ?")) {
+                        handleDeleteDeal(selectedDeal.id);
+                        setSelectedDeal(null);
+                      }
+                    }}
+                    style={{ color: "#e74c3c", borderColor: "#e74c3c" }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

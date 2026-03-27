@@ -48,72 +48,86 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* LCA exact brand palette */
+  --lca-blue: #1a6b9c;
+  --lca-blue-dark: #0d4f7a;
+  --lca-blue-deeper: #0a3d5f;
+  --lca-orange: #FF6B35;
+  --lca-orange-light: #FF8C5A;
+  --lca-green: #2ecc71;
+  --lca-green-dark: #27ae60;
+  --lca-red: #e74c3c;
+  --lca-text-dark: #1a2a3a;
+  --lca-text-mid: #4a6274;
+  --lca-text-light: #8399a9;
+  --lca-light-bg: #EFF5F9;
+  --lca-card-bg: #ffffff;
+  --lca-shadow: 0 4px 24px rgba(13,79,122,0.08);
+  --lca-shadow-hover: 0 8px 32px rgba(13,79,122,0.14);
+  --lca-radius: 14px;
+
+  /* shadcn variables */
+  --background: #EFF5F9;
+  --foreground: #1a2a3a;
+  --card: #ffffff;
+  --card-foreground: #1a2a3a;
+  --popover: #ffffff;
+  --popover-foreground: #1a2a3a;
+  --primary: #1a6b9c;
+  --primary-foreground: #ffffff;
+  --secondary: #EFF5F9;
+  --secondary-foreground: #1a2a3a;
+  --muted: #edf2f7;
+  --muted-foreground: #8399a9;
+  --accent: #FF6B35;
+  --accent-foreground: #ffffff;
+  --destructive: #e74c3c;
+  --border: #dce8f0;
+  --input: #dce8f0;
+  --ring: #1a6b9c;
+  --chart-1: #1a6b9c;
+  --chart-2: #FF6B35;
+  --chart-3: #2ecc71;
+  --chart-4: #f39c12;
+  --chart-5: #6C5CE7;
+  --radius: 0.875rem;
+  --sidebar: #0a3d5f;
+  --sidebar-foreground: #8399a9;
+  --sidebar-primary: #FF6B35;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0d4f7a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-ring: #1a6b9c;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0a1929;
+  --foreground: #e0e0e0;
+  --card: #0d2137;
+  --card-foreground: #e0e0e0;
+  --popover: #0d2137;
+  --popover-foreground: #e0e0e0;
+  --primary: #1a6b9c;
+  --primary-foreground: #ffffff;
+  --secondary: #0d2137;
+  --secondary-foreground: #e0e0e0;
+  --muted: #0d2137;
+  --muted-foreground: #8399a9;
+  --accent: #FF6B35;
+  --accent-foreground: #ffffff;
+  --destructive: #e74c3c;
+  --border: rgba(255,255,255,0.1);
+  --input: rgba(255,255,255,0.1);
+  --ring: #1a6b9c;
+  --sidebar: #071422;
+  --sidebar-foreground: #8399a9;
+  --sidebar-primary: #FF6B35;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0a1929;
+  --sidebar-accent-foreground: #e0e0e0;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-ring: #1a6b9c;
 }
 
 @layer base {
@@ -126,4 +140,268 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Sidebar active menu item - orange */
+[data-slot="sidebar-inner"] [data-active="true"] {
+  background: #FF6B35 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+  border-radius: 8px;
+}
+
+[data-slot="sidebar-inner"] [data-active="true"]:hover {
+  background: #FF8C5A !important;
+}
+
+/* Cursor pointer on all clickable elements */
+a, button, [role="button"], [onclick], .cursor-pointer,
+[data-slot="sidebar-menu-button"], select, input[type="checkbox"],
+label:has(input), .lca-card-hover {
+  cursor: pointer !important;
+}
+
+/* Phone number formatting helper - applied via JS */
+
+/* Handwritten title style (Caveat) */
+.lca-handwritten {
+  font-family: var(--font-caveat), 'Caveat', cursive;
+  font-weight: 700;
+  color: #0d4f7a;
+}
+
+/* ========================================
+   LCA Sidebar Gradient
+   ======================================== */
+[data-slot="sidebar-inner"] {
+  background: linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 60%, #0d4f7a 100%) !important;
+  color: rgba(255,255,255,0.75) !important;
+}
+
+[data-slot="sidebar-inner"] [data-slot="sidebar-header"] {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Sidebar menu button hover & active */
+[data-slot="sidebar-inner"] button:hover,
+[data-slot="sidebar-inner"] a:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: white !important;
+}
+
+[data-slot="sidebar-inner"] [data-active="true"],
+[data-slot="sidebar-inner"] [aria-current="page"] {
+  background: rgba(255,255,255,0.15) !important;
+  color: white !important;
+}
+
+/* ========================================
+   LCA Animations
+   ======================================== */
+@keyframes cardPop {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   LCA Card System
+   ======================================== */
+.lca-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(13,79,122,0.08);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.grid > .lca-card:hover {
+  transform: scale(1.07);
+  box-shadow: 0 12px 40px rgba(13,79,122,0.2);
+}
+
+.lca-card:hover {
+  box-shadow: 0 8px 32px rgba(13,79,122,0.14);
+}
+
+.lca-card-hover:hover {
+  transform: scale(1.04) translateY(-4px);
+  box-shadow: 0 12px 28px rgba(26,107,156,0.22);
+  z-index: 20;
+}
+
+/* Top border bars */
+.lca-bar-green { height: 5px; background: #2ecc71; }
+.lca-bar-blue { height: 5px; background: #1a6b9c; }
+.lca-bar-orange { height: 5px; background: #FF6B35; }
+.lca-bar-red { height: 5px; background: #e74c3c; }
+.lca-bar-gradient { height: 5px; background: linear-gradient(90deg, #1a6b9c, #FF6B35); }
+.lca-bar-gradient-hot { height: 5px; background: linear-gradient(90deg, #FF6B35, #e74c3c); }
+
+/* ========================================
+   LCA Typography
+   ======================================== */
+.lca-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #8399a9;
+}
+
+.lca-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a2a3a;
+  margin-top: 4px;
+}
+
+.lca-sub { font-size: 11px; color: #8399a9; margin-top: 2px; }
+.lca-sub-green { font-size: 11px; color: #27ae60; font-weight: 600; margin-top: 2px; }
+
+.lca-big-pct {
+  font-size: 34px;
+  font-weight: 800;
+  color: #1a6b9c;
+  line-height: 1;
+}
+
+/* ========================================
+   LCA Progress Bars
+   ======================================== */
+.lca-progress-wrapper {
+  position: relative;
+  padding: 6px 0;
+}
+
+.lca-progress-track {
+  height: 28px;
+  background: #e6f0f7;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.lca-progress-fill {
+  height: 100%;
+  border-radius: 14px;
+  animation: lca-progress-grow 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-origin: left;
+}
+
+@keyframes lca-progress-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.lca-progress-badge {
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #FF6B35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #FF6B35;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-50%) scale(0.5);
+  animation: lca-badge-appear 0.5s ease-out 2.5s forwards, lca-badge-pulse 2.5s ease-in-out 3.5s infinite;
+}
+
+@keyframes lca-badge-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    box-shadow: 0 2px 12px rgba(255,107,53,0.3);
+  }
+}
+
+@keyframes lca-badge-pulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(255,107,53,0.3); }
+  50% { box-shadow: 0 0 20px rgba(255,107,53,0.5), 0 2px 12px rgba(255,107,53,0.3); }
+}
+
+/* ========================================
+   LCA Alerts
+   ======================================== */
+.lca-alert-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #fff8ed;
+  border-radius: 10px;
+  border-left: 4px solid #FF6B35;
+}
+
+.lca-alert-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #e8f8f0;
+  border-radius: 10px;
+  border-left: 4px solid #2ecc71;
+}
+
+.lca-alert-danger {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: #fde8e8;
+  border-radius: 10px;
+  border-left: 4px solid #e74c3c;
+}
+
+/* ========================================
+   LCA Badges
+   ======================================== */
+.lca-badge-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #e8f8f0;
+  color: #27ae60;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #b8e6cf;
+}
+
+.lca-badge-orange {
+  display: inline-flex;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #fff0e6;
+  color: #FF6B35;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #ffc9a8;
+}
+
+.lca-badge-red {
+  display: inline-flex;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #fde8e8;
+  color: #e74c3c;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #f5b7b7;
 }

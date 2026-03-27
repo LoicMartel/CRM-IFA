@@ -4,3 +4,20 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export function formatPhone(phone: string | null | undefined): string {
+  if (!phone) return "—";
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, "");
+  // French format: 06 99 25 24 87
+  if (digits.length === 10) {
+    return digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5");
+  }
+  // International +33 6 99 25 24 87
+  if (digits.length === 11 && digits.startsWith("33")) {
+    const local = "0" + digits.slice(2);
+    return local.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4 $5");
+  }
+  // Fallback: group by 2
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
