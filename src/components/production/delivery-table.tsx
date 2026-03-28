@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sheet";
 import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 
 interface SessionRow {
   id: string;
@@ -99,6 +100,7 @@ export function DeliveryTable({
   themes: ThemeRef[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
   const [filterMode, setFilterMode] = useState("");
@@ -245,10 +247,12 @@ export function DeliveryTable({
             <option value="no">Non facturable</option>
           </select>
         </div>
+        {!isRestrictedExterne && (
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle séance
         </Button>
+        )}
       </div>
 
       <div className="text-sm text-muted-foreground">

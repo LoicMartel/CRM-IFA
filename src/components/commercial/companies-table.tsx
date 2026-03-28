@@ -14,6 +14,7 @@ import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 
 interface Company {
   id: string;
@@ -62,6 +63,7 @@ export function CompaniesTable({
   teamMembers?: TeamMember[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");
@@ -86,6 +88,7 @@ export function CompaniesTable({
 
   const filtered = companies
     .filter((c) => {
+      if (isRestrictedExterne && roleMemberId && c.owner_id !== roleMemberId) return false;
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterType && c.company_types?.name !== filterType) return false;
       if (filterLifecycle && c.lifecycle_stage !== filterLifecycle) return false;

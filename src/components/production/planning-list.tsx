@@ -647,12 +647,12 @@ export function PlanningList({
                 <div style={{ borderTop: "1px solid #e8ecf1", padding: "16px 18px" }} className="space-y-5">
                   {/* Edit button */}
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <button
+                    {!isRestrictedExterne && <button
                       onClick={() => openEditPlan(plan)}
                       style={{ height: 32, borderRadius: 6, background: "#e8f0fe", color: "#0d4f7a", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <Pencil className="h-3.5 w-3.5" /> Modifier le plan
-                    </button>
+                    </button>}
                   </div>
 
                   {/* Counters */}
@@ -762,12 +762,14 @@ export function PlanningList({
                   <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
+                      {!isRestrictedExterne && (
                       <button
                         onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
                       </button>
+                      )}
                     </div>
 
                     {/* Inline session form */}
@@ -1069,7 +1071,8 @@ export function PlanningList({
                                     </TableCell>
                                     <TableCell>
                                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                                        <button
+                                          {!isRestrictedExterne && <>
+                                          <button
                                           onClick={() => openEditSession(s, plan.id)}
                                           style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
                                           title="Modifier"
@@ -1083,6 +1086,7 @@ export function PlanningList({
                                         >
                                           <Trash2 className="h-4 w-4" />
                                         </button>
+                                          </>}
                                       </div>
                                     </TableCell>
                                   </TableRow>

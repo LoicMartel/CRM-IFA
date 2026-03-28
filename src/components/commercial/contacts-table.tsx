@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -80,6 +81,7 @@ export function ContactsTable({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
+  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterLeadStatus, setFilterLeadStatus] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");
@@ -101,6 +103,7 @@ export function ContactsTable({
 
   const filtered = contacts
     .filter((c) => {
+      if (isRestrictedExterne && roleMemberId && c.owner_id !== roleMemberId) return false;
       if (contactTypeTab !== "all" && c.contact_type !== contactTypeTab) return false;
       const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
       if (search && !fullName.includes(search.toLowerCase()) && !(c.email ?? "").toLowerCase().includes(search.toLowerCase())) return false;

@@ -187,9 +187,11 @@ export function LearnersTable({
             ],
             "apprenants", fmt
           )} />
-          <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
-            <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
-          </Button>
+          {!isRestrictedExterne && (
+            <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
+              <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
+            </Button>
+          )}
         </div>
       </div>
 
@@ -247,6 +249,7 @@ export function LearnersTable({
                   <TableCell>{l.training_programs?.name ?? "—"}</TableCell>
                   <TableCell>{l.training_types?.name ?? "—"}</TableCell>
                   <TableCell>
+                    {!isRestrictedExterne && (
                     <button
                       onClick={() => {
                         if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
@@ -257,6 +260,7 @@ export function LearnersTable({
                     >
                       <Trash2 style={{ width: 14, height: 14 }} />
                     </button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
