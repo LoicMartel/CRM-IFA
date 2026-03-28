@@ -224,7 +224,10 @@ label:has(input), .lca-card-hover {
   box-shadow: 0 8px 32px rgba(13,79,122,0.14);
 }
 
-.grid > .lca-card:hover {
+.grid.md\:grid-cols-3 > .lca-card:hover,
+.grid.md\:grid-cols-4 > .lca-card:hover,
+.grid.md\:grid-cols-5 > .lca-card:hover,
+.grid.md\:grid-cols-7 > .lca-card:hover {
   transform: scale(1.07);
   box-shadow: 0 12px 40px rgba(13,79,122,0.2);
 }
