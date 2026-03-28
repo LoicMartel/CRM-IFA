@@ -53,7 +53,7 @@ export function LearnersTable({
   experts?: Expert[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -67,6 +67,7 @@ export function LearnersTable({
   });
 
   const filtered = learners.filter((l) => {
+    if (isRestrictedExterne && roleMemberId && (l as any).expert_id !== roleMemberId) return false;
     const name = `${l.first_name} ${l.last_name}`.toLowerCase();
     if (search && !name.includes(search.toLowerCase())) return false;
     if (filterStatus && l.status !== filterStatus) return false;
@@ -162,10 +163,12 @@ export function LearnersTable({
             <option value="">Tous les parcours</option>
             {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
+          {!isRestrictedExterne && (
           <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}>
             <option value="">Tous les experts</option>
             {experts.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
           </select>
+          )}
         </div>
         <div className="flex gap-2">
           <ExportButton onExport={(fmt: ExportFormat) => exportData(

@@ -147,7 +147,7 @@ export function PlanningList({
   expertNames?: string[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, firstName: currentFirstName } = useCurrentRoles();
   const TRAINER_LIST = expertNames && expertNames.length > 0 ? expertNames : TRAINER_LIST_FALLBACK;
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -214,6 +214,13 @@ export function PlanningList({
   const [form, setForm] = useState(emptyForm);
 
   const filtered = servicePlans.filter((p) => {
+    // Externes restreints : ne voir que les plans où ils sont impliqués
+    if (isRestrictedExterne && currentFirstName) {
+      const isInvolved = (p.training_sessions ?? []).some(
+        (s) => (s.trainers ?? []).includes(currentFirstName)
+      );
+      if (!isInvolved) return false;
+    }
     const companyName = p.companies?.name ?? "";
     if (search && !companyName.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterProgram && p.program_id !== filterProgram) return false;
