@@ -148,8 +148,8 @@ export default function LoginPage() {
         padding: 40, position: "relative", zIndex: 1,
       }}>
         <div style={{
-          width: 420, background: "white", borderRadius: 20,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)",
+          width: 420, background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)", borderRadius: 20,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.3)",
           overflow: "hidden",
         }}>
           {/* Card gradient bar */}
@@ -284,7 +284,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div style={{
-            padding: "14px 36px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd",
+            padding: "14px 36px", borderTop: "1px solid rgba(232,236,241,0.5)", background: "rgba(248,251,253,0.5)",
             textAlign: "center",
           }}>
             <p style={{ fontSize: 11, color: "#8399a9" }}>
