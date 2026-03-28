@@ -61,6 +61,8 @@ export function useCurrentRoles() {
 
   return {
     memberId: info?.id ?? null,
+    firstName: info?.firstName ?? "",
+    lastName: info?.lastName ?? "",
     roles: info?.roles ?? [],
     isAdmin,
     isExterne,

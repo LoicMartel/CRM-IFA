@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Mic, MicOff, X, Video, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -60,6 +61,7 @@ const statusLabels: Record<string, { label: string; bg: string; text: string }> 
 export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[]; expertNames?: string[] }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
   const router = useRouter();
+  const { isRestrictedExterne, firstName: currentFirstName } = useCurrentRoles();
   const [viewLearner, setViewLearner] = useState<{ id: string; first_name: string; last_name: string; email?: string; phone?: string; position?: string; status?: string; company_name?: string } | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(false);
 
@@ -108,7 +110,9 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     });
   }
 
-  const displayTrainers = filterTrainer ? [filterTrainer] : TRAINERS;
+  const displayTrainers = isRestrictedExterne && currentFirstName
+    ? TRAINERS.filter(t => t === currentFirstName)
+    : filterTrainer ? [filterTrainer] : TRAINERS;
   const hasUnassigned = weekDays.some(d => getUnassignedForDay(d).length > 0);
 
   const [sessionStatus, setSessionStatus] = useState("planned");
