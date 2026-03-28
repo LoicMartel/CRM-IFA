@@ -437,7 +437,7 @@ export function ReportsView({
                     }}
                   />
                 </div>
-                <div className="lca-progress-badge" style={{ left: `calc(${Math.min(annualPct, 100)}% - 16px)` }}>
+                <div className="lca-progress-badge" style={{ left: `clamp(0px, calc(${Math.min(annualPct, 100)}% - 20px), calc(100% - 40px))` }}>
                   {Math.round(annualPct)}%
                 </div>
               </div>

@@ -305,7 +305,7 @@ function ProgressBar({ pct }: { pct: number }) {
           }}
         />
       </div>
-      <div className="lca-progress-badge" style={{ left: `calc(${w}% - 16px)` }}>
+      <div className="lca-progress-badge" style={{ left: `clamp(0px, calc(${w}% - 20px), calc(100% - 40px))` }}>
         {Math.round(pct)}%
       </div>
     </div>

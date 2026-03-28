@@ -428,7 +428,7 @@ export function HomeView({
                 }}
               />
             </div>
-            <div className="lca-progress-badge" style={{ left: `calc(${Math.min(caPct, 100)}% - 16px)` }}>
+            <div className="lca-progress-badge" style={{ left: `clamp(0px, calc(${Math.min(caPct, 100)}% - 20px), calc(100% - 40px))` }}>
               {Math.round(caPct)}%
             </div>
           </div>
