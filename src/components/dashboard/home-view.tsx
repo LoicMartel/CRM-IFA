@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar, Clock, Target, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone, Mic, MicOff } from "lucide-react";
@@ -136,6 +137,7 @@ export function HomeView({
   overdueTasks: R[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const today = new Date();
   const todayLabel = format(today, "EEEE d MMMM yyyy", { locale: fr });
 
@@ -403,7 +405,7 @@ export function HomeView({
       </div>
 
       {/* ===== CA Progress Bar ===== */}
-      <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
+      {!isRestrictedExterne && <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="lca-bar-gradient-hot" />
         <div style={{ padding: 20 }}>
           <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
@@ -445,7 +447,7 @@ export function HomeView({
             )}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ===== Alertes ===== */}
       {overdueTasks.length > 0 && (
