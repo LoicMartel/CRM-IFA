@@ -10,6 +10,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Trash2, Edit, Building2, User, Calendar, X, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 
@@ -100,6 +102,7 @@ export function DealsBoard({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -177,7 +180,7 @@ export function DealsBoard({
   }
 
   async function handleDeleteDoc(doc: DealDocument, dealId: string) {
-    if (!confirm(`Supprimer "${doc.name}" ?`)) return;
+    if (!confirmDelete(isRestrictedExterne, `Supprimer "${doc.name}" ?`)) return;
     const supabase = createClient();
     await supabase.storage.from("deal-documents").remove([doc.file_path]);
     await supabase.from("deal_documents").delete().eq("id", doc.id);
@@ -458,7 +461,7 @@ export function DealsBoard({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm("Supprimer ce deal ?")) {
+                          if (confirmDelete(isRestrictedExterne, "Supprimer ce deal ?")) {
                             handleDeleteDeal(deal.id);
                           }
                         }}
@@ -805,7 +808,7 @@ export function DealsBoard({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (window.confirm("Supprimer ce deal ?")) {
+                      if (confirmDelete(isRestrictedExterne, "Supprimer ce deal ?")) {
                         handleDeleteDeal(selectedDeal.id);
                         setSelectedDeal(null);
                       }

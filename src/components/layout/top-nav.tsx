@@ -6,12 +6,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Search, Building2, User, Handshake, GraduationCap, X, Settings, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 
-const tabs = [
-  { label: "Dashboard", href: "/" },
-  { label: "Synthèse Commerciale", href: "/synthese-sales" },
-  { label: "Synthèse Production", href: "/synthese-service" },
-  { label: "Synthèse Finances", href: "/finances" },
+const allTabs = [
+  { label: "Dashboard", href: "/", restricted: true },
+  { label: "Synthèse Commerciale", href: "/synthese-sales", restricted: true },
+  { label: "Synthèse Production", href: "/synthese-service", restricted: false },
+  { label: "Synthèse Finances", href: "/finances", restricted: true },
 ];
 
 interface SearchResult {
@@ -25,6 +26,8 @@ interface SearchResult {
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
+  const tabs = isRestrictedExterne ? allTabs.filter((t) => !t.restricted) : allTabs;
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);

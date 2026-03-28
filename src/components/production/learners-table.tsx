@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 
 import { Plus, Search, Trash2, Users, UserCheck, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
@@ -51,6 +53,7 @@ export function LearnersTable({
   experts?: Expert[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -246,7 +249,7 @@ export function LearnersTable({
                   <TableCell>
                     <button
                       onClick={() => {
-                        if (window.confirm("Supprimer ? Cette action est irréversible.")) {
+                        if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
                           handleDeleteLearner(l.id);
                         }
                       }}

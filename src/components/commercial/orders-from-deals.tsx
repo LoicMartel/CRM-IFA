@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/table";
 import { Search, Mic, MicOff, X, Pencil, Building2, User, Calendar, Upload, FileText, Download, Trash2, Edit } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -42,6 +44,7 @@ interface InvoiceNote { id: string; deal_id: string | null; notes: string | null
 
 export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: { deals: Deal[]; teamMembers: Ref[]; sources: Ref[]; invoiceNotes: InvoiceNote[] }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterOwner, setFilterOwner] = useState("");
   const [filterSource, setFilterSource] = useState("");
@@ -103,7 +106,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
   }
 
   async function handleDeleteDoc(doc: { id: string; file_path: string }) {
-    if (!confirm("Supprimer ce document ?")) return;
+    if (!confirmDelete(isRestrictedExterne, "Supprimer ce document ?")) return;
     const supabase = createClient();
     await supabase.storage.from("deal-documents").remove([doc.file_path]);
     await supabase.from("deal_documents").delete().eq("id", doc.id);

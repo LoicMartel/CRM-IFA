@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users, Plus, Pencil, Trash2, KeyRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 
 type R = Record<string, unknown>;
 
@@ -41,6 +42,7 @@ const emptyForm = {
 
 export function TeamView({ members }: { members: R[] }) {
   const router = useRouter();
+  const { isAdmin } = useCurrentRoles();
   const [activeTab, setActiveTab] = useState("all");
   const [popup, setPopup] = useState<"create" | "edit" | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
@@ -194,18 +196,20 @@ export function TeamView({ members }: { members: R[] }) {
           })}
         </div>
 
-        <div style={{ marginLeft: "auto" }}>
-          <button
-            onClick={openCreate}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8, height: 38, borderRadius: 10,
-              padding: "0 20px", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer",
-              background: "#FF6B35", color: "white",
-            }}
-          >
-            <Plus className="h-4 w-4" /> Nouveau membre
-          </button>
-        </div>
+        {isAdmin && (
+          <div style={{ marginLeft: "auto" }}>
+            <button
+              onClick={openCreate}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8, height: 38, borderRadius: 10,
+                padding: "0 20px", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer",
+                background: "#FF6B35", color: "white",
+              }}
+            >
+              <Plus className="h-4 w-4" /> Nouveau membre
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Cards grid */}
@@ -236,17 +240,21 @@ export function TeamView({ members }: { members: R[] }) {
                       }}>
                         {member.is_active ? "Actif" : "Inactif"}
                       </span>
-                      {!!(member.auth_user_id) && (
+                      {isAdmin && !!(member.auth_user_id) && (
                         <button onClick={() => { setPasswordPopup(member); setNewPassword(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#1a6b9c" }} title="Changer le mot de passe">
                           <KeyRound className="h-3.5 w-3.5" />
                         </button>
                       )}
-                      <button onClick={() => openEdit(member)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#8399a9" }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => setDeleteConfirm(member.id as string)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#e74c3c" }}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {isAdmin && (
+                        <button onClick={() => openEdit(member)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#8399a9" }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button onClick={() => setDeleteConfirm(member.id as string)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#e74c3c" }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>

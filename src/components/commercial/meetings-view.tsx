@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Video, Phone, MapPin, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { MEETING_TYPE_LABELS, MEETING_STATUS_LABELS } from "@/types/database";
 import type { MeetingType, MeetingStatus, MeetingMode } from "@/types/database";
 
@@ -68,6 +70,7 @@ export function MeetingsView({
   companies: Ref[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -247,7 +250,7 @@ export function MeetingsView({
                       )}
                       <button
                         onClick={() => {
-                          if (window.confirm("Supprimer ? Cette action est irréversible.")) {
+                          if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
                             handleDeleteMeeting(m.id);
                           }
                         }}

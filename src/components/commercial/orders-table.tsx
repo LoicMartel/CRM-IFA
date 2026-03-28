@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 
@@ -75,6 +77,7 @@ export function OrdersTable({
   sources: Source[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterManager, setFilterManager] = useState("");
   const [filterInvoiced, setFilterInvoiced] = useState("all");
@@ -366,7 +369,7 @@ export function OrdersTable({
                   <TableCell>
                     <button
                       onClick={() => {
-                        if (window.confirm("Supprimer ? Cette action est irréversible.")) {
+                        if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
                           handleDeleteOrder(order.id);
                         }
                       }}

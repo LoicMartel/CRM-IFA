@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Trash2, Pencil, X, Building2, Handshake, Calendar, Receipt, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 
@@ -60,6 +62,7 @@ interface WonDeal {
 
 export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; wonDeals: WonDeal[] }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterFunding, setFilterFunding] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -105,7 +108,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
   }
 
   async function handleDeleteInvoiceDoc(doc: { id: string; file_path: string }, invoiceId: string) {
-    if (!confirm("Supprimer ce document ?")) return;
+    if (!confirmDelete(isRestrictedExterne, "Supprimer ce document ?")) return;
     const supabase = createClient();
     await supabase.storage.from("invoice-documents").remove([doc.file_path]);
     await supabase.from("invoice_documents").delete().eq("id", doc.id);
@@ -384,7 +387,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                       </button>
                       <button
                         onClick={() => {
-                          if (window.confirm("Supprimer ? Cette action est irréversible.")) {
+                          if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
                             handleDeleteInvoice(inv.id);
                           }
                         }}
@@ -765,7 +768,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                   <Pencil className="h-4 w-4" /> Modifier la facture
                 </button>
                 <button
-                  onClick={() => { if (confirm("Supprimer ?")) { handleDeleteInvoice(inv.id); setViewInvoice(null); } }}
+                  onClick={() => { if (confirmDelete(isRestrictedExterne, "Supprimer ?")) { handleDeleteInvoice(inv.id); setViewInvoice(null); } }}
                   style={{ height: 40, width: 40, borderRadius: 8, border: "1px solid #e74c3c", color: "#e74c3c", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <Trash2 className="h-4 w-4" />

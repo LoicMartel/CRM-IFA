@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/table";
 import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -145,6 +147,7 @@ export function PlanningList({
   expertNames?: string[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const TRAINER_LIST = expertNames && expertNames.length > 0 ? expertNames : TRAINER_LIST_FALLBACK;
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -522,7 +525,7 @@ export function PlanningList({
   }
 
   async function handleDeleteSession(sessionId: string) {
-    if (!confirm("Supprimer cette session ?")) return;
+    if (!confirmDelete(isRestrictedExterne, "Supprimer cette session ?")) return;
     const supabase = createClient();
     await supabase.from("training_sessions").delete().eq("id", sessionId);
     router.refresh();

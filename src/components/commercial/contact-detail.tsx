@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -165,6 +167,7 @@ export function ContactDetail({
   const currentMemberId = useCurrentMember();
   const isInbound = (contact as any).contact_type === "inbound";
   const defaultMeetingType = isInbound ? "R1" : "R0";
+  const { isRestrictedExterne } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
@@ -711,7 +714,7 @@ export function ContactDetail({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (window.confirm("Supprimer ce contact ? Cette action est irréversible.")) {
+                    if (confirmDelete(isRestrictedExterne, "Supprimer ce contact ? Cette action est irréversible.")) {
                       handleDelete();
                     }
                   }}
@@ -1196,7 +1199,7 @@ export function ContactDetail({
                             </button>
                             <button
                               onClick={() => {
-                                if (window.confirm("Supprimer cette activité ?")) handleDeleteActivity(a.id);
+                                if (confirmDelete(isRestrictedExterne, "Supprimer cette activité ?")) handleDeleteActivity(a.id);
                               }}
                               style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}
                             >
@@ -1250,7 +1253,7 @@ export function ContactDetail({
                                 <button onClick={() => openEditMeeting(m)} style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
-                                <button onClick={() => { if (window.confirm("Supprimer ce RDV ?")) handleDeleteMeeting(m.id); }} style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                <button onClick={() => { if (confirmDelete(isRestrictedExterne, "Supprimer ce RDV ?")) handleDeleteMeeting(m.id); }} style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               </div>
@@ -1330,7 +1333,7 @@ export function ContactDetail({
                                   style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
-                                <button onClick={() => { if (window.confirm("Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
+                                <button onClick={() => { if (confirmDelete(isRestrictedExterne, "Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
                                   style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>

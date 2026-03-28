@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 import {
   Building2,
   Calendar,
@@ -95,6 +96,13 @@ function NavSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isRestrictedExterne, canViewReports, canViewFinance } = useCurrentRoles();
+
+  const visibleCommercialItems = isRestrictedExterne
+    ? commercialItems.filter((i) => i.href !== "/leads")
+    : commercialItems;
+
+  const visibleFinanceItems = canViewFinance ? financeItems : [];
 
   return (
     <Sidebar>
@@ -124,9 +132,9 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent style={{ paddingTop: 16 }}>
-        <NavSection label="Commercial" items={commercialItems} pathname={pathname} />
+        <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />
         <NavSection label="Production" items={productionItemsList} pathname={pathname} />
-        <NavSection label="Finance" items={financeItems} pathname={pathname} />
+        {visibleFinanceItems.length > 0 && <NavSection label="Finance" items={visibleFinanceItems} pathname={pathname} />}
         <NavSection label="Admin" items={adminItems} pathname={pathname} />
       </SidebarContent>
     </Sidebar>

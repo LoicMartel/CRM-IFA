@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Mic, MicOff, X, Phone, Video, User, Building2, MapPin, CheckSquare, Square, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useCurrentRoles } from "@/lib/use-current-roles";
+import { confirmDelete } from "@/lib/confirm-delete";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -74,6 +76,7 @@ const MODE_ICONS: Record<string, { icon: typeof Video; label: string }> = {
 
 export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { meetings: Meeting[]; teamMembers: TeamMember[]; tasks?: Task[] }) {
   const router = useRouter();
+  const { isRestrictedExterne } = useCurrentRoles();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -169,7 +172,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   async function handleDeleteTask() {
     if (!selectedTask) return;
-    if (!confirm("Supprimer cette tâche ?")) return;
+    if (!confirmDelete(isRestrictedExterne, "Supprimer cette tâche ?")) return;
     const supabase = createClient();
     await supabase.from("activities").delete().eq("id", selectedTask.id);
     setSelectedTask(null);
