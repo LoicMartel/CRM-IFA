@@ -99,7 +99,9 @@ export function AppSidebar() {
   const { isRestrictedExterne, canViewReports, canViewFinance } = useCurrentRoles();
 
   const visibleCommercialItems = isRestrictedExterne ? [] : commercialItems;
-
+  const visibleProductionItems = isRestrictedExterne
+    ? productionItemsList.filter((i) => i.href !== "/delivery")
+    : productionItemsList;
   const visibleFinanceItems = canViewFinance ? financeItems : [];
 
   return (
@@ -131,7 +133,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent style={{ paddingTop: 16 }}>
         {visibleCommercialItems.length > 0 && <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />}
-        <NavSection label="Production" items={productionItemsList} pathname={pathname} />
+        <NavSection label="Production" items={visibleProductionItems} pathname={pathname} />
         {visibleFinanceItems.length > 0 && <NavSection label="Finance" items={visibleFinanceItems} pathname={pathname} />}
         <NavSection label="Admin" items={adminItems} pathname={pathname} />
       </SidebarContent>
