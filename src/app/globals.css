@@ -406,9 +406,9 @@ label:has(input), .lca-card-hover {
   border: 1px solid #f5b7b7;
 }
 
-/* ===== RESPONSIVE / MOBILE ===== */
+/* ===== RESPONSIVE ===== */
 
-/* Login page */
+/* --- Login page --- */
 @media (max-width: 900px) {
   .login-page {
     flex-direction: column !important;
@@ -440,14 +440,40 @@ label:has(input), .lca-card-hover {
     display: none !important;
   }
 }
+@media (max-width: 480px) {
+  .login-branding {
+    padding: 20px 16px 10px !important;
+  }
+  .login-form-wrapper {
+    padding: 4px 10px 20px !important;
+  }
+  .login-title {
+    font-size: 24px !important;
+  }
+  .login-subtitle {
+    font-size: 16px !important;
+  }
+  .login-logo-box {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
 
-/* Top nav */
+/* --- Top nav --- */
+/* Tablette : masquer la recherche */
 @media (max-width: 1100px) {
   .topnav-search {
     display: none !important;
   }
 }
-
+/* Tablette portrait : tabs raccourcis */
+@media (max-width: 900px) {
+  .topnav-tabs a {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+}
+/* Mobile : masquer les tabs */
 @media (max-width: 768px) {
   .topnav-tabs {
     display: none !important;
@@ -458,7 +484,14 @@ label:has(input), .lca-card-hover {
   }
 }
 
-/* Dashboard pages */
+/* --- Dashboard pages --- */
+/* Tablette */
+@media (max-width: 1024px) {
+  .p-6 {
+    padding: 16px !important;
+  }
+}
+/* Mobile */
 @media (max-width: 768px) {
   .p-6 {
     padding: 12px !important;
@@ -469,9 +502,31 @@ label:has(input), .lca-card-hover {
   .grid.md\:grid-cols-5 {
     grid-template-columns: 1fr !important;
   }
+  /* Filtres et boutons en wrap */
+  .flex.flex-col.sm\:flex-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .flex.gap-3.items-center.flex-wrap {
+    gap: 6px !important;
+  }
+  /* Formulaires Sheet responsive */
+  [data-radix-scroll-area-viewport] {
+    max-height: calc(100vh - 80px) !important;
+  }
 }
 
-/* Tables */
+/* --- Tables --- */
+/* Tablette */
+@media (max-width: 1024px) {
+  table {
+    font-size: 12px !important;
+  }
+  th, td {
+    padding: 6px 4px !important;
+  }
+}
+/* Mobile */
 @media (max-width: 640px) {
   table {
     font-size: 11px !important;
@@ -481,5 +536,56 @@ label:has(input), .lca-card-hover {
   }
   .lca-card {
     border-radius: 10px !important;
+  }
+  /* Scroll horizontal pour les grands tableaux */
+  .rounded-md.border {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* --- Modals / Popups --- */
+@media (max-width: 640px) {
+  /* Modaux centrés et pleine largeur sur mobile */
+  [style*="position: fixed"][style*="inset: 0"] > div {
+    width: 95% !important;
+    max-width: none !important;
+    margin: 0 auto;
+  }
+  /* Sheet (panneaux latéraux) */
+  [data-state="open"][role="dialog"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* --- KPIs cards --- */
+@media (max-width: 480px) {
+  .lca-value {
+    font-size: 18px !important;
+  }
+  .lca-big-pct {
+    font-size: 24px !important;
+  }
+  .lca-label {
+    font-size: 9px !important;
+  }
+}
+
+/* --- Boutons et actions --- */
+@media (max-width: 640px) {
+  button, select, input {
+    min-height: 36px;
+  }
+  /* Empêcher le zoom sur focus input iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="month"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }
