@@ -75,13 +75,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{
+    <div className="login-page" style={{
       minHeight: "100vh", display: "flex",
       background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 40%, #0d4f7a 70%, #0a3d5f 100%)",
       position: "relative", overflow: "hidden",
     }}>
       {/* Left side - Branding with powder explosion */}
-      <div style={{
+      <div className="login-branding" style={{
         flex: 1.2, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
         padding: 60, position: "relative", zIndex: 1, overflow: "hidden",
       }}>
@@ -143,11 +143,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login form */}
-      <div style={{
+      <div className="login-form-wrapper" style={{
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: 40, position: "relative", zIndex: 1,
       }}>
-        <div style={{
+        <div className="login-card" style={{
           width: 420, background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)", borderRadius: 20,
           boxShadow: "0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.3)",
           overflow: "hidden",

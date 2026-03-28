@@ -405,3 +405,81 @@ label:has(input), .lca-card-hover {
   font-weight: 700;
   border: 1px solid #f5b7b7;
 }
+
+/* ===== RESPONSIVE / MOBILE ===== */
+
+/* Login page */
+@media (max-width: 900px) {
+  .login-page {
+    flex-direction: column !important;
+  }
+  .login-branding {
+    flex: none !important;
+    padding: 30px 20px 20px !important;
+  }
+  .login-form-wrapper {
+    padding: 10px 16px 30px !important;
+  }
+  .login-card {
+    width: 100% !important;
+    max-width: 420px !important;
+  }
+  .login-title {
+    font-size: 30px !important;
+  }
+  .login-subtitle {
+    font-size: 20px !important;
+  }
+  .login-tagline {
+    display: none !important;
+  }
+  .login-features {
+    display: none !important;
+  }
+  .powder {
+    display: none !important;
+  }
+}
+
+/* Top nav */
+@media (max-width: 1100px) {
+  .topnav-search {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .topnav-tabs {
+    display: none !important;
+  }
+  .topnav-header {
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+}
+
+/* Dashboard pages */
+@media (max-width: 768px) {
+  .p-6 {
+    padding: 12px !important;
+  }
+  .grid.md\:grid-cols-2,
+  .grid.md\:grid-cols-3,
+  .grid.md\:grid-cols-4,
+  .grid.md\:grid-cols-5 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tables */
+@media (max-width: 640px) {
+  table {
+    font-size: 11px !important;
+  }
+  th, td {
+    padding: 4px 3px !important;
+  }
+  .lca-card {
+    border-radius: 10px !important;
+  }
+}

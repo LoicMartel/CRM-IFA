@@ -146,6 +146,7 @@ export function TopNav() {
 
   return (
     <header
+      className="topnav-header"
       style={{
         background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 60%, #0d4f7a 100%)",
         boxShadow: "0 4px 30px rgba(10,61,95,0.25)",
@@ -164,7 +165,7 @@ export function TopNav() {
       </div>
 
       {/* Search Bar */}
-      <div ref={wrapperRef} style={{ position: "absolute", left: 341, width: 400 }}>
+      <div ref={wrapperRef} className="topnav-search" style={{ position: "absolute", left: 341, width: 400 }}>
 
         <div style={{ position: "relative" }}>
           <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#5a7099" }} />
@@ -247,7 +248,7 @@ export function TopNav() {
       </div>
 
       {/* Tabs */}
-      <nav style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+      <nav className="topnav-tabs" style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
           return (

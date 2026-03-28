@@ -17,6 +17,7 @@ const caveat = Caveat({
 export const metadata: Metadata = {
   title: "CRM - La Closing Académie",
   description: "CRM de gestion commerciale, production et pilotage financier",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
