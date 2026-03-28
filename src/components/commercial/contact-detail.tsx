@@ -163,6 +163,8 @@ export function ContactDetail({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
+  const isInbound = (contact as any).contact_type === "inbound";
+  const defaultMeetingType = isInbound ? "R1" : "R0";
   const [editOpen, setEditOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
@@ -181,6 +183,7 @@ export function ContactDetail({
     notes: contact.notes ?? "",
     lifecycle_stage: contact.lifecycle_stage ?? "prospect",
     lead_status: contact.lead_status ?? "lead",
+    contact_type: (contact as any).contact_type ?? "",
     linkedin_url: contact.linkedin_url ?? "",
     owner_id: contact.owner_id ?? "",
   });
@@ -199,7 +202,7 @@ export function ContactDetail({
 
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
   const [rdvForm, setRdvForm] = useState({
-    meeting_type: "R0" as string,
+    meeting_type: defaultMeetingType as string,
     scheduled_at: "",
     duration_minutes: "60",
     meeting_mode: "visio" as string,
@@ -233,6 +236,7 @@ export function ContactDetail({
       notes: form.notes || null,
       lifecycle_stage: form.lifecycle_stage || "prospect",
       lead_status: form.lead_status || "lead",
+      contact_type: form.contact_type || null,
       linkedin_url: form.linkedin_url || null,
       owner_id: form.owner_id || null,
     }).eq("id", contact.id);
@@ -355,7 +359,7 @@ export function ContactDetail({
       // Open RDV creation form with the scheduled date from the activity
       const fallbackNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       setEditingMeetingId(null);
-      setRdvForm({ meeting_type: "R0", scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow });
+      setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow });
       setRdvOpen(true);
     }
 
@@ -539,7 +543,7 @@ export function ContactDetail({
       setSaving(false);
       setRdvOpen(false);
       setEditingMeetingId(null);
-      setRdvForm({ meeting_type: "R0", scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+      setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
 
       if (newDeal && !dealError) {
         router.push(`/deals?edit=${newDeal.id}`);
@@ -550,7 +554,7 @@ export function ContactDetail({
     setSaving(false);
     setRdvOpen(false);
     setEditingMeetingId(null);
-    setRdvForm({ meeting_type: "R0", scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+    setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
     router.refresh();
   }
 
@@ -657,9 +661,10 @@ export function ContactDetail({
 
   const ls = leadStatusColors[dynamicLeadStatus] ?? leadStatusColors[contact.lead_status ?? ""] ?? null;
 
-  // Build meeting progression (R0 -> R1 -> R2 -> R3)
+  // Build meeting progression
   const hasSomeSigned = meetings.some(m => m.status === "done" && m.outcome && m.outcome.includes("Signed") && !m.outcome.includes("Not signed")) || contact.lead_status === "signed";
-  const meetingProgression = ["R0", "R1", "R2", "R3", "Signed"].map((type) => {
+  const meetingTypes = isInbound ? ["R1", "R2", "R3", "Signed"] : ["R0", "R1", "R2", "R3", "Signed"];
+  const meetingProgression = meetingTypes.map((type) => {
     if (type === "Signed") {
       return { type, done: hasSomeSigned, date: null };
     }
@@ -680,7 +685,7 @@ export function ContactDetail({
           <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingActivityId(null); setActivityForm({ type: "email", title: "Email", description: "", due_date: now, call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
             <MailPlus className="h-4 w-4 mr-1" /> Log email
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: "R0", scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16) }); setRdvOpen(true); }}>
+          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16) }); setRdvOpen(true); }}>
             <CalendarPlus className="h-4 w-4 mr-1" /> Créer RDV
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "note", title: "", description: "", due_date: "", call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
@@ -747,6 +752,22 @@ export function ContactDetail({
                     style={{ backgroundColor: "#e8f0fe", color: "#0d4f7a" }}
                   >
                     Apprenant
+                  </span>
+                )}
+                {(contact as any).contact_type === "inbound" && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    style={{ backgroundColor: "#e8f5e9", color: "#2e7d32" }}
+                  >
+                    Inbound
+                  </span>
+                )}
+                {(contact as any).contact_type === "outbound" && (
+                  <span
+                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                    style={{ backgroundColor: "#fff3e0", color: "#e65100" }}
+                  >
+                    Outbound
                   </span>
                 )}
               </div>
@@ -1384,6 +1405,18 @@ export function ContactDetail({
                 ))}
               </select>
             </div>
+            <div className="space-y-2">
+              <Label>Type de contact *</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={form.contact_type}
+                onChange={(e) => setForm({ ...form, contact_type: e.target.value })}
+              >
+                <option value="">Sélectionner</option>
+                <option value="inbound">Inbound</option>
+                <option value="outbound">Outbound</option>
+              </select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cycle de vie</Label>
@@ -1581,7 +1614,7 @@ export function ContactDetail({
       {/* RDV Sheet (Create + Edit) */}
       <Sheet open={rdvOpen} onOpenChange={(open) => {
         setRdvOpen(open);
-        if (!open) { setEditingMeetingId(null); setRdvForm({ meeting_type: "R0", scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" }); }
+        if (!open) { setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" }); }
       }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
@@ -1595,11 +1628,21 @@ export function ContactDetail({
                 value={rdvForm.meeting_type}
                 onChange={(e) => setRdvForm({ ...rdvForm, meeting_type: e.target.value })}
               >
-                <option value="R0">R0 — Qualification</option>
-                <option value="R1">R0 + R1 — Qualification + Découverte</option>
-                <option value="R1">R1 — Découverte</option>
-                <option value="R2">R2 — Solution</option>
-                <option value="R3">R3 — Négociation</option>
+                {isInbound ? (
+                  <>
+                    <option value="R1">R1</option>
+                    <option value="R2">R2</option>
+                    <option value="R3">R3</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="R0">R0 — Qualification</option>
+                    <option value="R1">R0 + R1 — Qualification + Découverte</option>
+                    <option value="R1">R1 — Découverte</option>
+                    <option value="R2">R2 — Solution</option>
+                    <option value="R3">R3 — Négociation</option>
+                  </>
+                )}
               </select>
             </div>
             <div className="space-y-2">

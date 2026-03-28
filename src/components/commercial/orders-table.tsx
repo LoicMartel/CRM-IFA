@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 
 interface Order {
   id: string;
@@ -242,10 +244,33 @@ export function OrdersTable({
             <option value="pending">Non facturées</option>
           </select>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle commande
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton onExport={(fmt: ExportFormat) => exportData(
+            filtered.map((o) => ({
+              client: o.client_name,
+              contact: o.contacts ? `${o.contacts.first_name} ${o.contacts.last_name}` : "",
+              date: o.order_date ?? "",
+              account_manager: o.team_members ? `${o.team_members.first_name} ${o.team_members.last_name}` : "",
+              source: (o as any).lead_sources?.name ?? "",
+              montant: o.amount,
+              jours: o.training_days ?? "",
+              facture: o.is_invoiced ? "Oui" : "Non",
+              notes_facturation: o.invoice_notes ?? "",
+            })),
+            [
+              { key: "client", label: "Client" }, { key: "contact", label: "Contact" },
+              { key: "date", label: "Date" }, { key: "account_manager", label: "Account Manager" },
+              { key: "source", label: "Source" }, { key: "montant", label: "Montant" },
+              { key: "jours", label: "Jours" }, { key: "facture", label: "Facturé" },
+              { key: "notes_facturation", label: "Notes facturation" },
+            ],
+            "commandes", fmt
+          )} />
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle commande
+          </Button>
+        </div>
       </div>
 
       <div className="text-sm text-muted-foreground">

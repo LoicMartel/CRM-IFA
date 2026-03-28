@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -30,6 +32,7 @@ interface Contact {
   owner_id: string | null;
   companies: { name: string } | null;
   team_members: { first_name: string; last_name: string } | null;
+  contact_type: string | null;
   company_id: string | null;
   created_at: string;
 }
@@ -49,6 +52,11 @@ const lifecycleColors: Record<string, { bg: string; text: string; label: string 
   prospect: { bg: "#e3f2fd", text: "#1565c0", label: "Prospect" },
   customer: { bg: "#e8f5e9", text: "#2e7d32", label: "Client" },
   former_customer: { bg: "#f0f0f0", text: "#666", label: "Ancien client" },
+};
+
+const contactTypeColors: Record<string, { bg: string; text: string; label: string }> = {
+  inbound: { bg: "#e8f5e9", text: "#2e7d32", label: "Inbound" },
+  outbound: { bg: "#fff3e0", text: "#e65100", label: "Outbound" },
 };
 
 const leadStatusColors: Record<string, { bg: string; text: string; label: string }> = {
@@ -80,6 +88,7 @@ export function ContactsTable({
   const [filterCreatedTo, setFilterCreatedTo] = useState("");
   const [filterLastActionFrom, setFilterLastActionFrom] = useState("");
   const [filterLastActionTo, setFilterLastActionTo] = useState("");
+  const [contactTypeTab, setContactTypeTab] = useState<"all" | "inbound" | "outbound">("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
@@ -87,11 +96,12 @@ export function ContactsTable({
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", position: "",
     company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
-    lead_status: "lead", linkedin_url: "",
+    lead_status: "lead", linkedin_url: "", contact_type: "",
   });
 
   const filtered = contacts
     .filter((c) => {
+      if (contactTypeTab !== "all" && c.contact_type !== contactTypeTab) return false;
       const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
       if (search && !fullName.includes(search.toLowerCase()) && !(c.email ?? "").toLowerCase().includes(search.toLowerCase())) return false;
       if (filterLifecycle && c.lifecycle_stage !== filterLifecycle) return false;
@@ -139,6 +149,7 @@ export function ContactsTable({
       notes: form.notes || null,
       lifecycle_stage: form.lifecycle_stage || "lead",
       lead_status: form.lead_status || "new",
+      contact_type: form.contact_type || null,
       linkedin_url: form.linkedin_url || null,
       owner_id: currentMemberId || null,
     });
@@ -147,7 +158,7 @@ export function ContactsTable({
     setForm({
       first_name: "", last_name: "", email: "", phone: "", position: "",
       company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
-      lead_status: "lead", linkedin_url: "",
+      lead_status: "lead", linkedin_url: "", contact_type: "",
     });
     router.refresh();
   }
@@ -163,6 +174,24 @@ export function ContactsTable({
 
   return (
     <>
+      <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+        {(["all", "inbound", "outbound"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setContactTypeTab(tab)}
+            style={{
+              height: 36, borderRadius: 8, padding: "0 20px", fontSize: 14,
+              fontWeight: contactTypeTab === tab ? 700 : 500,
+              border: `1px solid ${contactTypeTab === tab ? "#1a6b9c" : "#dce8f0"}`,
+              background: contactTypeTab === tab ? "#1a6b9c" : "white",
+              color: contactTypeTab === tab ? "white" : "#5a6f80",
+              cursor: "pointer",
+            }}
+          >
+            {tab === "all" ? "Tous les contacts" : tab === "inbound" ? "Inbound" : "Outbound"}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex gap-3 items-center flex-wrap">
           <div className="relative">
@@ -202,10 +231,33 @@ export function ContactsTable({
             </select>
           )}
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau contact
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton onExport={(fmt: ExportFormat) => exportData(
+            filtered.map((c) => ({
+              nom: `${c.first_name} ${c.last_name}`,
+              email: c.email ?? "",
+              telephone: c.phone ?? "",
+              entreprise: c.companies?.name ?? "",
+              cycle: c.lifecycle_stage ?? "",
+              statut: c.lead_status ?? "",
+              type: c.contact_type ?? "",
+              dernier_contact: c.last_contacted_at ?? "",
+              proprietaire: c.team_members ? `${c.team_members.first_name} ${c.team_members.last_name}` : "",
+            })),
+            [
+              { key: "nom", label: "Nom" }, { key: "email", label: "Email" },
+              { key: "telephone", label: "Téléphone" }, { key: "entreprise", label: "Entreprise" },
+              { key: "cycle", label: "Cycle" }, { key: "statut", label: "Statut" },
+              { key: "type", label: "Type" }, { key: "dernier_contact", label: "Dernier contact" },
+              { key: "proprietaire", label: "Propriétaire" },
+            ],
+            "contacts", fmt
+          )} />
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau contact
+          </Button>
+        </div>
       </div>
 
       {/* Date filters */}
@@ -255,13 +307,14 @@ export function ContactsTable({
               <TableHead className="cursor-pointer" onClick={() => toggleSort("last_contacted_at")}>
                 <span className="flex items-center gap-1">Dernier contact <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Propriétaire</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucun contact trouvé
                 </TableCell>
               </TableRow>
@@ -269,6 +322,7 @@ export function ContactsTable({
               filtered.map((c) => {
                 const lc = lifecycleColors[c.lifecycle_stage ?? ""] ?? null;
                 const ls = leadStatusColors[c.lead_status ?? ""] ?? null;
+                const ct = contactTypeColors[c.contact_type ?? ""] ?? null;
                 return (
                   <TableRow
                     key={c.id}
@@ -301,6 +355,16 @@ export function ContactsTable({
                     </TableCell>
                     <TableCell>{formatDate(c.last_contacted_at)}</TableCell>
                     <TableCell>
+                      {ct ? (
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                          style={{ backgroundColor: ct.bg, color: ct.text }}
+                        >
+                          {ct.label}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell>
                       {c.team_members ? (
                         <span
                           style={{
@@ -329,6 +393,18 @@ export function ContactsTable({
             <SheetTitle>Nouveau contact</SheetTitle>
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+            <div className="space-y-2">
+              <Label>Type de contact *</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={form.contact_type}
+                onChange={(e) => setForm({ ...form, contact_type: e.target.value })}
+              >
+                <option value="">Sélectionner *</option>
+                <option value="inbound">Inbound</option>
+                <option value="outbound">Outbound</option>
+              </select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Prénom *</Label>
@@ -341,11 +417,11 @@ export function ContactsTable({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>Email{form.contact_type === "inbound" || form.contact_type === "outbound" ? " *" : ""}</Label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Téléphone</Label>
+                <Label>Téléphone{form.contact_type === "inbound" ? " *" : ""}</Label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
             </div>
@@ -354,7 +430,7 @@ export function ContactsTable({
               <Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Entreprise</Label>
+              <Label>Entreprise{form.contact_type === "outbound" ? " *" : ""}</Label>
               <select
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
                 value={form.company_id}
@@ -415,7 +491,9 @@ export function ContactsTable({
             </div>
             <Button
               onClick={handleSave}
-              disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
+              disabled={saving || !form.first_name.trim() || !form.last_name.trim() || !form.contact_type
+                || (form.contact_type === "inbound" && (!form.email.trim() || !form.phone.trim()))
+                || (form.contact_type === "outbound" && (!form.email.trim() || !form.company_id))}
               className="w-full"
             >
               {saving ? "Enregistrement..." : "Enregistrer"}

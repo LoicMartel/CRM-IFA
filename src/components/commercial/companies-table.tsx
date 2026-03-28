@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 
 interface Company {
   id: string;
@@ -188,10 +190,28 @@ export function CompaniesTable({
             </select>
           )}
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle entreprise
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton onExport={(fmt: ExportFormat) => exportData(
+            filtered.map((c) => ({
+              nom: c.name,
+              ville: c.city ?? "",
+              cycle: c.lifecycle_stage ?? "",
+              contacts: String(getContactCount(c)),
+              deals: String(getDealCount(c)),
+              proprietaire: c.team_members ? `${c.team_members.first_name} ${c.team_members.last_name}` : "",
+            })),
+            [
+              { key: "nom", label: "Nom" }, { key: "ville", label: "Ville" },
+              { key: "cycle", label: "Cycle de vie" }, { key: "contacts", label: "Contacts" },
+              { key: "deals", label: "Deals" }, { key: "proprietaire", label: "Propriétaire" },
+            ],
+            "entreprises", fmt
+          )} />
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle entreprise
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border">

@@ -111,6 +111,7 @@ async function getData() {
     daysPlanned: Math.round(totalHoursPlanned / 8 * 10) / 10,
     facturableADV, totalFacture, totalEncaisse, totalDecaisse,
     chartData,
+    targets,
   };
 }
 
@@ -245,6 +246,7 @@ export default async function DashboardPage() {
           totalHoursSold={d.totalHoursSold}
           daysDelivered={d.daysDelivered}
           daysPlanned={d.daysPlanned}
+          targets={d.targets}
         />
       </div>
 
@@ -312,17 +314,23 @@ function ProgressBar({ pct }: { pct: number }) {
 
 function PointsAttention({
   annualPct, annualTarget, totalCA, totalFacturable, totalNonFacturable, nonFactPct,
-  realizationPct, totalHoursDelivered, totalHoursSold, daysDelivered, daysPlanned,
+  realizationPct, totalHoursDelivered, totalHoursSold, daysDelivered, daysPlanned, targets,
 }: {
   annualPct: number; annualTarget: number; totalCA: number; totalFacturable: number;
   totalNonFacturable: number; nonFactPct: number; realizationPct: number;
   totalHoursDelivered: number; totalHoursSold: number; daysDelivered: number; daysPlanned: number;
+  targets: { month: string; target_amount: number }[];
 }) {
   function fmt(n: number) {
     return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
   }
 
-  const targetCumule = annualTarget * (7 / 12);
+  // Calculate cumulative target up to current month from actual targets
+  const now = new Date();
+  const currentMonthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-31`;
+  const targetCumule = targets
+    .filter(t => (t.month as string) <= currentMonthEnd)
+    .reduce((s, t) => s + (Number(t.target_amount) || 0), 0);
   const retard = Math.round(targetCumule - totalCA);
   const retardPct = targetCumule > 0 ? ((targetCumule - totalCA) / targetCumule * 100) : 0;
 

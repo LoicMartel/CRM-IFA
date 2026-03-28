@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Trash2, Pencil, X, Building2, Handshake, Calendar, Receipt, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 
 interface Invoice {
   id: string;
@@ -285,10 +287,31 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
             <option value="paye">Payé</option>
           </select>
         </div>
-        <Button onClick={() => { setEditingId(null); setMonthlyMode(false); setSelectedMonths([]); setMonthlyAmounts({}); setForm({ deal_id: "", client_name: "", company_id: null, funding_type: "", month: new Date().toISOString().slice(0, 7) + "-01", amount: "", status: "facturable", due_date: "", notes: "" }); setOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle facture
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton onExport={(fmt: ExportFormat) => exportData(
+            filtered.map((inv) => ({
+              nom_facture: inv.invoice_name ?? "",
+              client: inv.client_name,
+              financement: inv.funding_type ?? "",
+              emission: inv.month ?? "",
+              montant: inv.amount,
+              statut: inv.status ?? "",
+              echeance: inv.due_date ?? "",
+              notes: inv.notes ?? "",
+            })),
+            [
+              { key: "nom_facture", label: "Nom facture" }, { key: "client", label: "Client" },
+              { key: "financement", label: "Financement" }, { key: "emission", label: "Émission" },
+              { key: "montant", label: "Montant" }, { key: "statut", label: "Statut" },
+              { key: "echeance", label: "Échéance" }, { key: "notes", label: "Notes" },
+            ],
+            "facturation", fmt
+          )} />
+          <Button onClick={() => { setEditingId(null); setMonthlyMode(false); setSelectedMonths([]); setMonthlyAmounts({}); setForm({ deal_id: "", client_name: "", company_id: null, funding_type: "", month: new Date().toISOString().slice(0, 7) + "-01", amount: "", status: "facturable", due_date: "", notes: "" }); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle facture
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border">

@@ -14,9 +14,10 @@ export type Department = "ADMIN" | "MARKETING" | "PÉDAGOGIE" | "VENTE" | "RH";
 export type MeetingType = "R0" | "R1" | "R2" | "R3";
 export type MeetingStatus = "booked" | "done" | "no_show" | "cancelled";
 export type MeetingMode = "visio" | "phone" | "in_person";
-export type DealStage = "opportunities" | "quote_to_send" | "quote_sent" | "opco_deposit" | "quote_signed" | "ordered" | "closed_won" | "closed_lost";
+export type DealStage = "opportunities" | "quote_to_send" | "quote_sent" | "opco_deposit" | "quote_signed" | "closed_won" | "closed_lost";
 export type LifecycleStage = "subscriber" | "lead" | "mql" | "sql" | "opportunity" | "customer" | "evangelist";
 export type ContactLeadStatus = "lead" | "contacted" | "booked" | "rdv_done" | "signed";
+export type ContactType = "inbound" | "outbound";
 export type CompanyLifecycle = "lead" | "prospect" | "customer" | "partner" | "former_customer";
 
 export interface TeamMember {
@@ -64,6 +65,7 @@ export interface Contact {
   lifecycle_stage: LifecycleStage;
   lead_status: ContactLeadStatus | null;
   last_contacted_at: string | null;
+  contact_type: ContactType | null;
   linkedin_url: string | null;
   created_at: string;
   updated_at: string;
@@ -353,7 +355,6 @@ export const DEAL_STAGE_LABELS: Record<DealStage, string> = {
   quote_sent: "Devis envoyé",
   opco_deposit: "Dépôt OPCO",
   quote_signed: "Devis signé",
-  ordered: "Commandé",
   closed_won: "Gagné",
   closed_lost: "Perdu",
 };
@@ -364,7 +365,6 @@ export const DEAL_STAGE_PROBABILITY: Record<DealStage, number> = {
   quote_sent: 60,
   opco_deposit: 75,
   quote_signed: 85,
-  ordered: 90,
   closed_won: 100,
   closed_lost: 0,
 };

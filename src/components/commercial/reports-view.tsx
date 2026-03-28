@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { X, User, Building2, MapPin, Mic, MicOff, Video, Phone } from "lucide-react";
+import { X, User, Building2, MapPin, Mic, MicOff, Video, Phone, Download } from "lucide-react";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -110,6 +112,30 @@ export function ReportsView({
   const [isRecording, setIsRecording] = useState(false);
   const [recordTarget, setRecordTarget] = useState<"notes" | "outcome">("notes");
   const recognitionRef = useRef<any>(null);
+
+  // Inbound/Outbound filter for list reports
+  const [filterContactType, setFilterContactType] = useState<"" | "inbound" | "outbound">("");
+
+  const inboundContacts = contacts.filter((c: R) => (c as any).contact_type === "inbound");
+  const outboundContacts = contacts.filter((c: R) => (c as any).contact_type === "outbound");
+
+  // Contacts filtered by type dropdown
+  const filteredByType = filterContactType
+    ? contacts.filter((c: R) => (c as any).contact_type === filterContactType)
+    : contacts;
+  const filteredContactIds = new Set(filteredByType.map((c: R) => c.id as string));
+
+  const typeFilterSelect = (
+    <select
+      value={filterContactType}
+      onChange={(e) => setFilterContactType(e.target.value as "" | "inbound" | "outbound")}
+      style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+    >
+      <option value="">Tous les types</option>
+      <option value="inbound">Inbound</option>
+      <option value="outbound">Outbound</option>
+    </select>
+  );
 
   const RDV_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
     R0: { bg: "#ede7f6", text: "#4a148c" }, R1: { bg: "#fce4ec", text: "#c62828" },
@@ -279,9 +305,14 @@ export function ReportsView({
   const annualPct = annualTarget > 0 ? (totalOrders / annualTarget) * 100 : 0;
 
   // Current month (last with actual > 0)
-  const currentIdx = monthlyDetail.findLastIndex(m => m.realise > 0);
+  // Current month based on actual date, not last month with CA
+  const nowDate = new Date();
+  const nowMonthEnd = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, "0")}-31`;
+  const currentIdx = targets.filter(t => Number(t.target_amount) >= 0 && (t.month as string) <= nowMonthEnd).length - 1;
   const currentMonth = currentIdx >= 0 ? monthlyDetail[currentIdx] : null;
-  const objCumuleNow = currentMonth?.objCumule ?? 0;
+  const objCumuleNow = targets
+    .filter(t => (t.month as string) <= nowMonthEnd)
+    .reduce((s, t) => s + (Number(t.target_amount) || 0), 0);
   const ecart = totalOrders - objCumuleNow;
   const ecartPct = objCumuleNow > 0 ? Math.round(Math.abs(ecart) / objCumuleNow * 100) : 0;
 
@@ -557,13 +588,13 @@ export function ReportsView({
       {selectedReport === "new_not_contacted" && (() => {
         // All owners for filter
         const allOwners = new Map<string, string>();
-        contacts.forEach((c: R) => {
+        filteredByType.forEach((c: R) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) allOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
         });
         const ownerList = Array.from(allOwners.keys()).sort();
 
-        const newContacts = contacts.filter((c) => {
+        const newContacts = filteredByType.filter((c) => {
           if (c.lead_status !== "lead") return false;
           // Date filter on created_at
           const created = c.created_at as string | undefined;
@@ -582,14 +613,6 @@ export function ReportsView({
             if (name !== nncOwner) return false;
           }
           return true;
-        });
-
-        const byOwner: Record<string, R[]> = {};
-        newContacts.forEach((c) => {
-          const tm = c.team_members as { first_name: string; last_name: string } | null;
-          const name = tm ? `${tm.first_name} ${tm.last_name}` : "Non assigné";
-          if (!byOwner[name]) byOwner[name] = [];
-          byOwner[name].push(c);
         });
 
         function fmtDate(d: string | null | undefined): string {
@@ -625,6 +648,7 @@ export function ReportsView({
                 <option value="">Tous les Account Managers</option>
                 {ownerList.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             {/* KPIs */}
@@ -650,37 +674,6 @@ export function ReportsView({
             </div>
 
             {/* Par propriétaire */}
-            {Object.keys(byOwner).length > 0 && (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(byOwner).sort((a, b) => b[1].length - a[1].length).map(([owner, ownerContacts]) => (
-                  <div key={owner} className="lca-card" style={{ padding: "10px 14px" }}>
-                    <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>{owner}</span>
-                      <span style={{ background: "#fce4ec", color: "#c62828", padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{ownerContacts.length}</span>
-                    </div>
-                    {ownerContacts.slice(0, 5).map((c) => (
-                      <div
-                        key={c.id as string}
-                        onClick={() => router.push(`/contacts/${c.id}`)}
-                        style={{ padding: "6px 0", borderBottom: "1px solid #e6f0f7", cursor: "pointer" }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline" }}>
-                          {c.first_name as string} {c.last_name as string}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#8399a9" }}>
-                          {(c.companies as { name: string } | null)?.name ?? "Pas d'entreprise"}
-                          {c.phone ? ` • ${formatPhone(c.phone as string)}` : ""}
-                        </div>
-                      </div>
-                    ))}
-                    {ownerContacts.length > 5 && (
-                      <div style={{ fontSize: 11, color: "#8399a9", marginTop: 6 }}>+ {ownerContacts.length - 5} autres</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Full table */}
             <div className="lca-card">
               <div style={{ height: 4, background: "#e74c3c" }} />
@@ -742,13 +735,13 @@ export function ReportsView({
       {selectedReport === "not_booked" && (() => {
         // All owners for filter
         const nbAllOwners = new Map<string, string>();
-        contacts.forEach((c: R) => {
+        filteredByType.forEach((c: R) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) nbAllOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
         });
         const nbOwnerList = Array.from(nbAllOwners.keys()).sort();
 
-        const notBookedContacts = contacts.filter((c) => {
+        const notBookedContacts = filteredByType.filter((c) => {
           if (c.lead_status !== "contacted") return false;
           // Date filter on created_at
           const created = c.created_at as string | undefined;
@@ -767,14 +760,6 @@ export function ReportsView({
             if (name !== nbOwner) return false;
           }
           return true;
-        });
-
-        const byOwner: Record<string, R[]> = {};
-        notBookedContacts.forEach((c) => {
-          const tm = c.team_members as { first_name: string; last_name: string } | null;
-          const name = tm ? `${tm.first_name} ${tm.last_name}` : "Non assigné";
-          if (!byOwner[name]) byOwner[name] = [];
-          byOwner[name].push(c);
         });
 
         function fmtDate(d: string | null | undefined): string {
@@ -810,6 +795,7 @@ export function ReportsView({
                 <option value="">Tous les Account Managers</option>
                 {nbOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
@@ -832,37 +818,6 @@ export function ReportsView({
                 </div>
               </div>
             </div>
-
-            {Object.keys(byOwner).length > 0 && (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(byOwner).sort((a, b) => b[1].length - a[1].length).map(([owner, ownerContacts]) => (
-                  <div key={owner} className="lca-card" style={{ padding: "10px 14px" }}>
-                    <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>{owner}</span>
-                      <span style={{ background: "#fff3e0", color: "#e65100", padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{ownerContacts.length}</span>
-                    </div>
-                    {ownerContacts.slice(0, 5).map((c) => (
-                      <div
-                        key={c.id as string}
-                        onClick={() => router.push(`/contacts/${c.id}`)}
-                        style={{ padding: "6px 0", borderBottom: "1px solid #e6f0f7", cursor: "pointer" }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline" }}>
-                          {c.first_name as string} {c.last_name as string}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#8399a9" }}>
-                          {(c.companies as { name: string } | null)?.name ?? "Pas d'entreprise"}
-                          {c.last_contacted_at ? ` • Dernier contact: ${fmtDate(c.last_contacted_at as string)}` : ""}
-                        </div>
-                      </div>
-                    ))}
-                    {ownerContacts.length > 5 && (
-                      <div style={{ fontSize: 11, color: "#8399a9", marginTop: 6 }}>+ {ownerContacts.length - 5} autres</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="lca-card">
               <div style={{ height: 4, background: "#FF6B35" }} />
@@ -924,7 +879,7 @@ export function ReportsView({
       {selectedReport === "old_contacted" && (() => {
         // All owners for filter
         const ocAllOwners = new Map<string, string>();
-        contacts.forEach((c: R) => {
+        filteredByType.forEach((c: R) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) ocAllOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
         });
@@ -939,7 +894,7 @@ export function ReportsView({
         const contactsWithMeeting = new Set(meetings.map((m) => m.contact_id as string).filter(Boolean));
 
         // Old contacted = status "contacted" AND (has >1 activity OR has had a meeting)
-        const oldContacted = contacts.filter((c) => {
+        const oldContacted = filteredByType.filter((c) => {
           if (c.lead_status !== "contacted") return false;
           const cid = c.id as string;
           const hasMultipleActivities = (activityCountByContact[cid] || 0) > 1;
@@ -962,14 +917,6 @@ export function ReportsView({
             if (name !== ocOwner) return false;
           }
           return true;
-        });
-
-        const byOwner: Record<string, R[]> = {};
-        oldContacted.forEach((c) => {
-          const tm = c.team_members as { first_name: string; last_name: string } | null;
-          const name = tm ? `${tm.first_name} ${tm.last_name}` : "Non assigné";
-          if (!byOwner[name]) byOwner[name] = [];
-          byOwner[name].push(c);
         });
 
         function fmtDate(d: string | null | undefined): string {
@@ -1013,6 +960,7 @@ export function ReportsView({
                 <option value="">Tous les Account Managers</option>
                 {ocOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             <div className="grid gap-3 md:grid-cols-4">
@@ -1041,41 +989,6 @@ export function ReportsView({
                 </div>
               </div>
             </div>
-
-            {Object.keys(byOwner).length > 0 && (
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(byOwner).sort((a, b) => b[1].length - a[1].length).map(([owner, ownerContacts]) => (
-                  <div key={owner} className="lca-card" style={{ padding: "10px 14px" }}>
-                    <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>{owner}</span>
-                      <span style={{ background: "#f3e5f5", color: "#6a1b9a", padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{ownerContacts.length}</span>
-                    </div>
-                    {ownerContacts.slice(0, 5).map((c) => {
-                      const h = getContactHistory(c.id as string);
-                      return (
-                        <div
-                          key={c.id as string}
-                          onClick={() => router.push(`/contacts/${c.id}`)}
-                          style={{ padding: "6px 0", borderBottom: "1px solid #e6f0f7", cursor: "pointer" }}
-                        >
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline" }}>
-                            {c.first_name as string} {c.last_name as string}
-                          </div>
-                          <div style={{ fontSize: 11, color: "#8399a9" }}>
-                            {(c.companies as { name: string } | null)?.name ?? "Pas d'entreprise"}
-                            {" • "}{h.nbActivities} activité{h.nbActivities > 1 ? "s" : ""}
-                            {h.nbMeetings > 0 ? ` • ${h.nbMeetings} RDV` : ""}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {ownerContacts.length > 5 && (
-                      <div style={{ fontSize: 11, color: "#8399a9", marginTop: 6 }}>+ {ownerContacts.length - 5} autres</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="lca-card">
               <div style={{ height: 4, background: "#6a1b9a" }} />
@@ -1183,13 +1096,13 @@ export function ReportsView({
 
         // Build per-sales-rep data
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -1330,12 +1243,19 @@ export function ReportsView({
               <div style={{ padding: 16 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Monthly Inbound — <span style={{ textTransform: "capitalize" }}>{monthLabel}</span></h3>
+                  <div className="flex gap-2 items-center">
+                  <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                    reps.map((r) => ({ rep: r.name, old_contacted: r.oldCted, old_booked: r.oldBked, pct_booked: r.pctBked, old_done: r.oldDone, monthly_leads: r.monthlyLeads, new_contacted: r.newCted, pct_new_contacted: r.pctNewCted, new_booked: r.newBkd, pct_new_booked: r.pctNewBked, new_done: r.newDone, total_done: r.totalDone, n_signes: r.nSigned, ca_ht: r.caHT, prix_moyen: r.avgPrice })),
+                    [{ key: "rep", label: "Commercial" }, { key: "old_contacted", label: "Old Contacted" }, { key: "old_booked", label: "Old Booked" }, { key: "pct_booked", label: "% Booked" }, { key: "old_done", label: "Old Done" }, { key: "monthly_leads", label: "Monthly Leads" }, { key: "new_contacted", label: "New Contacted" }, { key: "pct_new_contacted", label: "% New Contacted" }, { key: "new_booked", label: "New Booked" }, { key: "pct_new_booked", label: "% New Booked" }, { key: "new_done", label: "New Done" }, { key: "total_done", label: "Total Done" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA HT" }, { key: "prix_moyen", label: "Prix Moyen" }],
+                    `inbound_monthly_${selectedMonth}`, fmt
+                  )} />
                   <input
                     type="month"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
                     style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, color: "#1a2a3a" }}
                   />
+                  </div>
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
                   <thead>
@@ -1466,13 +1386,13 @@ export function ReportsView({
 
         // Build per-sales-rep data
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -1617,6 +1537,11 @@ export function ReportsView({
                 <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Weekly Inbound — <span style={{ textTransform: "capitalize" }}>{weekLabel}</span></h3>
                   <div className="flex items-center gap-2">
+                    <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                      reps.map((r) => ({ rep: r.name, old_contacted: r.oldCted, old_booked: r.oldBked, old_done: r.oldDone, monthly_leads: r.monthlyLeads, new_contacted: r.newCted, new_booked: r.newBkd, new_done: r.newDone, total_done: r.totalDone, n_signes: r.nSigned, ca_ht: r.caHT, prix_moyen: r.avgPrice })),
+                      [{ key: "rep", label: "Commercial" }, { key: "old_contacted", label: "Old Contacted" }, { key: "old_booked", label: "Old Booked" }, { key: "old_done", label: "Old Done" }, { key: "monthly_leads", label: "Weekly Leads" }, { key: "new_contacted", label: "New Contacted" }, { key: "new_booked", label: "New Booked" }, { key: "new_done", label: "New Done" }, { key: "total_done", label: "Total Done" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA HT" }, { key: "prix_moyen", label: "Prix Moyen" }],
+                      `inbound_weekly_${filterWeekInbound}`, fmt
+                    )} />
                     <button onClick={() => shiftWeekInbound(-1)} style={{ height: 32, width: 32, borderRadius: 8, border: "1px solid #dce8f0", background: "white", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>&lt;</button>
                     <input
                       type="date"
@@ -1746,13 +1671,13 @@ export function ReportsView({
         }
 
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -1846,6 +1771,11 @@ export function ReportsView({
                 <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Yearly Inbound — {periodLabel}</h3>
                   <div className="flex items-center gap-3">
+                    <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                      reps.map((r) => ({ rep: r.name, old_contacted: r.oldCted, old_booked: r.oldBked, old_done: r.oldDone, monthly_leads: r.monthlyLeads, new_contacted: r.newCted, new_booked: r.newBkd, new_done: r.newDone, total_done: r.totalDone, n_signes: r.nSigned, ca_ht: r.caHT, prix_moyen: r.avgPrice })),
+                      [{ key: "rep", label: "Commercial" }, { key: "old_contacted", label: "Old Contacted" }, { key: "old_booked", label: "Old Booked" }, { key: "old_done", label: "Old Done" }, { key: "monthly_leads", label: "Leads" }, { key: "new_contacted", label: "New Contacted" }, { key: "new_booked", label: "New Booked" }, { key: "new_done", label: "New Done" }, { key: "total_done", label: "Total Done" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA HT" }, { key: "prix_moyen", label: "Prix Moyen" }],
+                      "inbound_yearly", fmt
+                    )} />
                     <select
                       style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, color: "#1a2a3a" }}
                       value={yearlyMode}
@@ -1989,13 +1919,13 @@ export function ReportsView({
         const pOrders = orders.filter(o => isInProspMonth(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -2049,13 +1979,13 @@ export function ReportsView({
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
 
           // Prop: nb of proposals (deals in quote_to_send + quote_sent + opco_deposit)
-          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string));
+          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string) && isInProspMonth((d.created_at) as string));
           const prop = propDeals.length;
 
           // Pipe: total amount of proposals
           const pipeMontant = propDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-          const wonDeals = repDeals.filter(d => d.stage === "closed_won");
+          const wonDeals = repDeals.filter(d => d.stage === "closed_won" && isInProspMonth((d.close_date || d.created_at) as string));
           const nSignes = wonDeals.length;
           const montantSigne = wonDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
@@ -2089,12 +2019,19 @@ export function ReportsView({
               <div style={{ padding: 16 }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Monthly Outbound — <span style={{ textTransform: "capitalize" }}>{prospMonthLabel}</span></h3>
+                  <div className="flex items-center gap-2">
+                  <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                    reps.map((r) => ({ rep: r.name, suivi_relances: r.suiviRelances, cibles_qualifiees: r.ciblesQualifiees, actions_sortantes: r.actionsSortantes, deci_1er_contact: r.deci1erContact, r1_pris: r.r1Pris, r1_fait: r.r1Fait, propositions: r.prop, pipe_montant: r.pipeMontant, n_signes: r.nSignes, ca_ht: r.montantSigne, panier_moyen: r.panierMoyen })),
+                    [{ key: "rep", label: "Commercial" }, { key: "suivi_relances", label: "Suivi & Relances" }, { key: "cibles_qualifiees", label: "Cibles Qualifiées" }, { key: "actions_sortantes", label: "Actions Sortantes" }, { key: "deci_1er_contact", label: "Déci 1er Contact" }, { key: "r1_pris", label: "R1 Pris" }, { key: "r1_fait", label: "R1 Fait" }, { key: "propositions", label: "Propositions" }, { key: "pipe_montant", label: "Pipe €" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA € HT" }, { key: "panier_moyen", label: "Panier Moyen" }],
+                    `outbound_monthly_${selectedMonth}`, fmt
+                  )} />
                   <input
                     type="month"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
                     style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, color: "#1a2a3a" }}
                   />
+                  </div>
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
                   <thead>
@@ -2230,13 +2167,13 @@ export function ReportsView({
         const pOrders = orders.filter(o => isInWeekOut(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -2290,13 +2227,13 @@ export function ReportsView({
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
 
           // Prop: nb of proposals (deals in quote_to_send + quote_sent + opco_deposit)
-          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string));
+          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string) && isInWeekOut((d.created_at) as string));
           const prop = propDeals.length;
 
           // Pipe: total amount of proposals
           const pipeMontant = propDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-          const wonDeals = repDeals.filter(d => d.stage === "closed_won");
+          const wonDeals = repDeals.filter(d => d.stage === "closed_won" && isInWeekOut((d.close_date || d.created_at) as string));
           const nSignes = wonDeals.length;
           const montantSigne = wonDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
@@ -2331,6 +2268,11 @@ export function ReportsView({
                 <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Weekly Outbound — <span style={{ textTransform: "capitalize" }}>{weekLabel}</span></h3>
                   <div className="flex items-center gap-2">
+                    <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                      reps.map((r) => ({ rep: r.name, suivi_relances: r.suiviRelances, cibles_qualifiees: r.ciblesQualifiees, actions_sortantes: r.actionsSortantes, deci_1er_contact: r.deci1erContact, r1_pris: r.r1Pris, r1_fait: r.r1Fait, propositions: r.prop, pipe_montant: r.pipeMontant, n_signes: r.nSignes, ca_ht: r.montantSigne, panier_moyen: r.panierMoyen })),
+                      [{ key: "rep", label: "Commercial" }, { key: "suivi_relances", label: "Suivi & Relances" }, { key: "cibles_qualifiees", label: "Cibles Qualifiées" }, { key: "actions_sortantes", label: "Actions Sortantes" }, { key: "deci_1er_contact", label: "Déci 1er Contact" }, { key: "r1_pris", label: "R1 Pris" }, { key: "r1_fait", label: "R1 Fait" }, { key: "propositions", label: "Propositions" }, { key: "pipe_montant", label: "Pipe €" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA € HT" }, { key: "panier_moyen", label: "Panier Moyen" }],
+                      `outbound_weekly_${filterWeekOutbound}`, fmt
+                    )} />
                     <button onClick={() => shiftWeekOutbound(-1)} style={{ height: 32, width: 32, borderRadius: 8, border: "1px solid #dce8f0", background: "white", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>&lt;</button>
                     <input
                       type="date"
@@ -2462,13 +2404,13 @@ export function ReportsView({
         const pyOrders = orders.filter(o => isInPY(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
-        contacts.forEach((c) => {
+        outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
-          const repContacts = contacts.filter((c) => {
+          const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
@@ -2508,10 +2450,10 @@ export function ReportsView({
           const pctR1Pris = ciblesQualifiees > 0 ? Math.round((r1Pris / ciblesQualifiees) * 100) : 0;
           const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done").length;
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
-          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string));
+          const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string) && isInPY((d.created_at) as string));
           const prop = propDeals.length;
           const pipeMontant = propDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
-          const wonDeals = repDeals.filter(d => d.stage === "closed_won");
+          const wonDeals = repDeals.filter(d => d.stage === "closed_won" && isInPY((d.close_date || d.created_at) as string));
           const nSignes = wonDeals.length;
           const montantSigne = wonDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
           const pctClosingR1 = r1Fait > 0 ? Math.round((nSignes / r1Fait) * 100) : 0;
@@ -2544,6 +2486,11 @@ export function ReportsView({
                 <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: 12 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic" }}>Yearly Outbound — {pyLabel}</h3>
                   <div className="flex items-center gap-3">
+                    <ExportButton onExport={(fmt: ExportFormat) => exportData(
+                      reps.map((r) => ({ rep: r.name, suivi_relances: r.suiviRelances, cibles_qualifiees: r.ciblesQualifiees, actions_sortantes: r.actionsSortantes, deci_1er_contact: r.deci1erContact, r1_pris: r.r1Pris, r1_fait: r.r1Fait, propositions: r.prop, pipe_montant: r.pipeMontant, n_signes: r.nSignes, ca_ht: r.montantSigne, panier_moyen: r.panierMoyen })),
+                      [{ key: "rep", label: "Commercial" }, { key: "suivi_relances", label: "Suivi & Relances" }, { key: "cibles_qualifiees", label: "Cibles Qualifiées" }, { key: "actions_sortantes", label: "Actions Sortantes" }, { key: "deci_1er_contact", label: "Déci 1er Contact" }, { key: "r1_pris", label: "R1 Pris" }, { key: "r1_fait", label: "R1 Fait" }, { key: "propositions", label: "Propositions" }, { key: "pipe_montant", label: "Pipe €" }, { key: "n_signes", label: "N° Signés" }, { key: "ca_ht", label: "CA € HT" }, { key: "panier_moyen", label: "Panier Moyen" }],
+                      "outbound_yearly", fmt
+                    )} />
                     <select
                       style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, color: "#1a2a3a" }}
                       value={yearlyMode}
@@ -2895,8 +2842,15 @@ export function ReportsView({
         });
         const acOwnerList = Array.from(acAllOwners.keys()).sort();
 
+        // Build set of company IDs that have at least one contact matching the type filter
+        const companyIdsWithMatchingContact = new Set<string>();
+        filteredByType.forEach((ct: R) => {
+          if (ct.company_id) companyIdsWithMatchingContact.add(ct.company_id as string);
+        });
+
         const formerClients = companies.filter(c => {
           if (c.lifecycle_stage !== "former_customer") return false;
+          if (!companyIdsWithMatchingContact.has(c.id as string)) return false;
           // Date filter on created_at
           const created = c.created_at as string | undefined;
           if (created && acPeriod !== "all") {
@@ -2982,6 +2936,7 @@ export function ReportsView({
                 <option value="">Tous les Account Managers</option>
                 {acOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             {/* KPIs */}
@@ -3083,6 +3038,7 @@ export function ReportsView({
         });
 
         const allOverdue = meetings.filter((m: R) => {
+          if (!filteredContactIds.has(m.contact_id as string)) return false;
           const status = m.status as string;
           const scheduledAt = m.scheduled_at as string | undefined;
           if (!scheduledAt) return false;
@@ -3149,6 +3105,7 @@ export function ReportsView({
                 <option value="">Tous les commerciaux</option>
                 {ownerNames.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
@@ -3462,6 +3419,7 @@ export function ReportsView({
         });
 
         const planned = meetings.filter((m: R) => {
+          if (!filteredContactIds.has(m.contact_id as string)) return false;
           if (m.status !== "booked") return false;
           const scheduledAt = m.scheduled_at as string | undefined;
           if (!scheduledAt) return false;
@@ -3489,6 +3447,9 @@ export function ReportsView({
 
         return (
           <>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+              {typeFilterSelect}
+            </div>
             <div className="grid gap-3 md:grid-cols-5">
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total planifiés</div>

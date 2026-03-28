@@ -21,6 +21,7 @@ interface Deal {
   training_days: number | null;
   probability: number;
   expected_close_date: string | null;
+  close_date: string | null;
   notes: string | null;
   owner_id: string | null;
   company_id: string | null;
@@ -82,7 +83,6 @@ const stageColors: Record<string, { bg: string; text: string; bar: string }> = {
   quote_sent: { bg: "#f3e5f5", text: "#6a1b9a", bar: "#8e44ad" },
   opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a", bar: "#0d4f7a" },
   quote_signed: { bg: "#e0f2f1", text: "#00695c", bar: "#1abc9c" },
-  ordered: { bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" },
   closed_won: { bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" },
   closed_lost: { bg: "#fce4ec", text: "#c62828", bar: "#e74c3c" },
 };
@@ -95,7 +95,7 @@ export function DealsBoard({
   deals: Deal[];
   teamMembers: Ref[];
   companies: Ref[];
-  contacts: Ref[];
+  contacts: (Ref & { company_id?: string })[];
   sources: Ref[];
 }) {
   const router = useRouter();
@@ -117,7 +117,7 @@ export function DealsBoard({
   const [form, setForm] = useState({
     name: "", company_id: "", contact_id: "", owner_id: "", source_id: "",
     stage: "opportunities" as DealStage, amount: "", training_days: "",
-    expected_close_date: "", notes: "",
+    expected_close_date: "", close_date: "", notes: "",
   });
 
   // Documents state
@@ -203,6 +203,7 @@ export function DealsBoard({
       amount: deal.amount ? String(deal.amount) : "",
       training_days: deal.training_days ? String(deal.training_days) : "",
       expected_close_date: deal.expected_close_date ?? "",
+      close_date: deal.close_date ?? "",
       notes: deal.notes ?? "",
     });
     setOpen(true);
@@ -277,8 +278,9 @@ export function DealsBoard({
       expected_close_date: form.expected_close_date || null,
       notes: form.notes || null,
     };
+    const closeDate = stage === "closed_won" ? (form.close_date || new Date().toISOString().split("T")[0]) : null;
     if (editingDealId) {
-      await supabase.from("deals").update({ ...payload, close_date: stage === "closed_won" ? new Date().toISOString().split("T")[0] : null }).eq("id", editingDealId);
+      await supabase.from("deals").update({ ...payload, close_date: closeDate }).eq("id", editingDealId);
 
       const originalDeal = deals.find((d) => d.id === editingDealId);
 
@@ -293,12 +295,12 @@ export function DealsBoard({
         }
       }
     } else {
-      await supabase.from("deals").insert(payload);
+      await supabase.from("deals").insert({ ...payload, close_date: closeDate });
     }
     setSaving(false);
     setOpen(false);
     setEditingDealId(null);
-    setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" });
+    setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" });
     router.refresh();
   }
 
@@ -361,7 +363,7 @@ export function DealsBoard({
             )}
             <span style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>{periodLabel}</span>
           </div>
-          <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+          <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
             <Plus className="h-4 w-4 mr-2" /> Nouveau deal
           </Button>
         </div>
@@ -438,36 +440,36 @@ export function DealsBoard({
                     onDragEnd={() => { setDraggedDealId(null); setDragOverStage(null); }}
                     onClick={() => { setSelectedDeal(deal); loadDealData(deal.id); }}
                     style={{
-                      padding: 12,
+                      padding: "8px 10px",
                       cursor: "grab",
-                      borderLeft: `4px solid ${colors.bar}`,
+                      borderLeft: `3px solid ${colors.bar}`,
                       position: "relative",
                       opacity: draggedDealId === deal.id ? 0.5 : 1,
                       transition: "opacity 0.2s ease",
                     }}
                   >
-                    <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 0 }}>
+                    <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 0 }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditDeal(deal); }}
-                        style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                        style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                       >
-                        <Edit style={{ width: 12, height: 12 }} />
+                        <Edit style={{ width: 10, height: 10 }} />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (window.confirm("Supprimer ce deal ? Cette action est irréversible.")) {
+                          if (window.confirm("Supprimer ce deal ?")) {
                             handleDeleteDeal(deal.id);
                           }
                         }}
-                        style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                        style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                       >
-                        <Trash2 style={{ width: 12, height: 12 }} />
+                        <Trash2 style={{ width: 10, height: 10 }} />
                       </button>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1b2a4a", paddingRight: 50 }}>{deal.name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#1b2a4a", paddingRight: 30, lineHeight: 1.3 }}>{deal.name}</div>
                     {deal.companies && (
-                      <div style={{ fontSize: 11, marginTop: 2 }}>
+                      <div style={{ fontSize: 10, marginTop: 1 }}>
                         <span
                           onClick={(e) => { e.stopPropagation(); router.push(`/clients/${deal.company_id}`); }}
                           style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
@@ -476,15 +478,10 @@ export function DealsBoard({
                         </span>
                       </div>
                     )}
-                    <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: colors.text }}>{fmt(deal.amount)}</span>
-                      <span style={{ fontSize: 10, color: "#7a8bab" }}>{deal.probability}%</span>
+                    <div className="flex items-center justify-between" style={{ marginTop: 3 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: colors.text }}>{fmt(deal.amount)}</span>
+                      <span style={{ fontSize: 9, color: "#7a8bab" }}>{deal.probability}%</span>
                     </div>
-                    {deal.team_members && (
-                      <div style={{ fontSize: 10, color: "#7a8bab", marginTop: 4 }}>
-                        {deal.team_members.first_name} {deal.team_members.last_name}
-                      </div>
-                    )}
                   </div>
                 ))}
                 {stageDeals.length === 0 && (
@@ -500,7 +497,7 @@ export function DealsBoard({
       </div>
 
       {/* New Deal Sheet */}
-      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", notes: "" }); } }}>
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); } }}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingDealId ? "Modifier le deal" : "Nouveau deal"}</SheetTitle>
@@ -512,7 +509,7 @@ export function DealsBoard({
             </div>
             <div className="space-y-2">
               <Label>Entreprise</Label>
-              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value })}>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value, contact_id: "" })}>
                 <option value="">Sélectionner</option>
                 {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -521,7 +518,7 @@ export function DealsBoard({
               <Label>Contact</Label>
               <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.contact_id} onChange={(e) => setForm({ ...form, contact_id: e.target.value })}>
                 <option value="">Sélectionner</option>
-                {contacts.map((c) => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
+                {contacts.filter((c) => !form.company_id || c.company_id === form.company_id).map((c) => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -558,6 +555,13 @@ export function DealsBoard({
               <Label>Date de closing prévue</Label>
               <Input type="date" value={form.expected_close_date} onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })} />
             </div>
+            {form.stage === "closed_won" && (
+              <div className="space-y-2">
+                <Label>Date de signature (close date)</Label>
+                <Input type="date" value={form.close_date} onChange={(e) => setForm({ ...form, close_date: e.target.value })} />
+                <p style={{ fontSize: 11, color: "#8399a9" }}>Si vide, la date du jour sera utilisée.</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Notes</Label>
               <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />

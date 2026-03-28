@@ -40,10 +40,12 @@ export default async function SyntheseSalesPage() {
   const monthTarget = Number(lastTarget?.target_amount ?? 80000);
   const monthName = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
-  // Elapsed months in fiscal year (Sept = month 1)
-  const fiscalStart = now.getMonth() >= 8 ? new Date(now.getFullYear(), 8, 1) : new Date(now.getFullYear() - 1, 8, 1);
-  const elapsedMonths = Math.max(1, Math.ceil((now.getTime() - fiscalStart.getTime()) / (30.44 * 24 * 60 * 60 * 1000)));
-  const targetCumule = annualTarget * (elapsedMonths / 12);
+  // Cumulative target up to current month from actual targets
+  const currentMonthEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-31`;
+  const elapsedMonths = targets.filter(t => (t.month as string) <= currentMonthEnd).length;
+  const targetCumule = targets
+    .filter(t => (t.month as string) <= currentMonthEnd)
+    .reduce((s, t) => s + (Number(t.target_amount) || 0), 0);
   const ecart = totalCA - targetCumule;
 
   // Chart data: objectif from targets, réalisé from won deals by month

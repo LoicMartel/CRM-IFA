@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Plus, Search, Trash2, Users, UserCheck, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { ExportButton } from "@/components/ui/export-button";
+import { exportData, type ExportFormat } from "@/lib/export";
 
 interface Learner {
   id: string;
@@ -162,9 +164,30 @@ export function LearnersTable({
             {experts.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
           </select>
         </div>
-        <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
-          <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
-        </Button>
+        <div className="flex gap-2">
+          <ExportButton onExport={(fmt: ExportFormat) => exportData(
+            filtered.map((l) => ({
+              nom: `${l.first_name} ${l.last_name}`,
+              email: l.email ?? "",
+              telephone: l.phone ?? "",
+              poste: l.position ?? "",
+              entreprise: l.companies?.name ?? "",
+              statut: l.status ?? "",
+              parcours: (l as any).training_programs?.name ?? "",
+              type_formation: (l as any).training_types?.name ?? "",
+            })),
+            [
+              { key: "nom", label: "Nom" }, { key: "email", label: "Email" },
+              { key: "telephone", label: "Téléphone" }, { key: "poste", label: "Poste" },
+              { key: "entreprise", label: "Entreprise" }, { key: "statut", label: "Statut" },
+              { key: "parcours", label: "Parcours" }, { key: "type_formation", label: "Type formation" },
+            ],
+            "apprenants", fmt
+          )} />
+          <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
+            <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
+          </Button>
+        </div>
       </div>
 
       <div style={{ fontSize: 13, color: "#8399a9" }}>
