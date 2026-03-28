@@ -70,7 +70,7 @@ export function MeetingsView({
   companies: Ref[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -250,7 +250,7 @@ export function MeetingsView({
                       )}
                       <button
                         onClick={() => {
-                          if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
+                          if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ? Cette action est irréversible.")) {
                             handleDeleteMeeting(m.id);
                           }
                         }}

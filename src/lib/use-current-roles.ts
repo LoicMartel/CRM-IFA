@@ -55,9 +55,13 @@ export function useCurrentRoles() {
 
   const isAdmin = info?.roles.includes("Admin") ?? false;
   const isExterne = info?.roles.includes("Externe") ?? false;
-  // Pauline exception: Externe but with full access
+  // Pauline & Gaëlle: Externes with full visibility
   const isPauline = info?.firstName === "Pauline" && info?.lastName === "BECQUERELLE";
-  const isRestrictedExterne = isExterne && !isPauline && !isAdmin;
+  const isGaelle = info?.firstName === "Gaëlle" && info?.lastName === "LE GUIRRIEC";
+  const hasFullAccess = isPauline || isGaelle;
+  const isRestrictedExterne = isExterne && !hasFullAccess && !isAdmin;
+  // Gaëlle: full access but read-only (no edit, no delete)
+  const isReadOnly = isGaelle && !isAdmin;
 
   return {
     memberId: info?.id ?? null,
@@ -67,6 +71,7 @@ export function useCurrentRoles() {
     isAdmin,
     isExterne,
     isRestrictedExterne,
+    isReadOnly,
     canDelete: isAdmin,
     canEditTeam: isAdmin,
     canViewFinance: !isRestrictedExterne,

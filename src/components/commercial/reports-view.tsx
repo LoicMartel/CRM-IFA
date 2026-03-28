@@ -42,7 +42,7 @@ export function ReportsView({
   tasks?: R[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [selectedReport, setSelectedReport] = useState("general");
   const [inboundMode, setInboundMode] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [outboundMode, setOutboundMode] = useState<"weekly" | "monthly" | "yearly">("weekly");
@@ -268,7 +268,7 @@ export function ReportsView({
   }
 
   async function handleDeleteTaskEdit() {
-    if (!taskPopup || !confirmDelete(isRestrictedExterne, "Supprimer cette tâche ?")) return;
+    if (!taskPopup || !confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette tâche ?")) return;
     const supabase = createClient();
     await supabase.from("activities").delete().eq("id", taskPopup.id as string);
     setTaskPopup(null);

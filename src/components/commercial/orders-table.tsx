@@ -77,7 +77,7 @@ export function OrdersTable({
   sources: Source[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterManager, setFilterManager] = useState("");
   const [filterInvoiced, setFilterInvoiced] = useState("all");
@@ -369,7 +369,7 @@ export function OrdersTable({
                   <TableCell>
                     <button
                       onClick={() => {
-                        if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
+                        if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ? Cette action est irréversible.")) {
                           handleDeleteOrder(order.id);
                         }
                       }}

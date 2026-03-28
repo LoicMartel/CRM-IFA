@@ -81,7 +81,7 @@ export function ContactsTable({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterLeadStatus, setFilterLeadStatus] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");

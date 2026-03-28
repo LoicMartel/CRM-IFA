@@ -149,7 +149,7 @@ export function LearnerDetailView({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const typedSessions = sessions as unknown as SessionData[];
   const typedPlans = servicePlans as unknown as ServicePlanData[];
 
@@ -322,7 +322,7 @@ export function LearnerDetailView({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (confirmDelete(isRestrictedExterne, "Supprimer cet apprenant ? Cette action est irreversible.")) {
+                    if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cet apprenant ? Cette action est irreversible.")) {
                       handleDelete();
                     }
                   }}
@@ -814,7 +814,7 @@ export function LearnerDetailView({
                                   style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
-                                <button onClick={() => { if (confirmDelete(isRestrictedExterne, "Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
+                                <button onClick={() => { if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
                                   style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>

@@ -147,7 +147,7 @@ export function PlanningList({
   expertNames?: string[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, firstName: currentFirstName } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, firstName: currentFirstName } = useCurrentRoles();
   const TRAINER_LIST = expertNames && expertNames.length > 0 ? expertNames : TRAINER_LIST_FALLBACK;
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -532,7 +532,7 @@ export function PlanningList({
   }
 
   async function handleDeleteSession(sessionId: string) {
-    if (!confirmDelete(isRestrictedExterne, "Supprimer cette session ?")) return;
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette session ?")) return;
     const supabase = createClient();
     await supabase.from("training_sessions").delete().eq("id", sessionId);
     router.refresh();
@@ -654,7 +654,7 @@ export function PlanningList({
                 <div style={{ borderTop: "1px solid #e8ecf1", padding: "16px 18px" }} className="space-y-5">
                   {/* Edit button */}
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {!isRestrictedExterne && <button
+                    {!isRestrictedExterne && !isReadOnly && <button
                       onClick={() => openEditPlan(plan)}
                       style={{ height: 32, borderRadius: 6, background: "#e8f0fe", color: "#0d4f7a", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                     >
@@ -769,7 +769,7 @@ export function PlanningList({
                   <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
-                      {!isRestrictedExterne && (
+                      {!isRestrictedExterne && !isReadOnly && (
                       <button
                         onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
@@ -1078,7 +1078,7 @@ export function PlanningList({
                                     </TableCell>
                                     <TableCell>
                                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                                          {!isRestrictedExterne && <>
+                                          {!isRestrictedExterne && !isReadOnly && <>
                                           <button
                                           onClick={() => openEditSession(s, plan.id)}
                                           style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}

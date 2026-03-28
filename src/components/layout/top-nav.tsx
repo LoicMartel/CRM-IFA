@@ -26,7 +26,7 @@ interface SearchResult {
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const tabs = isRestrictedExterne ? allTabs.filter((t) => !t.restricted) : allTabs;
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);

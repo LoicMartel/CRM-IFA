@@ -11,7 +11,7 @@ type R = Record<string, unknown>;
 
 const ALL_ROLES = [
   "Expert", "Experte", "Account Manager", "Admin", "Dirigeant",
-  "Coordinatrice Pédagogique", "Marketing Manager", "Interne", "Externe",
+  "Coordinatrice Pédagogique", "Marketing Manager", "Ingénieure Pédagogique", "Interne", "Externe",
 ];
 
 const badgeColors: Record<string, { bg: string; text: string }> = {
@@ -24,6 +24,7 @@ const badgeColors: Record<string, { bg: string; text: string }> = {
   "Marketing Manager": { bg: "#fce4ec", text: "#ad1457" },
   Interne: { bg: "#e3f2fd", text: "#1565c0" },
   Externe: { bg: "#fff8e1", text: "#f57f17" },
+  "Ingénieure Pédagogique": { bg: "#e0f2f1", text: "#00695c" },
 };
 
 const TABS = [

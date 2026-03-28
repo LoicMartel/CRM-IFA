@@ -63,7 +63,7 @@ export function CompaniesTable({
   teamMembers?: TeamMember[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");

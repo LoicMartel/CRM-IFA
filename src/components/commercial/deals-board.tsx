@@ -102,7 +102,7 @@ export function DealsBoard({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -180,7 +180,7 @@ export function DealsBoard({
   }
 
   async function handleDeleteDoc(doc: DealDocument, dealId: string) {
-    if (!confirmDelete(isRestrictedExterne, `Supprimer "${doc.name}" ?`)) return;
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer "${doc.name}" ?`)) return;
     const supabase = createClient();
     await supabase.storage.from("deal-documents").remove([doc.file_path]);
     await supabase.from("deal_documents").delete().eq("id", doc.id);
@@ -461,7 +461,7 @@ export function DealsBoard({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirmDelete(isRestrictedExterne, "Supprimer ce deal ?")) {
+                          if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ce deal ?")) {
                             handleDeleteDeal(deal.id);
                           }
                         }}
@@ -808,7 +808,7 @@ export function DealsBoard({
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (confirmDelete(isRestrictedExterne, "Supprimer ce deal ?")) {
+                      if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ce deal ?")) {
                         handleDeleteDeal(selectedDeal.id);
                         setSelectedDeal(null);
                       }

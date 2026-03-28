@@ -53,7 +53,7 @@ export function LearnersTable({
   experts?: Expert[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -163,7 +163,7 @@ export function LearnersTable({
             <option value="">Tous les parcours</option>
             {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          {!isRestrictedExterne && (
+          {!isRestrictedExterne && !isReadOnly && (
           <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}>
             <option value="">Tous les experts</option>
             {experts.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
@@ -190,7 +190,7 @@ export function LearnersTable({
             ],
             "apprenants", fmt
           )} />
-          {!isRestrictedExterne && (
+          {!isRestrictedExterne && !isReadOnly && (
             <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
               <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
             </Button>
@@ -252,10 +252,10 @@ export function LearnersTable({
                   <TableCell>{l.training_programs?.name ?? "—"}</TableCell>
                   <TableCell>{l.training_types?.name ?? "—"}</TableCell>
                   <TableCell>
-                    {!isRestrictedExterne && (
+                    {!isRestrictedExterne && !isReadOnly && (
                     <button
                       onClick={() => {
-                        if (confirmDelete(isRestrictedExterne, "Supprimer ? Cette action est irréversible.")) {
+                        if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ? Cette action est irréversible.")) {
                           handleDeleteLearner(l.id);
                         }
                       }}

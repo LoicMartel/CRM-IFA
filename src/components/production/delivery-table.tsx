@@ -100,7 +100,7 @@ export function DeliveryTable({
   themes: ThemeRef[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
   const [filterMode, setFilterMode] = useState("");
@@ -247,7 +247,7 @@ export function DeliveryTable({
             <option value="no">Non facturable</option>
           </select>
         </div>
-        {!isRestrictedExterne && (
+        {!isRestrictedExterne && !isReadOnly && (
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle séance

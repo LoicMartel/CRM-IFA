@@ -61,7 +61,7 @@ const statusLabels: Record<string, { label: string; bg: string; text: string }> 
 export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[]; expertNames?: string[] }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
   const router = useRouter();
-  const { isRestrictedExterne, firstName: currentFirstName } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, firstName: currentFirstName } = useCurrentRoles();
   const [viewLearner, setViewLearner] = useState<{ id: string; first_name: string; last_name: string; email?: string; phone?: string; position?: string; status?: string; company_name?: string } | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(false);
 
@@ -300,7 +300,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
             title="Choisir une date"
           />
         </div>
-        {!isRestrictedExterne && (
+        {!isRestrictedExterne && !isReadOnly && (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 12, color: "#8399a9", fontWeight: 600 }}>Filtrer :</span>
           <select

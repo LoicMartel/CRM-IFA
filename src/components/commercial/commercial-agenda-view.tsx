@@ -76,7 +76,7 @@ const MODE_ICONS: Record<string, { icon: typeof Video; label: string }> = {
 
 export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { meetings: Meeting[]; teamMembers: TeamMember[]; tasks?: Task[] }) {
   const router = useRouter();
-  const { isRestrictedExterne, memberId: currentMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, memberId: currentMemberId } = useCurrentRoles();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -172,7 +172,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   async function handleDeleteTask() {
     if (!selectedTask) return;
-    if (!confirmDelete(isRestrictedExterne, "Supprimer cette tâche ?")) return;
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette tâche ?")) return;
     const supabase = createClient();
     await supabase.from("activities").delete().eq("id", selectedTask.id);
     setSelectedTask(null);

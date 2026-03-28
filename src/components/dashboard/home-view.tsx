@@ -137,7 +137,7 @@ export function HomeView({
   overdueTasks: R[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const today = new Date();
   const todayLabel = format(today, "EEEE d MMMM yyyy", { locale: fr });
 
@@ -405,7 +405,7 @@ export function HomeView({
       </div>
 
       {/* ===== CA Progress Bar ===== */}
-      {!isRestrictedExterne && <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
+      {!isRestrictedExterne && !isReadOnly && <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="lca-bar-gradient-hot" />
         <div style={{ padding: 20 }}>
           <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>

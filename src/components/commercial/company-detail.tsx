@@ -110,7 +110,7 @@ export function CompanyDetail({
   company, contacts, deals, activities, meetings, orders, invoices, sessions, learners, companyTypes, teamMembers,
 }: Props) {
   const router = useRouter();
-  const { isRestrictedExterne } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -162,7 +162,7 @@ export function CompanyDetail({
   }
 
   async function handleDeleteDealDoc(doc: { id: string; file_path: string }) {
-    if (!confirmDelete(isRestrictedExterne, `Supprimer "${doc.file_path.split("/").pop()}" ?`)) return;
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer "${doc.file_path.split("/").pop()}" ?`)) return;
     const supabase = createClient();
     await supabase.storage.from("deal-documents").remove([doc.file_path]);
     await supabase.from("deal_documents").delete().eq("id", doc.id);
@@ -244,7 +244,7 @@ export function CompanyDetail({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (confirmDelete(isRestrictedExterne, "Supprimer cette entreprise ? Cette action est irréversible.")) {
+                    if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette entreprise ? Cette action est irréversible.")) {
                       handleDelete();
                     }
                   }}
@@ -1049,7 +1049,7 @@ export function CompanyDetail({
                   <Edit className="h-4 w-4" /> Modifier le deal
                 </button>
                 <button
-                  onClick={() => { if (confirmDelete(isRestrictedExterne, "Supprimer ce deal ?")) { createClient().from("deals").delete().eq("id", s(d.id)).then(() => { setSelectedDeal(null); router.refresh(); }); } }}
+                  onClick={() => { if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ce deal ?")) { createClient().from("deals").delete().eq("id", s(d.id)).then(() => { setSelectedDeal(null); router.refresh(); }); } }}
                   style={{ height: 40, width: 40, borderRadius: 8, border: "1px solid #e74c3c", color: "#e74c3c", background: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   <Trash2 className="h-4 w-4" />
