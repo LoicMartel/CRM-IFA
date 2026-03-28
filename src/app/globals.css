@@ -217,11 +217,16 @@ label:has(input), .lca-card-hover {
   border-radius: 14px;
   box-shadow: 0 4px 24px rgba(13,79,122,0.08);
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .lca-card:hover {
   box-shadow: 0 8px 32px rgba(13,79,122,0.14);
+}
+
+.grid > .lca-card:hover {
+  transform: scale(1.07);
+  box-shadow: 0 12px 40px rgba(13,79,122,0.2);
 }
 
 /* Top border bars */
