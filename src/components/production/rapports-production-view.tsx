@@ -10,6 +10,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useCurrentRoles } from "@/lib/use-current-roles";
 
 type R = Record<string, unknown>;
 
@@ -25,6 +26,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
   servicePlans: R[]; sessions: R[]; invoices: R[];
 }) {
   const router = useRouter();
+  const { isRestrictedExterne, firstName: currentFirstName } = useCurrentRoles();
   const [selectedReport, setSelectedReport] = useState("parcours_en_cours");
   const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
   const [filterMonth, setFilterMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
@@ -52,14 +54,15 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
         if (customFrom && d < customFrom) return false;
         if (customTo && d > customTo) return false;
       }
-      // Expert filter
-      if (filterExpert) {
+      // Expert filter (forced for restricted externes)
+      const effectiveExpert = isRestrictedExterne && currentFirstName ? currentFirstName : filterExpert;
+      if (effectiveExpert) {
         const trainers = (s.trainers as string[]) ?? [];
-        if (!trainers.includes(filterExpert)) return false;
+        if (!trainers.includes(effectiveExpert)) return false;
       }
       return true;
     });
-  }, [sessions, periodMode, filterMonth, customFrom, customTo, filterExpert]);
+  }, [sessions, periodMode, filterMonth, customFrom, customTo, filterExpert, isRestrictedExterne, currentFirstName]);
 
   // ====== REPORT: PARCOURS EN COURS ======
   function renderParcoursEnCours() {
@@ -335,11 +338,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
               style={{ height: 40, borderRadius: 10, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13 }} />
           </>
         )}
+        {!isRestrictedExterne && (
         <select value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}
           style={{ height: 40, borderRadius: 10, border: "1px solid #dce8f0", background: "white", padding: "0 16px", fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>
           <option value="">Tous les experts</option>
           {allExperts.map(e => <option key={e} value={e}>{e}</option>)}
         </select>
+        )}
       </div>
 
       {selectedReport === "parcours_en_cours" && renderParcoursEnCours()}
