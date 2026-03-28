@@ -9,8 +9,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
@@ -20,6 +26,15 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
+
+      // If "Rester connecté" is not checked, set shorter session
+      if (!rememberMe) {
+        // Default Supabase session is already persistent; we'll handle logout on browser close via a flag
+        localStorage.setItem("crm_session_persistent", "false");
+      } else {
+        localStorage.setItem("crm_session_persistent", "true");
+      }
+
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -37,6 +52,26 @@ export default function LoginPage() {
       setError("Une erreur inattendue est survenue.");
       setLoading(false);
     }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setForgotError(error.message);
+      setForgotLoading(false);
+      return;
+    }
+
+    setForgotSent(true);
+    setForgotLoading(false);
   }
 
   return (
@@ -150,7 +185,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div style={{ marginBottom: 24 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 6 }}>
                   Mot de passe
                 </label>
@@ -181,6 +216,29 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "#5a6f80" }}>
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: "#1a6b9c", cursor: "pointer" }}
+                  />
+                  Rester connecté
+                </label>
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(true); setForgotEmail(email); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 13, color: "#1a6b9c", fontWeight: 600,
+                    textDecoration: "underline",
+                  }}
+                >
+                  Mot de passe oublié ?
+                </button>
               </div>
 
               {error && (
@@ -235,6 +293,95 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Forgot password modal */}
+      {forgotMode && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100,
+          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+          onClick={() => { if (!forgotLoading) setForgotMode(false); }}
+        >
+          <div
+            style={{
+              width: 420, background: "white", borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)", overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ height: 5, background: "linear-gradient(90deg, #1a6b9c, #0d4f7a, #1a6b9c)" }} />
+            <div style={{ padding: "36px 36px 28px" }}>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a", marginBottom: 4 }}>
+                Mot de passe oublié
+              </h2>
+              <p style={{ fontSize: 14, color: "#8399a9", marginBottom: 28 }}>
+                Entrez votre email pour recevoir un lien de réinitialisation
+              </p>
+
+              {forgotSent ? (
+                <div style={{ padding: "14px", borderRadius: 8, background: "#e8f5e9", color: "#2e7d32", fontSize: 13, fontWeight: 500 }}>
+                  Un email de réinitialisation a été envoyé à <strong>{forgotEmail}</strong>. Vérifiez votre boîte mail (et vos spams).
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword}>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 6 }}>
+                      Adresse email
+                    </label>
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="votre@email.com"
+                      required
+                      style={{
+                        width: "100%", height: 44, borderRadius: 10, border: "1.5px solid #dce8f0",
+                        padding: "0 14px", fontSize: 14, color: "#1a2a3a", outline: "none",
+                        background: "#f8fbfd",
+                      }}
+                    />
+                  </div>
+
+                  {forgotError && (
+                    <div style={{
+                      padding: "10px 14px", borderRadius: 8, marginBottom: 20,
+                      background: "#fde8e8", borderLeft: "4px solid #e74c3c",
+                      color: "#c62828", fontSize: 13, fontWeight: 500,
+                    }}>
+                      {forgotError}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(false)}
+                      style={{
+                        flex: 1, height: 46, borderRadius: 10, border: "1.5px solid #dce8f0",
+                        background: "white", color: "#5a6f80", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={forgotLoading}
+                      style={{
+                        flex: 1, height: 46, borderRadius: 10, border: "none", cursor: "pointer",
+                        background: forgotLoading ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                        color: "white", fontSize: 14, fontWeight: 700,
+                        boxShadow: forgotLoading ? "none" : "0 4px 15px rgba(26,107,156,0.3)",
+                      }}
+                    >
+                      {forgotLoading ? "Envoi..." : "Envoyer le lien"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin {
