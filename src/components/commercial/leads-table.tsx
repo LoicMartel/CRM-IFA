@@ -25,7 +25,7 @@ import type {
   SalesMember,
   CompanyTypeOption,
   LeadSourceOption,
-} from "@/app/(dashboard)/leads/page";
+} from "@/types/leads";
 import { LeadFormDialog } from "./lead-form-dialog";
 
 interface LeadsTableProps {
