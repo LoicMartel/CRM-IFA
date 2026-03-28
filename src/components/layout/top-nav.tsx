@@ -164,7 +164,7 @@ export function TopNav() {
       </div>
 
       {/* Search Bar */}
-      <div ref={wrapperRef} style={{ position: "absolute", left: 358, width: 400 }}>
+      <div ref={wrapperRef} style={{ position: "absolute", left: 350, width: 400 }}>
 
         <div style={{ position: "relative" }}>
           <Search style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#5a7099" }} />
