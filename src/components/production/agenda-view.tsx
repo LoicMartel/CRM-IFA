@@ -300,6 +300,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
             title="Choisir une date"
           />
         </div>
+        {!isRestrictedExterne && (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 12, color: "#8399a9", fontWeight: 600 }}>Filtrer :</span>
           <select
@@ -311,6 +312,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
             {TRAINERS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
+        )}
       </div>
 
       {/* Weekly KPIs */}
