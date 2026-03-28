@@ -76,7 +76,7 @@ const MODE_ICONS: Record<string, { icon: typeof Video; label: string }> = {
 
 export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { meetings: Meeting[]; teamMembers: TeamMember[]; tasks?: Task[] }) {
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, memberId: currentMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, memberId: currentMemberId } = useCurrentRoles();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -179,7 +179,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
     router.refresh();
   }
 
-  const displayMembers = isRestrictedExterne && currentMemberId
+  const displayMembers = onlyOwnData && currentMemberId
     ? teamMembers.filter(t => t.id === currentMemberId)
     : filterMember ? teamMembers.filter(t => t.id === filterMember) : teamMembers;
   const hasUnassigned = weekDays.some(d => getUnassignedForDay(d).length > 0 || getUnassignedTasksForDay(d).length > 0);

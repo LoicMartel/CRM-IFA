@@ -53,7 +53,7 @@ export function LearnersTable({
   experts?: Expert[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -67,7 +67,7 @@ export function LearnersTable({
   });
 
   const filtered = learners.filter((l) => {
-    if (isRestrictedExterne && roleMemberId && (l as any).expert_id !== roleMemberId) return false;
+    if (onlyOwnData && roleMemberId && (l as any).expert_id !== roleMemberId) return false;
     const name = `${l.first_name} ${l.last_name}`.toLowerCase();
     if (search && !name.includes(search.toLowerCase())) return false;
     if (filterStatus && l.status !== filterStatus) return false;

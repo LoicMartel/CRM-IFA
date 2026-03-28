@@ -26,7 +26,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
   servicePlans: R[]; sessions: R[]; invoices: R[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, firstName: currentFirstName } = useCurrentRoles();
+  const { isRestrictedExterne, onlyOwnData, firstName: currentFirstName } = useCurrentRoles();
   const [selectedReport, setSelectedReport] = useState("parcours_en_cours");
   const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
   const [filterMonth, setFilterMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
@@ -55,7 +55,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
         if (customTo && d > customTo) return false;
       }
       // Expert filter (forced for restricted externes)
-      const effectiveExpert = isRestrictedExterne && currentFirstName ? currentFirstName : filterExpert;
+      const effectiveExpert = onlyOwnData && currentFirstName ? currentFirstName : filterExpert;
       if (effectiveExpert) {
         const trainers = (s.trainers as string[]) ?? [];
         if (!trainers.includes(effectiveExpert)) return false;
@@ -338,7 +338,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
               style={{ height: 40, borderRadius: 10, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13 }} />
           </>
         )}
-        {!isRestrictedExterne && !isReadOnly && (
+        {!onlyOwnData && (
         <select value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}
           style={{ height: 40, borderRadius: 10, border: "1px solid #dce8f0", background: "white", padding: "0 16px", fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>
           <option value="">Tous les experts</option>

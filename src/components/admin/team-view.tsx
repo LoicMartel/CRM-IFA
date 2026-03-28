@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Pencil, Trash2, KeyRound } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, KeyRound, Shield } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
-import { useCurrentRoles } from "@/lib/use-current-roles";
+import { useCurrentRoles, DEFAULT_PERMISSIONS, type MemberPermissions } from "@/lib/use-current-roles";
 
 type R = Record<string, unknown>;
 
@@ -53,6 +53,39 @@ export function TeamView({ members }: { members: R[] }) {
   const [passwordPopup, setPasswordPopup] = useState<R | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [permsMember, setPermsMember] = useState<R | null>(null);
+  const [permsForm, setPermsForm] = useState<MemberPermissions>({ ...DEFAULT_PERMISSIONS });
+  const [savingPerms, setSavingPerms] = useState(false);
+
+  function openPerms(member: R) {
+    const dbPerms = (member.permissions as Partial<MemberPermissions>) ?? {};
+    const roles = (member.roles as string[]) ?? [];
+    const isExterne = roles.includes("Externe");
+    const isAdmin = roles.includes("Admin");
+    // Show current effective permissions
+    let effective: MemberPermissions;
+    if (isAdmin) {
+      effective = { ...DEFAULT_PERMISSIONS };
+    } else if (Object.keys(dbPerms).length > 0) {
+      effective = { ...DEFAULT_PERMISSIONS, ...dbPerms };
+    } else if (isExterne) {
+      effective = { canViewCommercial: false, canViewFinance: false, canViewDashboard: false, canViewReports: false, canEdit: false, canDelete: false, onlyOwnData: true };
+    } else {
+      effective = { ...DEFAULT_PERMISSIONS };
+    }
+    setPermsForm(effective);
+    setPermsMember(member);
+  }
+
+  async function handleSavePerms() {
+    if (!permsMember) return;
+    setSavingPerms(true);
+    const supabase = createClient();
+    await supabase.from("team_members").update({ permissions: permsForm }).eq("id", permsMember.id as string);
+    setSavingPerms(false);
+    setPermsMember(null);
+    router.refresh();
+  }
 
   const filtered = members.filter(m => {
     if (activeTab === "all") return true;
@@ -241,6 +274,11 @@ export function TeamView({ members }: { members: R[] }) {
                       }}>
                         {member.is_active ? "Actif" : "Inactif"}
                       </span>
+                      {isAdmin && (
+                        <button onClick={() => openPerms(member)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#0d4f7a" }} title="Gérer les permissions">
+                          <Shield className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       {isAdmin && !!(member.auth_user_id) && (
                         <button onClick={() => { setPasswordPopup(member); setNewPassword(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#1a6b9c" }} title="Changer le mot de passe">
                           <KeyRound className="h-3.5 w-3.5" />
@@ -480,6 +518,106 @@ export function TeamView({ members }: { members: R[] }) {
                   style={{ height: 36, borderRadius: 8, background: "#FF6B35", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingPassword || !newPassword.trim() ? 0.5 : 1 }}>
                   {savingPassword ? "..." : "Modifier"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Permissions panel */}
+      {permsMember && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPermsMember(null); }}>
+          <div style={{ background: "white", borderRadius: 16, width: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ height: 4, background: "linear-gradient(90deg, #0d4f7a 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
+            <div style={{ padding: "24px 28px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                <Shield style={{ width: 20, height: 20, color: "#0d4f7a" }} />
+                <div>
+                  <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>
+                    Permissions — {permsMember.first_name as string} {permsMember.last_name as string}
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#8399a9", margin: 0 }}>
+                    {((permsMember.roles as string[]) ?? []).join(", ")}
+                  </p>
+                </div>
+              </div>
+
+              {((permsMember.roles as string[]) ?? []).includes("Admin") ? (
+                <div style={{ padding: 14, borderRadius: 8, background: "#e8f5e9", color: "#2e7d32", fontSize: 13, fontWeight: 500 }}>
+                  Administrateur — accès total, les permissions ne s&apos;appliquent pas.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Visibilité</div>
+
+                  {([
+                    { key: "canViewCommercial" as const, label: "Section Commerciale", desc: "Contacts, Entreprises, Pipeline, Opportunités, Commandes" },
+                    { key: "canViewFinance" as const, label: "Section Finance", desc: "Facturation, Suivi Financier, Rapports Facturation" },
+                    { key: "canViewDashboard" as const, label: "Dashboard & Synthèses", desc: "Dashboard, Synthèse Commerciale, Synthèse Finances" },
+                    { key: "canViewReports" as const, label: "Rapports Commerciaux", desc: "Reports Inbound, Outbound, etc." },
+                  ]).map(({ key, label, desc }) => (
+                    <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={permsForm[key]}
+                        onChange={(e) => setPermsForm({ ...permsForm, [key]: e.target.checked })}
+                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1a6b9c", cursor: "pointer" }}
+                      />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
+                        <div style={{ fontSize: 11, color: "#8399a9" }}>{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+
+                  <div style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12, marginTop: 4 }} />
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Actions</div>
+
+                  {([
+                    { key: "canEdit" as const, label: "Peut créer et modifier", desc: "Créer des contacts, modifier des fiches, ajouter des sessions..." },
+                    { key: "canDelete" as const, label: "Peut supprimer", desc: "Supprimer des contacts, entreprises, sessions, etc." },
+                  ]).map(({ key, label, desc }) => (
+                    <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={permsForm[key]}
+                        onChange={(e) => setPermsForm({ ...permsForm, [key]: e.target.checked })}
+                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1a6b9c", cursor: "pointer" }}
+                      />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
+                        <div style={{ fontSize: 11, color: "#8399a9" }}>{desc}</div>
+                      </div>
+                    </label>
+                  ))}
+
+                  <div style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12, marginTop: 4 }} />
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Données</div>
+
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={permsForm.onlyOwnData}
+                      onChange={(e) => setPermsForm({ ...permsForm, onlyOwnData: e.target.checked })}
+                      style={{ width: 18, height: 18, marginTop: 2, accentColor: "#e65100", cursor: "pointer" }}
+                    />
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Uniquement ses propres données</div>
+                      <div style={{ fontSize: 11, color: "#8399a9" }}>Ne voit que ses contacts, entreprises, sessions et RDV</div>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 24 }}>
+                <button onClick={() => setPermsMember(null)} style={{ height: 38, borderRadius: 8, padding: "0 18px", border: "1px solid #dce8f0", background: "white", color: "#5a6f80", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  Annuler
+                </button>
+                {!((permsMember.roles as string[]) ?? []).includes("Admin") && (
+                  <button onClick={handleSavePerms} disabled={savingPerms} style={{ height: 38, borderRadius: 8, padding: "0 18px", border: "none", background: savingPerms ? "#8399a9" : "#1a6b9c", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    {savingPerms ? "Enregistrement..." : "Enregistrer"}
+                  </button>
+                )}
               </div>
             </div>
           </div>

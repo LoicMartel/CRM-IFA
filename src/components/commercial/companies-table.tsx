@@ -63,7 +63,7 @@ export function CompaniesTable({
   teamMembers?: TeamMember[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");
@@ -88,7 +88,7 @@ export function CompaniesTable({
 
   const filtered = companies
     .filter((c) => {
-      if (isRestrictedExterne && roleMemberId && c.owner_id !== roleMemberId) return false;
+      if (onlyOwnData && roleMemberId && c.owner_id !== roleMemberId) return false;
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterType && c.company_types?.name !== filterType) return false;
       if (filterLifecycle && c.lifecycle_stage !== filterLifecycle) return false;

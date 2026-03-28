@@ -3,11 +3,43 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+export interface MemberPermissions {
+  canViewCommercial: boolean;
+  canViewFinance: boolean;
+  canViewDashboard: boolean;
+  canViewReports: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  onlyOwnData: boolean;
+}
+
+export const DEFAULT_PERMISSIONS: MemberPermissions = {
+  canViewCommercial: true,
+  canViewFinance: true,
+  canViewDashboard: true,
+  canViewReports: true,
+  canEdit: true,
+  canDelete: true,
+  onlyOwnData: false,
+};
+
+// Permissions for restricted externes (default when no permissions set and role is Externe)
+const RESTRICTED_EXTERNE_PERMISSIONS: MemberPermissions = {
+  canViewCommercial: false,
+  canViewFinance: false,
+  canViewDashboard: false,
+  canViewReports: false,
+  canEdit: false,
+  canDelete: false,
+  onlyOwnData: true,
+};
+
 interface MemberInfo {
   id: string;
   roles: string[];
   firstName: string;
   lastName: string;
+  permissions: MemberPermissions;
 }
 
 export function useCurrentRoles() {
@@ -21,32 +53,40 @@ export function useCurrentRoles() {
 
       const { data: member } = await supabase
         .from("team_members")
-        .select("id, first_name, last_name, roles")
+        .select("id, first_name, last_name, roles, permissions")
         .eq("auth_user_id", user.id)
         .single();
 
-      if (member) {
-        setInfo({
-          id: member.id,
-          roles: (member.roles as string[]) ?? [],
-          firstName: member.first_name,
-          lastName: member.last_name,
-        });
-        return;
-      }
-
-      const { data: memberByEmail } = await supabase
+      const m = member ?? (await supabase
         .from("team_members")
-        .select("id, first_name, last_name, roles")
+        .select("id, first_name, last_name, roles, permissions")
         .eq("email", user.email)
-        .single();
+        .single()).data;
 
-      if (memberByEmail) {
+      if (m) {
+        const roles = (m.roles as string[]) ?? [];
+        const isAdmin = roles.includes("Admin");
+        const isExterne = roles.includes("Externe");
+        const dbPerms = m.permissions as Partial<MemberPermissions> | null;
+
+        // Resolve permissions: DB > defaults based on role
+        let perms: MemberPermissions;
+        if (isAdmin) {
+          perms = { ...DEFAULT_PERMISSIONS };
+        } else if (dbPerms && Object.keys(dbPerms).length > 0) {
+          perms = { ...DEFAULT_PERMISSIONS, ...dbPerms };
+        } else if (isExterne) {
+          perms = { ...RESTRICTED_EXTERNE_PERMISSIONS };
+        } else {
+          perms = { ...DEFAULT_PERMISSIONS };
+        }
+
         setInfo({
-          id: memberByEmail.id,
-          roles: (memberByEmail.roles as string[]) ?? [],
-          firstName: memberByEmail.first_name,
-          lastName: memberByEmail.last_name,
+          id: m.id,
+          roles,
+          firstName: m.first_name,
+          lastName: m.last_name,
+          permissions: perms,
         });
       }
     }
@@ -55,13 +95,10 @@ export function useCurrentRoles() {
 
   const isAdmin = info?.roles.includes("Admin") ?? false;
   const isExterne = info?.roles.includes("Externe") ?? false;
-  // Pauline & Gaëlle: Externes with full visibility
-  const isPauline = info?.firstName === "Pauline" && info?.lastName === "BECQUERELLE";
-  const isGaelle = info?.firstName === "Gaëlle" && info?.lastName === "LE GUIRRIEC";
-  const hasFullAccess = isPauline || isGaelle;
-  const isRestrictedExterne = isExterne && !hasFullAccess && !isAdmin;
-  // Gaëlle: full access but read-only (no edit, no delete)
-  const isReadOnly = isGaelle && !isAdmin;
+  const perms = info?.permissions ?? DEFAULT_PERMISSIONS;
+
+  const isRestrictedExterne = isExterne && !perms.canViewCommercial && !isAdmin;
+  const isReadOnly = !perms.canEdit && !isAdmin;
 
   return {
     memberId: info?.id ?? null,
@@ -72,11 +109,13 @@ export function useCurrentRoles() {
     isExterne,
     isRestrictedExterne,
     isReadOnly,
-    canDelete: isAdmin,
+    canDelete: isAdmin || perms.canDelete,
     canEditTeam: isAdmin,
-    canViewFinance: !isRestrictedExterne,
-    canViewReports: !isRestrictedExterne,
-    canViewDashboard: !isRestrictedExterne,
+    canViewCommercial: isAdmin || perms.canViewCommercial,
+    canViewFinance: isAdmin || perms.canViewFinance,
+    canViewReports: isAdmin || perms.canViewReports,
+    canViewDashboard: isAdmin || perms.canViewDashboard,
+    onlyOwnData: !isAdmin && perms.onlyOwnData,
     loaded: info !== null,
   };
 }

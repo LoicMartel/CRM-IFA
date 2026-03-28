@@ -81,7 +81,7 @@ export function ContactsTable({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne, isReadOnly, memberId: roleMemberId } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, memberId: roleMemberId } = useCurrentRoles();
   const [search, setSearch] = useState("");
   const [filterLeadStatus, setFilterLeadStatus] = useState("");
   const [filterLifecycle, setFilterLifecycle] = useState("");
@@ -103,7 +103,7 @@ export function ContactsTable({
 
   const filtered = contacts
     .filter((c) => {
-      if (isRestrictedExterne && roleMemberId && c.owner_id !== roleMemberId) return false;
+      if (onlyOwnData && roleMemberId && c.owner_id !== roleMemberId) return false;
       if (contactTypeTab !== "all" && c.contact_type !== contactTypeTab) return false;
       const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
       if (search && !fullName.includes(search.toLowerCase()) && !(c.email ?? "").toLowerCase().includes(search.toLowerCase())) return false;

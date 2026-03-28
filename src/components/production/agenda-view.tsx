@@ -61,7 +61,7 @@ const statusLabels: Record<string, { label: string; bg: string; text: string }> 
 export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[]; expertNames?: string[] }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, firstName: currentFirstName } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, firstName: currentFirstName } = useCurrentRoles();
   const [viewLearner, setViewLearner] = useState<{ id: string; first_name: string; last_name: string; email?: string; phone?: string; position?: string; status?: string; company_name?: string } | null>(null);
   const [loadingLearner, setLoadingLearner] = useState(false);
 
@@ -110,7 +110,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     });
   }
 
-  const displayTrainers = isRestrictedExterne && currentFirstName
+  const displayTrainers = onlyOwnData && currentFirstName
     ? TRAINERS.filter(t => t === currentFirstName)
     : filterTrainer ? [filterTrainer] : TRAINERS;
   const hasUnassigned = weekDays.some(d => getUnassignedForDay(d).length > 0);
