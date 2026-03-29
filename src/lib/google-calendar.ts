@@ -21,6 +21,43 @@ function getAuth() {
   }
 }
 
+export async function getFreeBusy({
+  calendarId,
+  timeMin,
+  timeMax,
+  timeZone = "Europe/Paris",
+}: {
+  calendarId: string;
+  timeMin: string;
+  timeMax: string;
+  timeZone?: string;
+}): Promise<{ busy: { start: string; end: string }[]; error?: string }> {
+  const auth = getAuth();
+  if (!auth) return { busy: [], error: "Google Calendar not configured" };
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+    const res = await calendar.freebusy.query({
+      requestBody: {
+        timeMin,
+        timeMax,
+        timeZone,
+        items: [{ id: calendarId }],
+      },
+    });
+
+    const busySlots = res.data.calendars?.[calendarId]?.busy ?? [];
+    return {
+      busy: busySlots.map((b) => ({
+        start: b.start ?? "",
+        end: b.end ?? "",
+      })),
+    };
+  } catch (err: any) {
+    return { busy: [], error: err.message };
+  }
+}
+
 export async function createCalendarEvent({
   calendarId,
   summary,
