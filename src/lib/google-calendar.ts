@@ -5,7 +5,7 @@ let cachedAuth: any = null;
 function getAuth() {
   if (cachedAuth) return cachedAuth;
 
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
   if (!credentials) return null;
 
   try {
