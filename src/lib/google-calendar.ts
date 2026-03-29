@@ -9,25 +9,23 @@ function getAuth() {
   if (!raw) return null;
 
   try {
-    // Vercel may mangle the JSON in various ways — try multiple parsing strategies
-    let parsed: any;
+    // Vercel converts \n in env vars to real newlines.
+    // We need to restore them for JSON.parse, but then the private_key
+    // needs real \n chars for the PEM format.
     const trimmed = raw.trim();
+    let parsed: any;
 
     try {
       parsed = JSON.parse(trimmed);
     } catch {
-      // Strategy 2: replace real newlines with escaped \n
-      try {
-        parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n"));
-      } catch {
-        // Strategy 3: the value might be wrapped in extra quotes
-        const unwrapped = trimmed.replace(/^["']|["']$/g, "");
-        try {
-          parsed = JSON.parse(unwrapped);
-        } catch {
-          parsed = JSON.parse(unwrapped.replace(/\r?\n/g, "\\n"));
-        }
-      }
+      // Replace real newlines with \\n so JSON.parse works
+      parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n"));
+    }
+
+    // After parsing, the private_key should contain literal \n chars.
+    // If Vercel mangled them, they're now double-escaped — fix that.
+    if (parsed.private_key && !parsed.private_key.includes("\n")) {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
     }
     const auth = new google.auth.GoogleAuth({
       credentials: parsed,
