@@ -5,11 +5,20 @@ export async function GET() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!raw) return NextResponse.json({ error: "KEY MISSING" });
 
-  const trimmed = raw.trim();
+  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
   let parsed: any;
-  try { parsed = JSON.parse(trimmed); } catch {
-    try { parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n")); } catch (e: any) {
-      return NextResponse.json({ error: "parse failed", msg: e.message });
+
+  // Try base64 first
+  try {
+    const decoded = Buffer.from(trimmed, "base64").toString("utf-8");
+    if (decoded.startsWith("{")) parsed = JSON.parse(decoded);
+  } catch {}
+
+  if (!parsed) {
+    try { parsed = JSON.parse(trimmed); } catch {
+      try { parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n")); } catch (e: any) {
+        return NextResponse.json({ error: "parse failed", msg: e.message, first40: trimmed.slice(0, 40) });
+      }
     }
   }
 

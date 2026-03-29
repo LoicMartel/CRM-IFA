@@ -9,8 +9,9 @@ function getAuth() {
   if (!raw) return null;
 
   try {
+    // Strip surrounding quotes if Vercel added them
+    const trimmed = raw.trim().replace(/^["']|["']$/g, "");
     let parsed: any;
-    const trimmed = raw.trim();
 
     // Strategy 1: try base64 decode first (recommended for Vercel)
     try {
