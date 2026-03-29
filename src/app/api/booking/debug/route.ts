@@ -2,41 +2,30 @@ import { NextResponse } from "next/server";
 import { google } from "googleapis";
 
 export async function GET() {
+  const b64 = process.env.GOOGLE_SA_KEY_B64?.trim();
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!raw) return NextResponse.json({ error: "KEY MISSING" });
 
-  const trimmed = raw.trim().replace(/^["']|["']$/g, "");
+  if (!b64 && !raw) return NextResponse.json({ error: "No key found" });
+
   let parsed: any;
+  let method = "";
 
-  // Try base64 first
-  try {
-    const decoded = Buffer.from(trimmed, "base64").toString("utf-8");
-    if (decoded.startsWith("{")) parsed = JSON.parse(decoded);
-  } catch {}
-
-  if (!parsed) {
-    try { parsed = JSON.parse(trimmed); } catch {
-      try { parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n")); } catch (e: any) {
-        return NextResponse.json({ error: "parse failed", msg: e.message, first40: trimmed.slice(0, 40) });
+  if (b64) {
+    try {
+      const clean = b64.replace(/^["']|["']$/g, "").replace(/\s/g, "");
+      const decoded = Buffer.from(clean, "base64").toString("utf-8");
+      parsed = JSON.parse(decoded);
+      method = "base64";
+    } catch (e: any) {
+      return NextResponse.json({ error: "base64 decode failed", msg: e.message, b64First40: b64.slice(0, 40) });
+    }
+  } else if (raw) {
+    try { parsed = JSON.parse(raw); method = "direct"; } catch {
+      try { parsed = JSON.parse(raw.replace(/\r?\n/g, "\\n")); method = "newline-fix"; } catch (e: any) {
+        return NextResponse.json({ error: "parse failed", msg: e.message });
       }
     }
   }
-
-  // Show what private_key looks like
-  const pk = parsed.private_key || "";
-  const hasRealNewlines = pk.includes("\n");
-  const hasEscapedNewlines = pk.includes("\\n");
-  const startsCorrectly = pk.startsWith("-----BEGIN");
-  const pkFirst60 = pk.slice(0, 60);
-  const pkLength = pk.length;
-
-  // Force fix: ensure real newlines in PEM
-  if (!hasRealNewlines && hasEscapedNewlines) {
-    parsed.private_key = pk.replace(/\\n/g, "\n");
-  }
-
-  const pkAfterFix = parsed.private_key.slice(0, 60);
-  const hasRealNewlinesAfter = parsed.private_key.includes("\n");
 
   try {
     const auth = new google.auth.GoogleAuth({
@@ -55,14 +44,11 @@ export async function GET() {
     const calData = res.data.calendars?.["tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com"];
     return NextResponse.json({
       success: true,
+      method,
+      clientEmail: parsed.client_email,
       busy: calData?.busy ?? [],
-      pkDebug: { hasRealNewlines, hasEscapedNewlines, startsCorrectly, pkLength, pkFirst60, hasRealNewlinesAfter, pkAfterFix },
     });
   } catch (e: any) {
-    return NextResponse.json({
-      error: "auth/freebusy failed",
-      message: e.message,
-      pkDebug: { hasRealNewlines, hasEscapedNewlines, startsCorrectly, pkLength, pkFirst60, hasRealNewlinesAfter, pkAfterFix },
-    });
+    return NextResponse.json({ error: "auth failed", method, msg: e.message });
   }
 }

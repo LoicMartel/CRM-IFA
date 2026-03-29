@@ -5,30 +5,27 @@ let cachedAuth: any = null;
 function getAuth() {
   if (cachedAuth) return cachedAuth;
 
+  // Try GOOGLE_SA_KEY_B64 (base64-encoded, Vercel-safe) first, then fallback to GOOGLE_SERVICE_ACCOUNT_KEY
+  const b64 = process.env.GOOGLE_SA_KEY_B64?.trim();
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!raw) return null;
+
+  if (!b64 && !raw) return null;
 
   try {
-    // Strip surrounding quotes if Vercel added them
-    const trimmed = raw.trim().replace(/^["']|["']$/g, "");
     let parsed: any;
 
-    // Strategy 1: try base64 decode first (recommended for Vercel)
-    try {
-      const decoded = Buffer.from(trimmed, "base64").toString("utf-8");
-      if (decoded.startsWith("{")) {
-        parsed = JSON.parse(decoded);
-      }
-    } catch { /* not base64, try other strategies */ }
-
-    // Strategy 2: direct JSON parse
-    if (!parsed) {
-      try { parsed = JSON.parse(trimmed); } catch {}
+    // Strategy 1: base64-encoded key (Vercel production)
+    if (b64) {
+      const clean = b64.replace(/^["']|["']$/g, "").replace(/\s/g, "");
+      const decoded = Buffer.from(clean, "base64").toString("utf-8");
+      parsed = JSON.parse(decoded);
     }
 
-    // Strategy 3: fix newlines then parse
-    if (!parsed) {
-      parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n"));
+    // Strategy 2: direct JSON (local dev with .env.local)
+    if (!parsed && raw) {
+      try { parsed = JSON.parse(raw); } catch {
+        parsed = JSON.parse(raw.replace(/\r?\n/g, "\\n"));
+      }
     }
 
     if (!parsed) return null;
