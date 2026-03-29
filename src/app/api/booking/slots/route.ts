@@ -69,8 +69,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing date parameter" }, { status: 400 });
   }
 
-  const timeMin = `${date}T00:00:00+02:00`;
-  const timeMax = `${date}T23:59:59+02:00`;
+  // Use ISO format with timezone name — Google API handles the conversion
+  const timeMin = new Date(`${date}T00:00:00`).toISOString();
+  const timeMax = new Date(`${date}T23:59:59`).toISOString();
 
   const allSlots = generateSlots(date);
 
@@ -95,9 +96,16 @@ export async function GET(request: Request) {
 
     if (accessibleCount === 0) continue; // skip only if NO calendar is accessible
 
-    const availableSlots = allSlots.filter(
-      (s) => !isOverlapping(`${s.start}+02:00`, `${s.end}+02:00`, allBusy)
-    );
+    const availableSlots = allSlots.filter((s) => {
+      // Build proper Date objects for comparison
+      const slotStart = new Date(`${s.start}+02:00`);
+      const slotEnd = new Date(`${s.end}+02:00`);
+      return !allBusy.some((b) => {
+        const bs = new Date(b.start).getTime();
+        const be = new Date(b.end).getTime();
+        return slotStart.getTime() < be && slotEnd.getTime() > bs;
+      });
+    });
 
     // Filter out past slots if date is today
     const now = new Date();
