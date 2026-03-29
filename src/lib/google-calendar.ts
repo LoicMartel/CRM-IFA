@@ -5,10 +5,12 @@ let cachedAuth: any = null;
 function getAuth() {
   if (cachedAuth) return cachedAuth;
 
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
-  if (!credentials) return null;
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
+  if (!raw) return null;
 
   try {
+    // Vercel may convert \n escape sequences into real newlines — restore them for JSON.parse
+    const credentials = raw.replace(/\n/g, "\\n");
     const parsed = JSON.parse(credentials);
     const auth = new google.auth.GoogleAuth({
       credentials: parsed,
