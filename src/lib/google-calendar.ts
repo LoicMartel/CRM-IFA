@@ -5,13 +5,30 @@ let cachedAuth: any = null;
 function getAuth() {
   if (cachedAuth) return cachedAuth;
 
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!raw) return null;
 
   try {
-    // Vercel may convert \n escape sequences into real newlines — restore them for JSON.parse
-    const credentials = raw.replace(/\n/g, "\\n");
-    const parsed = JSON.parse(credentials);
+    // Vercel may mangle the JSON in various ways — try multiple parsing strategies
+    let parsed: any;
+    const trimmed = raw.trim();
+
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      // Strategy 2: replace real newlines with escaped \n
+      try {
+        parsed = JSON.parse(trimmed.replace(/\r?\n/g, "\\n"));
+      } catch {
+        // Strategy 3: the value might be wrapped in extra quotes
+        const unwrapped = trimmed.replace(/^["']|["']$/g, "");
+        try {
+          parsed = JSON.parse(unwrapped);
+        } catch {
+          parsed = JSON.parse(unwrapped.replace(/\r?\n/g, "\\n"));
+        }
+      }
+    }
     const auth = new google.auth.GoogleAuth({
       credentials: parsed,
       scopes: ["https://www.googleapis.com/auth/calendar"],
