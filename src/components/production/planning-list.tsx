@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload } from "lucide-react";
 import { VisioformationSessionsImportModal } from "./visioformation-sessions-import-modal";
+import { PDFSessionsImportModal } from "./pdf-sessions-import-modal";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -190,6 +191,7 @@ export function PlanningList({
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [sessionsImportOpen, setSessionsImportOpen] = useState(false);
+  const [pdfImportOpen, setPdfImportOpen] = useState(false);
 
   function getPrimaryContact(companyId: string): CompanyContact | null {
     const company = companies.find(c => c.id === companyId);
@@ -573,15 +575,22 @@ export function PlanningList({
           </select>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          {!isRestrictedExterne && !isReadOnly && (
+          {!isRestrictedExterne && !isReadOnly && (<>
             <button
               onClick={() => setSessionsImportOpen(true)}
               style={{ height: 38, borderRadius: 8, background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "1.5px solid #1a6b9c", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
               <Upload className="h-4 w-4" />
-              Import Visioformation
+              Import Plans (Excel)
             </button>
-          )}
+            <button
+              onClick={() => setPdfImportOpen(true)}
+              style={{ height: 38, borderRadius: 8, background: "white", color: "#e65100", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "1.5px solid #e65100", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <Upload className="h-4 w-4" />
+              Import Sessions (PDF)
+            </button>
+          </>)}
           <button
             onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
             style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
@@ -1695,6 +1704,13 @@ export function PlanningList({
       <VisioformationSessionsImportModal
         open={sessionsImportOpen}
         onClose={() => setSessionsImportOpen(false)}
+        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name, address: sp.companies.address, city: sp.companies.city } : null }))}
+        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
+      />
+
+      <PDFSessionsImportModal
+        open={pdfImportOpen}
+        onClose={() => setPdfImportOpen(false)}
         servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name, address: sp.companies.address, city: sp.companies.city } : null }))}
         learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
       />

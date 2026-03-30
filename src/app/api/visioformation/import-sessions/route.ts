@@ -10,6 +10,7 @@ interface SessionPayload {
   servicePlanId: string;
   sessionType: "vt" | "journee";
   sessionDate: string;
+  sessionTime?: string;
   durationHours: number;
   status: "planned" | "done" | "cancelled";
   trainers: string[];
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
           service_plan_id: session.servicePlanId,
           session_type: session.sessionType,
           session_date: session.sessionDate,
-          session_time: "09:00",
+          session_time: session.sessionTime || "09:00",
           duration_hours: session.durationHours,
           status: session.status,
           trainers: session.trainers.length > 0 ? session.trainers : null,
