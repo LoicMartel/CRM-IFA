@@ -16,6 +16,7 @@ import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { checkLearnerDuplicate } from "@/lib/duplicate-check";
 import { VisioformationImportModal } from "./visioformation-import-modal";
 import { generateVisioformationImportXlsx } from "@/lib/visioformation";
 import * as XLSX from "xlsx";
@@ -120,6 +121,16 @@ export function LearnersTable({
 
   async function handleSave() {
     setSaving(true);
+    // Duplicate check
+    if (form.email) {
+      const dup = await checkLearnerDuplicate(form.email);
+      if (dup.isDuplicate) {
+        if (!window.confirm(`⚠ Doublon détecté !\n\n${dup.message}\n\nVoulez-vous quand même créer cet apprenant ?`)) {
+          setSaving(false);
+          return;
+        }
+      }
+    }
     const supabase = createClient();
     await supabase.from("learners").insert({
       first_name: form.first_name,

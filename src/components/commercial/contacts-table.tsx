@@ -16,6 +16,7 @@ import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { useCurrentRoles } from "@/lib/use-current-roles";
+import { checkContactDuplicate } from "@/lib/duplicate-check";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -140,6 +141,16 @@ export function ContactsTable({
 
   async function handleSave() {
     setSaving(true);
+    // Duplicate check
+    if (form.email) {
+      const dup = await checkContactDuplicate(form.email);
+      if (dup.isDuplicate) {
+        if (!window.confirm(`⚠ Doublon détecté !\n\n${dup.message}\n\nVoulez-vous quand même créer ce contact ?`)) {
+          setSaving(false);
+          return;
+        }
+      }
+    }
     const supabase = createClient();
     await supabase.from("contacts").insert({
       first_name: form.first_name,

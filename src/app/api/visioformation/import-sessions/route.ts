@@ -26,6 +26,19 @@ export async function POST(request: Request) {
 
   for (const session of sessions) {
     try {
+      // Check for duplicate session (same plan + same date)
+      const { data: existing } = await supabase
+        .from("training_sessions")
+        .select("id")
+        .eq("service_plan_id", session.servicePlanId)
+        .eq("session_date", session.sessionDate)
+        .maybeSingle();
+
+      if (existing) {
+        errors.push(`Session ${session.sessionDate} (${session.notes}): doublon détecté, ignorée`);
+        continue;
+      }
+
       const { data: newSession, error } = await supabase
         .from("training_sessions")
         .insert({

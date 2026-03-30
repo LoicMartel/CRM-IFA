@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { useCurrentRoles } from "@/lib/use-current-roles";
+import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 
 interface Company {
   id: string;
@@ -119,6 +120,16 @@ export function CompaniesTable({
 
   async function handleSave() {
     setSaving(true);
+    // Duplicate check
+    if (form.name) {
+      const dup = await checkCompanyDuplicate(form.name);
+      if (dup.isDuplicate) {
+        if (!window.confirm(`⚠ Doublon détecté !\n\n${dup.message}\n\nVoulez-vous quand même créer cette entreprise ?`)) {
+          setSaving(false);
+          return;
+        }
+      }
+    }
     const supabase = createClient();
     await supabase.from("companies").insert({
       name: form.name,

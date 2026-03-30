@@ -85,23 +85,42 @@ export async function POST(request: Request) {
     companyId = newCompany?.id ?? null;
   }
 
-  // 3. Create contact (Inbound)
-  const { data: contact } = await supabase
+  // 3. Find or create contact (Inbound) — avoid duplicates
+  let contact: { id: string } | null = null;
+  const { data: existingContact } = await supabase
     .from("contacts")
-    .insert({
-      first_name: firstName,
-      last_name: lastName,
-      email,
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+
+  if (existingContact) {
+    // Update existing contact
+    await supabase.from("contacts").update({
       phone,
       company_id: companyId,
-      contact_type: "inbound",
-      lifecycle_stage: "lead",
       lead_status: "booked",
-      owner_id: assignedTo,
       notes: source ? `Source: ${source}` : null,
-    })
-    .select("id")
-    .single();
+    }).eq("id", existingContact.id);
+    contact = existingContact;
+  } else {
+    const { data: newContact } = await supabase
+      .from("contacts")
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        company_id: companyId,
+        contact_type: "inbound",
+        lifecycle_stage: "lead",
+        lead_status: "booked",
+        owner_id: assignedTo,
+        notes: source ? `Source: ${source}` : null,
+      })
+      .select("id")
+      .single();
+    contact = newContact;
+  }
 
   // 4. Create meeting in CRM
   if (contact) {
