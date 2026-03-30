@@ -283,11 +283,49 @@ export function PlanningList({
     setOpen(true);
   }
 
+  function mergePlansByCompany(plans: PlanImportRow[]): PlanImportRow[] {
+    const byCompany = new Map<string, PlanImportRow>();
+    for (const p of plans) {
+      const key = p.companyId ?? p.entreprise;
+      if (!key) continue;
+      const existing = byCompany.get(key);
+      if (!existing) {
+        byCompany.set(key, { ...p, learnerNames: [...p.learnerNames], matchedLearnerIds: [...p.matchedLearnerIds], formateurs: [...p.formateurs] });
+      } else {
+        // Merge sessions counts
+        existing.sessionCount += p.sessionCount;
+        existing.vtCount += p.vtCount;
+        existing.journeeCount += p.journeeCount;
+        existing.totalHours += p.totalHours;
+        // Merge learner names (deduplicate)
+        for (const n of p.learnerNames) {
+          if (!existing.learnerNames.includes(n)) existing.learnerNames.push(n);
+        }
+        for (const id of p.matchedLearnerIds) {
+          if (!existing.matchedLearnerIds.includes(id)) existing.matchedLearnerIds.push(id);
+        }
+        // Merge formateurs
+        for (const f of p.formateurs) {
+          if (!existing.formateurs.includes(f)) existing.formateurs.push(f);
+        }
+        // Extend date range
+        if (p.startDate && (!existing.startDate || p.startDate < existing.startDate)) existing.startDate = p.startDate;
+        if (p.endDate && (!existing.endDate || p.endDate > existing.endDate)) existing.endDate = p.endDate;
+        // Update mode if mixed
+        if (existing.vtCount > 0 && existing.journeeCount > 0) existing.mode = "mixte";
+        // Update format
+        if (existing.learnerNames.length > 1) existing.format = "collectif";
+      }
+    }
+    return Array.from(byCompany.values());
+  }
+
   function handleStartImport(plans: PlanImportRow[]) {
     if (plans.length === 0) return;
-    setImportQueue(plans);
+    const merged = mergePlansByCompany(plans);
+    setImportQueue(merged);
     setImportIndex(0);
-    prefillFormFromImport(plans[0], plans);
+    prefillFormFromImport(merged[0], merged);
   }
   const [form, setForm] = useState(emptyForm);
 
