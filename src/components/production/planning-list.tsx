@@ -15,7 +15,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload } from "lucide-react";
+import { VisioformationSessionsImportModal } from "./visioformation-sessions-import-modal";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -187,6 +188,7 @@ export function PlanningList({
   const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[] });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [sessionsImportOpen, setSessionsImportOpen] = useState(false);
 
   function getPrimaryContact(companyId: string): CompanyContact | null {
     const company = companies.find(c => c.id === companyId);
@@ -569,13 +571,24 @@ export function PlanningList({
             {trainingTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
-        <button
-          onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
-          style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
-        >
-          <Plus className="h-4 w-4" />
-          Nouveau plan de formation
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {!isRestrictedExterne && !isReadOnly && (
+            <button
+              onClick={() => setSessionsImportOpen(true)}
+              style={{ height: 38, borderRadius: 8, background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "1.5px solid #1a6b9c", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              <Upload className="h-4 w-4" />
+              Import Visioformation
+            </button>
+          )}
+          <button
+            onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
+            style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <Plus className="h-4 w-4" />
+            Nouveau plan de formation
+          </button>
+        </div>
       </div>
 
       <div style={{ fontSize: 13, color: "#8399a9" }}>
@@ -1662,6 +1675,14 @@ export function PlanningList({
           </div>
         );
       })()}
+
+      {/* Visioformation Sessions Import Modal */}
+      <VisioformationSessionsImportModal
+        open={sessionsImportOpen}
+        onClose={() => setSessionsImportOpen(false)}
+        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name } : null }))}
+        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
+      />
 
       <style>{`
         @keyframes pulse {
