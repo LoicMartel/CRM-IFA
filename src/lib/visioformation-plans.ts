@@ -205,11 +205,10 @@ export function buildPlanImportRows(
   companies: CompanyRefPlan[],
   learners: LearnerRefPlan[]
 ): PlanImportRow[] {
-  // Group rows by entreprise
+  // Group rows by entreprise (use titre as fallback key when entreprise is empty)
   const groups = new Map<string, VisioPlanRow[]>();
   for (const row of visioRows) {
-    const key = row.entreprise.toLowerCase().trim();
-    if (!key) continue;
+    const key = row.entreprise.toLowerCase().trim() || `__titre__${row.titre.toLowerCase().trim()}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(row);
   }
@@ -218,7 +217,10 @@ export function buildPlanImportRows(
 
   for (const [, rows] of groups) {
     const firstRow = rows[0];
-    const { companyId, companyName, matchType } = matchCompanyForPlan(firstRow.entreprise, companies);
+    const entrepriseLabel = firstRow.entreprise || firstRow.titre;
+    const { companyId, companyName, matchType } = firstRow.entreprise
+      ? matchCompanyForPlan(firstRow.entreprise, companies)
+      : { companyId: null, companyName: "", matchType: "none" as const };
 
     // Aggregate all unique learner names across all sessions for this company
     const allLearnerNames = new Set<string>();
@@ -272,7 +274,7 @@ export function buildPlanImportRows(
     const format: "individuel" | "collectif" = uniqueLearnerCount > 1 ? "collectif" : "individuel";
 
     results.push({
-      entreprise: firstRow.entreprise,
+      entreprise: entrepriseLabel,
       companyId,
       companyName,
       matchType,
