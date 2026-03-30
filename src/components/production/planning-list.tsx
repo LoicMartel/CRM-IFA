@@ -596,7 +596,7 @@ export function PlanningList({
     <>
       {/* Filters + new plan button */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <div className="relative" style={{ flex: "0 1 180px", minWidth: 140 }}>
+        <div className="relative" style={{ flex: "0 1 240px", minWidth: 180 }}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
           <input
             placeholder="Rechercher un client..."
