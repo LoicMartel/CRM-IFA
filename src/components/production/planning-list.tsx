@@ -219,6 +219,49 @@ export function PlanningList({
     budget: "", start_date: "", end_date: "", notes: "",
   };
 
+  function matchLearnersForCompany(learnerNames: string[], companyId: string): string[] {
+    const companyLearners = getCompanyLearners(companyId);
+    if (companyLearners.length === 0 || learnerNames.length === 0) return [];
+
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+    const matched: string[] = [];
+
+    for (const rawName of learnerNames) {
+      const nameNorm = norm(rawName);
+      const parts = nameNorm.split(" ").filter(Boolean);
+
+      const match = companyLearners.find((l) => {
+        const lFn = norm(l.first_name);
+        const lLn = norm(l.last_name);
+        const lFull = `${lFn} ${lLn}`;
+        const lFullR = `${lLn} ${lFn}`;
+
+        // Full name match (either direction)
+        if (nameNorm === lFull || nameNorm === lFullR) return true;
+
+        // Contains both first and last name
+        if (lFn && lLn && nameNorm.includes(lFn) && nameNorm.includes(lLn)) return true;
+
+        // Parts match: all parts of one name found in the other
+        if (parts.length >= 2 && lFn && lLn) {
+          const lParts = [lFn, lLn];
+          if (parts.every(p => lParts.some(lp => lp.includes(p) || p.includes(lp)))) return true;
+        }
+
+        // Single word match against first or last name
+        if (parts.length === 1 && (parts[0] === lFn || parts[0] === lLn)) return true;
+
+        return false;
+      });
+
+      if (match && !matched.includes(match.id)) {
+        matched.push(match.id);
+      }
+    }
+
+    return matched;
+  }
+
   function prefillFormFromImport(plan: PlanImportRow) {
     const companyId = plan.companyId ?? "";
     const deals = companyId ? getAvailableDeals(companyId) : [];
@@ -239,7 +282,9 @@ export function PlanningList({
       end_date: plan.endDate ?? "",
       notes: "",
     });
-    setSelectedLearnerIds(plan.matchedLearnerIds);
+    // Re-match learner names directly against this company's learners in CRM
+    const matchedIds = companyId ? matchLearnersForCompany(plan.learnerNames, companyId) : [];
+    setSelectedLearnerIds(matchedIds);
     setEditingPlanId(null);
     setOpen(true);
   }
