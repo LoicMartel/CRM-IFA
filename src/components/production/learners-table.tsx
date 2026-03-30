@@ -147,76 +147,77 @@ export function LearnersTable({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher nom ou email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
-          </div>
-          <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="">Tous les statuts</option>
-            <option value="actuel">Actuel</option>
-            <option value="ancien">Ancien</option>
-            <option value="futur">Futur</option>
-          </select>
-          <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)}>
-            <option value="">Toutes les entreprises</option>
-            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterProgram} onChange={(e) => setFilterProgram(e.target.value)}>
-            <option value="">Tous les parcours</option>
-            {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          {!isRestrictedExterne && !isReadOnly && (
-          <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}>
-            <option value="">Tous les experts</option>
-            {experts.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
-          </select>
-          )}
+      {/* Ligne 1 : Filtres */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Rechercher nom ou email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
         </div>
-        <div className="flex gap-2">
-          <ExportButton onExport={(fmt: ExportFormat) => exportData(
-            filtered.map((l) => ({
-              nom: `${l.first_name} ${l.last_name}`,
-              email: l.email ?? "",
-              telephone: l.phone ?? "",
-              poste: l.position ?? "",
-              entreprise: l.companies?.name ?? "",
-              statut: l.status ?? "",
-              parcours: (l as any).training_programs?.name ?? "",
-              type_formation: (l as any).training_types?.name ?? "",
-            })),
-            [
-              { key: "nom", label: "Nom" }, { key: "email", label: "Email" },
-              { key: "telephone", label: "Téléphone" }, { key: "poste", label: "Poste" },
-              { key: "entreprise", label: "Entreprise" }, { key: "statut", label: "Statut" },
-              { key: "parcours", label: "Parcours" }, { key: "type_formation", label: "Type formation" },
-            ],
-            "apprenants", fmt
-          )} />
-          {!isRestrictedExterne && !isReadOnly && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setVisioImportOpen(true)}>
-                <Upload className="h-4 w-4 mr-2" /> Import Visioformation
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const buf = generateVisioformationImportXlsx(filtered);
-                const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "visioformation-import.xlsx";
-                a.click();
-                URL.revokeObjectURL(url);
-              }}>
-                <FileDown className="h-4 w-4 mr-2" /> Export Visioformation
-              </Button>
-              <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
-                <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
-              </Button>
-            </>
-          )}
-        </div>
+        <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">Tous les statuts</option>
+          <option value="actuel">Actuel</option>
+          <option value="ancien">Ancien</option>
+          <option value="futur">Futur</option>
+        </select>
+        <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)}>
+          <option value="">Toutes les entreprises</option>
+          {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterProgram} onChange={(e) => setFilterProgram(e.target.value)}>
+          <option value="">Tous les parcours</option>
+          {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        {!isRestrictedExterne && !isReadOnly && (
+        <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterExpert} onChange={(e) => setFilterExpert(e.target.value)}>
+          <option value="">Tous les experts</option>
+          {experts.map((e) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
+        </select>
+        )}
+      </div>
+
+      {/* Ligne 2 : Boutons d'action */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <ExportButton onExport={(fmt: ExportFormat) => exportData(
+          filtered.map((l) => ({
+            nom: `${l.first_name} ${l.last_name}`,
+            email: l.email ?? "",
+            telephone: l.phone ?? "",
+            poste: l.position ?? "",
+            entreprise: l.companies?.name ?? "",
+            statut: l.status ?? "",
+            parcours: (l as any).training_programs?.name ?? "",
+            type_formation: (l as any).training_types?.name ?? "",
+          })),
+          [
+            { key: "nom", label: "Nom" }, { key: "email", label: "Email" },
+            { key: "telephone", label: "Téléphone" }, { key: "poste", label: "Poste" },
+            { key: "entreprise", label: "Entreprise" }, { key: "statut", label: "Statut" },
+            { key: "parcours", label: "Parcours" }, { key: "type_formation", label: "Type formation" },
+          ],
+          "apprenants", fmt
+        )} />
+        {!isRestrictedExterne && !isReadOnly && (
+          <>
+            <Button variant="outline" size="sm" onClick={() => setVisioImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Import Visioformation
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const buf = generateVisioformationImportXlsx(filtered);
+              const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "visioformation-import.xlsx";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <FileDown className="h-4 w-4 mr-2" /> Export Visioformation
+            </Button>
+            <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
+              <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
+            </Button>
+          </>
+        )}
       </div>
 
       <div style={{ fontSize: 13, color: "#8399a9" }}>
