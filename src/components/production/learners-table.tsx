@@ -79,7 +79,8 @@ export function LearnersTable({
     if (search && !name.includes(search.toLowerCase())) return false;
     if (filterStatus && l.status !== filterStatus) return false;
     if (filterProgram && l.program_id !== filterProgram) return false;
-    if (filterCompany && l.company_id !== filterCompany) return false;
+    if (filterCompany === "__none__" && l.company_id) return false;
+    if (filterCompany && filterCompany !== "__none__" && l.company_id !== filterCompany) return false;
     if (filterExpert && (l as any).expert_id !== filterExpert) return false;
     return true;
   });
@@ -203,6 +204,7 @@ export function LearnersTable({
         </select>
         <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)}>
           <option value="">Toutes les entreprises</option>
+          <option value="__none__">Sans entreprise</option>
           {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <select className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={filterProgram} onChange={(e) => setFilterProgram(e.target.value)}>
