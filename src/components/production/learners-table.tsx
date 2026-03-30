@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Plus, Search, Trash2, Users, UserCheck, UserPlus, Upload, FileDown } from "lucide-react";
+import { Plus, Search, Trash2, Users, UserCheck, UserPlus, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -18,8 +18,6 @@ import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { checkLearnerDuplicate } from "@/lib/duplicate-check";
 import { VisioformationImportModal } from "./visioformation-import-modal";
-import { generateVisioformationImportXlsx } from "@/lib/visioformation";
-import * as XLSX from "xlsx";
 
 interface Learner {
   id: string;
@@ -244,18 +242,6 @@ export function LearnersTable({
           <>
             <Button variant="outline" size="sm" onClick={() => setVisioImportOpen(true)}>
               <Upload className="h-4 w-4 mr-2" /> Import Visioformation
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              const buf = generateVisioformationImportXlsx(filtered);
-              const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "visioformation-import.xlsx";
-              a.click();
-              URL.revokeObjectURL(url);
-            }}>
-              <FileDown className="h-4 w-4 mr-2" /> Export Visioformation
             </Button>
             {selectedIds.size > 0 && (
               <Button
