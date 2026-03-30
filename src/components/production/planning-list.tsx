@@ -16,7 +16,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload } from "lucide-react";
-import { VisioformationSessionsImportModal } from "./visioformation-sessions-import-modal";
+import { VisioformationPlansImportModal, type PlanImportRow } from "./visioformation-plans-import-modal";
 import { PDFSessionsImportModal } from "./pdf-sessions-import-modal";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -190,8 +190,10 @@ export function PlanningList({
   const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[] });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [sessionsImportOpen, setSessionsImportOpen] = useState(false);
+  const [plansImportOpen, setPlansImportOpen] = useState(false);
   const [pdfImportOpen, setPdfImportOpen] = useState(false);
+  const [importQueue, setImportQueue] = useState<PlanImportRow[]>([]);
+  const [importIndex, setImportIndex] = useState(0);
 
   function getPrimaryContact(companyId: string): CompanyContact | null {
     const company = companies.find(c => c.id === companyId);
@@ -216,6 +218,38 @@ export function PlanningList({
     vt_planned: "", days_planned: "", hourly_rate: "",
     budget: "", start_date: "", end_date: "", notes: "",
   };
+
+  function prefillFormFromImport(plan: PlanImportRow) {
+    const companyId = plan.companyId ?? "";
+    const deals = companyId ? getAvailableDeals(companyId) : [];
+    const dealId = deals.length === 1 ? deals[0].id : "";
+    const budget = dealId ? String(Number(deals.find(d => d.id === dealId)?.amount) || 0) : "";
+    setForm({
+      company_id: companyId,
+      deal_id: dealId,
+      program_id: "",
+      training_type_id: "",
+      format: plan.format,
+      mode: plan.mode,
+      vt_planned: String(plan.vtCount),
+      days_planned: String(plan.journeeCount),
+      hourly_rate: "",
+      budget,
+      start_date: plan.startDate ?? "",
+      end_date: plan.endDate ?? "",
+      notes: "",
+    });
+    setSelectedLearnerIds(plan.matchedLearnerIds);
+    setEditingPlanId(null);
+    setOpen(true);
+  }
+
+  function handleStartImport(plans: PlanImportRow[]) {
+    if (plans.length === 0) return;
+    setImportQueue(plans);
+    setImportIndex(0);
+    prefillFormFromImport(plans[0]);
+  }
   const [form, setForm] = useState(emptyForm);
 
   const filtered = servicePlans.filter((p) => {
@@ -305,6 +339,21 @@ export function PlanningList({
     }
 
     setSaving(false);
+
+    // If we're in an import queue, advance to next plan
+    if (importQueue.length > 0 && !editingPlanId) {
+      const nextIndex = importIndex + 1;
+      if (nextIndex < importQueue.length) {
+        setImportIndex(nextIndex);
+        prefillFormFromImport(importQueue[nextIndex]);
+        router.refresh();
+        return;
+      }
+      // Queue finished
+      setImportQueue([]);
+      setImportIndex(0);
+    }
+
     setOpen(false);
     setEditingPlanId(null);
     setSelectedLearnerIds([]);
@@ -546,59 +595,56 @@ export function PlanningList({
   return (
     <>
       {/* Filters + new plan button */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
-            <input
-              placeholder="Rechercher un client..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", paddingLeft: 36, paddingRight: 12, fontSize: 13, width: 240, color: "#1a2a3a" }}
-            />
-          </div>
-          <select
-            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
-            value={filterProgram}
-            onChange={(e) => setFilterProgram(e.target.value)}
-          >
-            <option value="">Tous les parcours</option>
-            {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <select
-            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="">Tous les types</option>
-            {trainingTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="relative" style={{ flex: "0 1 180px", minWidth: 140 }}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
+          <input
+            placeholder="Rechercher un client..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", paddingLeft: 36, paddingRight: 12, fontSize: 13, width: "100%", color: "#1a2a3a" }}
+          />
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          {!isRestrictedExterne && !isReadOnly && (<>
-            <button
-              onClick={() => setSessionsImportOpen(true)}
-              style={{ height: 38, borderRadius: 8, background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "1.5px solid #1a6b9c", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
-            >
-              <Upload className="h-4 w-4" />
-              Import Plans (Excel)
-            </button>
-            <button
-              onClick={() => setPdfImportOpen(true)}
-              style={{ height: 38, borderRadius: 8, background: "white", color: "#e65100", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "1.5px solid #e65100", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
-            >
-              <Upload className="h-4 w-4" />
-              Import Sessions (PDF)
-            </button>
-          </>)}
+        <select
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+          value={filterProgram}
+          onChange={(e) => setFilterProgram(e.target.value)}
+        >
+          <option value="">Tous les parcours</option>
+          {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <select
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+        >
+          <option value="">Tous les types</option>
+          {trainingTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+        <div style={{ flex: 1 }} />
+        {!isRestrictedExterne && !isReadOnly && (<>
           <button
-            onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
-            style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            onClick={() => setPlansImportOpen(true)}
+            style={{ height: 38, borderRadius: 8, background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "1.5px solid #1a6b9c", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
           >
-            <Plus className="h-4 w-4" />
-            Nouveau plan de formation
+            <Upload className="h-4 w-4" />
+            Import Plans
           </button>
-        </div>
+          <button
+            onClick={() => setPdfImportOpen(true)}
+            style={{ height: 38, borderRadius: 8, background: "white", color: "#e65100", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "1.5px solid #e65100", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+          >
+            <Upload className="h-4 w-4" />
+            Import Sessions
+          </button>
+        </>)}
+        <button
+          onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
+          style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <Plus className="h-4 w-4" />
+          Nouveau plan
+        </button>
       </div>
 
       <div style={{ fontSize: 13, color: "#8399a9" }}>
@@ -1199,10 +1245,14 @@ export function PlanningList({
       </div>
 
       {/* Sheet: Nouveau plan de formation */}
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={(v) => { if (!v) { setImportQueue([]); setImportIndex(0); } setOpen(v); }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editingPlanId ? "Modifier le plan de formation" : "Nouveau plan de formation"}</SheetTitle>
+            <SheetTitle>
+              {editingPlanId ? "Modifier le plan de formation" : importQueue.length > 0
+                ? `Import plan ${importIndex + 1} / ${importQueue.length} — ${importQueue[importIndex]?.entreprise ?? ""}`
+                : "Nouveau plan de formation"}
+            </SheetTitle>
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4 pb-4">
             {/* Client */}
@@ -1504,7 +1554,9 @@ export function PlanningList({
               className="w-full"
               style={{ background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white" }}
             >
-              {saving ? "Enregistrement..." : editingPlanId ? "Mettre à jour" : "Enregistrer le plan de formation"}
+              {saving ? "Enregistrement..." : editingPlanId ? "Mettre à jour" : importQueue.length > 0
+                ? (importIndex + 1 < importQueue.length ? `Enregistrer et passer au suivant (${importIndex + 2}/${importQueue.length})` : "Enregistrer et terminer l'import")
+                : "Enregistrer le plan de formation"}
             </Button>
           </div>
         </SheetContent>
@@ -1700,12 +1752,13 @@ export function PlanningList({
         );
       })()}
 
-      {/* Visioformation Sessions Import Modal */}
-      <VisioformationSessionsImportModal
-        open={sessionsImportOpen}
-        onClose={() => setSessionsImportOpen(false)}
-        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name, address: sp.companies.address, city: sp.companies.city } : null }))}
-        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
+      {/* Visioformation Plans Import Modal */}
+      <VisioformationPlansImportModal
+        open={plansImportOpen}
+        onClose={() => setPlansImportOpen(false)}
+        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string; company_id?: string | null }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name, company_id: (l as any).company_id ?? null }))}
+        onStartImport={handleStartImport}
       />
 
       <PDFSessionsImportModal
