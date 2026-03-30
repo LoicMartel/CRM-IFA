@@ -9,6 +9,7 @@ import {
   type SessionImportRow,
   type ServicePlanRef,
   type LearnerRef,
+  type TeamMemberRef,
 } from "@/lib/visioformation-sessions";
 
 export function VisioformationSessionsImportModal({
@@ -16,11 +17,13 @@ export function VisioformationSessionsImportModal({
   onClose,
   servicePlans,
   learners,
+  teamMembers = [],
 }: {
   open: boolean;
   onClose: () => void;
   servicePlans: ServicePlanRef[];
   learners: LearnerRef[];
+  teamMembers?: TeamMemberRef[];
 }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -40,7 +43,7 @@ export function VisioformationSessionsImportModal({
     reader.onload = (ev) => {
       const buffer = ev.target?.result as ArrayBuffer;
       const visioRows = parseSessionsExport(buffer);
-      const importRows = buildSessionImportRows(visioRows, servicePlans, learners);
+      const importRows = buildSessionImportRows(visioRows, servicePlans, learners, teamMembers);
       setRows(importRows);
       // Only pre-select rows that have a matching plan
       setSelected(new Set(importRows.map((r, i) => (r.servicePlanId ? i : -1)).filter((i) => i >= 0)));
@@ -77,11 +80,21 @@ export function VisioformationSessionsImportModal({
     setRows((prev) => {
       const next = [...prev];
       const plan = servicePlans.find((sp) => sp.id === planId);
+      const companyAddress = plan?.companies
+        ? [plan.companies.address, plan.companies.city].filter(Boolean).join(", ")
+        : "";
+      // Re-resolve location with new plan's company address
+      const row = next[idx];
+      let sessionLocation = row.sessionLocation;
+      if (row.sessionType === "journee" && !row.raw.lieuFormation) {
+        sessionLocation = companyAddress;
+      }
       next[idx] = {
         ...next[idx],
         servicePlanId: planId || null,
         servicePlanLabel: plan?.companies?.name ?? "",
         matchType: planId ? "exact" : "none",
+        sessionLocation,
       };
       return next;
     });
@@ -112,6 +125,7 @@ export function VisioformationSessionsImportModal({
       trainers: r.trainers,
       notes: r.titre,
       learnerIds: r.matchedLearnerIds,
+      sessionLocation: r.sessionLocation,
     }));
 
     try {

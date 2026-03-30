@@ -15,6 +15,7 @@ interface SessionPayload {
   trainers: string[];
   notes: string;
   learnerIds: string[];
+  sessionLocation: string;
 }
 
 export async function POST(request: Request) {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
           trainers: session.trainers.length > 0 ? session.trainers : null,
           is_billable: true,
           notes: session.notes || null,
+          session_location: session.sessionLocation || null,
         })
         .select("id")
         .single();

@@ -1680,7 +1680,7 @@ export function PlanningList({
       <VisioformationSessionsImportModal
         open={sessionsImportOpen}
         onClose={() => setSessionsImportOpen(false)}
-        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name } : null }))}
+        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name, address: sp.companies.address, city: sp.companies.city } : null }))}
         learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
       />
 

@@ -15,12 +15,19 @@ export interface VisioSessionRow {
   formateurs: string;
   statut: string;
   emplacement: string;
+  lieuFormation: string;
 }
 
 export interface ServicePlanRef {
   id: string;
   company_id: string;
-  companies: { name: string } | null;
+  companies: { name: string; address?: string; city?: string } | null;
+}
+
+export interface TeamMemberRef {
+  first_name: string;
+  last_name: string;
+  zoom_link: string | null;
 }
 
 export interface LearnerRef {
@@ -45,6 +52,7 @@ export interface SessionImportRow {
   apprenantNames: string[];
   matchedLearnerIds: string[];
   nbApprenants: number;
+  sessionLocation: string;
 }
 
 // ===== Parsing =====
@@ -66,6 +74,7 @@ export function parseSessionsExport(buffer: ArrayBuffer): VisioSessionRow[] {
     formateurs: String(row["Formateurs"] ?? "").trim(),
     statut: String(row["Statut"] ?? "").trim(),
     emplacement: String(row["Emplacement"] ?? "").trim(),
+    lieuFormation: String(row["Lieu de formation"] ?? row["Lieu de la formation"] ?? row["Lieu"] ?? "").trim(),
   })).filter((r) => r.titre);
 }
 
@@ -106,6 +115,32 @@ export function matchTrainers(formateurs: string): string[] {
       const { firstName } = splitName(fullName);
       return firstName || fullName;
     });
+}
+
+// ===== Session location resolution =====
+
+export function resolveSessionLocation(
+  sessionType: "vt" | "journee",
+  lieuFormation: string,
+  companyAddress: string,
+  trainerFirstNames: string[],
+  teamMembers: TeamMemberRef[]
+): string {
+  if (sessionType === "journee") {
+    // Présentiel: lieu de formation > adresse entreprise
+    if (lieuFormation) return lieuFormation;
+    if (companyAddress) return companyAddress;
+    return "";
+  }
+  // À distance: lien visio du formateur
+  if (trainerFirstNames.length > 0) {
+    const trainerName = trainerFirstNames[0];
+    const member = teamMembers.find(
+      (m) => m.first_name.toLowerCase() === trainerName.toLowerCase()
+    );
+    if (member?.zoom_link) return member.zoom_link;
+  }
+  return "";
 }
 
 // ===== Company → Service Plan matching =====
@@ -186,7 +221,8 @@ export function matchLearnersByName(
 export function buildSessionImportRows(
   visioRows: VisioSessionRow[],
   servicePlans: ServicePlanRef[],
-  learners: LearnerRef[]
+  learners: LearnerRef[],
+  teamMembers: TeamMemberRef[] = []
 ): SessionImportRow[] {
   return visioRows.map((row) => {
     const { servicePlanId, servicePlanLabel, matchType } = matchSessionToServicePlan(
@@ -195,6 +231,22 @@ export function buildSessionImportRows(
     );
     const { names, matchedIds } = matchLearnersByName(row.apprenants, learners);
     const durationHours = parseHours(row.heuresPrevues);
+    const sessionType = mapEmplacement(row.emplacement);
+    const trainers = matchTrainers(row.formateurs);
+
+    // Resolve location
+    const matchedPlan = servicePlanId ? servicePlans.find((sp) => sp.id === servicePlanId) : null;
+    const companyAddress = matchedPlan?.companies
+      ? [matchedPlan.companies.address, matchedPlan.companies.city].filter(Boolean).join(", ")
+      : "";
+
+    const sessionLocation = resolveSessionLocation(
+      sessionType,
+      row.lieuFormation,
+      companyAddress,
+      trainers,
+      teamMembers
+    );
 
     return {
       raw: row,
@@ -202,9 +254,9 @@ export function buildSessionImportRows(
       dateDebut: row.dateDebut,
       dateFin: row.dateFin,
       durationHours,
-      sessionType: mapEmplacement(row.emplacement),
+      sessionType,
       status: mapStatus(row.statut),
-      trainers: matchTrainers(row.formateurs),
+      trainers,
       entreprise: row.entreprise,
       servicePlanId,
       servicePlanLabel,
@@ -212,6 +264,7 @@ export function buildSessionImportRows(
       apprenantNames: names,
       matchedLearnerIds: matchedIds,
       nbApprenants: names.length,
+      sessionLocation,
     };
   });
 }
