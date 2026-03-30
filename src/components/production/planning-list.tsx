@@ -227,10 +227,6 @@ export function PlanningList({
     const words = (s: string) => norm(s).split(" ").filter(w => w.length > 1);
     const matched: string[] = [];
 
-    // Debug: log names to match and available learners
-    console.log("[Import Match] learnerNames from Excel:", learnerNames);
-    console.log("[Import Match] companyLearners:", companyLearners.map(l => `${l.first_name} ${l.last_name} (${l.id.slice(0,6)})`));
-
     for (const rawName of learnerNames) {
       const excelWords = words(rawName);
       if (excelWords.length === 0) continue;
@@ -245,8 +241,6 @@ export function PlanningList({
 
         return excelMatchesLearner || learnerMatchesExcel;
       });
-
-      console.log("[Import Match]", rawName, "→", match ? `${match.first_name} ${match.last_name}` : "NO MATCH", "(words:", excelWords.join("|"), ")");
 
       if (match && !matched.includes(match.id)) {
         matched.push(match.id);
@@ -276,8 +270,14 @@ export function PlanningList({
       end_date: plan.endDate ?? "",
       notes: "",
     });
-    // Re-match learner names directly against this company's learners in CRM
-    const matchedIds = companyId ? matchLearnersForCompany(plan.learnerNames, companyId) : [];
+    // Collect learner names from ALL plans in the queue that map to the same company
+    const allNamesForCompany = new Set<string>();
+    for (const p of (importQueue.length > 0 ? importQueue : [plan])) {
+      if (p.companyId === companyId) {
+        p.learnerNames.forEach(n => allNamesForCompany.add(n));
+      }
+    }
+    const matchedIds = companyId ? matchLearnersForCompany(Array.from(allNamesForCompany), companyId) : [];
     setSelectedLearnerIds(matchedIds);
     setEditingPlanId(null);
     setOpen(true);
