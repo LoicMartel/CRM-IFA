@@ -148,7 +148,8 @@ export function PlanningList({
   expertNames?: string[];
 }) {
   const router = useRouter();
-  const { isRestrictedExterne, isReadOnly, onlyOwnData, firstName: currentFirstName } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, onlyOwnData, firstName: currentFirstName, lastName: currentLastName, isAdmin } = useCurrentRoles();
+  const canDeletePlan = isAdmin || (currentFirstName === "Iman" && currentLastName === "KHARBA");
   const TRAINER_LIST = expertNames && expertNames.length > 0 ? expertNames : TRAINER_LIST_FALLBACK;
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
@@ -666,7 +667,21 @@ export function PlanningList({
               {isExpanded && (
                 <div style={{ borderTop: "1px solid #e8ecf1", padding: "16px 18px" }} className="space-y-5">
                   {/* Edit button */}
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    {canDeletePlan && <button
+                      onClick={async () => {
+                        if (!window.confirm(`Supprimer le plan de formation de ${plan.companies?.name ?? "cette entreprise"} et toutes ses sessions ? Cette action est irréversible.`)) return;
+                        const supabase = createClient();
+                        await supabase.from("training_session_learners").delete().in("training_session_id", (plan.training_sessions ?? []).map(s => s.id));
+                        await supabase.from("training_sessions").delete().eq("service_plan_id", plan.id);
+                        await supabase.from("service_plan_learners").delete().eq("service_plan_id", plan.id);
+                        await supabase.from("service_plans").delete().eq("id", plan.id);
+                        router.refresh();
+                      }}
+                      style={{ height: 32, borderRadius: 6, background: "#fde8e8", color: "#c62828", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Supprimer le plan
+                    </button>}
                     {!isRestrictedExterne && !isReadOnly && <button
                       onClick={() => openEditPlan(plan)}
                       style={{ height: 32, borderRadius: 6, background: "#e8f0fe", color: "#0d4f7a", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}

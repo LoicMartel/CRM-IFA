@@ -123,7 +123,7 @@ export function VisioformationSessionsImportModal({
       durationHours: r.durationHours,
       status: r.status,
       trainers: r.trainers,
-      notes: r.titre,
+      notes: "",
       learnerIds: r.matchedLearnerIds,
       sessionLocation: r.sessionLocation,
     }));

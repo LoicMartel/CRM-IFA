@@ -91,10 +91,13 @@ export function parseHours(heures: string): number {
   return 0;
 }
 
-export function mapEmplacement(emplacement: string): "vt" | "journee" {
+export function mapSessionType(emplacement: string, durationHours: number): "vt" | "journee" {
+  // Duration >= 7h → always journée (présentiel), regardless of emplacement
+  if (durationHours >= 7) return "journee";
+  // Explicit présentiel
   const lower = emplacement.toLowerCase().trim();
   if (lower === "en présentiel" || lower === "en situation de travail") return "journee";
-  // "A Distance", "Mixte", or anything else
+  // Everything else (A Distance, Mixte, short sessions)
   return "vt";
 }
 
@@ -231,8 +234,8 @@ export function buildSessionImportRows(
     );
     const { names, matchedIds } = matchLearnersByName(row.apprenants, learners);
     const durationHours = parseHours(row.heuresPrevues);
-    const sessionType = mapEmplacement(row.emplacement);
     const trainers = matchTrainers(row.formateurs);
+    const sessionType = mapSessionType(row.emplacement, durationHours);
 
     // Resolve location
     const matchedPlan = servicePlanId ? servicePlans.find((sp) => sp.id === servicePlanId) : null;
