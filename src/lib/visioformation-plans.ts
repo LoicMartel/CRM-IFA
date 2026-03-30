@@ -133,23 +133,49 @@ function matchCompanyForPlan(
 
 // ===== Learner matching =====
 
+function cleanName(s: string): string {
+  // Remove trailing dots, extra spaces, special chars
+  return s.replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function matchLearners(
   apprenantsStr: string,
   learners: LearnerRefPlan[]
 ): { names: string[]; matchedIds: string[] } {
   if (!apprenantsStr) return { names: [], matchedIds: [] };
-  const names = apprenantsStr.split(",").map((n) => n.trim()).filter(Boolean);
+  const names = apprenantsStr.split(",").map((n) => cleanName(n.trim())).filter(Boolean);
   const matchedIds: string[] = [];
 
   for (const rawName of names) {
     const { firstName, lastName } = splitName(rawName);
     const fnNorm = normalizeName(firstName);
     const lnNorm = normalizeName(lastName);
+    // Full name as a single normalized string (for fuzzy matching)
+    const fullNorm = normalizeName(rawName);
 
     const match = learners.find((l) => {
       const lFn = normalizeName(l.first_name);
       const lLn = normalizeName(l.last_name);
-      return (lFn === fnNorm && lLn === lnNorm) || (lFn === lnNorm && lLn === fnNorm);
+      const lFull = normalizeName(`${l.first_name} ${l.last_name}`);
+      const lFullReverse = normalizeName(`${l.last_name} ${l.first_name}`);
+
+      // 1. Exact first/last swap match
+      if ((lFn === fnNorm && lLn === lnNorm) || (lFn === lnNorm && lLn === fnNorm)) return true;
+
+      // 2. Full name comparison (handles splitName errors)
+      if (fullNorm === lFull || fullNorm === lFullReverse) return true;
+
+      // 3. One part contains the other's first name AND last name somewhere
+      if (fnNorm && lnNorm && lFn && lLn) {
+        if ((fullNorm.includes(lFn) && fullNorm.includes(lLn)) ||
+            (lFull.includes(fnNorm) && lFull.includes(lnNorm))) return true;
+      }
+
+      // 4. First name only match when last name is missing from either side
+      if (!lnNorm && fnNorm && (lFn === fnNorm || lLn === fnNorm)) return true;
+      if (!lLn && lFn && (lFn === fnNorm || lFn === lnNorm)) return true;
+
+      return false;
     });
 
     if (match && !matchedIds.includes(match.id)) {
