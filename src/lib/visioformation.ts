@@ -45,19 +45,47 @@ export function parseVisioformationExport(buffer: ArrayBuffer): VisioRow[] {
 export function splitName(nom: string): { firstName: string; lastName: string } {
   const parts = nom.trim().split(/\s+/);
   if (parts.length <= 1) return { firstName: parts[0] || "", lastName: "" };
-  // Convention: last part(s) in UPPERCASE = last name, rest = first name
-  // Find the split point where uppercase parts begin from the end
-  let lastNameStart = parts.length - 1;
-  for (let i = parts.length - 1; i >= 1; i--) {
-    if (parts[i] === parts[i].toUpperCase() && parts[i].length > 1) {
-      lastNameStart = i;
-    } else {
-      break;
+
+  // Check if first part is all uppercase (NOM Prénom format, e.g. "VALLEIX Abel")
+  const firstIsUpper = parts[0] === parts[0].toUpperCase() && parts[0].length > 1;
+  const lastIsUpper = parts[parts.length - 1] === parts[parts.length - 1].toUpperCase() && parts[parts.length - 1].length > 1;
+
+  if (firstIsUpper && !lastIsUpper) {
+    // Inverted: NOM Prénom — find where uppercase ends
+    let splitIdx = 1;
+    for (let i = 1; i < parts.length; i++) {
+      if (parts[i] === parts[i].toUpperCase() && parts[i].length > 1) {
+        splitIdx = i + 1;
+      } else {
+        break;
+      }
     }
+    return {
+      firstName: parts.slice(splitIdx).join(" "),
+      lastName: parts.slice(0, splitIdx).join(" "),
+    };
   }
+
+  if (lastIsUpper) {
+    // Standard: Prénom NOM — find where uppercase starts from end
+    let splitIdx = parts.length - 1;
+    for (let i = parts.length - 1; i >= 1; i--) {
+      if (parts[i] === parts[i].toUpperCase() && parts[i].length > 1) {
+        splitIdx = i;
+      } else {
+        break;
+      }
+    }
+    return {
+      firstName: parts.slice(0, splitIdx).join(" "),
+      lastName: parts.slice(splitIdx).join(" "),
+    };
+  }
+
+  // No uppercase pattern — assume first word = first name, rest = last name
   return {
-    firstName: parts.slice(0, lastNameStart).join(" "),
-    lastName: parts.slice(lastNameStart).join(" "),
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
   };
 }
 
