@@ -223,36 +223,30 @@ export function PlanningList({
     const companyLearners = getCompanyLearners(companyId);
     if (companyLearners.length === 0 || learnerNames.length === 0) return [];
 
-    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim();
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.\-_,;]/g, " ").replace(/\s+/g, " ").trim();
+    const words = (s: string) => norm(s).split(" ").filter(w => w.length > 1);
     const matched: string[] = [];
 
+    // Debug: log names to match and available learners
+    console.log("[Import Match] learnerNames from Excel:", learnerNames);
+    console.log("[Import Match] companyLearners:", companyLearners.map(l => `${l.first_name} ${l.last_name} (${l.id.slice(0,6)})`));
+
     for (const rawName of learnerNames) {
-      const nameNorm = norm(rawName);
-      const parts = nameNorm.split(" ").filter(Boolean);
+      const excelWords = words(rawName);
+      if (excelWords.length === 0) continue;
 
       const match = companyLearners.find((l) => {
-        const lFn = norm(l.first_name);
-        const lLn = norm(l.last_name);
-        const lFull = `${lFn} ${lLn}`;
-        const lFullR = `${lLn} ${lFn}`;
+        const learnerWords = words(`${l.first_name} ${l.last_name}`);
+        if (learnerWords.length === 0) return false;
 
-        // Full name match (either direction)
-        if (nameNorm === lFull || nameNorm === lFullR) return true;
+        // Word-based matching: each word from Excel name must be found in learner words (or vice versa)
+        const excelMatchesLearner = excelWords.every(ew => learnerWords.some(lw => lw === ew || lw.includes(ew) || ew.includes(lw)));
+        const learnerMatchesExcel = learnerWords.every(lw => excelWords.some(ew => ew === lw || ew.includes(lw) || lw.includes(ew)));
 
-        // Contains both first and last name
-        if (lFn && lLn && nameNorm.includes(lFn) && nameNorm.includes(lLn)) return true;
-
-        // Parts match: all parts of one name found in the other
-        if (parts.length >= 2 && lFn && lLn) {
-          const lParts = [lFn, lLn];
-          if (parts.every(p => lParts.some(lp => lp.includes(p) || p.includes(lp)))) return true;
-        }
-
-        // Single word match against first or last name
-        if (parts.length === 1 && (parts[0] === lFn || parts[0] === lLn)) return true;
-
-        return false;
+        return excelMatchesLearner || learnerMatchesExcel;
       });
+
+      console.log("[Import Match]", rawName, "→", match ? `${match.first_name} ${match.last_name}` : "NO MATCH", "(words:", excelWords.join("|"), ")");
 
       if (match && !matched.includes(match.id)) {
         matched.push(match.id);
