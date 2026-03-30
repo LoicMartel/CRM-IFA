@@ -250,7 +250,7 @@ export function PlanningList({
     return matched;
   }
 
-  function prefillFormFromImport(plan: PlanImportRow) {
+  function prefillFormFromImport(plan: PlanImportRow, allPlans: PlanImportRow[]) {
     const companyId = plan.companyId ?? "";
     const deals = companyId ? getAvailableDeals(companyId) : [];
     const dealId = deals.length === 1 ? deals[0].id : "";
@@ -270,9 +270,9 @@ export function PlanningList({
       end_date: plan.endDate ?? "",
       notes: "",
     });
-    // Collect learner names from ALL plans in the queue that map to the same company
+    // Collect learner names from ALL plans that map to the same company
     const allNamesForCompany = new Set<string>();
-    for (const p of (importQueue.length > 0 ? importQueue : [plan])) {
+    for (const p of allPlans) {
       if (p.companyId === companyId) {
         p.learnerNames.forEach(n => allNamesForCompany.add(n));
       }
@@ -287,7 +287,7 @@ export function PlanningList({
     if (plans.length === 0) return;
     setImportQueue(plans);
     setImportIndex(0);
-    prefillFormFromImport(plans[0]);
+    prefillFormFromImport(plans[0], plans);
   }
   const [form, setForm] = useState(emptyForm);
 
@@ -384,7 +384,7 @@ export function PlanningList({
       const nextIndex = importIndex + 1;
       if (nextIndex < importQueue.length) {
         setImportIndex(nextIndex);
-        prefillFormFromImport(importQueue[nextIndex]);
+        prefillFormFromImport(importQueue[nextIndex], importQueue);
         router.refresh();
         return;
       }
