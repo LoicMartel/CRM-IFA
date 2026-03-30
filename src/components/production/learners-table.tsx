@@ -63,6 +63,8 @@ export function LearnersTable({
   const [filterCompany, setFilterCompany] = useState("");
   const [filterExpert, setFilterExpert] = useState("");
   const [visioImportOpen, setVisioImportOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -80,6 +82,35 @@ export function LearnersTable({
     if (filterExpert && (l as any).expert_id !== filterExpert) return false;
     return true;
   });
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((l) => l.id)));
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer ${selectedIds.size} apprenant(s) ? Cette action est irréversible.`)) return;
+    setDeleting(true);
+    const supabase = createClient();
+    for (const id of selectedIds) {
+      await supabase.from("learners").delete().eq("id", id);
+    }
+    setSelectedIds(new Set());
+    setDeleting(false);
+    router.refresh();
+  }
 
   async function handleDeleteLearner(id: string) {
     const supabase = createClient();
@@ -213,6 +244,18 @@ export function LearnersTable({
             }}>
               <FileDown className="h-4 w-4 mr-2" /> Export Visioformation
             </Button>
+            {selectedIds.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={deleting}
+                style={{ borderColor: "#e74c3c", color: "#e74c3c" }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleting ? "Suppression..." : `Supprimer (${selectedIds.size})`}
+              </Button>
+            )}
             <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
               <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
             </Button>
@@ -228,6 +271,11 @@ export function LearnersTable({
         <Table>
           <TableHeader>
             <TableRow>
+              {!isRestrictedExterne && !isReadOnly && (
+                <TableHead style={{ width: 30 }}>
+                  <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
+                </TableHead>
+              )}
               <TableHead>Nom</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Téléphone</TableHead>
@@ -250,6 +298,11 @@ export function LearnersTable({
               const sc = statusColors[l.status] ?? { bg: "#f0f0f0", text: "#666", label: l.status };
               return (
                 <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/learners/${l.id}`)}>
+                  {!isRestrictedExterne && !isReadOnly && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selectedIds.has(l.id)} onChange={() => toggleSelect(l.id)} />
+                    </TableCell>
+                  )}
                   <TableCell className="font-medium">
                     {l.first_name} {l.last_name}
                   </TableCell>
