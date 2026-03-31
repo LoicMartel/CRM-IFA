@@ -11,10 +11,12 @@ export default async function ContactsPage() {
     { data: contacts },
     { data: companies },
     { data: teamMembers },
+    { data: sources },
   ] = await Promise.all([
     supabase.from("contacts").select("*, companies!contacts_company_id_fkey(name), team_members!contacts_owner_id_fkey(first_name, last_name)").order("last_name"),
     supabase.from("companies").select("id, name").order("name"),
     supabase.from("team_members").select("id, first_name, last_name, roles").eq("is_active", true),
+    supabase.from("lead_sources").select("id, name").order("name"),
   ]);
 
   const accountManagers = (teamMembers ?? []).filter((m: any) => ((m.roles as string[]) ?? []).includes("Account Manager"));
@@ -48,7 +50,7 @@ export default async function ContactsPage() {
             <User style={{ width: 16, height: 16, color: "#8399a9" }} />
           </div>
         </div>
-        <ContactsTable contacts={contactsList} companies={companies ?? []} teamMembers={accountManagers} />
+        <ContactsTable contacts={contactsList} companies={companies ?? []} teamMembers={accountManagers} sources={sources ?? []} />
       </div>
     </>
   );

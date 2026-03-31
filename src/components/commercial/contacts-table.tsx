@@ -71,14 +71,18 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
 
 type SortKey = "name" | "email" | "company" | "lifecycle_stage" | "lead_status" | "last_contacted_at";
 
+interface Source { id: string; name: string; }
+
 export function ContactsTable({
   contacts,
   companies,
   teamMembers = [],
+  sources = [],
 }: {
   contacts: Contact[];
   companies: Company[];
   teamMembers?: TeamMember[];
+  sources?: Source[];
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
@@ -99,7 +103,7 @@ export function ContactsTable({
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", position: "",
     company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
-    lead_status: "lead", linkedin_url: "", contact_type: "",
+    lead_status: "lead", linkedin_url: "", contact_type: "", source_id: "",
   });
 
   const filtered = contacts
@@ -165,6 +169,7 @@ export function ContactsTable({
       lead_status: form.lead_status || "new",
       contact_type: form.contact_type || null,
       linkedin_url: form.linkedin_url || null,
+      source_id: form.source_id || null,
       owner_id: currentMemberId || null,
     });
     setSaving(false);
@@ -172,7 +177,7 @@ export function ContactsTable({
     setForm({
       first_name: "", last_name: "", email: "", phone: "", position: "",
       company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
-      lead_status: "lead", linkedin_url: "", contact_type: "",
+      lead_status: "lead", linkedin_url: "", contact_type: "", source_id: "",
     });
     router.refresh();
   }
@@ -453,6 +458,19 @@ export function ContactsTable({
                 <option value="">Sélectionner</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={form.source_id}
+                onChange={(e) => setForm({ ...form, source_id: e.target.value })}
+              >
+                <option value="">Sélectionner</option>
+                {sources.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
