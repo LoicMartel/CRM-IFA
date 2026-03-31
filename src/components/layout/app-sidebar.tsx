@@ -55,6 +55,7 @@ const productionItemsList = [
 
 const marketingItems = [
   { title: "Leads", href: "/marketing/leads", icon: UserPlus },
+  { title: "Suivi Prestataires", href: "/marketing/suivi-prestataires", icon: Megaphone },
 ];
 
 const financeItems = [
