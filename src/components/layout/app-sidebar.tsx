@@ -12,10 +12,12 @@ import {
   GraduationCap,
   Handshake,
   LayoutDashboard,
+  Megaphone,
   Receipt,
   Target,
   TrendingUp,
   User,
+  UserPlus,
   Users,
   Wallet,
 } from "lucide-react";
@@ -50,6 +52,10 @@ const productionItemsList = [
   { title: "Rapports Production", href: "/rapports-production", icon: Target },
 ];
 
+
+const marketingItems = [
+  { title: "Leads", href: "/marketing/leads", icon: UserPlus },
+];
 
 const financeItems = [
   { title: "Facturation", href: "/invoices", icon: Receipt },
@@ -132,6 +138,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent style={{ paddingTop: 16 }}>
+        <NavSection label="Marketing" items={marketingItems} pathname={pathname} />
         {visibleCommercialItems.length > 0 && <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />}
         <NavSection label="Production" items={visibleProductionItems} pathname={pathname} />
         {visibleFinanceItems.length > 0 && <NavSection label="Finance" items={visibleFinanceItems} pathname={pathname} />}
