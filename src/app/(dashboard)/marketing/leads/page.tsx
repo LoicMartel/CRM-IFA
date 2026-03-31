@@ -9,6 +9,7 @@ export default async function MarketingLeadsPage() {
   const { data: leads } = await supabase
     .from("contacts")
     .select("id, first_name, last_name, email, phone, company_id, created_at, companies!contacts_company_id_fkey(name), lead_sources!contacts_source_id_fkey(name)")
+    .eq("lifecycle_stage", "prospect")
     .eq("lead_status", "lead")
     .order("last_name");
 
