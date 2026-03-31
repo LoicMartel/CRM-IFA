@@ -1,28 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+const WEBFLOW_SECRET = process.env.WEBFLOW_WEBHOOK_SECRET ?? "";
+
 // Pauline's team member ID
 const PAULINE_ID = "55e425cb-5041-4ea4-92c3-ce2f1dbce6a0";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
 
-    // Webflow form submissions come in different formats depending on the integration
-    // Try to extract fields flexibly
-    const data = body.data ?? body.payload?.data ?? body;
+    // Verify Webflow signature if secret is set
+    if (WEBFLOW_SECRET) {
+      const signature = req.headers.get("x-webflow-signature");
+      if (signature) {
+        const expected = crypto.createHmac("sha256", WEBFLOW_SECRET).update(rawBody).digest("hex");
+        if (signature !== expected) {
+          console.error("Webflow webhook: invalid signature");
+          return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+        }
+      }
+    }
 
-    // Extract form fields (Webflow sends field names or IDs)
-    const firstName = data["Prénom"] ?? data["prenom"] ?? data["Pr-nom"] ?? data["first_name"] ?? data["firstName"] ?? "";
-    const lastName = data["Nom"] ?? data["nom"] ?? data["last_name"] ?? data["lastName"] ?? "";
-    const email = data["Email"] ?? data["email"] ?? data["e-mail"] ?? "";
-    const phone = data["Numéro de téléphone"] ?? data["Num-ro-de-t-l-phone"] ?? data["phone"] ?? data["telephone"] ?? data["tel"] ?? "";
-    const companyUrl = data["URL de la société"] ?? data["URL-de-la-soci-t"] ?? data["company_url"] ?? data["url"] ?? "";
+    const body = JSON.parse(rawBody);
+
+    // Webflow API V2 form submission format:
+    // { payload: { formId, submittedAt, formResponse: { "field-id": { ... }, ... } } }
+    // OR legacy: { data: { "Prénom": "...", ... } }
+    // We handle both + log the raw body for debugging
+
+    console.log("Webflow webhook raw body:", JSON.stringify(body));
+
+    let firstName = "";
+    let lastName = "";
+    let email = "";
+    let phone = "";
+    let companyUrl = "";
+
+    // Try V2 format first (formResponse with field objects)
+    const formResponse = body.payload?.formResponse;
+    if (formResponse) {
+      // V2: fields are keyed by field ID, each has { displayName, type, textValue/objectValue }
+      for (const field of Object.values(formResponse) as any[]) {
+        const name = (field.displayName ?? "").toLowerCase();
+        const value = field.textValue ?? field.objectValue ?? "";
+        if (name.includes("prénom") || name.includes("prenom") || name === "first name") firstName = value;
+        else if (name.includes("nom") && !name.includes("prénom") && !name.includes("prenom")) lastName = value;
+        else if (name.includes("email") || name.includes("mail")) email = value;
+        else if (name.includes("téléphone") || name.includes("telephone") || name.includes("phone")) phone = value;
+        else if (name.includes("url") || name.includes("société") || name.includes("societe")) companyUrl = value;
+      }
+    }
+
+    // Fallback: legacy / flat format
+    if (!email) {
+      const data = body.data ?? body.payload?.data ?? body;
+      firstName = firstName || (data["Prénom"] ?? data["prenom"] ?? data["Pr-nom"] ?? data["first_name"] ?? data["firstName"] ?? "");
+      lastName = lastName || (data["Nom"] ?? data["nom"] ?? data["last_name"] ?? data["lastName"] ?? "");
+      email = data["Email"] ?? data["email"] ?? data["e-mail"] ?? "";
+      phone = phone || (data["Numéro de téléphone"] ?? data["Num-ro-de-t-l-phone"] ?? data["phone"] ?? data["telephone"] ?? data["tel"] ?? "");
+      companyUrl = companyUrl || (data["URL de la société"] ?? data["URL-de-la-soci-t"] ?? data["company_url"] ?? data["url"] ?? "");
+    }
 
     if (!email) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
