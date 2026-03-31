@@ -61,6 +61,7 @@ export function ContactListsView({
   // Import CSV
   const [importOpen, setImportOpen] = useState(false);
   const [importListId, setImportListId] = useState("");
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ added: number; duplicates: number; errors: number } | null>(null);
 
@@ -123,18 +124,26 @@ export function ContactListsView({
     });
   }
 
-  async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !importListId) return;
+    if (file) setImportFile(file);
+  }
+
+  async function handleImportCSV() {
+    if (!importFile || !importListId) return;
+    const file = importFile;
     setImporting(true);
     setImportResult(null);
 
     const text = await file.text();
     const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-    const header = lines[0].toLowerCase();
-    const emailIdx = header.split(/[,;\t]/).findIndex((h) => h.includes("email"));
+    const headerCols = lines[0].split(/[,;\t]/);
+    const emailIdx = headerCols.findIndex((h) => {
+      const normalized = h.toLowerCase().replace(/[^a-z]/g, "");
+      return ["email", "emails", "emailaddress", "adresseemail", "mail", "mails", "adressemail"].includes(normalized);
+    });
     if (emailIdx === -1) {
-      alert("Colonne 'email' non trouvée dans le CSV");
+      alert("Colonne email non trouvée. Noms acceptés : email, emails, e-mail, e-mails, mail, adresse email...");
       setImporting(false);
       return;
     }
@@ -170,6 +179,7 @@ export function ContactListsView({
 
     setImportResult({ added, duplicates, errors });
     setImporting(false);
+    setImportFile(null);
     if (fileRef.current) fileRef.current.value = "";
     router.refresh();
   }
@@ -344,8 +354,37 @@ export function ContactListsView({
             </div>
             <div className="space-y-2">
               <Label>Fichier CSV</Label>
-              <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleImportCSV} disabled={importing || !importListId} />
+              <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFileSelect} style={{ display: "none" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={importing || !importListId}
+                  style={{
+                    height: 40, borderRadius: 8, padding: "0 20px", fontSize: 13, fontWeight: 600,
+                    border: "1px solid #dce8f0", background: "white", color: "#1a6b9c",
+                    cursor: importing || !importListId ? "not-allowed" : "pointer",
+                    display: "flex", alignItems: "center", gap: 8,
+                    opacity: importing || !importListId ? 0.5 : 1,
+                  }}
+                >
+                  <Upload className="h-4 w-4" />
+                  Choisir un fichier
+                </button>
+                <span style={{ fontSize: 13, color: importFile ? "#1a2a3a" : "#8399a9" }}>
+                  {importFile ? importFile.name : "Aucun fichier choisi"}
+                </span>
+              </div>
             </div>
+            {importFile && !importing && (
+              <Button
+                onClick={handleImportCSV}
+                disabled={!importListId || !importFile}
+                className="w-full"
+              >
+                Lancer l'import
+              </Button>
+            )}
             {importing && <p style={{ fontSize: 13, color: "#1a6b9c" }}>Import en cours...</p>}
             {importResult && (
               <div style={{ padding: 12, borderRadius: 8, background: "#f8fbfd", fontSize: 13 }}>
