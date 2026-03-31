@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Handshake,
   LayoutDashboard,
+  Mail,
   Megaphone,
   Receipt,
   Target,
@@ -56,6 +57,7 @@ const productionItemsList = [
 const marketingItems = [
   { title: "Leads", href: "/marketing/leads", icon: UserPlus },
   { title: "Suivi Prestataires", href: "/marketing/suivi-prestataires", icon: Megaphone },
+  { title: "Campagnes", href: "/marketing/campagnes", icon: Mail },
 ];
 
 const financeItems = [
