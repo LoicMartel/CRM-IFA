@@ -198,6 +198,12 @@ export function CompanyDetail({
       employee_count: form.employee_count || null, annual_revenue: form.annual_revenue || null,
       linkedin_url: form.linkedin_url || null, siret: form.siret || null, opco: form.opco || null, owner_id: form.owner_id || null, primary_contact_id: form.primary_contact_id || null,
     }).eq("id", company.id as string);
+
+    // Si passage en ancien client, propager aux contacts associés
+    if (form.lifecycle_stage === "former_customer" && s(company.lifecycle_stage) !== "former_customer") {
+      await supabase.from("contacts").update({ is_client: false, lifecycle_stage: "former_customer" }).eq("company_id", company.id as string);
+    }
+
     setSaving(false);
     setEditOpen(false);
     router.refresh();

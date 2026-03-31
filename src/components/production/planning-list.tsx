@@ -652,8 +652,8 @@ export function PlanningList({
             });
             if (!hasActivePlan) {
               await supabase.from("companies").update({ lifecycle_stage: "former_customer" }).eq("id", companyId);
-              // Uncheck is_client on all contacts of this company
-              await supabase.from("contacts").update({ is_client: false }).eq("company_id", companyId);
+              // Uncheck is_client + pass contacts to former_customer
+              await supabase.from("contacts").update({ is_client: false, lifecycle_stage: "former_customer" }).eq("company_id", companyId);
             }
           }
         }

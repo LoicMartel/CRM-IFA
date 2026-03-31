@@ -144,7 +144,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
       const remaining = (companySessions ?? []).filter(s => s.id !== selectedSession.id && s.status === "planned");
       if (remaining.length === 0) {
         await supabase.from("companies").update({ lifecycle_stage: "former_customer" }).eq("id", companyId);
-        await supabase.from("contacts").update({ is_client: false }).eq("company_id", companyId);
+        await supabase.from("contacts").update({ is_client: false, lifecycle_stage: "former_customer" }).eq("company_id", companyId);
       }
     }
 
