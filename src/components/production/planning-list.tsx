@@ -194,6 +194,7 @@ export function PlanningList({
   const [pdfImportOpen, setPdfImportOpen] = useState(false);
   const [importQueue, setImportQueue] = useState<PlanImportRow[]>([]);
   const [importIndex, setImportIndex] = useState(0);
+  const [importAllRows, setImportAllRows] = useState<PlanImportRow[]>([]);
 
   function getPrimaryContact(companyId: string): CompanyContact | null {
     const company = companies.find(c => c.id === companyId);
@@ -720,7 +721,7 @@ export function PlanningList({
           style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
         >
           <Plus className="h-4 w-4" />
-          Nouveau plan
+          Nouveau plan de formation
         </button>
       </div>
 
