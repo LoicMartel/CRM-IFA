@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -105,6 +107,7 @@ export function ContactsTable({
     company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
     lead_status: "lead", linkedin_url: "", contact_type: "", source_id: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = contacts
     .filter((c) => {
@@ -520,6 +523,7 @@ export function ContactsTable({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}

@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import {
   Table,
   TableBody,
@@ -125,6 +127,7 @@ export function DeliveryTable({
     trainer_id: "",
     notes: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = useMemo(() => {
     let result = sessions.filter((s) => {
@@ -555,6 +558,7 @@ export function DeliveryTable({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}

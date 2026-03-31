@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import {
   Sheet,
   SheetContent,
@@ -100,6 +102,7 @@ export function LeadFormDialog({
 }: LeadFormDialogProps) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(getInitialState(lead));
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => updateField("notes", t));
   const [saving, setSaving] = useState(false);
 
   const isEditing = !!lead;
@@ -432,6 +435,7 @@ export function LeadFormDialog({
                 rows={3}
                 className="flex w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
           </div>
 

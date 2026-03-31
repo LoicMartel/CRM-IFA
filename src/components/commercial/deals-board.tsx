@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Plus, Trash2, Edit, Building2, User, Calendar, X, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -122,6 +124,7 @@ export function DealsBoard({
     stage: "opportunities" as DealStage, amount: "", training_days: "",
     expected_close_date: "", close_date: "", notes: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   // Documents state
   const [documents, setDocuments] = useState<DealDocument[]>([]);
@@ -568,6 +571,7 @@ export function DealsBoard({
             <div className="space-y-2">
               <Label>Notes</Label>
               <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full" style={{ background: "#e8632b", color: "white" }}>
               {saving ? "Enregistrement..." : (editingDealId ? "Sauvegarder" : "Créer le deal")}

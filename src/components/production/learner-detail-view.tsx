@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -177,6 +179,8 @@ export function LearnerDetailView({
     expert_id: learner.expert_id ?? "",
     notes: learner.notes ?? "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
+  const activityVoice = useVoiceDictation(() => activityForm.description, (t) => setActivityForm((f) => ({ ...f, description: t })));
 
   async function handleSave() {
     setSaving(true);
@@ -888,6 +892,7 @@ export function LearnerDetailView({
                   value={activityForm.description}
                   onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })}
                 />
+                <VoiceButton isRecording={activityVoice.isRecording} onClick={activityVoice.toggleRecording} />
               </div>
               <Button
                 onClick={handleLogActivity}
@@ -977,6 +982,7 @@ export function LearnerDetailView({
               <div className="space-y-2">
                 <Label>Notes</Label>
                 <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
               </div>
               <Button onClick={handleSave} disabled={saving || !form.first_name.trim() || !form.last_name.trim()} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
                 {saving ? "Enregistrement..." : "Enregistrer les modifications"}

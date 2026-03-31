@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -196,6 +198,9 @@ export function ContactDetail({
     source_id: (contact as any).source_id ?? "",
   });
 
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
+  const activityVoice = useVoiceDictation(() => activityForm.description, (t) => setActivityForm((f) => ({ ...f, description: t })));
+  const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm((f) => ({ ...f, notes: t })));
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState({
     type: "appel" as string,
@@ -1503,6 +1508,7 @@ export function ContactDetail({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}
@@ -1620,6 +1626,7 @@ export function ContactDetail({
                 value={activityForm.description}
                 onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })}
               />
+              <VoiceButton isRecording={activityVoice.isRecording} onClick={activityVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleLogActivity}
@@ -1716,6 +1723,7 @@ export function ContactDetail({
                 onChange={(e) => setRdvForm({ ...rdvForm, notes: e.target.value })}
                 placeholder={editingMeetingId ? "Écrivez vos notes de RDV ici..." : "Objectifs du RDV, points clés..."}
               />
+              <VoiceButton isRecording={rdvNotesVoice.isRecording} onClick={rdvNotesVoice.toggleRecording} />
             </div>
 
             {/* Status - key for post-RDV workflow */}

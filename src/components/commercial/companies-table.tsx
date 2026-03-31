@@ -8,6 +8,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, ArrowUpDown } from "lucide-react";
@@ -78,6 +80,7 @@ export function CompaniesTable({
     website: "", notes: "", industry: "", lifecycle_stage: "prospect",
     employee_count: "", annual_revenue: "", linkedin_url: "", siret: "", opco: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   function getContactCount(c: Company): number {
     return c.contacts?.[0]?.count ?? 0;
@@ -412,6 +415,7 @@ export function CompaniesTable({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full">
               {saving ? "Enregistrement..." : "Enregistrer"}

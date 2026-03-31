@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Plus, TrendingUp, ArrowRightLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -90,6 +92,7 @@ export function OpportunitiesBoard({
     is_planned: false,
     notes: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const opps = opportunities.filter((o) => o.stage === "opportunité");
   const pipe = opportunities.filter((o) => o.stage === "pipe");
@@ -262,6 +265,7 @@ export function OpportunitiesBoard({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}

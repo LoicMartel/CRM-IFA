@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Plus, Pencil, Trash2, KeyRound, Shield } from "lucide-react";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles, DEFAULT_PERMISSIONS, type MemberPermissions } from "@/lib/use-current-roles";
@@ -47,6 +49,7 @@ export function TeamView({ members }: { members: R[] }) {
   const [activeTab, setActiveTab] = useState("all");
   const [popup, setPopup] = useState<"create" | "edit" | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -477,6 +480,7 @@ export function TeamView({ members }: { members: R[] }) {
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Notes internes..."
                   className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
               </div>
 
               {/* Submit */}

@@ -8,6 +8,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Trash2, Pencil, X, Building2, Handshake, Calendar, Receipt, Upload, FileText, Download } from "lucide-react";
@@ -128,6 +130,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
     due_date: "",
     notes: "",
   });
+  const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = invoices.filter((inv) => {
     if (search && !inv.client_name.toLowerCase().includes(search.toLowerCase()) && !(inv.invoice_name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
@@ -629,6 +632,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.deal_id || !form.amount || (monthlyMode && selectedMonths.length === 0)} className="w-full">
               {saving ? "Enregistrement..." : editingId ? "Mettre à jour" : "Enregistrer"}

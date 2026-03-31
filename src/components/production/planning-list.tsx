@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -329,6 +331,7 @@ export function PlanningList({
     prefillFormFromImport(merged[0], merged);
   }
   const [form, setForm] = useState(emptyForm);
+  const planNotesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = servicePlans.filter((p) => {
     // Externes restreints : ne voir que les plans où ils sont impliqués
@@ -1624,6 +1627,7 @@ export function PlanningList({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
+              <VoiceButton isRecording={planNotesVoice.isRecording} onClick={planNotesVoice.toggleRecording} />
             </div>
 
             <Button
