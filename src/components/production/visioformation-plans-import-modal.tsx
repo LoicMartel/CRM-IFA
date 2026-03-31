@@ -18,12 +18,14 @@ export function VisioformationPlansImportModal({
   companies,
   learners,
   onStartImport,
+  existingPlanCompanyIds = [],
 }: {
   open: boolean;
   onClose: () => void;
   companies: CompanyRefPlan[];
   learners: LearnerRefPlan[];
   onStartImport: (plans: PlanImportRow[]) => void;
+  existingPlanCompanyIds?: string[];
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<1 | 2>(1);
@@ -42,13 +44,19 @@ export function VisioformationPlansImportModal({
       const visioRows = parsePlansExport(buffer);
       const planRows = buildPlanImportRows(visioRows, companies, learners);
       setRows(planRows);
-      setSelected(new Set(planRows.map((r, i) => (r.companyId ? i : -1)).filter((i) => i >= 0)));
+      // Pre-select rows that have a company match (but NOT those with existing plans)
+      setSelected(new Set(planRows.map((r, i) => (r.companyId && !existingSet.has(r.companyId) ? i : -1)).filter((i) => i >= 0)));
       setStage(2);
     };
     reader.readAsArrayBuffer(file);
   }
 
+  const existingSet = new Set(existingPlanCompanyIds);
   const hasUnmatched = rows.some((r) => !r.companyId);
+
+  function hasExistingPlan(row: PlanImportRow) {
+    return !!row.companyId && existingSet.has(row.companyId);
+  }
 
   function toggleRow(idx: number) {
     if (!rows[idx]?.companyId) return;
@@ -93,6 +101,14 @@ export function VisioformationPlansImportModal({
 
   function handleConfirm() {
     const selectedPlans = rows.filter((_, i) => selected.has(i));
+    const duplicates = selectedPlans.filter((r) => hasExistingPlan(r));
+    if (duplicates.length > 0) {
+      const names = duplicates.map((d) => d.companyName || d.entreprise).join(", ");
+      const ok = window.confirm(
+        `Attention : ${duplicates.length} plan${duplicates.length > 1 ? "s" : ""} concern${duplicates.length > 1 ? "ent" : "e"} des entreprises qui ont déjà un plan de formation :\n\n${names}\n\nNormalement il n'y a qu'un seul plan par deal signé. Voulez-vous quand même créer de nouveaux plans pour ces entreprises ?`
+      );
+      if (!ok) return;
+    }
     // Reset modal state for next time
     setStage(1);
     setRows([]);
@@ -204,14 +220,19 @@ export function VisioformationPlansImportModal({
                 <div style={{ padding: "8px 16px", borderRadius: 8, background: "#e8f5e9", fontSize: 13, fontWeight: 600, color: "#2e7d32" }}>
                   {selected.size} plan{selected.size > 1 ? "s" : ""} à importer
                 </div>
-                <div style={{ padding: "8px 16px", borderRadius: 8, background: "#f5f5f5", fontSize: 13, fontWeight: 600, color: "#666" }}>
-                  {rows.length - selected.size} ignoré{rows.length - selected.size > 1 ? "s" : ""}
-                </div>
+                {rows.some((r) => hasExistingPlan(r)) && (
+                  <div style={{ padding: "8px 16px", borderRadius: 8, background: "#fff3e0", fontSize: 13, fontWeight: 600, color: "#e65100" }}>
+                    {rows.filter((r) => hasExistingPlan(r)).length} avec plan existant
+                  </div>
+                )}
                 {hasUnmatched && (
                   <div style={{ padding: "8px 16px", borderRadius: 8, background: "#fde8e8", fontSize: 13, fontWeight: 600, color: "#c62828" }}>
                     {rows.filter((r) => !r.companyId).length} sans entreprise
                   </div>
                 )}
+                <div style={{ padding: "8px 16px", borderRadius: 8, background: "#f5f5f5", fontSize: 13, fontWeight: 600, color: "#666" }}>
+                  {rows.length - selected.size} ignoré{(rows.length - selected.size) > 1 ? "s" : ""}
+                </div>
               </div>
 
               <div style={{ overflowX: "auto", maxHeight: "50vh", overflowY: "auto" }}>
@@ -236,6 +257,7 @@ export function VisioformationPlansImportModal({
                   <tbody>
                     {rows.map((row, idx) => {
                       const hasCompany = !!row.companyId;
+                      const existing = hasExistingPlan(row);
                       const mc = matchColors[row.matchType];
                       return (
                         <tr
@@ -243,14 +265,17 @@ export function VisioformationPlansImportModal({
                           style={{
                             borderBottom: "1px solid #f0f0f0",
                             opacity: selected.has(idx) ? 1 : hasCompany ? 0.4 : 1,
-                            background: !hasCompany ? "#fef2f2" : undefined,
+                            background: !hasCompany ? "#fef2f2" : existing ? "#fff8f0" : undefined,
                           }}
                         >
                           <td style={{ padding: "6px 4px", textAlign: "center" }}>
                             <input type="checkbox" checked={selected.has(idx)} onChange={() => toggleRow(idx)} disabled={!hasCompany} />
                           </td>
-                          <td style={{ padding: "6px 4px", fontWeight: 600, color: !hasCompany ? "#c62828" : "#1a2a3a", maxWidth: 180 }}>
-                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.entreprise}</div>
+                          <td style={{ padding: "6px 4px", fontWeight: 600, color: !hasCompany ? "#c62828" : "#1a2a3a", maxWidth: 200 }}>
+                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+                              {row.entreprise}
+                              {existing && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 8, background: "#fff3e0", color: "#e65100", whiteSpace: "nowrap", flexShrink: 0 }}>plan existant</span>}
+                            </div>
                           </td>
                           <td style={{ padding: "6px 4px", textAlign: "center", color: "#5a6f80", fontWeight: 700 }}>{row.sessionCount}</td>
                           <td style={{ padding: "6px 4px", textAlign: "center", color: "#0d4f7a" }}>{row.vtCount}</td>

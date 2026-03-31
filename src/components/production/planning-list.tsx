@@ -1837,6 +1837,7 @@ export function PlanningList({
         companies={companies.map((c) => ({ id: c.id, name: c.name }))}
         learners={(allLearners as Array<{ id: string; first_name: string; last_name: string; company_id?: string | null }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name, company_id: (l as any).company_id ?? null }))}
         onStartImport={handleStartImport}
+        existingPlanCompanyIds={servicePlans.map((sp) => sp.company_id)}
       />
 
       <PDFSessionsImportModal
