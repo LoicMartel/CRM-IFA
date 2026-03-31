@@ -58,9 +58,10 @@ const lifecycleColors: Record<string, { bg: string; text: string }> = {
 };
 
 const contactLifecycle: Record<string, { bg: string; text: string; label: string }> = {
-  lead: { bg: "#f0f0f0", text: "#666", label: "Lead" }, mql: { bg: "#e3f2fd", text: "#1565c0", label: "MQL" },
+  lead: { bg: "#f0f0f0", text: "#666", label: "Lead" }, lead_marketing: { bg: "#fff3e0", text: "#e65100", label: "Lead Marketing" },
+  mql: { bg: "#e3f2fd", text: "#1565c0", label: "MQL" },
   sql: { bg: "#fff3e0", text: "#e65100", label: "SQL" }, opportunity: { bg: "#fce4ec", text: "#c62828", label: "Opportunité" },
-  customer: { bg: "#e8f5e9", text: "#2e7d32", label: "Client" },
+  customer: { bg: "#e8f5e9", text: "#2e7d32", label: "Client" }, former_customer: { bg: "#f0f0f0", text: "#666", label: "Ancien client" },
 };
 
 const typeColors: Record<string, { bg: string; text: string }> = {

@@ -15,7 +15,7 @@ export type MeetingType = "R0" | "R1" | "R2" | "R3";
 export type MeetingStatus = "booked" | "done" | "no_show" | "cancelled";
 export type MeetingMode = "visio" | "phone" | "in_person";
 export type DealStage = "opportunities" | "quote_to_send" | "quote_sent" | "opco_deposit" | "quote_signed" | "closed_won" | "closed_lost";
-export type LifecycleStage = "subscriber" | "lead" | "mql" | "sql" | "opportunity" | "customer" | "evangelist";
+export type LifecycleStage = "subscriber" | "lead" | "lead_marketing" | "mql" | "sql" | "opportunity" | "customer" | "evangelist";
 export type ContactLeadStatus = "lead" | "contacted" | "booked" | "rdv_done" | "signed";
 export type ContactType = "inbound" | "outbound";
 export type CompanyLifecycle = "lead" | "prospect" | "customer" | "partner" | "former_customer";
@@ -372,6 +372,7 @@ export const DEAL_STAGE_PROBABILITY: Record<DealStage, number> = {
 export const LIFECYCLE_LABELS: Record<LifecycleStage, string> = {
   subscriber: "Abonné",
   lead: "Lead",
+  lead_marketing: "Lead Marketing",
   mql: "MQL",
   sql: "SQL",
   opportunity: "Opportunité",

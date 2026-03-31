@@ -96,6 +96,7 @@ interface MeetingData {
 
 const lifecycleColors: Record<string, { bg: string; text: string; label: string }> = {
   prospect: { bg: "#e3f2fd", text: "#1565c0", label: "Prospect" },
+  lead_marketing: { bg: "#fff3e0", text: "#e65100", label: "Lead Marketing" },
   customer: { bg: "#e8f5e9", text: "#2e7d32", label: "Client" },
   former_customer: { bg: "#f0f0f0", text: "#666", label: "Ancien client" },
 };
