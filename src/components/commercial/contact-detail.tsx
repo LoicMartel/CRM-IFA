@@ -148,6 +148,8 @@ const activityTypeColors: Record<string, { bg: string; text: string }> = {
   relance: { bg: "#fff8e1", text: "#f57c00" },
 };
 
+interface SourceRef { id: string; name: string; }
+
 export function ContactDetail({
   contact,
   deals,
@@ -155,6 +157,7 @@ export function ContactDetail({
   meetings,
   companies,
   teamMembers,
+  sources = [],
 }: {
   contact: ContactData;
   deals: DealData[];
@@ -162,6 +165,7 @@ export function ContactDetail({
   meetings: MeetingData[];
   companies: CompanyRef[];
   teamMembers: TeamMemberRef[];
+  sources?: SourceRef[];
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
@@ -189,6 +193,7 @@ export function ContactDetail({
     contact_type: (contact as any).contact_type ?? "",
     linkedin_url: contact.linkedin_url ?? "",
     owner_id: contact.owner_id ?? "",
+    source_id: (contact as any).source_id ?? "",
   });
 
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -242,6 +247,7 @@ export function ContactDetail({
       contact_type: form.contact_type || null,
       linkedin_url: form.linkedin_url || null,
       owner_id: form.owner_id || null,
+      source_id: form.source_id || null,
     }).eq("id", contact.id);
     if (error) { alert("Erreur: " + error.message); console.error(error); }
 
@@ -1418,6 +1424,19 @@ export function ContactDetail({
                 <option value="">Sélectionner</option>
                 <option value="inbound">Inbound</option>
                 <option value="outbound">Outbound</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={form.source_id}
+                onChange={(e) => setForm({ ...form, source_id: e.target.value })}
+              >
+                <option value="">Sélectionner</option>
+                {sources.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
