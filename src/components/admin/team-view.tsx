@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Pencil, Trash2, KeyRound, Shield } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, KeyRound, Shield, HelpCircle } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { createClient } from "@/lib/supabase/client";
@@ -36,11 +36,33 @@ const TABS = [
   { key: "externe", label: "Externe" },
 ];
 
+const ALL_EXPERTISES = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
+const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+const CITY_REGION_MAP: Record<string, string> = {
+  "Paris": "Île-de-France", "Mérignac": "Nouvelle-Aquitaine", "Bordeaux": "Nouvelle-Aquitaine",
+  "Montpellier": "Occitanie", "Toulouse": "Occitanie", "Lyon": "Auvergne-Rhône-Alpes",
+  "Marseille": "Provence-Alpes-Côte d'Azur", "Nantes": "Pays de la Loire", "Lille": "Hauts-de-France",
+  "Strasbourg": "Grand Est", "Rennes": "Bretagne", "Nice": "Provence-Alpes-Côte d'Azur",
+  "Rouen": "Normandie", "Dijon": "Bourgogne-Franche-Comté", "Clermont-Ferrand": "Auvergne-Rhône-Alpes",
+  "La Rochelle": "Nouvelle-Aquitaine", "Limoges": "Nouvelle-Aquitaine", "Poitiers": "Nouvelle-Aquitaine",
+  "Orléans": "Centre-Val de Loire", "Tours": "Centre-Val de Loire", "Reims": "Grand Est",
+  "Amiens": "Hauts-de-France", "Caen": "Normandie", "Angers": "Pays de la Loire",
+  "Grenoble": "Auvergne-Rhône-Alpes", "Saint-Étienne": "Auvergne-Rhône-Alpes",
+  "Toulon": "Provence-Alpes-Côte d'Azur", "Aix-en-Provence": "Provence-Alpes-Côte d'Azur",
+  "Brest": "Bretagne", "Perpignan": "Occitanie", "Nîmes": "Occitanie", "Pau": "Nouvelle-Aquitaine",
+  "Bayonne": "Nouvelle-Aquitaine", "Metz": "Grand Est", "Nancy": "Grand Est",
+};
+const WEEKS_PER_YEAR = 47;
+
 const emptyForm = {
   first_name: "", last_name: "", email: "", phone: "", role: "sales",
   roles: [] as string[], is_active: true, availability: "", notes: "",
   google_calendar_id: "", zoom_link: "", slack_user_id: "",
   create_account: true, password: "",
+  // Expert fields
+  expertises: [] as string[], city: "", region: "", tjm: "",
+  days_per_week: "", preferred_days: [] as string[], expert_status: "active",
+  mobility: "Toute la France",
 };
 
 export function TeamView({ members }: { members: R[] }) {
@@ -59,6 +81,9 @@ export function TeamView({ members }: { members: R[] }) {
   const [permsMember, setPermsMember] = useState<R | null>(null);
   const [permsForm, setPermsForm] = useState<MemberPermissions>({ ...DEFAULT_PERMISSIONS });
   const [savingPerms, setSavingPerms] = useState(false);
+  // Aide à la décision
+  const [decisionOpen, setDecisionOpen] = useState(false);
+  const [decisionForm, setDecisionForm] = useState({ expertise: "", city: "", days: "", budget: "" });
 
   function openPerms(member: R) {
     const dbPerms = (member.permissions as Partial<MemberPermissions>) ?? {};
@@ -120,6 +145,14 @@ export function TeamView({ members }: { members: R[] }) {
       zoom_link: (m.zoom_link as string) || "",
       slack_user_id: (m.slack_user_id as string) || "",
       create_account: false, password: "",
+      expertises: (m.expertises as string[]) ?? [],
+      city: (m.city as string) || "",
+      region: (m.region as string) || "",
+      tjm: m.tjm ? String(m.tjm) : "",
+      days_per_week: m.days_per_week ? String(m.days_per_week) : "",
+      preferred_days: (m.preferred_days as string[]) ?? [],
+      expert_status: (m.expert_status as string) || "active",
+      mobility: (m.mobility as string) || "Toute la France",
     });
     setEditId(m.id as string);
     setPopup("edit");
@@ -141,6 +174,14 @@ export function TeamView({ members }: { members: R[] }) {
       google_calendar_id: form.google_calendar_id.trim() || null,
       zoom_link: form.zoom_link.trim() || null,
       slack_user_id: form.slack_user_id.trim() || null,
+      expertises: form.expertises.length > 0 ? form.expertises : null,
+      city: form.city.trim() || null,
+      region: form.region.trim() || null,
+      tjm: form.tjm ? parseFloat(form.tjm) : null,
+      days_per_week: form.days_per_week ? parseFloat(form.days_per_week) : null,
+      preferred_days: form.preferred_days.length > 0 ? form.preferred_days : null,
+      expert_status: form.expert_status || "active",
+      mobility: form.mobility.trim() || "Toute la France",
     };
     if (popup === "edit" && editId) {
       await supabase.from("team_members").update(memberData).eq("id", editId);
@@ -233,8 +274,18 @@ export function TeamView({ members }: { members: R[] }) {
           })}
         </div>
 
-        {isAdmin && (
-          <div style={{ marginLeft: "auto" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setDecisionOpen(true)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8, height: 38, borderRadius: 10,
+              padding: "0 20px", fontSize: 13, fontWeight: 700, border: "2px solid #1a6b9c", cursor: "pointer",
+              background: "white", color: "#1a6b9c",
+            }}
+          >
+            <HelpCircle className="h-4 w-4" /> Aide Décision
+          </button>
+          {isAdmin && (
             <button
               onClick={openCreate}
               style={{
@@ -245,8 +296,8 @@ export function TeamView({ members }: { members: R[] }) {
             >
               <Plus className="h-4 w-4" /> Nouveau membre
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Cards grid */}
@@ -315,6 +366,25 @@ export function TeamView({ members }: { members: R[] }) {
                   {String(member.phone || "") && (
                     <div style={{ fontSize: 13, color: "#5a6f80" }}>{formatPhone(String(member.phone))}</div>
                   )}
+                  {/* Expert info */}
+                  {(() => {
+                    const exps: string[] = Array.isArray(member.expertises) ? member.expertises as string[] : [];
+                    if (exps.length === 0) return null;
+                    return (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 6 }}>
+                        {exps.map((exp: string) => (
+                          <span key={exp} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: "#fff3e0", color: "#e65100" }}>{exp}</span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {(member.city || member.tjm) ? (
+                    <div style={{ display: "flex", gap: 8, marginTop: 4, fontSize: 11, color: "#8399a9" }}>
+                      {member.city ? <span>{String(member.city)}</span> : null}
+                      {member.tjm ? <span>{"TJM: " + String(member.tjm) + "€"}</span> : null}
+                      {member.days_per_week ? <span>{String(member.days_per_week) + "j/sem"}</span> : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -438,14 +508,113 @@ export function TeamView({ members }: { members: R[] }) {
                 </>
               )}
 
-              {/* Disponibilités (si Expert) */}
+              {/* Section Expert (si Expert/Experte) */}
               {isExpert && (
-                <div className="space-y-2">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Disponibilités préférées</label>
-                  <textarea value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })}
-                    placeholder="Ex: Lundi et mercredi matin, vendredi après-midi..."
-                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
-                </div>
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF6B35", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 8 }}>
+                    Profil Expert
+                  </div>
+
+                  {/* Expertises */}
+                  <div className="space-y-2">
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Expertises</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {ALL_EXPERTISES.map(exp => {
+                        const selected = form.expertises.includes(exp);
+                        return (
+                          <button key={exp} type="button"
+                            onClick={() => setForm(f => ({ ...f, expertises: selected ? f.expertises.filter(e => e !== exp) : [...f.expertises, exp] }))}
+                            style={{
+                              fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 20, cursor: "pointer",
+                              border: selected ? "2px solid #FF6B35" : "2px solid #dce8f0",
+                              background: selected ? "#fff3e0" : "white", color: selected ? "#e65100" : "#8399a9",
+                            }}
+                          >{exp}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Ville + Région */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Ville de résidence</label>
+                      <input value={form.city} onChange={(e) => {
+                        const city = e.target.value;
+                        const region = CITY_REGION_MAP[city] ?? form.region;
+                        setForm({ ...form, city, region });
+                      }} list="city-list"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Ex: Paris" />
+                      <datalist id="city-list">
+                        {Object.keys(CITY_REGION_MAP).map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </div>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Région</label>
+                      <input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Auto-détectée" readOnly
+                        style={{ background: "#f8fbfd" }} />
+                    </div>
+                  </div>
+
+                  {/* TJM + Jours/semaine */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>TJM (EUR)</label>
+                      <input type="number" value={form.tjm} onChange={(e) => setForm({ ...form, tjm: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="546" />
+                    </div>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Jours/semaine</label>
+                      <input type="number" step="0.5" value={form.days_per_week} onChange={(e) => setForm({ ...form, days_per_week: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="3" />
+                    </div>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Jours/an</label>
+                      <input readOnly value={form.days_per_week ? Math.round(parseFloat(form.days_per_week) * WEEKS_PER_YEAR) : "—"}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                        style={{ background: "#f8fbfd", fontWeight: 700 }} />
+                    </div>
+                  </div>
+
+                  {/* Jours préférentiels */}
+                  <div className="space-y-2">
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Jours préférentiels</label>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {ALL_DAYS.map(day => {
+                        const selected = form.preferred_days.includes(day);
+                        return (
+                          <button key={day} type="button"
+                            onClick={() => setForm(f => ({ ...f, preferred_days: selected ? f.preferred_days.filter(d => d !== day) : [...f.preferred_days, day] }))}
+                            style={{
+                              fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 8, cursor: "pointer",
+                              border: selected ? "2px solid #1a6b9c" : "2px solid #dce8f0",
+                              background: selected ? "#e3f2fd" : "white", color: selected ? "#1565c0" : "#8399a9",
+                            }}
+                          >{day.slice(0, 3)}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mobilité + Statut */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Mobilité</label>
+                      <input value={form.mobility} onChange={(e) => setForm({ ...form, mobility: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Statut expert</label>
+                      <select value={form.expert_status} onChange={(e) => setForm({ ...form, expert_status: e.target.value })}
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
+                        <option value="active">Actif</option>
+                        <option value="pending">En attente</option>
+                        <option value="inactive">Inactif</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Intégrations (section repliée pour l'édition) */}
@@ -627,6 +796,175 @@ export function TeamView({ members }: { members: R[] }) {
           </div>
         </div>
       )}
+      {/* Aide à la décision popup */}
+      {decisionOpen && (() => {
+        const experts = members.filter(m => {
+          const roles = (m.roles as string[]) ?? [];
+          return roles.some(r => r === "Expert" || r === "Experte") && (m.expert_status as string) === "active" && m.tjm;
+        });
+
+        const formationRegion = CITY_REGION_MAP[decisionForm.city] ?? "";
+        const nbDays = parseFloat(decisionForm.days) || 0;
+        const budgetHT = parseFloat(decisionForm.budget) || 0;
+
+        const analysis = experts.map(m => {
+          const expertises = (m.expertises as string[]) ?? [];
+          const hasExpertise = decisionForm.expertise ? expertises.includes(decisionForm.expertise) : false;
+          const expertRegion = (m.region as string) || "";
+          const sameRegion = formationRegion && expertRegion ? expertRegion === formationRegion : false;
+          const tjm = Number(m.tjm) || 0;
+          const costTjm = tjm * nbDays;
+          const prepa = tjm * 0.5;
+          const deplacement = sameRegion ? 0 : tjm * 0.5;
+          const totalHT = costTjm + prepa + deplacement;
+          const budgetOk = budgetHT > 0 ? totalHT <= budgetHT : true;
+          const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
+          const marge = budgetHT > 0 ? budgetHT - totalHT : 0;
+
+          return {
+            name: `${m.first_name} ${m.last_name}`,
+            hasExpertise, sameRegion, budgetOk, score,
+            city: (m.city as string) || "—",
+            region: expertRegion || "—",
+            tjm, costTjm, prepa, deplacement, totalHT, marge,
+            daysPerWeek: m.days_per_week ? Number(m.days_per_week) : null,
+          };
+        }).sort((a, b) => b.score - a.score || a.totalHT - b.totalHT);
+
+        const best = analysis[0];
+        const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setDecisionOpen(false); }}>
+            <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 900, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>Aide à la Décision — Choix du formateur</h3>
+                <button onClick={() => setDecisionOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>✕</button>
+              </div>
+
+              <div style={{ padding: 24 }} className="space-y-5">
+                {/* Critères */}
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                  Critères du besoin client
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Expertise recherchée</label>
+                    <select value={decisionForm.expertise} onChange={(e) => setDecisionForm({ ...decisionForm, expertise: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
+                      <option value="">Sélectionner</option>
+                      {ALL_EXPERTISES.map(e => <option key={e} value={e}>{e}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Ville de formation</label>
+                    <input value={decisionForm.city} onChange={(e) => setDecisionForm({ ...decisionForm, city: e.target.value })}
+                      list="decision-city-list"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Ex: Lyon" />
+                    <datalist id="decision-city-list">
+                      {Object.keys(CITY_REGION_MAP).map(c => <option key={c} value={c} />)}
+                    </datalist>
+                    {formationRegion && <p style={{ fontSize: 10, color: "#8399a9" }}>{formationRegion}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb jours</label>
+                    <input type="number" value={decisionForm.days} onChange={(e) => setDecisionForm({ ...decisionForm, days: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="2" />
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Budget HT (EUR)</label>
+                    <input type="number" value={decisionForm.budget} onChange={(e) => setDecisionForm({ ...decisionForm, budget: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="4000" />
+                  </div>
+                </div>
+
+                {/* Analyse */}
+                {nbDays > 0 && (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                      Analyse des formateurs
+                    </div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: "#f8fbfd" }}>
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Formateur</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Expertise</th>
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Ville</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Même région</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Coût TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Prépa</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Déplac.</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Budget OK</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Score</th>
+                            {budgetHT > 0 && <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Marge</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analysis.map((a, i) => (
+                            <tr key={a.name} style={{ borderTop: "1px solid #e8ecf1", background: i === 0 ? "#f0f7fb" : "white" }}>
+                              <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.name}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.hasExpertise ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.hasExpertise ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 10px", color: "#5a6f80" }}>{a.city}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.sameRegion ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.sameRegion ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.tjm)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.costTjm)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.prepa)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.deplacement)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700 }}>{fmtE(a.totalHT)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.budgetOk ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.budgetOk ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  width: 28, height: 28, borderRadius: "50%", fontWeight: 800, fontSize: 13,
+                                  background: a.score === 3 ? "#e8f5e9" : a.score === 2 ? "#fff3e0" : "#fce4ec",
+                                  color: a.score === 3 ? "#27ae60" : a.score === 2 ? "#e65100" : "#c62828",
+                                }}>{a.score}/3</span>
+                              </td>
+                              {budgetHT > 0 && (
+                                <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, color: a.marge >= 0 ? "#27ae60" : "#e74c3c" }}>
+                                  {fmtE(a.marge)}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Recommandation */}
+                    {best && (
+                      <div style={{ padding: 16, borderRadius: 10, background: "linear-gradient(135deg, #e8f5e9 0%, #f0f7fb 100%)", border: "1px solid #c8e6c9" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32", marginBottom: 6 }}>Recommandation</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#1a2a3a" }}>
+                          Meilleur choix : {best.name} — Score : {best.score}/3 — Coût estimé : {fmtE(best.totalHT)}
+                        </div>
+                        {budgetHT > 0 && best.marge > 0 && (
+                          <div style={{ fontSize: 13, color: "#27ae60", fontWeight: 600, marginTop: 4 }}>
+                            Marge dégagée : {fmtE(best.marge)}
+                          </div>
+                        )}
+                        <p style={{ fontSize: 11, color: "#5a6f80", marginTop: 8 }}>
+                          Si plusieurs formateurs ont le même score, le classement privilégie le coût total le plus bas.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
