@@ -1477,12 +1477,11 @@ export function PlanningList({
               <div className="space-y-2">
                 <Label>Taux horaire (€/h)</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={form.hourly_rate}
                   onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
-                  placeholder="0"
+                  placeholder="250.27"
                 />
               </div>
             </div>
