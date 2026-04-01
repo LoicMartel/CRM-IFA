@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createCalendarEvent } from "@/lib/google-calendar";
 import { createClient } from "@supabase/supabase-js";
+import { sendSessionEmail } from "@/lib/send-email";
+import { generateICS } from "@/lib/ics";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -60,11 +62,42 @@ export async function POST(request: Request) {
     location: locationLabel,
     startDateTime,
     endDateTime,
-    attendees: email ? [{ email, displayName: `${firstName} ${lastName}` }] : [],
   });
 
   if (!success) {
     return NextResponse.json({ error: calError || "Failed to create calendar event" }, { status: 500 });
+  }
+
+  // 1b. Send .ics invitation to prospect
+  if (email) {
+    const icsContent = generateICS({
+      summary: `Bilan Commercial — ${firstName} ${lastName} (${company})`,
+      description: `Rendez-vous avec La Closing Académie\nMode : ${locationLabel}`,
+      location: locationLabel,
+      startDateTime,
+      endDateTime,
+      organizerName: "La Closing Académie",
+      organizerEmail: "contact@closing-academie.com",
+    });
+    await sendSessionEmail({
+      to: email,
+      subject: `Confirmation de votre rendez-vous — La Closing Académie`,
+      body: [
+        `Bonjour ${firstName},`,
+        "",
+        "Votre rendez-vous est confirmé :",
+        "",
+        `📆 ${date} à ${time}`,
+        `🖥️ ${locationLabel}`,
+        "",
+        "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
+        "",
+        "À très bientôt,",
+        "",
+        "L'équipe La Closing Académie",
+      ].join("\n"),
+      attachments: [{ filename: "invitation.ics", content: icsContent }],
+    });
   }
 
   // 2. Find or create company

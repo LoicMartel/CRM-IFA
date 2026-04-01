@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
+import { generateICS } from "@/lib/ics";
 
 export async function POST(req: NextRequest) {
   try {
@@ -111,8 +112,6 @@ export async function POST(req: NextRequest) {
         meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
       ].filter(Boolean).join("\n");
 
-      const attendees = contactEmail ? [{ email: contactEmail, displayName: contactName }] : [];
-
       const gcalResult = await createCalendarEvent({
         calendarId: commercialCalId,
         summary: title,
@@ -120,7 +119,6 @@ export async function POST(req: NextRequest) {
         location,
         startDateTime: startDT,
         endDateTime: endDT,
-        attendees,
       });
 
       results.push({ action: "Google Calendar", status: gcalResult.success ? "Ajouté" : gcalResult.error ?? "Erreur" });
@@ -188,6 +186,58 @@ export async function POST(req: NextRequest) {
         body: emailBody,
       });
       results.push({ action: "Email", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
+    }
+
+    // 4. Send .ics invitation to prospect
+    if (contactEmail) {
+      const icsStart = `${dateStr}T${timeStr}:00`;
+      const [iH, iM] = timeStr.split(":").map(Number);
+      const iTotalMin = iH * 60 + iM + durationMin;
+      const icsEnd = `${dateStr}T${String(Math.floor(iTotalMin / 60)).padStart(2, "0")}:${String(iTotalMin % 60).padStart(2, "0")}:00`;
+
+      const icsContent = generateICS({
+        summary: title,
+        description: [
+          typeLabel,
+          `Contact : ${contactName}`,
+          companyName ? `Entreprise : ${companyName}` : "",
+          `Mode : ${modeLabel}`,
+          `Durée : ${durationLabel}`,
+          meeting.meeting_mode === "visio" && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
+          meeting.location ? `Lieu : ${meeting.location}` : "",
+        ].filter(Boolean).join("\n"),
+        location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconférence") : (meeting.location || ""),
+        startDateTime: icsStart,
+        endDateTime: icsEnd,
+        organizerName: assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "La Closing Académie",
+        organizerEmail: (assignedMember?.email as string) || "contact@closing-academie.com",
+      });
+
+      const emailBody = [
+        `Bonjour ${contactName},`,
+        "",
+        "Votre rendez-vous est confirmé :",
+        "",
+        `📋 ${typeLabel}`,
+        `📆 ${dateDisplay} à ${timeStr} (${durationLabel})`,
+        `🖥️ ${modeLabel}`,
+        meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+        meeting.location ? `📍 Lieu : ${meeting.location}` : "",
+        "",
+        "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
+        "",
+        "À très bientôt,",
+        "",
+        "L'équipe La Closing Académie",
+      ].filter(Boolean).join("\n");
+
+      const emailResult = await sendSessionEmail({
+        to: contactEmail,
+        subject: `Confirmation RDV : ${title}`,
+        body: emailBody,
+        attachments: [{ filename: "invitation.ics", content: icsContent }],
+      });
+      results.push({ action: "Email prospect (.ics)", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
     }
 
     return NextResponse.json({ success: true, title, results });

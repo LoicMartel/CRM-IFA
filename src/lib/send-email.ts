@@ -14,10 +14,12 @@ export async function sendSessionEmail({
   to,
   subject,
   body,
+  attachments,
 }: {
   to: string;
   subject: string;
   body: string;
+  attachments?: { filename: string; content: string }[];
 }): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   if (!resend) return { success: false, error: "Resend not configured" };
@@ -27,7 +29,7 @@ export async function sendSessionEmail({
       .replace(/\n/g, "<br>")
       .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 
-    const { error } = await resend.emails.send({
+    const emailPayload: any = {
       from: "CRM La Closing Académie <noreply@closing-academie.com>",
       to,
       subject,
@@ -51,7 +53,17 @@ export async function sendSessionEmail({
           </table>
         </div>
       `,
-    });
+    };
+
+    if (attachments && attachments.length > 0) {
+      emailPayload.attachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.content).toString("base64"),
+        content_type: "text/calendar",
+      }));
+    }
+
+    const { error } = await resend.emails.send(emailPayload);
 
     if (error) return { success: false, error: error.message };
     return { success: true };

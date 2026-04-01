@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
+import { generateICS } from "@/lib/ics";
 
 export async function POST(req: NextRequest) {
   try {
@@ -112,10 +113,6 @@ export async function POST(req: NextRequest) {
           session.notes ? `\n📝 Notes : ${session.notes}` : "",
         ].filter(Boolean).join("\n");
 
-        const attendees = learners
-          .filter((l: any) => l.email)
-          .map((l: any) => ({ email: l.email, displayName: `${l.first_name} ${l.last_name}` }));
-
         const gcalResult = await createCalendarEvent({
           calendarId,
           summary: title,
@@ -123,7 +120,6 @@ export async function POST(req: NextRequest) {
           location,
           startDateTime: startDT,
           endDateTime: endDT,
-          attendees,
         });
 
         if (gcalResult.success && gcalResult.eventId) {
@@ -189,6 +185,59 @@ export async function POST(req: NextRequest) {
           body: emailBody,
         });
         results.push({ trainer: trainer.first_name, email: emailResult.success ? "sent" : emailResult.error });
+      }
+    }
+
+    // 4. Send .ics invitation emails to learners
+    const learnersWithEmail = learners.filter((l: any) => l.email);
+    if (learnersWithEmail.length > 0) {
+      const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
+      const icsStartDT = `${session.session_date}T${sessionTime}:00`;
+      const [sH, sM] = sessionTime.split(":").map(Number);
+      const totalMin = sH * 60 + sM + durationHours * 60;
+      const icsEndDT = `${session.session_date}T${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}:00`;
+
+      const icsContent = generateICS({
+        summary: title,
+        description: [
+          `${typeLabel} ${sessionIndex}/${totalSessions}`,
+          `Entreprise : ${companyName}`,
+          `Apprenants : ${learnerFullNames || "Non assignés"}`,
+          `Durée : ${durationHours}h`,
+          isJournee ? `Lieu : ${(session as any).session_location || fullAddress || "Non renseigné"}` : "",
+          !isJournee && trainers.length > 0 ? `Expert : ${trainers.join(", ")}` : "",
+        ].filter(Boolean).join("\n"),
+        location: isJournee ? ((session as any).session_location || fullAddress || companyName) : "Visioconférence",
+        startDateTime: icsStartDT,
+        endDateTime: icsEndDT,
+        organizerName: "La Closing Académie",
+        organizerEmail: "contact@closing-academie.com",
+      });
+
+      for (const learner of learnersWithEmail) {
+        const emailBody = [
+          `Bonjour ${(learner as any).first_name},`,
+          "",
+          "Votre prochaine session de formation est planifiée :",
+          "",
+          `📋 ${title}`,
+          `📆 ${session.session_date} à ${sessionTime} (${durationHours}h)`,
+          isJournee ? `📍 ${(session as any).session_location || fullAddress || "Lieu à confirmer"}` : "🖥️ Visioconférence",
+          "",
+          "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
+          "",
+          "Belle journée,",
+          "",
+          "L'équipe La Closing Académie",
+        ].filter(Boolean).join("\n");
+
+        const emailResult = await sendSessionEmail({
+          to: (learner as any).email,
+          subject: `Invitation : ${title} — ${session.session_date}`,
+          body: emailBody,
+          attachments: [{ filename: "invitation.ics", content: icsContent }],
+        });
+        results.push({ trainer: `${(learner as any).first_name} ${(learner as any).last_name}`, email: emailResult.success ? "ics_sent" : emailResult.error });
       }
     }
 
