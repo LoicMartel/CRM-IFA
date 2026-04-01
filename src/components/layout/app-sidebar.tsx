@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   CalendarDays,
   CreditCard,
+  FolderOpen,
   GraduationCap,
   Handshake,
   LayoutDashboard,
@@ -50,6 +51,7 @@ const productionItemsList = [
   { title: "Apprenants", href: "/learners", icon: Users },
   { title: "Planification", href: "/planning", icon: Calendar },
   { title: "Delivery", href: "/delivery", icon: GraduationCap },
+  { title: "Ressources", href: "/ressources", icon: FolderOpen },
   { title: "Rapports Production", href: "/rapports-production", icon: Target },
 ];
 
