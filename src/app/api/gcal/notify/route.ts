@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       .from("training_sessions")
       .select(`
         *,
-        training_session_learners(learner_id, learners(first_name, last_name)),
+        training_session_learners(learner_id, learners(first_name, last_name, email)),
         service_plans(
           id, company_id, vt_planned, days_planned,
           companies(name, address, city),
@@ -112,6 +112,10 @@ export async function POST(req: NextRequest) {
           session.notes ? `\n📝 Notes : ${session.notes}` : "",
         ].filter(Boolean).join("\n");
 
+        const attendees = learners
+          .filter((l: any) => l.email)
+          .map((l: any) => ({ email: l.email, displayName: `${l.first_name} ${l.last_name}` }));
+
         const gcalResult = await createCalendarEvent({
           calendarId,
           summary: title,
@@ -119,6 +123,7 @@ export async function POST(req: NextRequest) {
           location,
           startDateTime: startDT,
           endDateTime: endDT,
+          attendees,
         });
 
         if (gcalResult.success && gcalResult.eventId) {

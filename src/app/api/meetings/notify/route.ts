@@ -111,6 +111,8 @@ export async function POST(req: NextRequest) {
         meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
       ].filter(Boolean).join("\n");
 
+      const attendees = contactEmail ? [{ email: contactEmail, displayName: contactName }] : [];
+
       const gcalResult = await createCalendarEvent({
         calendarId: commercialCalId,
         summary: title,
@@ -118,6 +120,7 @@ export async function POST(req: NextRequest) {
         location,
         startDateTime: startDT,
         endDateTime: endDT,
+        attendees,
       });
 
       results.push({ action: "Google Calendar", status: gcalResult.success ? "Ajouté" : gcalResult.error ?? "Erreur" });

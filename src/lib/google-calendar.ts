@@ -85,6 +85,7 @@ export async function createCalendarEvent({
   startDateTime,
   endDateTime,
   timeZone = "Europe/Paris",
+  attendees = [],
 }: {
   calendarId: string;
   summary: string;
@@ -93,6 +94,7 @@ export async function createCalendarEvent({
   startDateTime: string;
   endDateTime: string;
   timeZone?: string;
+  attendees?: { email: string; displayName?: string }[];
 }): Promise<{ success: boolean; eventId?: string; error?: string }> {
   const auth = getAuth();
   if (!auth) return { success: false, error: "Google Calendar not configured" };
@@ -102,12 +104,14 @@ export async function createCalendarEvent({
 
     const event = await calendar.events.insert({
       calendarId,
+      sendUpdates: attendees.length > 0 ? "all" : "none",
       requestBody: {
         summary,
         description,
         location,
         start: { dateTime: startDateTime, timeZone },
         end: { dateTime: endDateTime, timeZone },
+        attendees: attendees.length > 0 ? attendees : undefined,
         reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 15 }] },
       },
     });

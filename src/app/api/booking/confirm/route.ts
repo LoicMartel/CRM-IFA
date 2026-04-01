@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     location: locationLabel,
     startDateTime,
     endDateTime,
+    attendees: email ? [{ email, displayName: `${firstName} ${lastName}` }] : [],
   });
 
   if (!success) {
