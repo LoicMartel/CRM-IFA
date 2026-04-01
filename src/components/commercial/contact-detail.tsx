@@ -183,7 +183,8 @@ export function ContactDetail({
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [senderInfo, setSenderInfo] = useState<{ first_name: string; last_name: string; email: string; phone: string } | null>(null);
+  const [senderInfo, setSenderInfo] = useState<{ first_name: string; last_name: string; email: string; phone: string; email_signature: string | null } | null>(null);
+  const [emailPreview, setEmailPreview] = useState<{ title: string; description: string } | null>(null);
 
   const [form, setForm] = useState({
     first_name: contact.first_name,
@@ -213,7 +214,7 @@ export function ContactDetail({
   useEffect(() => {
     if (!currentMemberId) return;
     const supabase = createClient();
-    supabase.from("team_members").select("first_name, last_name, email, phone").eq("id", currentMemberId).single()
+    supabase.from("team_members").select("first_name, last_name, email, phone, email_signature").eq("id", currentMemberId).single()
       .then(({ data }) => { if (data) setSenderInfo(data as any); });
   }, [currentMemberId]);
 
@@ -1201,8 +1202,20 @@ export function ContactDetail({
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm font-medium">{a.title}</p>
-                            {a.description && <p className="text-sm text-muted-foreground mt-1">{a.description}</p>}
+                            {a.type === "email" ? (
+                              <p className="text-sm font-medium" style={{ color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                                onClick={() => setEmailPreview({ title: a.title, description: a.description ?? "" })}>
+                                {a.title}
+                              </p>
+                            ) : (
+                              <p className="text-sm font-medium">{a.title}</p>
+                            )}
+                            {a.description && a.type !== "email" && <p className="text-sm text-muted-foreground mt-1">{a.description}</p>}
+                            {a.description && a.type === "email" && (
+                              <p className="text-sm text-muted-foreground mt-1" style={{ cursor: "pointer" }} onClick={() => setEmailPreview({ title: a.title, description: a.description ?? "" })}>
+                                {a.description.replace(/__EMAIL_HTML__[\s\S]*?__END_HTML__\n\n/, "").slice(0, 80)}...
+                              </p>
+                            )}
                             <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
                               {a.team_members && (
                                 <span>Par {a.team_members.first_name} {a.team_members.last_name}</span>
@@ -1834,6 +1847,30 @@ export function ContactDetail({
           </div>
         </SheetContent>
       </Sheet>
+      {/* Email preview popup */}
+      {emailPreview && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEmailPreview(null); }}>
+          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 600, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "80vh" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: "#1a2a3a" }}>{emailPreview.title}</span>
+              <button onClick={() => setEmailPreview(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, overflowY: "auto", maxHeight: "calc(80vh - 60px)" }}>
+              {emailPreview.description.includes("__EMAIL_HTML__") ? (
+                <div dangerouslySetInnerHTML={{
+                  __html: emailPreview.description.match(/__EMAIL_HTML__([\s\S]*?)__END_HTML__/)?.[1] ?? ""
+                }} />
+              ) : (
+                <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Arial, sans-serif", fontSize: 13, color: "#1a2a3a", lineHeight: 1.6 }}>
+                  {emailPreview.description}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Email composer popup */}
       {emailOpen && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -1885,12 +1922,18 @@ export function ContactDetail({
 
               {/* Signature preview */}
               {senderInfo && (
-                <div style={{ padding: 12, background: "#f8fbfd", borderRadius: 8, borderTop: "2px solid #FF6B35", fontSize: 12, color: "#5a6f80" }}>
-                  <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
-                  La Closing Académie ®<br />
-                  {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
-                  ✉️ {senderInfo.email}<br />
-                  🔗 www.closing-academie.com
+                <div style={{ padding: 12, background: "#f8fbfd", borderRadius: 8, overflow: "auto" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "#8399a9", textTransform: "uppercase", marginBottom: 8 }}>Signature</div>
+                  {senderInfo.email_signature ? (
+                    <div dangerouslySetInnerHTML={{ __html: senderInfo.email_signature }} style={{ transform: "scale(0.7)", transformOrigin: "top left" }} />
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#5a6f80" }}>
+                      <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
+                      La Closing Académie ®<br />
+                      {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
+                      ✉️ {senderInfo.email}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
