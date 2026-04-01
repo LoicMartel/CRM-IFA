@@ -179,6 +179,11 @@ export function ContactDetail({
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Email composer
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [senderInfo, setSenderInfo] = useState<{ first_name: string; last_name: string; email: string; phone: string } | null>(null);
 
   const [form, setForm] = useState({
     first_name: contact.first_name,
@@ -202,6 +207,16 @@ export function ContactDetail({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const activityVoice = useVoiceDictation(() => activityForm.description, (t) => setActivityForm((f) => ({ ...f, description: t })));
   const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm((f) => ({ ...f, notes: t })));
+  const emailBodyVoice = useVoiceDictation(() => emailForm.body, (t) => setEmailForm((f) => ({ ...f, body: t })));
+
+  // Load sender info for email composer
+  useEffect(() => {
+    if (!currentMemberId) return;
+    const supabase = createClient();
+    supabase.from("team_members").select("first_name, last_name, email, phone").eq("id", currentMemberId).single()
+      .then(({ data }) => { if (data) setSenderInfo(data as any); });
+  }, [currentMemberId]);
+
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState({
     type: "appel" as string,
@@ -697,8 +712,8 @@ export function ContactDetail({
           <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingActivityId(null); setActivityForm({ type: "appel", title: "Appel", description: "", due_date: now, call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
             <PhoneCall className="h-4 w-4 mr-1" /> Log appel
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingActivityId(null); setActivityForm({ type: "email", title: "Email", description: "", due_date: now, call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
-            <MailPlus className="h-4 w-4 mr-1" /> Log email
+          <Button variant="outline" size="sm" onClick={() => { setEmailForm({ subject: "", body: "" }); setEmailOpen(true); }}>
+            <MailPlus className="h-4 w-4 mr-1" /> Envoyer email
           </Button>
           <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16) }); setRdvOpen(true); }}>
             <CalendarPlus className="h-4 w-4 mr-1" /> Créer RDV
@@ -1819,6 +1834,115 @@ export function ContactDetail({
           </div>
         </SheetContent>
       </Sheet>
+      {/* Email composer popup */}
+      {emailOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEmailOpen(false); }}>
+          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <MailPlus className="h-4 w-4" style={{ color: "white" }} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: "white" }}>Nouvel email</span>
+              </div>
+              <button onClick={() => setEmailOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.7)", padding: 4, fontSize: 18 }}>✕</button>
+            </div>
+
+            {/* Email form */}
+            <div style={{ padding: 20 }} className="space-y-3">
+              {/* From */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
+                <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>De :</span>
+                <span style={{ fontWeight: 600, color: "#1a2a3a" }}>
+                  {senderInfo ? `${senderInfo.first_name} ${senderInfo.last_name} <${senderInfo.email}>` : "Chargement..."}
+                </span>
+              </div>
+
+              {/* To */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
+                <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>À :</span>
+                <span style={{ fontWeight: 600, color: "#1a2a3a" }}>
+                  {contact.first_name} {contact.last_name} &lt;{contact.email}&gt;
+                </span>
+              </div>
+
+              {/* Subject */}
+              <input
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                placeholder="Objet"
+                style={{ width: "100%", height: 40, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a", outline: "none" }}
+              />
+
+              {/* Body */}
+              <textarea
+                value={emailForm.body}
+                onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
+                placeholder="Écrivez votre message..."
+                style={{ width: "100%", minHeight: 200, borderRadius: 8, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", lineHeight: 1.6, resize: "vertical", outline: "none" }}
+              />
+              <VoiceButton isRecording={emailBodyVoice.isRecording} onClick={emailBodyVoice.toggleRecording} />
+
+              {/* Signature preview */}
+              {senderInfo && (
+                <div style={{ padding: 12, background: "#f8fbfd", borderRadius: 8, borderTop: "2px solid #FF6B35", fontSize: 12, color: "#5a6f80" }}>
+                  <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
+                  La Closing Académie ®<br />
+                  {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
+                  ✉️ {senderInfo.email}<br />
+                  🔗 www.closing-academie.com
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
+              <button onClick={() => setEmailOpen(false)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  if (!emailForm.subject.trim() || !emailForm.body.trim() || !contact.email) return;
+                  setSendingEmail(true);
+                  try {
+                    const res = await fetch("/api/email/send", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        to: contact.email,
+                        subject: emailForm.subject,
+                        body: emailForm.body,
+                        memberId: currentMemberId,
+                        contactId: contact.id,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setEmailOpen(false);
+                      setEmailForm({ subject: "", body: "" });
+                      router.refresh();
+                    } else {
+                      alert(data.error || "Erreur lors de l'envoi");
+                    }
+                  } catch {
+                    alert("Erreur réseau");
+                  }
+                  setSendingEmail(false);
+                }}
+                disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() || !contact.email}
+                style={{
+                  height: 36, borderRadius: 8, fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer",
+                  background: sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() ? "#dce8f0" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                  color: "white", display: "flex", alignItems: "center", gap: 6,
+                }}
+              >
+                <MailPlus className="h-3.5 w-3.5" />
+                {sendingEmail ? "Envoi..." : "Envoyer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
