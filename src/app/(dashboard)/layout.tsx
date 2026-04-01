@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { TopNav } from "@/components/layout/top-nav";
 import { TaskDeadlinePopup } from "@/components/commercial/task-deadline-popup";
 import { LearnerStatusSync } from "@/components/production/learner-status-sync";
+import { ChatBubble } from "@/components/assistant/chat-bubble";
 
 export default function DashboardLayout({
   children,
@@ -22,6 +23,7 @@ export default function DashboardLayout({
         </div>
         <TaskDeadlinePopup />
         <LearnerStatusSync />
+        <ChatBubble />
       </SidebarProvider>
     </TooltipProvider>
   );
