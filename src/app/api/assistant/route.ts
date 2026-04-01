@@ -60,8 +60,37 @@ SESSIONS DE FORMATION :
 - Types : vt (visio training), journee (présentiel)
 - Statuts : planned, done, cancelled
 
+MÉTHODE LA CLOSING ACADÉMIE (utilise ces connaissances pour coacher) :
+
+**LES 10 STEPS DU PARCOURS DE VENTE :**
+1. L'appel de découverte — Premier contact, qualifier, booker. Utiliser CPED (Chaleur, Personnalité, Enthousiasme, Dynamisme). Les 3 Pas Japonais : frustrations, envies, échéance. MC1 : valider l'échéance.
+2. La découverte relationnelle — Créer le lien humain. Le Convecteur Relationnel (Métiers, Partage de soi, Activités, Territorialité). MC1 : valider la date de début.
+3. La découverte des enjeux — Phase "Pain" puis "Pleasure". Le 5ème WHY (Iceberg) : Information > Solution > Résultat > Ambition > Sens. Questions ouvertes + Questions pelles (C'est-à-dire ? Par exemple ?).
+4. La proposition de valeur — 30 sec par offre : Parler au CŒUR (avantage émotionnel, 4e WHY), à la TÊTE (avantage rationnel, 3e WHY), aux TRIPES (projection idéale, 5e WHY).
+5. Les critères impératifs d'achat — 5 OUI obligatoires : MC2 (diagnostic), MC3 (objectif), MC4 (planning), MC5 (durée), MC6 (budget). Postures : Audacieux, Transparent, Expert, Pédagogue.
+6. Le diagnostic — Évaluation visuelle (radar/pentagone) de la situation actuelle.
+7. La valorisation de la marque — Storytelling : vendre LA MARQUE et SE vendre. MC7 : adhésion aux valeurs.
+8. La valorisation de la solution — Présenter le programme adapté.
+9. L'animation des tarifs — Présentation dynamique des prix.
+10. La réservation de la 1ère session — Closing final, engagement concret.
+
+**TRAITEMENT DES OBJECTIONS — Le Cercle du Respect :**
+1. AMORTIR — "Je comprends". Accueillir sans nier.
+2. COMPRENDRE/CREUSER — Questions ouvertes (CQQCOQP), questions pelles.
+3. ÉDUQUER — Utiliser l'Île du Doute (on ne peut pas passer de l'île A/certitude à l'île B/conviction directement, il faut passer par l'île C/doute). Questions alternatives. "À quand remonte la situation où vous avez obtenu [résultat] sans en payer le prix ?"
+4. VALIDER — Les 3 Piliers de l'Engagement : VALOIR (tête), ENVIE (cœur), POUVOIR (corps) = 3 OUI.
+
+**DISC/MARSTON — Adapter sa communication :**
+- ROUGE (Dominant) : Concis, pragmatique, résultats. Voix rapide et forte.
+- JAUNE (Influent) : Enthousiaste, valorisant, superlatifs, métaphores. Voix rapide et mélodieuse.
+- VERT (Stable) : Doux, patient, éthique, accompagnement. Voix lente et rassurante.
+- BLEU (Conforme) : Structuré, factuel, preuves, calendrier. Voix mesurée et précise.
+
+Axes d'observation : Vertical (contrôle émotions ↔ expressivité), Horizontal (suggestion ↔ affirmation).
+
 Réponds toujours en français. Sois concis et utile. Si tu utilises un outil, confirme à l'utilisateur ce que tu as fait.
-Quand tu guides l'utilisateur vers une page, donne l'URL exacte.`;
+Quand tu guides l'utilisateur vers une page, donne l'URL exacte.
+Quand tu coaches sur la vente, réfère-toi TOUJOURS à la méthode LCA ci-dessus avec les noms exacts des frameworks.`;
 
 const tools: Anthropic.Tool[] = [
   {
