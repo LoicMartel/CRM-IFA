@@ -17,7 +17,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload, HelpCircle } from "lucide-react";
 import { VisioformationPlansImportModal, type PlanImportRow } from "./visioformation-plans-import-modal";
 import { PDFSessionsImportModal } from "./pdf-sessions-import-modal";
 import { createClient } from "@/lib/supabase/client";
@@ -141,6 +141,7 @@ export function PlanningList({
   companies,
   wonDeals,
   expertNames,
+  expertMembers = [],
 }: {
   servicePlans: ServicePlanRow[];
   allLearners: R[];
@@ -149,6 +150,7 @@ export function PlanningList({
   companies: CompanyRef[];
   wonDeals: WonDeal[];
   expertNames?: string[];
+  expertMembers?: R[];
 }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly, onlyOwnData, firstName: currentFirstName, lastName: currentLastName, isAdmin } = useCurrentRoles();
@@ -332,6 +334,9 @@ export function PlanningList({
   }
   const [form, setForm] = useState(emptyForm);
   const planNotesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
+  // Aide à la décision
+  const [decisionOpen, setDecisionOpen] = useState(false);
+  const [decisionForm, setDecisionForm] = useState({ expertise: "", city: "", days: "", budget: "" });
 
   const filtered = servicePlans.filter((p) => {
     // Externes restreints : ne voir que les plans où ils sont impliqués
@@ -719,6 +724,13 @@ export function PlanningList({
             Import Sessions
           </button>
         </>)}
+        <button
+          onClick={() => setDecisionOpen(true)}
+          style={{ height: 38, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: 700, border: "2px solid #1a6b9c", cursor: "pointer", background: "white", color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <HelpCircle className="h-4 w-4" />
+          Aide Décision
+        </button>
         <button
           onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
           style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
@@ -1858,6 +1870,184 @@ export function PlanningList({
           100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
         }
       `}</style>
+
+      {/* Aide à la décision popup */}
+      {decisionOpen && (() => {
+        const CITY_REGION: Record<string, string> = {
+          "Paris": "Île-de-France", "Mérignac": "Nouvelle-Aquitaine", "Bordeaux": "Nouvelle-Aquitaine",
+          "Montpellier": "Occitanie", "Toulouse": "Occitanie", "Lyon": "Auvergne-Rhône-Alpes",
+          "Marseille": "Provence-Alpes-Côte d'Azur", "Nantes": "Pays de la Loire", "Lille": "Hauts-de-France",
+          "Strasbourg": "Grand Est", "Rennes": "Bretagne", "Nice": "Provence-Alpes-Côte d'Azur",
+          "Rouen": "Normandie", "Dijon": "Bourgogne-Franche-Comté", "Clermont-Ferrand": "Auvergne-Rhône-Alpes",
+          "La Rochelle": "Nouvelle-Aquitaine", "Limoges": "Nouvelle-Aquitaine", "Poitiers": "Nouvelle-Aquitaine",
+          "Orléans": "Centre-Val de Loire", "Tours": "Centre-Val de Loire", "Reims": "Grand Est",
+          "Amiens": "Hauts-de-France", "Caen": "Normandie", "Angers": "Pays de la Loire",
+          "Grenoble": "Auvergne-Rhône-Alpes", "Saint-Étienne": "Auvergne-Rhône-Alpes",
+          "Toulon": "Provence-Alpes-Côte d'Azur", "Aix-en-Provence": "Provence-Alpes-Côte d'Azur",
+          "Brest": "Bretagne", "Perpignan": "Occitanie", "Nîmes": "Occitanie", "Pau": "Nouvelle-Aquitaine",
+          "Bayonne": "Nouvelle-Aquitaine", "Metz": "Grand Est", "Nancy": "Grand Est",
+        };
+        const ALL_EXP = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
+
+        // Include all experts (active + pending, internal + external) that have a TJM
+        const experts = expertMembers.filter((m: R) => m.tjm);
+
+        const formationRegion = CITY_REGION[decisionForm.city] ?? "";
+        const nbDays = parseFloat(decisionForm.days) || 0;
+        const budgetHT = parseFloat(decisionForm.budget) || 0;
+
+        const analysis = experts.map((m: R) => {
+          const exps = (m.expertises as string[]) ?? [];
+          const hasExpertise = decisionForm.expertise ? exps.includes(decisionForm.expertise) : false;
+          const expertRegion = (m.region as string) || "";
+          const sameRegion = !!(formationRegion && expertRegion && expertRegion === formationRegion);
+          const tjm = Number(m.tjm) || 0;
+          const costTjm = tjm * nbDays;
+          const prepa = tjm * 0.5;
+          const deplacement = sameRegion ? 0 : tjm * 0.5;
+          const totalHT = costTjm + prepa + deplacement;
+          const budgetOk = budgetHT > 0 ? totalHT <= budgetHT : true;
+          const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
+          const marge = budgetHT > 0 ? budgetHT - totalHT : 0;
+          return {
+            name: `${m.first_name} ${m.last_name}`,
+            hasExpertise, sameRegion, budgetOk, score,
+            city: (m.city as string) || "—", region: expertRegion || "—",
+            tjm, costTjm, prepa, deplacement, totalHT, marge,
+          };
+        }).sort((a, b) => b.score - a.score || a.totalHT - b.totalHT);
+
+        const best = analysis[0];
+        const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setDecisionOpen(false); }}>
+            <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 950, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>Aide à la Décision — Choix de l'expert</h3>
+                <button onClick={() => setDecisionOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>✕</button>
+              </div>
+
+              <div style={{ padding: 24 }} className="space-y-5">
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                  Critères du besoin client
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Expertise recherchée</label>
+                    <select value={decisionForm.expertise} onChange={(e) => setDecisionForm({ ...decisionForm, expertise: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
+                      <option value="">Sélectionner</option>
+                      {ALL_EXP.map(e => <option key={e} value={e}>{e}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Ville de formation</label>
+                    <input value={decisionForm.city} onChange={(e) => setDecisionForm({ ...decisionForm, city: e.target.value })}
+                      list="decision-city-list2"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Ex: Lyon" />
+                    <datalist id="decision-city-list2">
+                      {Object.keys(CITY_REGION).map(c => <option key={c} value={c} />)}
+                    </datalist>
+                    {formationRegion && <p style={{ fontSize: 10, color: "#8399a9" }}>{formationRegion}</p>}
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb jours</label>
+                    <input type="number" value={decisionForm.days} onChange={(e) => setDecisionForm({ ...decisionForm, days: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="2" />
+                  </div>
+                  <div className="space-y-1">
+                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Budget HT (EUR)</label>
+                    <input type="number" value={decisionForm.budget} onChange={(e) => setDecisionForm({ ...decisionForm, budget: e.target.value })}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="4000" />
+                  </div>
+                </div>
+
+                {nbDays > 0 && (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                      Analyse des experts
+                    </div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: "#f8fbfd" }}>
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Expertise</th>
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Ville</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Même région</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Coût TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Prépa</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Déplac.</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Budget OK</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Score</th>
+                            {budgetHT > 0 && <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Marge</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analysis.map((a, i) => (
+                            <tr key={a.name} style={{ borderTop: "1px solid #e8ecf1", background: i === 0 ? "#f0f7fb" : "white" }}>
+                              <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.name}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.hasExpertise ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.hasExpertise ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 10px", color: "#5a6f80" }}>{a.city}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.sameRegion ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.sameRegion ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.tjm)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.costTjm)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.prepa)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.deplacement)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700 }}>{fmtE(a.totalHT)}</td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{ color: a.budgetOk ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.budgetOk ? "OUI ✓" : "NON ✗"}</span>
+                              </td>
+                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  width: 28, height: 28, borderRadius: "50%", fontWeight: 800, fontSize: 13,
+                                  background: a.score === 3 ? "#e8f5e9" : a.score === 2 ? "#fff3e0" : "#fce4ec",
+                                  color: a.score === 3 ? "#27ae60" : a.score === 2 ? "#e65100" : "#c62828",
+                                }}>{a.score}/3</span>
+                              </td>
+                              {budgetHT > 0 && (
+                                <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, color: a.marge >= 0 ? "#27ae60" : "#e74c3c" }}>
+                                  {fmtE(a.marge)}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {best && (
+                      <div style={{ padding: 16, borderRadius: 10, background: "linear-gradient(135deg, #e8f5e9 0%, #f0f7fb 100%)", border: "1px solid #c8e6c9" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32", marginBottom: 6 }}>Recommandation</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#1a2a3a" }}>
+                          Meilleur choix : {best.name} — Score : {best.score}/3 — Coût estimé : {fmtE(best.totalHT)}
+                        </div>
+                        {budgetHT > 0 && best.marge > 0 && (
+                          <div style={{ fontSize: 13, color: "#27ae60", fontWeight: 600, marginTop: 4 }}>
+                            Marge dégagée : {fmtE(best.marge)}
+                          </div>
+                        )}
+                        <p style={{ fontSize: 11, color: "#5a6f80", marginTop: 8 }}>
+                          Si plusieurs experts ont le même score, le classement privilégie le coût total le plus bas.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

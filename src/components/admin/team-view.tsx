@@ -81,9 +81,6 @@ export function TeamView({ members }: { members: R[] }) {
   const [permsMember, setPermsMember] = useState<R | null>(null);
   const [permsForm, setPermsForm] = useState<MemberPermissions>({ ...DEFAULT_PERMISSIONS });
   const [savingPerms, setSavingPerms] = useState(false);
-  // Aide à la décision
-  const [decisionOpen, setDecisionOpen] = useState(false);
-  const [decisionForm, setDecisionForm] = useState({ expertise: "", city: "", days: "", budget: "" });
 
   function openPerms(member: R) {
     const dbPerms = (member.permissions as Partial<MemberPermissions>) ?? {};
@@ -274,18 +271,8 @@ export function TeamView({ members }: { members: R[] }) {
           })}
         </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button
-            onClick={() => setDecisionOpen(true)}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8, height: 38, borderRadius: 10,
-              padding: "0 20px", fontSize: 13, fontWeight: 700, border: "2px solid #1a6b9c", cursor: "pointer",
-              background: "white", color: "#1a6b9c",
-            }}
-          >
-            <HelpCircle className="h-4 w-4" /> Aide Décision
-          </button>
-          {isAdmin && (
+        {isAdmin && (
+          <div style={{ marginLeft: "auto" }}>
             <button
               onClick={openCreate}
               style={{
@@ -296,8 +283,8 @@ export function TeamView({ members }: { members: R[] }) {
             >
               <Plus className="h-4 w-4" /> Nouveau membre
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Cards grid */}
@@ -796,175 +783,6 @@ export function TeamView({ members }: { members: R[] }) {
           </div>
         </div>
       )}
-      {/* Aide à la décision popup */}
-      {decisionOpen && (() => {
-        const experts = members.filter(m => {
-          const roles = (m.roles as string[]) ?? [];
-          return roles.some(r => r === "Expert" || r === "Experte") && (m.expert_status as string) === "active" && m.tjm;
-        });
-
-        const formationRegion = CITY_REGION_MAP[decisionForm.city] ?? "";
-        const nbDays = parseFloat(decisionForm.days) || 0;
-        const budgetHT = parseFloat(decisionForm.budget) || 0;
-
-        const analysis = experts.map(m => {
-          const expertises = (m.expertises as string[]) ?? [];
-          const hasExpertise = decisionForm.expertise ? expertises.includes(decisionForm.expertise) : false;
-          const expertRegion = (m.region as string) || "";
-          const sameRegion = formationRegion && expertRegion ? expertRegion === formationRegion : false;
-          const tjm = Number(m.tjm) || 0;
-          const costTjm = tjm * nbDays;
-          const prepa = tjm * 0.5;
-          const deplacement = sameRegion ? 0 : tjm * 0.5;
-          const totalHT = costTjm + prepa + deplacement;
-          const budgetOk = budgetHT > 0 ? totalHT <= budgetHT : true;
-          const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
-          const marge = budgetHT > 0 ? budgetHT - totalHT : 0;
-
-          return {
-            name: `${m.first_name} ${m.last_name}`,
-            hasExpertise, sameRegion, budgetOk, score,
-            city: (m.city as string) || "—",
-            region: expertRegion || "—",
-            tjm, costTjm, prepa, deplacement, totalHT, marge,
-            daysPerWeek: m.days_per_week ? Number(m.days_per_week) : null,
-          };
-        }).sort((a, b) => b.score - a.score || a.totalHT - b.totalHT);
-
-        const best = analysis[0];
-        const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
-
-        return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={(e) => { if (e.target === e.currentTarget) setDecisionOpen(false); }}>
-            <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 900, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
-              <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>Aide à la Décision — Choix du formateur</h3>
-                <button onClick={() => setDecisionOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>✕</button>
-              </div>
-
-              <div style={{ padding: 24 }} className="space-y-5">
-                {/* Critères */}
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
-                  Critères du besoin client
-                </div>
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Expertise recherchée</label>
-                    <select value={decisionForm.expertise} onChange={(e) => setDecisionForm({ ...decisionForm, expertise: e.target.value })}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
-                      <option value="">Sélectionner</option>
-                      {ALL_EXPERTISES.map(e => <option key={e} value={e}>{e}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Ville de formation</label>
-                    <input value={decisionForm.city} onChange={(e) => setDecisionForm({ ...decisionForm, city: e.target.value })}
-                      list="decision-city-list"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Ex: Lyon" />
-                    <datalist id="decision-city-list">
-                      {Object.keys(CITY_REGION_MAP).map(c => <option key={c} value={c} />)}
-                    </datalist>
-                    {formationRegion && <p style={{ fontSize: 10, color: "#8399a9" }}>{formationRegion}</p>}
-                  </div>
-                  <div className="space-y-1">
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb jours</label>
-                    <input type="number" value={decisionForm.days} onChange={(e) => setDecisionForm({ ...decisionForm, days: e.target.value })}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="2" />
-                  </div>
-                  <div className="space-y-1">
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Budget HT (EUR)</label>
-                    <input type="number" value={decisionForm.budget} onChange={(e) => setDecisionForm({ ...decisionForm, budget: e.target.value })}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="4000" />
-                  </div>
-                </div>
-
-                {/* Analyse */}
-                {nbDays > 0 && (
-                  <>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
-                      Analyse des formateurs
-                    </div>
-                    <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                        <thead>
-                          <tr style={{ background: "#f8fbfd" }}>
-                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Formateur</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Expertise</th>
-                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Ville</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Même région</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>TJM</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Coût TJM</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Prépa</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Déplac.</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Budget OK</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Score</th>
-                            {budgetHT > 0 && <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Marge</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analysis.map((a, i) => (
-                            <tr key={a.name} style={{ borderTop: "1px solid #e8ecf1", background: i === 0 ? "#f0f7fb" : "white" }}>
-                              <td style={{ padding: "8px 10px", fontWeight: 600 }}>{a.name}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                                <span style={{ color: a.hasExpertise ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.hasExpertise ? "OUI ✓" : "NON ✗"}</span>
-                              </td>
-                              <td style={{ padding: "8px 10px", color: "#5a6f80" }}>{a.city}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                                <span style={{ color: a.sameRegion ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.sameRegion ? "OUI ✓" : "NON ✗"}</span>
-                              </td>
-                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.tjm)}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.costTjm)}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.prepa)}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "right" }}>{fmtE(a.deplacement)}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700 }}>{fmtE(a.totalHT)}</td>
-                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                                <span style={{ color: a.budgetOk ? "#27ae60" : "#e74c3c", fontWeight: 700 }}>{a.budgetOk ? "OUI ✓" : "NON ✗"}</span>
-                              </td>
-                              <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                                <span style={{
-                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                                  width: 28, height: 28, borderRadius: "50%", fontWeight: 800, fontSize: 13,
-                                  background: a.score === 3 ? "#e8f5e9" : a.score === 2 ? "#fff3e0" : "#fce4ec",
-                                  color: a.score === 3 ? "#27ae60" : a.score === 2 ? "#e65100" : "#c62828",
-                                }}>{a.score}/3</span>
-                              </td>
-                              {budgetHT > 0 && (
-                                <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600, color: a.marge >= 0 ? "#27ae60" : "#e74c3c" }}>
-                                  {fmtE(a.marge)}
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Recommandation */}
-                    {best && (
-                      <div style={{ padding: 16, borderRadius: 10, background: "linear-gradient(135deg, #e8f5e9 0%, #f0f7fb 100%)", border: "1px solid #c8e6c9" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32", marginBottom: 6 }}>Recommandation</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#1a2a3a" }}>
-                          Meilleur choix : {best.name} — Score : {best.score}/3 — Coût estimé : {fmtE(best.totalHT)}
-                        </div>
-                        {budgetHT > 0 && best.marge > 0 && (
-                          <div style={{ fontSize: 13, color: "#27ae60", fontWeight: 600, marginTop: 4 }}>
-                            Marge dégagée : {fmtE(best.marge)}
-                          </div>
-                        )}
-                        <p style={{ fontSize: 11, color: "#5a6f80", marginTop: 8 }}>
-                          Si plusieurs formateurs ont le même score, le classement privilégie le coût total le plus bas.
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }

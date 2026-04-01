@@ -49,7 +49,7 @@ export default async function PlanningPage() {
 
   const { data: teamMembersData } = await supabase
     .from("team_members")
-    .select("id, first_name, last_name, roles")
+    .select("id, first_name, last_name, roles, expertises, city, region, tjm, days_per_week, preferred_days, expert_status, mobility")
     .eq("is_active", true);
 
   const experts = (teamMembersData ?? []).filter((m: any) => ((m.roles as string[]) ?? []).some(r => r === "Expert" || r === "Experte")).map((m: any) => m.first_name as string);
@@ -105,6 +105,7 @@ export default async function PlanningPage() {
           companies={companies ?? []}
           wonDeals={(wonDeals ?? []) as any}
           expertNames={experts}
+          expertMembers={(teamMembersData ?? []).filter((m: any) => ((m.roles as string[]) ?? []).some(r => r === "Expert" || r === "Experte"))}
         />
       </div>
     </>
