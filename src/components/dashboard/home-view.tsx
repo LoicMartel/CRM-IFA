@@ -505,26 +505,31 @@ export function HomeView({
                   const company = m.companies as { name: string } | null;
                   const time = (() => { try { return format(new Date(m.scheduled_at as string), "HH:mm"); } catch { return ""; } })();
                   return (
-                    <div key={m.id as string} style={{ padding: "10px 12px", borderRadius: 8, background: mc.bg, borderLeft: `3px solid ${mc.text}` }}>
+                    <div key={m.id as string} onClick={() => openMeeting(m)} style={{ padding: "10px 12px", borderRadius: 8, background: mc.bg, borderLeft: `3px solid ${mc.text}`, cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: mc.text }}>{time} · {m.meeting_type as string}</span>
                         <span style={{ fontSize: 10, color: "#8399a9", marginLeft: "auto" }}>{(m.duration_minutes as number) ?? 60} min</span>
                       </div>
                       {contact && <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{contact.first_name} {contact.last_name}</div>}
                       {company && <div style={{ fontSize: 11, color: "#5a6f80" }}>{company.name}</div>}
-                      {(m.status as string) === "booked" && (m.next_step as string) !== "completed" && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: 4,
-                            marginTop: 6, height: 22, borderRadius: 20, border: "none", cursor: "pointer",
-                            background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white",
-                            fontSize: 9, fontWeight: 700, padding: "0 10px",
-                          }}
-                        >
-                          📋 Suivi rdv
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+                        <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
+                          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                          title="Modifier">
+                          ✏️
                         </button>
-                      )}
+                        <button onClick={async (e) => { e.stopPropagation(); if (!window.confirm("Supprimer ce RDV ?")) return; const sb = createClient(); await sb.from("meetings").delete().eq("id", m.id as string); router.refresh(); }}
+                          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                          title="Supprimer">
+                          🗑
+                        </button>
+                        {(m.status as string) === "booked" && (
+                          <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+                            📋 Suivi rdv
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -550,7 +555,7 @@ export function HomeView({
                   const plan = s.service_plans as { companies: { name: string } | null; training_programs: { name: string } | null } | null;
                   const trainers = (s.trainers as string[]) ?? [];
                   return (
-                    <div key={s.id as string} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1a6b9c"}` }}>
+                    <div key={s.id as string} onClick={() => openSession(s)} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1a6b9c"}`, cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: isJournee ? "#e65100" : "#1a6b9c" }}>
                           {time ? `${time} · ` : ""}{isJournee ? "Journée" : "VT"}
@@ -559,12 +564,24 @@ export function HomeView({
                       </div>
                       {plan?.companies && <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{plan.companies.name}</div>}
                       {trainers.length > 0 && <div style={{ fontSize: 11, color: "#5a6f80" }}>{trainers.join(", ")}</div>}
-                      {(s.status as string) === "planned" && (
-                        <button onClick={() => openSession(s)}
-                          style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px", marginTop: 6 }}>
-                          📋 Suivi session
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
+                        <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+                          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                          title="Modifier">
+                          ✏️
                         </button>
-                      )}
+                        <button onClick={async (e) => { e.stopPropagation(); if (!window.confirm("Supprimer cette session ?")) return; const sb = createClient(); await sb.from("training_session_learners").delete().eq("training_session_id", s.id as string); await sb.from("training_sessions").delete().eq("id", s.id as string); router.refresh(); }}
+                          style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                          title="Supprimer">
+                          🗑
+                        </button>
+                        {(s.status as string) === "planned" && (
+                          <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+                            📋 Suivi session
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
