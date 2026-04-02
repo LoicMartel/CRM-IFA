@@ -1997,7 +1997,7 @@ export function ContactDetail({
       {emailOpen && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={(e) => { if (e.target === e.currentTarget) setEmailOpen(false); }}>
-          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
             {/* Header */}
             <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2008,7 +2008,7 @@ export function ContactDetail({
             </div>
 
             {/* Email form */}
-            <div style={{ padding: 20 }} className="space-y-3">
+            <div style={{ padding: 20, overflowY: "auto", flex: 1 }} className="space-y-3">
               {/* From */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
                 <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>De :</span>
