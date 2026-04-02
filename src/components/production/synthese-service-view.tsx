@@ -96,12 +96,13 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const fyEnd = `${parseInt(fy.start.slice(0, 4)) + 1}-08-31`;
 
   const fySessions = sessions.filter((s: R) => inRange(s.session_date as string, fyStart, fyEnd));
-  const doneSessions = fySessions.filter((s: R) => s.status === "done");
   const plannedSessions = fySessions.filter((s: R) => s.status === "planned");
   const allActiveSessions = fySessions.filter((s: R) => s.status !== "cancelled");
 
-  const totalHoursDelivered = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-  const totalHoursPlanned = allActiveSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+  // Use deliverySessions for all "delivered" metrics
+  const fyDelivery = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, fyStart, fyEnd));
+  const totalHoursDelivered = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+  const totalHoursPlanned = totalHoursDelivered + plannedSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
 
   // Total hours sold = sum of (vt_planned + days_planned*8) from service plans
   const totalHoursSold = servicePlans.reduce((sum: number, p: R) => {
@@ -112,15 +113,14 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   const realizationRate = totalHoursSold > 0 ? (totalHoursDelivered / totalHoursSold * 100) : 0;
 
-  // Facturable / non facturable — use deliverySessions (table sessions) for exact amounts
-  const fyDeliverySessions = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, fyStart, fyEnd));
-  const totalFacturable = fyDeliverySessions.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
-  const totalNonFacturable = fyDeliverySessions.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
+  // Facturable / non facturable from deliverySessions
+  const totalFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
+  const totalNonFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
 
   const nonFactPct = (totalFacturable + totalNonFacturable) > 0 ? (totalNonFacturable / (totalFacturable + totalNonFacturable) * 100) : 0;
 
   // Average daily rate — facturable hours only
-  const billableHours = fyDeliverySessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+  const billableHours = fyDelivery.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
   const billableDays = hoursToJ(billableHours);
   const totalDaysDelivered = hoursToJ(totalHoursDelivered);
   const avgDailyRate = billableDays > 0 ? totalFacturable / billableDays : 0;
@@ -132,8 +132,15 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const daysToplan = Math.max(0, totalWonDays - totalPlannedDays);
   const hoursToplan = daysToplan * 8;
 
-  // Unique trainers with data
-  const activeTrainers = TRAINERS.filter(t => fySessions.some((s: R) => ((s.trainers as string[]) ?? []).includes(t)));
+  // Unique trainers with data (from both sources)
+  const activeTrainers = TRAINERS.filter(t => {
+    const inTrainingSessions = fySessions.some((s: R) => ((s.trainers as string[]) ?? []).includes(t));
+    const inDelivery = fyDelivery.some((s: R) => {
+      const trainer = s.team_members as { first_name: string; last_name: string } | null;
+      return trainer?.first_name === t;
+    });
+    return inTrainingSessions || inDelivery;
+  });
 
   // ========== PORTEFEUILLE BY TRAINER (bar chart) ==========
   const portfolioData = activeTrainers.map(t => {
@@ -148,58 +155,50 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
     return { name: t, montant: budget };
   });
 
-  // ========== JOURS DELIVRES PAR MOIS (stacked bar) ==========
+  // ========== JOURS DELIVRES PAR MOIS (stacked bar) — from deliverySessions ==========
   const monthlyData = FISCAL_MONTHS.map((m, i) => {
     const yr = i < 4 ? parseInt(fy.start.slice(0, 4)) : parseInt(fy.start.slice(0, 4)) + 1;
     const monthStr = `${yr}-${m.key}`;
     const entry: Record<string, any> = { month: m.label };
     activeTrainers.forEach(t => {
-      const hours = doneSessions.filter((s: R) => {
+      const hours = fyDelivery.filter((s: R) => {
         const d = (s.session_date as string).slice(0, 7);
-        return d === monthStr && ((s.trainers as string[]) ?? []).includes(t);
-      }).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+        const trainer = s.team_members as { first_name: string; last_name: string } | null;
+        return d === monthStr && trainer?.first_name === t;
+      }).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
       entry[t] = hoursToJ(hours);
     });
     return entry;
   });
 
-  // ========== DETAIL CONSULTANT EXPERTS TABLE ==========
+  // ========== DETAIL CONSULTANT EXPERTS TABLE — all from deliverySessions ==========
   function computeDetailData(start: string, end: string) {
-    const periodSessions = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status !== "cancelled");
-    const periodDone = periodSessions.filter((s: R) => s.status === "done");
+    const periodDelivery = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, start, end));
 
     return activeTrainers.map(t => {
-      const tSessions = periodSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-      const tDone = periodDone.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-
-      // Portefeuille
-      const planIds = new Set<string>();
-      tSessions.forEach((s: R) => planIds.add(s.service_plan_id as string));
-      const portfolio = Array.from(planIds).reduce((sum, pid) => {
-        const p = servicePlans.find((pp: R) => pp.id === pid);
-        return sum + (Number(p?.budget) || 0);
-      }, 0);
-
-      const visioHours = tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const presentielHours = tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const totalPrevues = visioHours + presentielHours;
-      const totalDelivrees = tDone.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-
-      // Use deliverySessions for exact financial amounts per trainer
-      const tDelivery = (deliverySessions ?? []).filter((ds: R) => {
-        if (!inRange(ds.session_date as string, start, end)) return false;
+      const tDelivery = periodDelivery.filter((ds: R) => {
         const trainer = ds.team_members as { first_name: string; last_name: string } | null;
         return trainer?.first_name === t;
       });
+
+      // Portefeuille from service plans where trainer has sessions
+      const companyIds = new Set<string>();
+      tDelivery.forEach((s: R) => {
+        const company = s.companies as { id: string; name: string } | null;
+        if (company?.id) companyIds.add(company.id);
+      });
+      const portfolio = servicePlans.filter((p: R) => companyIds.has(p.company_id as string)).reduce((sum: number, p: R) => sum + (Number(p.budget) || 0), 0);
+
+      // Hours from delivery: distanciel = visio, présentiel = présentiel
+      const visioHours = tDelivery.filter((s: R) => s.delivery_mode === "distanciel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+      const presentielHours = tDelivery.filter((s: R) => s.delivery_mode === "présentiel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+      const totalPrevues = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.hours_planned) || 0), 0);
+      const totalDelivrees = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+
       const facturable = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
       const nonFact = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
 
-      // Pipe = deals in pipeline for companies where this trainer works
-      const companyIds = new Set<string>();
-      tSessions.forEach((s: R) => {
-        const cid = (s.service_plans as R)?.company_id as string;
-        if (cid) companyIds.add(cid);
-      });
+      // Pipe = deals in pipeline
       const pipe = deals.filter((d: R) => companyIds.has(d.company_id as string) && !["closed_won", "closed_lost"].includes(d.stage as string)).length;
 
       return {
@@ -238,17 +237,20 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const cmdData = computeCmdData(cmdRange.start, cmdRange.end);
   const cmdTotals = cmdData.reduce((acc, r) => ({ totalH: acc.totalH + r.totalH, presH: acc.presH + r.presH, visioH: acc.visioH + r.visioH }), { totalH: 0, presH: 0, visioH: 0 });
 
-  // ========== VISIO VS PRESENTIEL CHART ==========
+  // ========== VISIO VS PRESENTIEL CHART — from deliverySessions ==========
   const visioPresentielData = activeTrainers.map(t => {
-    const tSessions = allActiveSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-    const visio = hoursToJ(tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0));
-    const presentiel = hoursToJ(tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0));
+    const tDelivery = fyDelivery.filter((s: R) => {
+      const trainer = s.team_members as { first_name: string; last_name: string } | null;
+      return trainer?.first_name === t;
+    });
+    const visio = hoursToJ(tDelivery.filter((s: R) => s.delivery_mode === "distanciel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0));
+    const presentiel = hoursToJ(tDelivery.filter((s: R) => s.delivery_mode === "présentiel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0));
     return { name: t, Visio: visio, Présentiel: presentiel };
   });
 
   // ========== FACTURABLE VS NON FACTURABLE CHART ==========
   const factNonFactData = activeTrainers.map(t => {
-    const tDelivery = fyDeliverySessions.filter((ds: R) => {
+    const tDelivery = fyDelivery.filter((ds: R) => {
       const trainer = ds.team_members as { first_name: string; last_name: string } | null;
       return trainer?.first_name === t;
     });
