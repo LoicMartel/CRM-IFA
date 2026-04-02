@@ -21,6 +21,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
+import { PlanPopup } from "@/components/production/plan-popup";
 import { formatPhone } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -159,6 +160,7 @@ export function LearnerDetailView({
   const [saving, setSaving] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
+  const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [activityForm, setActivityForm] = useState({
     type: "tâche" as string,
     title: "",
@@ -550,9 +552,13 @@ export function LearnerDetailView({
                                 <span style={{ background: ssc.bg, color: ssc.text, padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
                                   {ssc.label}
                                 </span>
-                                <span style={{ fontSize: 12, color: "#1a2a3a" }}>
-                                  {s.service_plans?.companies?.name ?? ""}
-                                </span>
+                                {s.service_plan_id ? (
+                                  <button onClick={() => setOpenPlanId(s.service_plan_id)} style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
+                                    {s.service_plans?.companies?.name ?? ""}
+                                  </button>
+                                ) : (
+                                  <span style={{ fontSize: 12, color: "#1a2a3a" }}>{s.service_plans?.companies?.name ?? ""}</span>
+                                )}
                               </div>
                               <span style={{ fontSize: 12, color: "#8399a9" }}>
                                 {s.duration_hours ? `${s.duration_hours}h` : "\u2014"}
@@ -581,9 +587,9 @@ export function LearnerDetailView({
                             <div key={plan.id} style={{ padding: "8px 0", borderBottom: "1px solid #e6f0f7" }}>
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>
+                                  <button onClick={() => setOpenPlanId(plan.id)} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
                                     {plan.companies?.name ?? "\u2014"}
-                                  </span>
+                                  </button>
                                   {plan.training_programs?.name && (
                                     <span style={{ fontSize: 11, color: "#8399a9", marginLeft: 8 }}>
                                       {plan.training_programs.name}
@@ -643,10 +649,10 @@ export function LearnerDetailView({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => router.push("/planning")}
+                              onClick={() => setOpenPlanId(plan.id)}
                               style={{ fontSize: 11, color: "#1a6b9c" }}
                             >
-                              Voir le plan
+                              Ouvrir le plan
                             </Button>
                           </CardTitle>
                         </CardHeader>
@@ -1018,6 +1024,8 @@ export function LearnerDetailView({
           </div>
         </div>
       )}
+
+      {openPlanId && <PlanPopup planId={openPlanId} onClose={() => setOpenPlanId(null)} />}
     </div>
   );
 }

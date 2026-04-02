@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
+import { PlanPopup } from "@/components/production/plan-popup";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -118,6 +119,7 @@ export function CompanyDetail({
 
   // Plan de formation collapse state
   const [collapsedPlans, setCollapsedPlans] = useState<Set<string>>(new Set());
+  const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   function togglePlan(planId: string) {
     setCollapsedPlans(prev => {
       const next = new Set(prev);
@@ -728,6 +730,15 @@ export function CompanyDetail({
                       <div key={s(plan.id)} className="lca-card">
                         <div style={{ height: 4, background: "#7c3aed" }} />
                         <div style={{ padding: 16 }}>
+                          {/* Open plan button */}
+                          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+                            <button
+                              onClick={() => setOpenPlanId(s(plan.id))}
+                              style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "#e8f0fe", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}
+                            >
+                              Ouvrir le plan
+                            </button>
+                          </div>
                           {/* Plan header — clickable to toggle */}
                           <div
                             style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", marginBottom: collapsedPlans.has(s(plan.id)) ? 0 : 12 }}
@@ -1205,6 +1216,8 @@ export function CompanyDetail({
           </div>
         );
       })()}
+
+      {openPlanId && <PlanPopup planId={openPlanId} onClose={() => setOpenPlanId(null)} />}
     </div>
   );
 }

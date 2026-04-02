@@ -24,6 +24,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
+import { PlanPopup } from "@/components/production/plan-popup";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -178,6 +179,7 @@ export function ContactDetail({
   const defaultMeetingType = isInbound ? "R1" : "R0";
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
+  const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1392,7 +1394,15 @@ export function ContactDetail({
                                     {sess.session_type === "journee" ? "Journée" : "VT"}
                                   </span>
                                 </TableCell>
-                                <TableCell style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{company?.name ?? "—"}</TableCell>
+                                <TableCell>
+                                  {sp?.id ? (
+                                    <button onClick={() => setOpenPlanId(String(sp.id))} style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
+                                      {company?.name ?? "—"}
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{company?.name ?? "—"}</span>
+                                  )}
+                                </TableCell>
                                 <TableCell style={{ fontSize: 12, color: "#5a6f80" }}>{program?.name ?? "—"}</TableCell>
                                 <TableCell>
                                   {(() => {
@@ -2108,6 +2118,8 @@ export function ContactDetail({
           </div>
         </div>
       )}
+
+      {openPlanId && <PlanPopup planId={openPlanId} onClose={() => setOpenPlanId(null)} />}
     </div>
   );
 }
