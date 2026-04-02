@@ -260,8 +260,10 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         {!s.is_billable && <span style={{ fontSize: 9, fontWeight: 600, padding: "0 5px", borderRadius: 6, background: "#f5f5f5", color: "#999" }}>NF</span>}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
           <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#e8f0fe", color: "#0d4f7a", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
-            ✏️ Modifier
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+            title="Modifier"
+          >
+            ✏️
           </button>
           <button
             onClick={async (e) => {
@@ -272,7 +274,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
               await sb.from("training_sessions").delete().eq("id", s.id);
               router.refresh();
             }}
-            style={{ display: "inline-flex", alignItems: "center", height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#fce4ec", color: "#c62828", fontSize: 9, fontWeight: 700, padding: "0 8px" }}
+            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
             title="Supprimer"
           >
             🗑
