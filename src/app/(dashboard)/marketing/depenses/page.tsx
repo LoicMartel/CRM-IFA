@@ -7,7 +7,7 @@ export default async function DepensesPage() {
 
   const { data: expenses } = await supabase
     .from("marketing_expenses")
-    .select("*")
+    .select("*, marketing_expense_documents(*)")
     .order("period_start", { ascending: false });
 
   return (

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Pencil, Trash2, DollarSign, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Users, Upload, Download, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -19,6 +19,15 @@ import { exportData, type ExportFormat } from "@/lib/export";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+interface ExpenseDoc {
+  id: string;
+  expense_id: string;
+  name: string;
+  file_path: string;
+  file_size: number | null;
+  file_type: string | null;
+}
+
 interface Expense {
   id: string;
   period_start: string;
@@ -27,6 +36,7 @@ interface Expense {
   amount: number;
   description: string | null;
   created_at: string;
+  marketing_expense_documents?: ExpenseDoc[];
 }
 
 function fmt(n: number) {
@@ -69,6 +79,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
     description: "",
   });
   const descVoice = useVoiceDictation(() => form.description, (t) => setForm((f) => ({ ...f, description: t })));
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [editDocs, setEditDocs] = useState<ExpenseDoc[]>([]);
 
   // Filters
   const [filterProvider, setFilterProvider] = useState("");
@@ -101,7 +113,40 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
       amount: String(e.amount),
       description: e.description ?? "",
     });
+    setEditDocs(e.marketing_expense_documents ?? []);
     setOpen(true);
+  }
+
+  async function handleUploadDoc(expenseId: string, file: File) {
+    setUploadingDoc(true);
+    const supabase = createClient();
+    const path = `${expenseId}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("marketing-expense-documents").upload(path, file);
+    if (!uploadError) {
+      const { data: doc } = await supabase.from("marketing_expense_documents").insert({
+        expense_id: expenseId,
+        name: file.name,
+        file_path: path,
+        file_size: file.size,
+        file_type: file.type,
+      }).select().single();
+      if (doc) setEditDocs(prev => [...prev, doc]);
+    }
+    setUploadingDoc(false);
+  }
+
+  async function handleDownloadDoc(doc: ExpenseDoc) {
+    const supabase = createClient();
+    const { data } = await supabase.storage.from("marketing-expense-documents").createSignedUrl(doc.file_path, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
+  async function handleDeleteDoc(doc: ExpenseDoc) {
+    if (!window.confirm(`Supprimer "${doc.name}" ?`)) return;
+    const supabase = createClient();
+    await supabase.storage.from("marketing-expense-documents").remove([doc.file_path]);
+    await supabase.from("marketing_expense_documents").delete().eq("id", doc.id);
+    setEditDocs(prev => prev.filter(d => d.id !== doc.id));
   }
 
   async function handleDelete(id: string) {
@@ -207,13 +252,14 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               <TableHead>Prestataire</TableHead>
               <TableHead style={{ textAlign: "right" }}>Montant</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead>Documents</TableHead>
               <TableHead style={{ width: 70 }}></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   Aucune dépense
                 </TableCell>
               </TableRow>
@@ -230,6 +276,16 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                     </TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 700 }}>{fmt(Number(e.amount))}</TableCell>
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
+                    <TableCell>
+                      {(e.marketing_expense_documents ?? []).length > 0 ? (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c" }}>
+                          <FileText className="h-3.5 w-3.5 inline mr-1" />
+                          {(e.marketing_expense_documents ?? []).length}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#ccc", fontSize: 11 }}>—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div style={{ display: "flex", gap: 4 }}>
                         <button onClick={() => openEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}>
@@ -251,7 +307,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                 <td style={{ padding: "8px 16px" }}>TOTAL</td>
                 <td></td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#e74c3c" }}>{fmt(totalAmount)}</td>
-                <td colSpan={2}></td>
+                <td colSpan={3}></td>
               </tr>
             </tfoot>
           )}
@@ -301,6 +357,42 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               />
               <VoiceButton isRecording={descVoice.isRecording} onClick={descVoice.toggleRecording} />
             </div>
+            {/* Documents section — only for existing expenses */}
+            {editingId && (
+              <div className="space-y-2">
+                <Label>Documents</Label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {editDocs.map(doc => (
+                    <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#f7f8fa", borderRadius: 8, padding: "6px 10px" }}>
+                      <FileText className="h-4 w-4" style={{ color: "#1a6b9c", flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</span>
+                      {doc.file_size && <span style={{ fontSize: 10, color: "#8399a9" }}>{(doc.file_size / 1024).toFixed(0)}KB</span>}
+                      <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 2 }}>
+                        <Download className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 2 }}>
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: "#1a6b9c", fontWeight: 600, marginTop: 4 }}>
+                  <Upload className="h-4 w-4" />
+                  {uploadingDoc ? "Upload en cours..." : "Ajouter un document"}
+                  <input
+                    type="file"
+                    style={{ display: "none" }}
+                    disabled={uploadingDoc}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file && editingId) await handleUploadDoc(editingId, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            )}
+
             <Button
               onClick={handleSave}
               disabled={saving || !form.provider_name || !form.amount || !form.period}
