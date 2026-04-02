@@ -365,10 +365,14 @@ export function ContactDetail({
     // Update contact lead_status based on call result
     if (!editingActivityId && activityForm.type === "appel") {
       if (activityForm.call_result === "contacted") {
-        await supabase.from("contacts").update({
+        const callUpdate: Record<string, string> = {
           last_contacted_at: new Date().toISOString(),
           lead_status: activityForm.call_outcome === "booked" ? "booked" : "contacted",
-        }).eq("id", contact.id);
+        };
+        if (activityForm.call_outcome === "booked" && contact.lifecycle_stage === "lead_marketing") {
+          callUpdate.lifecycle_stage = "prospect";
+        }
+        await supabase.from("contacts").update(callUpdate).eq("id", contact.id);
       } else {
         await supabase.from("contacts").update({
           last_contacted_at: new Date().toISOString(),
@@ -441,7 +445,9 @@ export function ContactDetail({
 
     const hasBookedRdv = mtgs.some(m => m.status === "booked");
     if (hasBookedRdv) {
-      await supabase.from("contacts").update({ lead_status: "booked" }).eq("id", contact.id);
+      const updateData: Record<string, string> = { lead_status: "booked" };
+      if (contact.lifecycle_stage === "lead_marketing") updateData.lifecycle_stage = "prospect";
+      await supabase.from("contacts").update(updateData).eq("id", contact.id);
       return;
     }
 
@@ -538,7 +544,9 @@ export function ContactDetail({
 
       // Update lead_status to reflect latest action
       if (rdvForm.status === "booked") {
-        await supabase.from("contacts").update({ lead_status: "booked" }).eq("id", contact.id);
+        const updateData: Record<string, string> = { lead_status: "booked" };
+        if (contact.lifecycle_stage === "lead_marketing") updateData.lifecycle_stage = "prospect";
+        await supabase.from("contacts").update(updateData).eq("id", contact.id);
       }
 
       // Auto-notify: Google Calendar + Slack/Email
