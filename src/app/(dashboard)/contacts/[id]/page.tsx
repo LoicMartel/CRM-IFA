@@ -15,6 +15,24 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   if (!contact) notFound();
 
+  // Find training sessions for this contact (if they are a learner)
+  let learnerSessions: any[] = [];
+  if (contact.email) {
+    const { data: learnerMatch } = await supabase
+      .from("learners")
+      .select("id")
+      .eq("email", contact.email as string)
+      .limit(1);
+    if (learnerMatch && learnerMatch.length > 0) {
+      const learnerId = learnerMatch[0].id;
+      const { data: tsl } = await supabase
+        .from("training_session_learners")
+        .select("training_sessions(*, service_plans(companies(name), training_programs(name)))")
+        .eq("learner_id", learnerId);
+      learnerSessions = (tsl ?? []).map((r: any) => r.training_sessions).filter(Boolean);
+    }
+  }
+
   const [
     { data: deals },
     { data: activities },
@@ -63,6 +81,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         companies={companies ?? []}
         teamMembers={teamMembers ?? []}
         sources={sources ?? []}
+        learnerSessions={learnerSessions}
       />
     </>
   );

@@ -18,8 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload, HelpCircle } from "lucide-react";
-import { VisioformationPlansImportModal, type PlanImportRow } from "./visioformation-plans-import-modal";
-import { PDFSessionsImportModal } from "./pdf-sessions-import-modal";
+type PlanImportRow = Record<string, any>;
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -194,11 +193,8 @@ export function PlanningList({
   const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[] });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [plansImportOpen] = useState(false);
-  const [pdfImportOpen] = useState(false);
-  const [importQueue, setImportQueue] = useState<PlanImportRow[]>([]);
-  const [importIndex, setImportIndex] = useState(0);
-  const [importAllRows, setImportAllRows] = useState<PlanImportRow[]>([]);
+  const importQueue: PlanImportRow[] = [];
+  const importIndex = 0;
 
   function getPrimaryContact(companyId: string): CompanyContact | null {
     const company = companies.find(c => c.id === companyId);
@@ -279,7 +275,7 @@ export function PlanningList({
     const allNamesForCompany = new Set<string>();
     for (const p of allPlans) {
       if (p.companyId === companyId) {
-        p.learnerNames.forEach(n => allNamesForCompany.add(n));
+        (p.learnerNames as string[] ?? []).forEach((n: string) => allNamesForCompany.add(n));
       }
     }
     const matchedIds = companyId ? matchLearnersForCompany(Array.from(allNamesForCompany), companyId) : [];
@@ -325,12 +321,8 @@ export function PlanningList({
     return Array.from(byCompany.values());
   }
 
-  function handleStartImport(plans: PlanImportRow[]) {
-    if (plans.length === 0) return;
-    const merged = mergePlansByCompany(plans);
-    setImportQueue(merged);
-    setImportIndex(0);
-    prefillFormFromImport(merged[0], merged);
+  function handleStartImport(_plans: PlanImportRow[]) {
+    // Import functionality removed
   }
   const [form, setForm] = useState(emptyForm);
   const planNotesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
@@ -426,19 +418,6 @@ export function PlanningList({
 
     setSaving(false);
 
-    // If we're in an import queue, advance to next plan
-    if (importQueue.length > 0 && !editingPlanId) {
-      const nextIndex = importIndex + 1;
-      if (nextIndex < importQueue.length) {
-        setImportIndex(nextIndex);
-        prefillFormFromImport(importQueue[nextIndex], importQueue);
-        router.refresh();
-        return;
-      }
-      // Queue finished
-      setImportQueue([]);
-      setImportIndex(0);
-    }
 
     setOpen(false);
     setEditingPlanId(null);
@@ -1322,7 +1301,7 @@ export function PlanningList({
       </div>
 
       {/* Sheet: Nouveau plan de formation */}
-      <Sheet open={open} onOpenChange={(v) => { if (!v) { setImportQueue([]); setImportIndex(0); } setOpen(v); }}>
+      <Sheet open={open} onOpenChange={(v) => { setOpen(v); }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>

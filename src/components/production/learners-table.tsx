@@ -17,7 +17,6 @@ import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { checkLearnerDuplicate } from "@/lib/duplicate-check";
-import { VisioformationImportModal } from "./visioformation-import-modal";
 
 interface Learner {
   id: string;

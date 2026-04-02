@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   User, Mail, Phone, Building2, Edit, Briefcase, Calendar,
   Activity, ArrowLeft, ExternalLink, Linkedin, PhoneCall,
-  MailPlus, CalendarPlus, PlusCircle, Trash2, ClipboardList,
+  MailPlus, CalendarPlus, PlusCircle, Trash2, ClipboardList, GraduationCap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
@@ -161,6 +161,7 @@ export function ContactDetail({
   companies,
   teamMembers,
   sources = [],
+  learnerSessions = [],
 }: {
   contact: ContactData;
   deals: DealData[];
@@ -169,6 +170,7 @@ export function ContactDetail({
   companies: CompanyRef[];
   teamMembers: TeamMemberRef[];
   sources?: SourceRef[];
+  learnerSessions?: Record<string, unknown>[];
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
@@ -951,6 +953,11 @@ export function ContactDetail({
               <TabsTrigger value="meetings">
                 <Calendar className="h-4 w-4 mr-1" /> RDV ({meetings.length})
               </TabsTrigger>
+              {learnerSessions.length > 0 && (
+                <TabsTrigger value="sessions">
+                  <GraduationCap className="h-4 w-4 mr-1" /> Sessions ({learnerSessions.length})
+                </TabsTrigger>
+              )}
               <TabsTrigger value="tasks">
                 <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({activities.filter(a => a.type === "tâche").length})
               </TabsTrigger>
@@ -1322,6 +1329,71 @@ export function ContactDetail({
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Sessions de formation */}
+            {learnerSessions.length > 0 && (
+              <TabsContent value="sessions" className="mt-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div style={{ fontSize: 13, marginBottom: 12, color: "#5a6f80" }}>
+                      <strong>{learnerSessions.length}</strong> session{learnerSessions.length > 1 ? "s" : ""} de formation
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Entreprise</TableHead>
+                          <TableHead>Programme</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Durée</TableHead>
+                          <TableHead>Trainer</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(learnerSessions as Record<string, any>[])
+                          .sort((a, b) => String(b.session_date ?? "").localeCompare(String(a.session_date ?? "")))
+                          .map((sess) => {
+                            const sp = sess.service_plans as Record<string, any> | null;
+                            const company = sp?.companies as { name: string } | null;
+                            const program = sp?.training_programs as { name: string } | null;
+                            const trainers = (sess.trainers as string[] ?? []).join(", ");
+                            const statusColors: Record<string, { bg: string; text: string; label: string }> = {
+                              done: { bg: "#e8f5e9", text: "#2e7d32", label: "Fait" },
+                              planned: { bg: "#fff3e0", text: "#e65100", label: "Planifié" },
+                              cancelled: { bg: "#fce4ec", text: "#c62828", label: "Annulé" },
+                            };
+                            const sc = statusColors[String(sess.status)] ?? statusColors.planned;
+                            return (
+                              <TableRow key={String(sess.id)}>
+                                <TableCell style={{ fontWeight: 600 }}>
+                                  {sess.session_date ? new Date(String(sess.session_date)).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                                </TableCell>
+                                <TableCell>
+                                  <span style={{
+                                    fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
+                                    background: sess.session_type === "journee" ? "#fff3e0" : "#e8f0fe",
+                                    color: sess.session_type === "journee" ? "#FF6B35" : "#1a6b9c",
+                                  }}>
+                                    {sess.session_type === "journee" ? "Journée" : "VT"}
+                                  </span>
+                                </TableCell>
+                                <TableCell style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{company?.name ?? "—"}</TableCell>
+                                <TableCell style={{ fontSize: 12, color: "#5a6f80" }}>{program?.name ?? "—"}</TableCell>
+                                <TableCell>
+                                  <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{sc.label}</span>
+                                </TableCell>
+                                <TableCell className="text-right" style={{ fontWeight: 600 }}>{sess.duration_hours ? `${Number(sess.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                                <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
 
             <TabsContent value="tasks" className="mt-4">
               <Card>
