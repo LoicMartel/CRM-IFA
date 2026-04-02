@@ -364,7 +364,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
           <span style={{ fontWeight: 700, color: tc.text, fontSize: 11 }}>{time} · {m.meeting_type}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
             <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
               title="Modifier">
               ✏️
             </button>
@@ -376,7 +376,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                 await sb.from("meetings").delete().eq("id", m.id);
                 router.refresh();
               }}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
               title="Supprimer">
               🗑
             </button>

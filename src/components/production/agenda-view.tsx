@@ -247,7 +247,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 11 }}>{s.session_time ? String(s.session_time).slice(0, 5) + " · " : ""}{isVT ? "VT" : "Journée"} — {Number(s.duration_hours) || 0}h</span>
           <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
             <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
               title="Modifier">
               ✏️
             </button>
@@ -260,7 +260,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                 await sb.from("training_sessions").delete().eq("id", s.id);
                 router.refresh();
               }}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
               title="Supprimer">
               🗑
             </button>

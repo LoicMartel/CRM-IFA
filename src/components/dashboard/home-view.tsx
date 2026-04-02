@@ -510,12 +510,12 @@ export function HomeView({
                         <span style={{ fontSize: 12, fontWeight: 700, color: mc.text }}>{time} · {m.meeting_type as string}</span>
                         <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
                           <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
                             title="Modifier">
                             ✏️
                           </button>
                           <button onClick={async (e) => { e.stopPropagation(); if (!window.confirm("Supprimer ce RDV ?")) return; const sb = createClient(); await sb.from("meetings").delete().eq("id", m.id as string); router.refresh(); }}
-                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
                             title="Supprimer">
                             🗑
                           </button>
@@ -564,12 +564,12 @@ export function HomeView({
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
                           <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
                             title="Modifier">
                             ✏️
                           </button>
                           <button onClick={async (e) => { e.stopPropagation(); if (!window.confirm("Supprimer cette session ?")) return; const sb = createClient(); await sb.from("training_session_learners").delete().eq("training_session_id", s.id as string); await sb.from("training_sessions").delete().eq("id", s.id as string); router.refresh(); }}
-                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+                            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
                             title="Supprimer">
                             🗑
                           </button>
