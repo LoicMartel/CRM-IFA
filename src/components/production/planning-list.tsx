@@ -17,7 +17,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload, HelpCircle } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, Upload, HelpCircle, ArrowUpDown } from "lucide-react";
 type PlanImportRow = Record<string, any>;
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -158,6 +158,9 @@ export function PlanningList({
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filterTrainer, setFilterTrainer] = useState("");
+  const [filterCompany, setFilterCompany] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -330,6 +333,20 @@ export function PlanningList({
   const [decisionOpen, setDecisionOpen] = useState(false);
   const [decisionForm, setDecisionForm] = useState({ expertise: "", city: "", days: "", budget: "" });
 
+  // Extract unique trainer names from all training sessions
+  const allTrainerNames = Array.from(
+    new Set(
+      servicePlans.flatMap((p) =>
+        (p.training_sessions ?? []).flatMap((s) => s.trainers ?? [])
+      )
+    )
+  ).sort((a, b) => a.localeCompare(b, "fr"));
+
+  // Extract unique company names for the company filter dropdown
+  const allCompanyNames = Array.from(
+    new Set(servicePlans.map((p) => p.companies?.name ?? "").filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, "fr"));
+
   const filtered = servicePlans.filter((p) => {
     // Externes restreints : ne voir que les plans où ils sont impliqués
     if (onlyOwnData && currentFirstName) {
@@ -342,7 +359,21 @@ export function PlanningList({
     if (search && !companyName.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterProgram && p.program_id !== filterProgram) return false;
     if (filterType && p.training_type_id !== filterType) return false;
+    // Filter by trainer/expert
+    if (filterTrainer) {
+      const hasTrainer = (p.training_sessions ?? []).some(
+        (s) => (s.trainers ?? []).includes(filterTrainer)
+      );
+      if (!hasTrainer) return false;
+    }
+    // Filter by company (exact match from dropdown)
+    if (filterCompany && companyName !== filterCompany) return false;
     return true;
+  }).sort((a, b) => {
+    const nameA = (a.companies?.name ?? "").toLowerCase();
+    const nameB = (b.companies?.name ?? "").toLowerCase();
+    const cmp = nameA.localeCompare(nameB, "fr");
+    return sortDirection === "asc" ? cmp : -cmp;
   });
 
   function toggleExpand(id: string) {
@@ -686,6 +717,30 @@ export function PlanningList({
           <option value="">Tous les types</option>
           {trainingTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
+        <select
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+          value={filterTrainer}
+          onChange={(e) => setFilterTrainer(e.target.value)}
+        >
+          <option value="">Tous les experts</option>
+          {allTrainerNames.map((name) => <option key={name} value={name}>{name}</option>)}
+        </select>
+        <select
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+          value={filterCompany}
+          onChange={(e) => setFilterCompany(e.target.value)}
+        >
+          <option value="">Toutes les entreprises</option>
+          {allCompanyNames.map((name) => <option key={name} value={name}>{name}</option>)}
+        </select>
+        <button
+          onClick={() => setSortDirection((d) => d === "asc" ? "desc" : "asc")}
+          title={sortDirection === "asc" ? "Tri A → Z" : "Tri Z → A"}
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", background: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
+        >
+          <ArrowUpDown className="h-4 w-4" />
+          {sortDirection === "asc" ? "A → Z" : "Z → A"}
+        </button>
         <div style={{ flex: 1 }} />
         <button
           onClick={() => setDecisionOpen(true)}
