@@ -117,6 +117,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
   const hasUnassigned = weekDays.some(d => getUnassignedForDay(d).length > 0);
 
   const [sessionStatus, setSessionStatus] = useState("planned");
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
 
   function openSession(s: AgendaSession) {
     setSelectedSession(s);
@@ -226,14 +227,16 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     const company = plan?.companies?.name ?? "—";
     const program = plan?.training_programs?.name ?? "";
     const learners = (s.training_session_learners ?? []).map(sl => sl.learners).filter(Boolean);
-    const sc = statusLabels[s.status];
+    const currentStatus = statusOverrides[s.id] ?? s.status;
+    const sc = statusLabels[currentStatus];
     const isVT = s.session_type === "vt";
 
     return (
       <div
         key={s.id}
+        onClick={() => openSession(s)}
         style={{
-          padding: "8px 10px", borderRadius: 8,
+          padding: "8px 10px", borderRadius: 8, cursor: "pointer",
           background: isVT ? "#f0f7fb" : "#fdf8f5",
           borderLeft: `3px solid ${isVT ? "#1a6b9c" : "#FF6B35"}`,
           fontSize: 12, marginBottom: 4,
@@ -256,28 +259,10 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         )}
         {!s.is_billable && <span style={{ fontSize: 9, fontWeight: 600, padding: "0 5px", borderRadius: 6, background: "#f5f5f5", color: "#999" }}>NF</span>}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-          <select
-            defaultValue={s.status}
-            onClick={(e) => e.stopPropagation()}
-            onChange={async (e) => {
-              e.stopPropagation();
-              const sb = createClient();
-              await sb.from("training_sessions").update({ status: e.target.value }).eq("id", s.id);
-              router.refresh();
-            }}
-            style={{ height: 22, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 4px", fontSize: 9, fontWeight: 600, background: sc.bg, color: sc.text, cursor: "pointer" }}
-          >
-            <option value="planned">Planifié</option>
-            <option value="done">Réalisé</option>
-            <option value="cancelled">Annulé</option>
-            <option value="no_show">No show</option>
-          </select>
-          {s.status !== "done" && (
-            <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
-              📋 Suivi
-            </button>
-          )}
+          <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#e8f0fe", color: "#0d4f7a", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+            ✏️ Modifier
+          </button>
           <button
             onClick={async (e) => {
               e.stopPropagation();
@@ -292,6 +277,12 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           >
             🗑
           </button>
+          {currentStatus === "planned" && (
+            <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+              📋 Suivi
+            </button>
+          )}
         </div>
       </div>
     );

@@ -352,8 +352,9 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
     return (
       <div
         key={m.id}
+        onClick={() => openMeeting(m)}
         style={{
-          padding: "8px 10px", borderRadius: 8,
+          padding: "8px 10px", borderRadius: 8, cursor: "pointer",
           background: tc.bg, borderLeft: `3px solid ${tc.border}`,
           fontSize: 12, marginBottom: 4,
         }}
@@ -370,12 +371,31 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
           <div style={{ fontSize: 10, color: "#8399a9" }}>{m.companies.name}</div>
         )}
         <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 1 }}>{m.duration_minutes} min</div>
-        {m.status === "booked" && m.next_step !== "completed" && (
-          <button onClick={() => openMeeting(m)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px", marginTop: 4 }}>
-            📋 Suivi rdv
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+          <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#e8f0fe", color: "#0d4f7a", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+            ✏️ Modifier
           </button>
-        )}
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!window.confirm("Supprimer ce RDV ?")) return;
+              const sb = createClient();
+              await sb.from("meetings").delete().eq("id", m.id);
+              router.refresh();
+            }}
+            style={{ display: "inline-flex", alignItems: "center", height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#fce4ec", color: "#c62828", fontSize: 9, fontWeight: 700, padding: "0 8px" }}
+            title="Supprimer"
+          >
+            🗑
+          </button>
+          {m.status === "booked" && (
+            <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+              📋 Suivi rdv
+            </button>
+          )}
+        </div>
       </div>
     );
   }
