@@ -16,7 +16,7 @@ import {
   Building2, Mail, Phone, Globe, MapPin, Edit, Briefcase, Linkedin,
   ExternalLink, Users, GraduationCap, Receipt, CalendarCheck, Handshake,
   CreditCard, Video, PhoneCall, MapPinIcon, Clock, Trash2, ArrowLeft,
-  X, Upload, FileText, Download, Calendar,
+  X, Upload, FileText, Download, Calendar, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
@@ -115,6 +115,17 @@ export function CompanyDetail({
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Plan de formation collapse state
+  const [collapsedPlans, setCollapsedPlans] = useState<Set<string>>(new Set());
+  function togglePlan(planId: string) {
+    setCollapsedPlans(prev => {
+      const next = new Set(prev);
+      if (next.has(planId)) next.delete(planId);
+      else next.add(planId);
+      return next;
+    });
+  }
 
   // Deal popup state
   const [selectedDeal, setSelectedDeal] = useState<Record<string, unknown> | null>(null);
@@ -717,16 +728,25 @@ export function CompanyDetail({
                       <div key={s(plan.id)} className="lca-card">
                         <div style={{ height: 4, background: "#7c3aed" }} />
                         <div style={{ padding: 16 }}>
-                          {/* Plan header */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                            <div>
-                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>
-                                {program?.name ?? "Plan"} {trainingType ? `— ${trainingType.name}` : ""}
-                              </div>
-                              <div style={{ fontSize: 13, color: "#7a8bab", marginTop: 2 }}>
-                                {plan.start_date ? `Depuis le ${fmtDate(s(plan.start_date))}` : "Date non définie"}
-                                {plan.format ? ` | ${s(plan.format)}` : ""}
-                                {plan.mode ? ` | ${s(plan.mode)}` : ""}
+                          {/* Plan header — clickable to toggle */}
+                          <div
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", cursor: "pointer", marginBottom: collapsedPlans.has(s(plan.id)) ? 0 : 12 }}
+                            onClick={() => togglePlan(s(plan.id))}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              {collapsedPlans.has(s(plan.id)) ? <ChevronRight size={18} style={{ color: "#7a8bab", flexShrink: 0 }} /> : <ChevronDown size={18} style={{ color: "#7a8bab", flexShrink: 0 }} />}
+                              <div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>
+                                  {program?.name ?? "Plan"} {trainingType ? `— ${trainingType.name}` : ""}
+                                  <span style={{ fontSize: 13, fontWeight: 400, color: "#7a8bab", marginLeft: 8 }}>
+                                    {doneSessions.length} faites / {plannedSessions.length} planifiées
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: 13, color: "#7a8bab", marginTop: 2 }}>
+                                  {plan.start_date ? `Depuis le ${fmtDate(s(plan.start_date))}` : "Date non définie"}
+                                  {plan.format ? ` | ${s(plan.format)}` : ""}
+                                  {plan.mode ? ` | ${s(plan.mode)}` : ""}
+                                </div>
                               </div>
                             </div>
                             <div style={{ textAlign: "right" }}>
@@ -743,6 +763,7 @@ export function CompanyDetail({
                             </div>
                           </div>
 
+                          {!collapsedPlans.has(s(plan.id)) && (<>
                           {/* Stats */}
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
                             <div style={{ background: "#f7f8fa", borderRadius: 8, padding: "8px 12px" }}>
@@ -827,6 +848,7 @@ export function CompanyDetail({
                               </TableBody>
                             </Table>
                           )}
+                          </>)}
                         </div>
                       </div>
                     );
