@@ -40,7 +40,7 @@ interface TrainingSession {
   session_date: string;
   session_time: string | null;
   duration_hours: number | null;
-  status: "planned" | "done" | "cancelled";
+  status: "planned" | "done" | "cancelled" | "no_show";
   trainers: string[] | null;
   is_billable: boolean;
   notes: string | null;

@@ -32,7 +32,7 @@ interface AgendaSession {
   duration_hours: number | null;
   session_time: string | null;
   session_location: string | null;
-  status: "planned" | "done" | "cancelled";
+  status: "planned" | "done" | "cancelled" | "no_show";
   trainers: string[] | null;
   is_billable: boolean;
   notes: string | null;
@@ -56,6 +56,7 @@ const statusLabels: Record<string, { label: string; bg: string; text: string }> 
   planned: { label: "Planifié", bg: "#e8f0fe", text: "#0d4f7a" },
   done: { label: "Réalisé", bg: "#e8f5e9", text: "#2e7d32" },
   cancelled: { label: "Annulé", bg: "#fce4ec", text: "#c62828" },
+  no_show: { label: "No show", bg: "#fff3e0", text: "#e65100" },
 };
 
 export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[]; expertNames?: string[] }) {
