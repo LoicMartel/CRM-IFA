@@ -9,6 +9,7 @@ export default async function RapportsProductionPage() {
     { data: servicePlans },
     { data: sessions },
     { data: invoices },
+    { data: deliverySessions },
   ] = await Promise.all([
     supabase.from("service_plans").select(`
       *,
@@ -22,6 +23,7 @@ export default async function RapportsProductionPage() {
       service_plans(id, company_id, hourly_rate, companies(id, name))
     `),
     supabase.from("invoices").select("id, amount, status, deal_id"),
+    supabase.from("sessions").select("*, team_members(first_name, last_name), companies(id, name)").not("company_id", "is", null),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function RapportsProductionPage() {
           servicePlans={(servicePlans ?? []) as any}
           sessions={(sessions ?? []) as any}
           invoices={(invoices ?? []) as any}
+          deliverySessions={(deliverySessions ?? []) as any}
         />
       </div>
     </>

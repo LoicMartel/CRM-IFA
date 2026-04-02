@@ -22,8 +22,8 @@ function hoursToJ(h: number) {
   return Math.round(h / 8 * 10) / 10;
 }
 
-export function RapportsProductionView({ servicePlans, sessions, invoices }: {
-  servicePlans: R[]; sessions: R[]; invoices: R[];
+export function RapportsProductionView({ servicePlans, sessions, invoices, deliverySessions }: {
+  servicePlans: R[]; sessions: R[]; invoices: R[]; deliverySessions?: R[];
 }) {
   const router = useRouter();
   const { isRestrictedExterne, onlyOwnData, firstName: currentFirstName } = useCurrentRoles();
@@ -120,7 +120,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
       const hourlyRate = Number(plan.hourly_rate) || 0;
       if (hourlyRate > c.totalHourlyRate) c.totalHourlyRate = hourlyRate;
 
-      // Sessions for this plan
+      // Sessions for this plan (training_sessions for planning data)
       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
       planSessions.forEach((s: R) => {
         const hours = Number(s.duration_hours) || 0;
@@ -131,13 +131,22 @@ export function RapportsProductionView({ servicePlans, sessions, invoices }: {
           c.sessionsDone++;
           c.hoursDone += hours;
           c.consumedAmount += hours * hourlyRate;
-          if (isBillable) c.facturableAmount += hours * hourlyRate;
         } else {
           c.sessionsPlanned++;
           c.hoursPlanned += hours;
           if (isBillable) c.plannedAmount += hours * hourlyRate;
         }
       });
+
+    });
+
+    // Set facturable from deliverySessions (exact amounts per company)
+    Object.values(companyMap).forEach(c => {
+      const companyDelivery = (deliverySessions ?? []).filter((ds: R) => {
+        const dsCompany = ds.companies as { id: string } | null;
+        return dsCompany?.id === c.companyId;
+      });
+      c.facturableAmount = companyDelivery.reduce((sum: number, ds: R) => sum + (Number(ds.billable_amount) || 0), 0);
     });
 
     // Filter: only companies with remaining sessions (not all done)
