@@ -130,6 +130,7 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
   planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" },
   done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
   cancelled: { bg: "#fce4ec", text: "#c62828", label: "Annulé" },
+  no_show: { bg: "#fff3e0", text: "#e65100", label: "No show" },
 };
 
 export function PlanningList({
@@ -1194,7 +1195,7 @@ export function PlanningList({
 
                     {sessions.length > 0 ? (
                       <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflowX: "auto" }}>
-                        <Table style={{ minWidth: 900 }}>
+                        <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
@@ -1204,8 +1205,8 @@ export function PlanningList({
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Apprenants</TableHead>
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Statut</TableHead>
                               {hourlyRate > 0 && <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>}
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Notes</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Actions</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, maxWidth: 150 }}>Notes</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center", whiteSpace: "nowrap" }}>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1272,6 +1273,7 @@ export function PlanningList({
                                         <option value="planned">Planifié</option>
                                         <option value="done">Réalisé</option>
                                         <option value="cancelled">Annulé</option>
+                                        <option value="no_show">No show</option>
                                       </select>
                                     </TableCell>
                                     {hourlyRate > 0 && (
@@ -1283,12 +1285,12 @@ export function PlanningList({
                                     )}
                                     <TableCell
                                       onClick={() => openNotesPopup(s)}
-                                      style={{ color: "#5a6f80", fontSize: 12, cursor: "pointer" }}
-                                      title="Cliquer pour éditer les notes"
+                                      style={{ color: "#5a6f80", fontSize: 12, cursor: "pointer", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis" }}
+                                      title={s.notes || "Cliquer pour éditer les notes"}
                                     >
-                                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                        {!s.is_billable && <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: "#f5f5f5", color: "#999" }}>NF</span>}
-                                        <span style={{ borderBottom: "1px dashed #ccc" }}>{s.notes || "Ajouter une note..."}</span>
+                                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 150 }}>
+                                        {!s.is_billable && <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: "#f5f5f5", color: "#999", flexShrink: 0 }}>NF</span>}
+                                        <span style={{ borderBottom: "1px dashed #ccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.notes || "Ajouter une note..."}</span>
                                       </div>
                                     </TableCell>
                                     <TableCell>
@@ -1329,7 +1331,7 @@ export function PlanningList({
                     <div>
                       <div style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14, marginBottom: 10 }}>Apprenants assignés</div>
                       <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflowX: "auto" }}>
-                        <Table style={{ minWidth: 900 }}>
+                        <Table>
                           <TableHeader>
                             <TableRow>
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Nom</TableHead>
