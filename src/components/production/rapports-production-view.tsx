@@ -325,6 +325,8 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
           onChange={(e) => setSelectedReport(e.target.value)}
         >
           <option value="parcours_en_cours">Parcours en cours</option>
+          <option value="sessions_annulees">Sessions annulées</option>
+          <option value="parcours_non_termines">Parcours non terminés</option>
           <option value="vt_non_fermees">VT non fermées</option>
           <option value="journees_non_fermees">Journées non fermées</option>
         </select>
@@ -357,6 +359,116 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       </div>
 
       {selectedReport === "parcours_en_cours" && renderParcoursEnCours()}
+
+      {selectedReport === "sessions_annulees" && (() => {
+        const cancelled = sessions.filter((s: R) => s.status === "cancelled");
+        if (cancelled.length === 0) return <div className="lca-card" style={{ padding: 24, textAlign: "center", color: "#8399a9" }}>Aucune session annulée</div>;
+        return (
+          <div className="lca-card" style={{ overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1" }}>
+              <h3 style={{ fontWeight: 700, color: "#1a2a3a", margin: 0 }}>Sessions annulées ({cancelled.length})</h3>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Entreprise</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Durée</TableHead>
+                    <TableHead>Trainer</TableHead>
+                    <TableHead>Notes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cancelled.sort((a: R, b: R) => String(b.session_date).localeCompare(String(a.session_date))).map((s: R) => {
+                    const sp = s.service_plans as R | null;
+                    const company = sp?.companies as { id: string; name: string } | null;
+                    const trainers = ((s.trainers as string[]) ?? []).join(", ");
+                    return (
+                      <TableRow key={String(s.id)}>
+                        <TableCell style={{ fontWeight: 600 }}>{s.session_date ? format(new Date(String(s.session_date)), "dd MMM yyyy", { locale: fr }) : "—"}</TableCell>
+                        <TableCell>
+                          {company ? (
+                            <span onClick={() => router.push(`/clients/${company.id}`)} style={{ color: "#1a6b9c", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{company.name}</span>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: s.session_type === "journee" ? "#fff3e0" : "#e8f0fe", color: s.session_type === "journee" ? "#FF6B35" : "#1a6b9c" }}>
+                            {s.session_type === "journee" ? "Journée" : "VT"}
+                          </span>
+                        </TableCell>
+                        <TableCell>{s.duration_hours ? `${Number(s.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                        <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
+                        <TableCell style={{ fontSize: 12, color: "#7a8bab", maxWidth: 200 }} className="truncate">{String(s.notes ?? "") || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {selectedReport === "parcours_non_termines" && (() => {
+        // Entreprises avec tous les plans terminés mais qui avaient des sessions
+        const companyMap: Record<string, { companyId: string; companyName: string; totalSessions: number; doneSessions: number; cancelledSessions: number; budget: number; lastSessionDate: string }> = {};
+        servicePlans.forEach((plan: R) => {
+          const company = plan.companies as { id: string; name: string } | null;
+          if (!company) return;
+          const cid = company.id;
+          if (!companyMap[cid]) companyMap[cid] = { companyId: cid, companyName: company.name, totalSessions: 0, doneSessions: 0, cancelledSessions: 0, budget: 0, lastSessionDate: "" };
+          const c = companyMap[cid];
+          c.budget += Number(plan.budget) || 0;
+          const planSessions = sessions.filter((s: R) => s.service_plan_id === plan.id);
+          planSessions.forEach((s: R) => {
+            c.totalSessions++;
+            if (s.status === "done") { c.doneSessions++; if (String(s.session_date) > c.lastSessionDate) c.lastSessionDate = String(s.session_date); }
+            if (s.status === "cancelled") c.cancelledSessions++;
+          });
+        });
+        // "Non terminé" = a des sessions done mais le plan est terminé prématurément (sessions annulées ou budget non consommé)
+        const nonTermines = Object.values(companyMap).filter(c => {
+          const plannedCount = c.totalSessions - c.doneSessions - c.cancelledSessions;
+          return plannedCount === 0 && c.cancelledSessions > 0;
+        }).sort((a, b) => b.cancelledSessions - a.cancelledSessions);
+
+        if (nonTermines.length === 0) return <div className="lca-card" style={{ padding: 24, textAlign: "center", color: "#8399a9" }}>Aucun parcours non terminé avec sessions annulées</div>;
+        return (
+          <div className="lca-card" style={{ overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1" }}>
+              <h3 style={{ fontWeight: 700, color: "#1a2a3a", margin: 0 }}>Parcours avec sessions annulées ({nonTermines.length})</h3>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Entreprise</TableHead>
+                    <TableHead className="text-center">Sessions faites</TableHead>
+                    <TableHead className="text-center">Sessions annulées</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead>Dernière session</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {nonTermines.map(c => (
+                    <TableRow key={c.companyId}>
+                      <TableCell>
+                        <span onClick={() => router.push(`/clients/${c.companyId}`)} style={{ color: "#1a6b9c", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{c.companyName}</span>
+                      </TableCell>
+                      <TableCell className="text-center" style={{ fontWeight: 600 }}>{c.doneSessions}</TableCell>
+                      <TableCell className="text-center" style={{ fontWeight: 600, color: "#c62828" }}>{c.cancelledSessions}</TableCell>
+                      <TableCell className="text-right" style={{ fontWeight: 600 }}>{fmt(c.budget)}</TableCell>
+                      <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{c.lastSessionDate ? format(new Date(c.lastSessionDate), "dd MMM yyyy", { locale: fr }) : "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        );
+      })()}
 
       {selectedReport === "vt_non_fermees" && (() => {
         const todayStr = new Date().toISOString().split("T")[0];
