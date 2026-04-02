@@ -995,8 +995,8 @@ export function PlanningList({
                       )}
                     </div>
 
-                    {/* Inline session form */}
-                    {sessionPlanId === plan.id && (
+                    {/* Session form is now rendered as a popup modal outside the plan loop */}
+                    {false && sessionPlanId === plan.id && (
                       <div style={{ background: "#f8fbfd", borderRadius: 8, padding: 14, marginBottom: 12 }}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
                           <div>
@@ -1695,6 +1695,107 @@ export function PlanningList({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Session Edit/Add Popup */}
+      {sessionPlanId && (() => {
+        const currentPlan = servicePlans.find(p => p.id === sessionPlanId);
+        const popupLearners = currentPlan ? ((currentPlan.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean) as LearnerNested[]) : [];
+        const compAddr = currentPlan?.companies ? [currentPlan.companies.address, currentPlan.companies.city].filter(Boolean).join(", ") : "";
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={(e) => { if (e.target === e.currentTarget) setSessionPlanId(null); }}>
+            <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>
+                  {editingSessionId ? "Modifier la session" : "Nouvelle session"} — {currentPlan?.companies?.name ?? ""}
+                </h3>
+                <button onClick={() => setSessionPlanId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 18 }}>×</button>
+              </div>
+              <div style={{ padding: 20 }} className="space-y-4">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Type</div>
+                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_location: t === "journee" ? compAddr : "" }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
+                      <option value="vt">Visio Training (VT)</option>
+                      <option value="journee">Journée</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Date</div>
+                    <input type="date" value={sessionForm.session_date} onChange={(e) => setSessionForm({ ...sessionForm, session_date: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Heure</div>
+                    <input type="time" value={sessionForm.session_time} onChange={(e) => setSessionForm({ ...sessionForm, session_time: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Durée</div>
+                    {sessionForm.session_type === "journee" ? (
+                      <div style={{ height: 34, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, padding: "0 10px", background: "#f0f0f0", borderRadius: 6, border: "1px solid #dce8f0" }}>8h</div>
+                    ) : (
+                      <select value={sessionForm.duration_hours} onChange={(e) => setSessionForm({ ...sessionForm, duration_hours: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
+                        <option value="1">1h</option><option value="1.5">1h30</option><option value="2">2h</option><option value="3">3h</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+                {sessionForm.session_type === "journee" && (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Adresse</div>
+                    <input type="text" value={sessionForm.session_location} onChange={(e) => setSessionForm({ ...sessionForm, session_location: e.target.value })} placeholder="Adresse du lieu" style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, width: "100%" }} />
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Notes</div>
+                  <input type="text" value={sessionForm.notes} onChange={(e) => setSessionForm({ ...sessionForm, notes: e.target.value })} placeholder="Notes (optionnel)" style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, width: "100%" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 6 }}>Apprenants</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {popupLearners.map(l => {
+                      const checked = sessionForm.learner_ids.includes(l.id);
+                      return (
+                        <label key={l.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#e8f0fe" : "white", border: `1px solid ${checked ? "#1a6b9c" : "#dce8f0"}`, color: checked ? "#0d4f7a" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
+                          <input type="checkbox" checked={checked} onChange={(e) => { const ids = e.target.checked ? [...sessionForm.learner_ids, l.id] : sessionForm.learner_ids.filter(id => id !== l.id); setSessionForm({ ...sessionForm, learner_ids: ids }); }} style={{ accentColor: "#1a6b9c" }} />
+                          {l.first_name} {l.last_name}
+                        </label>
+                      );
+                    })}
+                    {popupLearners.length > 1 && (
+                      <button onClick={() => { const allIds = popupLearners.map(l => l.id); const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id)); setSessionForm({ ...sessionForm, learner_ids: allSelected ? [] : allIds }); }} style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                        {popupLearners.every(l => sessionForm.learner_ids.includes(l.id)) ? "Tout désélectionner" : "Tout sélectionner"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 6 }}>Expert(s)</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {TRAINER_LIST.map(t => {
+                      const checked = sessionForm.trainers.includes(t);
+                      return (
+                        <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#fff3e0" : "white", border: `1px solid ${checked ? "#FF6B35" : "#dce8f0"}`, color: checked ? "#e65100" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
+                          <input type="checkbox" checked={checked} onChange={(e) => { const trainers = e.target.checked ? [...sessionForm.trainers, t] : sessionForm.trainers.filter(x => x !== t); setSessionForm({ ...sessionForm, trainers }); }} style={{ accentColor: "#FF6B35" }} />
+                          {t}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                  <input type="checkbox" checked={sessionForm.is_billable} onChange={(e) => setSessionForm({ ...sessionForm, is_billable: e.target.checked })} style={{ accentColor: "#27ae60" }} />
+                  <span style={{ fontWeight: sessionForm.is_billable ? 600 : 400, color: sessionForm.is_billable ? "#27ae60" : "#8399a9" }}>{sessionForm.is_billable ? "Facturable" : "Non facturable"}</span>
+                </label>
+              </div>
+              <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button onClick={() => setSessionPlanId(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>Annuler</button>
+                <button onClick={handleAddSession} disabled={savingSession || !sessionForm.session_date} style={{ height: 36, borderRadius: 8, background: editingSessionId ? "#1a6b9c" : "#2ecc71", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date ? 0.5 : 1 }}>
+                  {savingSession ? "..." : editingSessionId ? "Mettre à jour" : "Ajouter"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Notes Popup */}
       {notesPopup && (
