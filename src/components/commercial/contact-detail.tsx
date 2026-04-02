@@ -1361,6 +1361,7 @@ export function ContactDetail({
                           <TableHead>Statut</TableHead>
                           <TableHead className="text-right">Durée</TableHead>
                           <TableHead>Trainer</TableHead>
+                          <TableHead style={{ textAlign: "center" }}>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1394,10 +1395,46 @@ export function ContactDetail({
                                 <TableCell style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{company?.name ?? "—"}</TableCell>
                                 <TableCell style={{ fontSize: 12, color: "#5a6f80" }}>{program?.name ?? "—"}</TableCell>
                                 <TableCell>
-                                  <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: sc.bg, color: sc.text }}>{sc.label}</span>
+                                  {(() => {
+                                    const allStatuses = [
+                                      { value: "planned", bg: "#fff3e0", text: "#e65100", label: "Planifié" },
+                                      { value: "done", bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
+                                      { value: "cancelled", bg: "#fce4ec", text: "#c62828", label: "Annulé" },
+                                      { value: "no_show", bg: "#fff3e0", text: "#e65100", label: "No show" },
+                                    ];
+                                    const cur = allStatuses.find(o => o.value === String(sess.status)) ?? allStatuses[0];
+                                    return (
+                                      <select
+                                        defaultValue={String(sess.status)}
+                                        onChange={async (e) => {
+                                          const sb = createClient();
+                                          await sb.from("training_sessions").update({ status: e.target.value }).eq("id", String(sess.id));
+                                          router.refresh();
+                                        }}
+                                        style={{ height: 26, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 6px", fontSize: 11, fontWeight: 600, background: cur.bg, color: cur.text, cursor: "pointer" }}
+                                      >
+                                        {allStatuses.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                      </select>
+                                    );
+                                  })()}
                                 </TableCell>
                                 <TableCell className="text-right" style={{ fontWeight: 600 }}>{sess.duration_hours ? `${Number(sess.duration_hours).toFixed(0)}h` : "—"}</TableCell>
                                 <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
+                                <TableCell style={{ textAlign: "center" }}>
+                                  <button
+                                    onClick={async () => {
+                                      if (!window.confirm("Supprimer cette session ?")) return;
+                                      const sb = createClient();
+                                      await sb.from("training_session_learners").delete().eq("training_session_id", String(sess.id));
+                                      await sb.from("training_sessions").delete().eq("id", String(sess.id));
+                                      router.refresh();
+                                    }}
+                                    style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </TableCell>
                               </TableRow>
                             );
                           })}

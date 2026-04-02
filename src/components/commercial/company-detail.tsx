@@ -812,6 +812,7 @@ export function CompanyDetail({
                                   <TableHead className="text-right">Duree</TableHead>
                                   <TableHead>Trainer</TableHead>
                                   <TableHead>Apprenants</TableHead>
+                                  <TableHead style={{ textAlign: "center" }}>Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
@@ -833,15 +834,47 @@ export function CompanyDetail({
                                         />
                                       </TableCell>
                                       <TableCell>
-                                        <Badge
-                                          bg={s(ts.status) === "done" ? "#e8f5e9" : s(ts.status) === "cancelled" ? "#fce4ec" : "#fff3e0"}
-                                          text={s(ts.status) === "done" ? "#2e7d32" : s(ts.status) === "cancelled" ? "#c62828" : "#e65100"}
-                                          label={s(ts.status) === "done" ? "Fait" : s(ts.status) === "cancelled" ? "Annule" : "Planifie"}
-                                        />
+                                        {(() => {
+                                          const statusOpts = [
+                                            { value: "planned", bg: "#fff3e0", text: "#e65100", label: "Planifié" },
+                                            { value: "done", bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
+                                            { value: "cancelled", bg: "#fce4ec", text: "#c62828", label: "Annulé" },
+                                            { value: "no_show", bg: "#fff3e0", text: "#e65100", label: "No show" },
+                                          ];
+                                          const current = statusOpts.find(o => o.value === s(ts.status)) ?? statusOpts[0];
+                                          return (
+                                            <select
+                                              defaultValue={s(ts.status)}
+                                              onChange={async (e) => {
+                                                const supabaseClient = createClient();
+                                                await supabaseClient.from("training_sessions").update({ status: e.target.value }).eq("id", s(ts.id));
+                                                router.refresh();
+                                              }}
+                                              style={{ height: 28, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 8px", fontSize: 12, fontWeight: 600, background: current.bg, color: current.text, cursor: "pointer" }}
+                                            >
+                                              {statusOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                                            </select>
+                                          );
+                                        })()}
                                       </TableCell>
                                       <TableCell className="text-right">{ts.duration_hours ? `${Number(ts.duration_hours).toFixed(0)}h` : "—"}</TableCell>
                                       <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
                                       <TableCell style={{ fontSize: 11, color: "#7a8bab", maxWidth: 200 }} className="truncate">{learnersNames || "—"}</TableCell>
+                                      <TableCell style={{ textAlign: "center" }}>
+                                        <button
+                                          onClick={async () => {
+                                            if (!window.confirm("Supprimer cette session ?")) return;
+                                            const supabaseClient = createClient();
+                                            await supabaseClient.from("training_session_learners").delete().eq("training_session_id", s(ts.id));
+                                            await supabaseClient.from("training_sessions").delete().eq("id", s(ts.id));
+                                            router.refresh();
+                                          }}
+                                          style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}
+                                          title="Supprimer"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </TableCell>
                                     </TableRow>
                                   );
                                 })}

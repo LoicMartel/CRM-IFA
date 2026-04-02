@@ -716,12 +716,13 @@ export function LearnerDetailView({
                           <TableHead>Statut</TableHead>
                           <TableHead>Entreprise</TableHead>
                           <TableHead>Notes</TableHead>
+                          <TableHead style={{ textAlign: "center" }}>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {typedSessions.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                               Aucune session associee
                             </TableCell>
                           </TableRow>
@@ -747,15 +748,41 @@ export function LearnerDetailView({
                                   {s.duration_hours ? `${s.duration_hours}h` : "\u2014"}
                                 </TableCell>
                                 <TableCell>
-                                  <span style={{ background: ssc.bg, color: ssc.text, padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600 }}>
-                                    {ssc.label}
-                                  </span>
+                                  <select
+                                    defaultValue={s.status}
+                                    onChange={async (e) => {
+                                      const sb = createClient();
+                                      await sb.from("training_sessions").update({ status: e.target.value }).eq("id", s.id);
+                                      router.refresh();
+                                    }}
+                                    style={{ height: 26, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 6px", fontSize: 11, fontWeight: 600, background: ssc.bg, color: ssc.text, cursor: "pointer" }}
+                                  >
+                                    <option value="planned">Planifié</option>
+                                    <option value="done">Réalisé</option>
+                                    <option value="cancelled">Annulé</option>
+                                    <option value="no_show">No show</option>
+                                  </select>
                                 </TableCell>
                                 <TableCell style={{ fontSize: 12 }}>
                                   {s.service_plans?.companies?.name ?? "\u2014"}
                                 </TableCell>
-                                <TableCell style={{ fontSize: 12, color: "#8399a9", maxWidth: 200 }}>
+                                <TableCell style={{ fontSize: 12, color: "#8399a9", maxWidth: 150 }}>
                                   <span className="truncate block">{s.notes ?? "\u2014"}</span>
+                                </TableCell>
+                                <TableCell style={{ textAlign: "center" }}>
+                                  <button
+                                    onClick={async () => {
+                                      if (!window.confirm("Supprimer cette session ?")) return;
+                                      const sb = createClient();
+                                      await sb.from("training_session_learners").delete().eq("training_session_id", s.id);
+                                      await sb.from("training_sessions").delete().eq("id", s.id);
+                                      router.refresh();
+                                    }}
+                                    style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
                                 </TableCell>
                               </TableRow>
                             );
