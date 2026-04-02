@@ -122,7 +122,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
   function openSession(s: AgendaSession) {
     setSelectedSession(s);
     setNotesText(s.notes ?? "");
-    setSessionStatus(s.status);
+    setSessionStatus(statusOverrides[s.id] ?? s.status);
   }
 
   async function handleSaveSession() {
@@ -153,6 +153,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     // Sync learner statuses
     try { await fetch("/api/learners/sync-status"); } catch {}
 
+    setStatusOverrides(prev => ({ ...prev, [selectedSession.id]: sessionStatus }));
     setSavingNotes(false);
     setSelectedSession(null);
     stopRecording();
@@ -541,6 +542,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                         >
                           <option value="planned">Planifié</option>
                           {!isFuture && <option value="done">Réalisé</option>}
+                          {!isFuture && <option value="no_show">No show</option>}
                           <option value="cancelled">Annulé</option>
                         </select>
                         {isFuture && sessionStatus === "planned" && (

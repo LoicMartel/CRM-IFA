@@ -957,6 +957,7 @@ export function HomeView({
         const statusColors: Record<string, { bg: string; text: string; label: string }> = {
           planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" },
           done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
+          no_show: { bg: "#fce4ec", text: "#c62828", label: "No show" },
           cancelled: { bg: "#f5f5f5", text: "#999", label: "Annulé" },
         };
         const sc = statusColors[sessionForm.status] ?? statusColors.planned;
@@ -1036,6 +1037,7 @@ export function HomeView({
                         >
                           <option value="planned">Planifié</option>
                           {!isFuture && <option value="done">Réalisé</option>}
+                          {!isFuture && <option value="no_show">No show</option>}
                           <option value="cancelled">Annulé</option>
                         </select>
                         {isFuture && sessionForm.status === "planned" && (
