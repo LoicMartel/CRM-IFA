@@ -223,12 +223,29 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   }), { portfolio: 0, visioHours: 0, presentielHours: 0, totalPrevues: 0, totalDelivrees: 0, facturable: 0, nonFact: 0, pipe: 0 });
 
   // ========== COMMANDES PLANIFIEES TABLE ==========
+  // Combine: done sessions from deliverySessions + planned sessions from training_sessions
   function computeCmdData(start: string, end: string) {
-    const periodSessions = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status !== "cancelled");
+    // Done sessions from delivery (exact data)
+    const periodDelivery = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, start, end));
+    // Planned only from training_sessions
+    const periodPlanned = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status === "planned");
+
     return activeTrainers.map(t => {
-      const tSessions = periodSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-      const visioH = tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const presH = tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+      // Done: from delivery
+      const tDoneDelivery = periodDelivery.filter((s: R) => {
+        const trainer = s.team_members as { first_name: string; last_name: string } | null;
+        return trainer?.first_name === t;
+      });
+      const doneVisioH = tDoneDelivery.filter((s: R) => s.delivery_mode === "distanciel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+      const donePresH = tDoneDelivery.filter((s: R) => s.delivery_mode === "présentiel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+
+      // Planned: from training_sessions
+      const tPlanned = periodPlanned.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
+      const plannedVisioH = tPlanned.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+      const plannedPresH = tPlanned.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+
+      const visioH = doneVisioH + plannedVisioH;
+      const presH = donePresH + plannedPresH;
       return { trainer: t, totalH: visioH + presH, presH, visioH };
     });
   }
