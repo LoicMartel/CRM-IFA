@@ -1193,8 +1193,8 @@ export function PlanningList({
                     )}
 
                     {sessions.length > 0 ? (
-                      <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflow: "hidden" }}>
-                        <Table>
+                      <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflowX: "auto" }}>
+                        <Table style={{ minWidth: 900 }}>
                           <TableHeader>
                             <TableRow>
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
@@ -1328,8 +1328,8 @@ export function PlanningList({
                   {planLearners.length > 0 && (
                     <div>
                       <div style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14, marginBottom: 10 }}>Apprenants assignés</div>
-                      <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflow: "hidden" }}>
-                        <Table>
+                      <div style={{ borderRadius: 8, border: "1px solid #e8ecf1", overflowX: "auto" }}>
+                        <Table style={{ minWidth: 900 }}>
                           <TableHeader>
                             <TableRow>
                               <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Nom</TableHead>
