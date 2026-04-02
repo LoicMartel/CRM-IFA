@@ -194,8 +194,8 @@ export function PlanningList({
   const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[] });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [plansImportOpen, setPlansImportOpen] = useState(false);
-  const [pdfImportOpen, setPdfImportOpen] = useState(false);
+  const [plansImportOpen] = useState(false);
+  const [pdfImportOpen] = useState(false);
   const [importQueue, setImportQueue] = useState<PlanImportRow[]>([]);
   const [importIndex, setImportIndex] = useState(0);
   const [importAllRows, setImportAllRows] = useState<PlanImportRow[]>([]);
@@ -708,22 +708,6 @@ export function PlanningList({
           {trainingTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         <div style={{ flex: 1 }} />
-        {!isRestrictedExterne && !isReadOnly && (<>
-          <button
-            onClick={() => setPlansImportOpen(true)}
-            style={{ height: 38, borderRadius: 8, background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "1.5px solid #1a6b9c", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
-          >
-            <Upload className="h-4 w-4" />
-            Import Plans
-          </button>
-          <button
-            onClick={() => setPdfImportOpen(true)}
-            style={{ height: 38, borderRadius: 8, background: "white", color: "#e65100", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "1.5px solid #e65100", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
-          >
-            <Upload className="h-4 w-4" />
-            Import Sessions
-          </button>
-        </>)}
         <button
           onClick={() => setDecisionOpen(true)}
           style={{ height: 38, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: 700, border: "2px solid #1a6b9c", cursor: "pointer", background: "white", color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
@@ -1845,22 +1829,6 @@ export function PlanningList({
         );
       })()}
 
-      {/* Visioformation Plans Import Modal */}
-      <VisioformationPlansImportModal
-        open={plansImportOpen}
-        onClose={() => setPlansImportOpen(false)}
-        companies={companies.map((c) => ({ id: c.id, name: c.name }))}
-        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string; company_id?: string | null }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name, company_id: (l as any).company_id ?? null }))}
-        onStartImport={handleStartImport}
-        existingPlanCompanyIds={servicePlans.map((sp) => sp.company_id)}
-      />
-
-      <PDFSessionsImportModal
-        open={pdfImportOpen}
-        onClose={() => setPdfImportOpen(false)}
-        servicePlans={servicePlans.map((sp) => ({ id: sp.id, company_id: sp.company_id, companies: sp.companies ? { name: sp.companies.name, address: sp.companies.address, city: sp.companies.city } : null }))}
-        learners={(allLearners as Array<{ id: string; first_name: string; last_name: string }>).map((l) => ({ id: l.id, first_name: l.first_name, last_name: l.last_name }))}
-      />
 
       <style>{`
         @keyframes pulse {

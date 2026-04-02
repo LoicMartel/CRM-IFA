@@ -240,9 +240,6 @@ export function LearnersTable({
         )} />
         {!isRestrictedExterne && !isReadOnly && (
           <>
-            <Button variant="outline" size="sm" onClick={() => setVisioImportOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" /> Import Visioformation
-            </Button>
             {selectedIds.size > 0 && (
               <Button
                 variant="outline"
@@ -427,12 +424,6 @@ export function LearnersTable({
         </div>
       )}
 
-      <VisioformationImportModal
-        open={visioImportOpen}
-        onClose={() => setVisioImportOpen(false)}
-        learners={learners.map((l) => ({ id: l.id, email: l.email }))}
-        companies={companies}
-      />
     </>
   );
 }
