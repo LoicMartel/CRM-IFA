@@ -271,10 +271,12 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
             <option value="cancelled">Annulé</option>
             <option value="no_show">No show</option>
           </select>
-          <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
-            📋 Suivi
-          </button>
+          {s.status !== "done" && (
+            <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+              📋 Suivi
+            </button>
+          )}
           <button
             onClick={async (e) => {
               e.stopPropagation();
