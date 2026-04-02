@@ -675,6 +675,27 @@ export function PlanningList({
       }
     }
 
+    // Notify Iman on Slack when a session is cancelled
+    if (newStatus === "cancelled") {
+      try {
+        const session = servicePlans.flatMap(p =>
+          (p.training_sessions ?? []).map((s: any) => ({ ...s, plan: p }))
+        ).find((s: any) => s.id === sessionId);
+        if (session) {
+          const companyName = session.plan?.companies?.name ?? "—";
+          const sessionDate = session.session_date ? new Date(session.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
+          const sessionType = session.session_type === "journee" ? "Journée" : "VT";
+          const duration = session.duration_hours ? `${Number(session.duration_hours).toFixed(0)}h` : "";
+          const trainers = (session.trainers ?? []).join(", ");
+          await fetch("/api/slack/notify-cancelled", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: session.notes ?? "" }),
+          });
+        }
+      } catch {}
+    }
+
     // Sync learner statuses (futur → actuel, actuel → ancien)
     try { await fetch("/api/learners/sync-status"); } catch {}
 
