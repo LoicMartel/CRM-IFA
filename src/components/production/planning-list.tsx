@@ -163,6 +163,7 @@ export function PlanningList({
   const [filterTrainer, setFilterTrainer] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [syncPopup, setSyncPopup] = useState<{ sessionId: string; syncData: any } | null>(null);
@@ -640,6 +641,8 @@ export function PlanningList({
   }
 
   async function handleSessionStatus(sessionId: string, newStatus: string) {
+    // Update local state immediately so the select reflects the change
+    setLocalStatuses(prev => ({ ...prev, [sessionId]: newStatus }));
     const supabase = createClient();
     await supabase.from("training_sessions").update({ status: newStatus }).eq("id", sessionId);
 
@@ -1213,7 +1216,8 @@ export function PlanningList({
                             {sessions
                               .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())
                               .map((s) => {
-                                const sc = statusColors[s.status];
+                                const effectiveStatus = localStatuses[s.id] ?? s.status;
+                                const sc = statusColors[effectiveStatus] ?? statusColors.planned;
                                 return (
                                   <TableRow key={s.id}>
                                     <TableCell style={{ fontWeight: 600, color: "#1a2a3a", fontSize: 13 }}>{(() => {
@@ -1263,7 +1267,7 @@ export function PlanningList({
                                     </TableCell>
                                     <TableCell>
                                       <select
-                                        value={s.status}
+                                        value={effectiveStatus}
                                         onChange={(e) => handleSessionStatus(s.id, e.target.value)}
                                         style={{
                                           height: 28, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 8px",
