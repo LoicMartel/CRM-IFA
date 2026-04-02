@@ -245,7 +245,26 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
           {isVT ? <Video className="h-3 w-3" style={{ color: "#1a6b9c" }} /> : <Building2 className="h-3 w-3" style={{ color: "#FF6B35" }} />}
           <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 11 }}>{s.session_time ? String(s.session_time).slice(0, 5) + " · " : ""}{isVT ? "VT" : "Journée"} — {Number(s.duration_hours) || 0}h</span>
-          <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text, marginLeft: "auto" }}>{sc.label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
+            <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              title="Modifier">
+              ✏️
+            </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!window.confirm("Supprimer cette session ?")) return;
+                const sb = createClient();
+                await sb.from("training_session_learners").delete().eq("training_session_id", s.id);
+                await sb.from("training_sessions").delete().eq("id", s.id);
+                router.refresh();
+              }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              title="Supprimer">
+              🗑
+            </button>
+          </div>
         </div>
         <div style={{ fontWeight: 600, color: "#1a2a3a", fontSize: 12 }}>{company}</div>
         {program && <div style={{ fontSize: 10, color: "#8399a9" }}>{program}</div>}
@@ -259,26 +278,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         )}
         {!s.is_billable && <span style={{ fontSize: 9, fontWeight: 600, padding: "0 5px", borderRadius: 6, background: "#f5f5f5", color: "#999" }}>NF</span>}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-          <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
-            title="Modifier"
-          >
-            ✏️
-          </button>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (!window.confirm("Supprimer cette session ?")) return;
-              const sb = createClient();
-              await sb.from("training_session_learners").delete().eq("training_session_id", s.id);
-              await sb.from("training_sessions").delete().eq("id", s.id);
-              router.refresh();
-            }}
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
-            title="Supprimer"
-          >
-            🗑
-          </button>
+          <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
           {currentStatus === "planned" && (
             <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
               style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>

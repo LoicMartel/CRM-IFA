@@ -362,7 +362,25 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
           <ModeIcon className="h-3 w-3" style={{ color: tc.text }} />
           <span style={{ fontWeight: 700, color: tc.text, fontSize: 11 }}>{time} · {m.meeting_type}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text, marginLeft: "auto" }}>{sc.label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
+            <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              title="Modifier">
+              ✏️
+            </button>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!window.confirm("Supprimer ce RDV ?")) return;
+                const sb = createClient();
+                await sb.from("meetings").delete().eq("id", m.id);
+                router.refresh();
+              }}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
+              title="Supprimer">
+              🗑
+            </button>
+          </div>
         </div>
         {m.contacts && (
           <div style={{ fontWeight: 600, color: "#1a2a3a", fontSize: 12 }}>{m.contacts.first_name} {m.contacts.last_name}</div>
@@ -372,25 +390,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
         )}
         <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 1 }}>{m.duration_minutes} min</div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-          <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
-            title="Modifier"
-          >
-            ✏️
-          </button>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              if (!window.confirm("Supprimer ce RDV ?")) return;
-              const sb = createClient();
-              await sb.from("meetings").delete().eq("id", m.id);
-              router.refresh();
-            }}
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "1px solid #dce8f0", cursor: "pointer", background: "white", fontSize: 11, padding: 0 }}
-            title="Supprimer"
-          >
-            🗑
-          </button>
+          <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
           {m.status === "booked" && (
             <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
               style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
