@@ -26,6 +26,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     { data: learners },
     { data: companyTypes },
     { data: teamMembers },
+    { data: servicePlans },
   ] = await Promise.all([
     supabase
       .from("contacts")
@@ -76,6 +77,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       .from("team_members")
       .select("id, first_name, last_name")
       .eq("is_active", true),
+    supabase
+      .from("service_plans")
+      .select("*, training_programs(name), training_types(name), training_sessions(*, training_session_learners(learner_id, learners(first_name, last_name))), service_plan_learners(learner_id, learners(first_name, last_name))")
+      .eq("company_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   return (
@@ -93,6 +99,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         learners={learners ?? []}
         companyTypes={companyTypes ?? []}
         teamMembers={teamMembers ?? []}
+        servicePlans={servicePlans ?? []}
       />
     </>
   );

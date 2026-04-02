@@ -103,12 +103,13 @@ interface Props {
   learners: R[];
   companyTypes: R[];
   teamMembers: R[];
+  servicePlans: R[];
 }
 
 /* ---- Component ---- */
 
 export function CompanyDetail({
-  company, contacts, deals, activities, meetings, orders, invoices, sessions, learners, companyTypes, teamMembers,
+  company, contacts, deals, activities, meetings, orders, invoices, sessions, learners, companyTypes, teamMembers, servicePlans,
 }: Props) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -361,7 +362,7 @@ export function CompanyDetail({
               <TabsTrigger value="deals">Deals ({deals.length})</TabsTrigger>
               <TabsTrigger value="meetings">RDV ({meetings.length})</TabsTrigger>
               <TabsTrigger value="invoices">Factures ({invoices.length})</TabsTrigger>
-              <TabsTrigger value="sessions">Sessions ({sessions.length})</TabsTrigger>
+              <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
               <TabsTrigger value="learners">Apprenants ({learners.length})</TabsTrigger>
             </TabsList>
 
@@ -691,63 +692,146 @@ export function CompanyDetail({
               </div>
             </TabsContent>
 
-            {/* --- Sessions / Formations délivrées --- */}
-            <TabsContent value="sessions" className="mt-4">
-              <div className="lca-card">
-                <div style={{ height: 4, background: "#1565c0" }} />
-                <div style={{ padding: 16 }}>
-                  {sessions.length === 0 ? <Empty text="Aucune session délivrée" /> : (
-                    <>
-                      <div style={{ marginBottom: 12, fontSize: 14 }}>
-                        <strong>Total :</strong> {totalSessions} sessions — <strong>{totalHours.toFixed(1)}h</strong> délivrées —{" "}
-                        <span style={{ color: "#27ae60", fontWeight: 700 }}>
-                          {fmt(sessions.reduce((a, s) => a + (Number(s.billable_amount) || 0), 0))}
-                        </span> facturable
+            {/* --- Plans de formation --- */}
+            <TabsContent value="service-plans" className="mt-4">
+              <div className="space-y-4">
+                {servicePlans.length === 0 ? (
+                  <div className="lca-card">
+                    <div style={{ height: 4, background: "#7c3aed" }} />
+                    <div style={{ padding: 16 }}><Empty text="Aucun plan de formation" /></div>
+                  </div>
+                ) : (
+                  (servicePlans as R[]).map((plan) => {
+                    const program = plan.training_programs as { name: string } | null;
+                    const trainingType = plan.training_types as { name: string } | null;
+                    const trainingSessions = (plan.training_sessions as R[] ?? []).sort(
+                      (a, b) => String(a.session_date).localeCompare(String(b.session_date))
+                    );
+                    const planLearners = plan.service_plan_learners as R[] ?? [];
+                    const doneSessions = trainingSessions.filter((ts) => ts.status === "done");
+                    const plannedSessions = trainingSessions.filter((ts) => ts.status === "planned");
+                    const totalHoursDone = doneSessions.reduce((acc, ts) => acc + (Number(ts.duration_hours) || 0), 0);
+                    const totalHoursPlanned = trainingSessions.reduce((acc, ts) => acc + (Number(ts.duration_hours) || 0), 0);
+
+                    return (
+                      <div key={s(plan.id)} className="lca-card">
+                        <div style={{ height: 4, background: "#7c3aed" }} />
+                        <div style={{ padding: 16 }}>
+                          {/* Plan header */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                            <div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>
+                                {program?.name ?? "Plan"} {trainingType ? `— ${trainingType.name}` : ""}
+                              </div>
+                              <div style={{ fontSize: 13, color: "#7a8bab", marginTop: 2 }}>
+                                {plan.start_date ? `Depuis le ${fmtDate(s(plan.start_date))}` : "Date non définie"}
+                                {plan.format ? ` | ${s(plan.format)}` : ""}
+                                {plan.mode ? ` | ${s(plan.mode)}` : ""}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              {Number(plan.budget) > 0 && (
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "#27ae60" }}>
+                                  {fmt(Number(plan.budget))}
+                                </div>
+                              )}
+                              {Number(plan.hourly_rate) > 0 && (
+                                <div style={{ fontSize: 12, color: "#7a8bab" }}>
+                                  {Number(plan.hourly_rate).toFixed(0)}€/h
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Stats */}
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+                            <div style={{ background: "#f7f8fa", borderRadius: 8, padding: "8px 12px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions faites</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>{doneSessions.length}</div>
+                            </div>
+                            <div style={{ background: "#f7f8fa", borderRadius: 8, padding: "8px 12px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions planifiees</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>{plannedSessions.length}</div>
+                            </div>
+                            <div style={{ background: "#f7f8fa", borderRadius: 8, padding: "8px 12px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures faites</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>{totalHoursDone.toFixed(0)}h / {totalHoursPlanned.toFixed(0)}h</div>
+                            </div>
+                            <div style={{ background: "#f7f8fa", borderRadius: 8, padding: "8px 12px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Apprenants</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a" }}>{planLearners.length}</div>
+                            </div>
+                          </div>
+
+                          {/* Apprenants list */}
+                          {planLearners.length > 0 && (
+                            <div style={{ marginBottom: 16 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#8399a9", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Apprenants</div>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {planLearners.map((spl) => {
+                                  const learner = spl.learners as { first_name: string; last_name: string } | null;
+                                  return learner ? (
+                                    <span key={s(spl.learner_id)} style={{ background: "#e8f0fe", color: "#1565c0", fontSize: 12, padding: "2px 8px", borderRadius: 12 }}>
+                                      {learner.first_name} {learner.last_name}
+                                    </span>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Sessions table */}
+                          {trainingSessions.length > 0 && (
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Date</TableHead>
+                                  <TableHead>Type</TableHead>
+                                  <TableHead>Statut</TableHead>
+                                  <TableHead className="text-right">Duree</TableHead>
+                                  <TableHead>Trainer</TableHead>
+                                  <TableHead>Apprenants</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {trainingSessions.map((ts) => {
+                                  const tsLearners = (ts.training_session_learners as R[] ?? []);
+                                  const learnersNames = tsLearners.map((tsl) => {
+                                    const l = tsl.learners as { first_name: string; last_name: string } | null;
+                                    return l ? `${l.first_name} ${l.last_name}` : "";
+                                  }).filter(Boolean).join(", ");
+                                  const trainers = (ts.trainers as string[] ?? []).join(", ");
+                                  return (
+                                    <TableRow key={s(ts.id)}>
+                                      <TableCell>{fmtDate(s(ts.session_date))}</TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          bg={s(ts.session_type) === "journee" ? "#e8f0fe" : "#f0f0f0"}
+                                          text={s(ts.session_type) === "journee" ? "#1565c0" : "#666"}
+                                          label={s(ts.session_type) === "journee" ? "Journee" : "VT"}
+                                        />
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge
+                                          bg={s(ts.status) === "done" ? "#e8f5e9" : s(ts.status) === "cancelled" ? "#fce4ec" : "#fff3e0"}
+                                          text={s(ts.status) === "done" ? "#2e7d32" : s(ts.status) === "cancelled" ? "#c62828" : "#e65100"}
+                                          label={s(ts.status) === "done" ? "Fait" : s(ts.status) === "cancelled" ? "Annule" : "Planifie"}
+                                        />
+                                      </TableCell>
+                                      <TableCell className="text-right">{ts.duration_hours ? `${Number(ts.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                                      <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
+                                      <TableCell style={{ fontSize: 11, color: "#7a8bab", maxWidth: 200 }} className="truncate">{learnersNames || "—"}</TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </div>
                       </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Thème</TableHead>
-                            <TableHead>Mode</TableHead>
-                            <TableHead>Participants</TableHead>
-                            <TableHead className="text-right">Heures</TableHead>
-                            <TableHead className="text-right">Montant</TableHead>
-                            <TableHead>Expert</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sessions.map((sess) => {
-                            const theme = sess.session_themes as { name: string } | null;
-                            const trainer = sess.team_members as { first_name: string; last_name: string } | null;
-                            return (
-                              <TableRow key={s(sess.id)}>
-                                <TableCell>{fmtDate(s(sess.session_date))}</TableCell>
-                                <TableCell>{theme?.name ?? s(sess.session_label) ?? "—"}</TableCell>
-                                <TableCell>
-                                  <Badge
-                                    bg={s(sess.delivery_mode) === "présentiel" ? "#e3f2fd" : "#f0f0f0"}
-                                    text={s(sess.delivery_mode) === "présentiel" ? "#1565c0" : "#666"}
-                                    label={s(sess.delivery_mode) === "présentiel" ? "Présentiel" : "Distanciel"}
-                                  />
-                                </TableCell>
-                                <TableCell style={{ fontSize: 12, maxWidth: 150 }} className="truncate">{s(sess.attendee_names) || "—"}</TableCell>
-                                <TableCell className="text-right">{sess.hours_delivered ? Number(sess.hours_delivered).toFixed(1) : "—"}</TableCell>
-                                <TableCell className="text-right font-semibold">
-                                  {sess.is_billable
-                                    ? <span style={{ color: "#27ae60" }}>{fmt(sess.billable_amount as number)}</span>
-                                    : <span style={{ color: "#7a8bab" }}>{fmt(sess.non_billable_amount as number)}</span>
-                                  }
-                                </TableCell>
-                                <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainer ? `${trainer.first_name} ${trainer.last_name}` : "—"}</TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </>
-                  )}
-                </div>
+                    );
+                  })
+                )}
               </div>
             </TabsContent>
 
