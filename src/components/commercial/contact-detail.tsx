@@ -369,9 +369,7 @@ export function ContactDetail({
           last_contacted_at: new Date().toISOString(),
           lead_status: activityForm.call_outcome === "booked" ? "booked" : "contacted",
         };
-        if (activityForm.call_outcome === "booked" && contact.lifecycle_stage === "lead_marketing") {
-          callUpdate.lifecycle_stage = "prospect";
-        }
+        // Ne pas changer lifecycle_stage ici — le changement se fait quand le RDV R1+ est créé
         await supabase.from("contacts").update(callUpdate).eq("id", contact.id);
       } else {
         await supabase.from("contacts").update({
@@ -423,7 +421,7 @@ export function ContactDetail({
     // Fetch remaining activities and meetings for this contact
     const [{ data: remainingActivities }, { data: remainingMeetings }] = await Promise.all([
       supabase.from("activities").select("type, description").eq("contact_id", contact.id),
-      supabase.from("meetings").select("status, outcome, next_step").eq("contact_id", contact.id),
+      supabase.from("meetings").select("status, outcome, next_step, meeting_type").eq("contact_id", contact.id),
     ]);
 
     const acts = remainingActivities ?? [];
@@ -446,7 +444,11 @@ export function ContactDetail({
     const hasBookedRdv = mtgs.some(m => m.status === "booked");
     if (hasBookedRdv) {
       const updateData: Record<string, string> = { lead_status: "booked" };
-      if (contact.lifecycle_stage === "lead_marketing") updateData.lifecycle_stage = "prospect";
+      // Lead marketing → prospect uniquement si R1 ou supérieur est booked
+      if (contact.lifecycle_stage === "lead_marketing") {
+        const hasR1Plus = mtgs.some(m => m.status === "booked" && ["R1", "R2", "R3", "Signed"].includes(m.meeting_type));
+        if (hasR1Plus) updateData.lifecycle_stage = "prospect";
+      }
       await supabase.from("contacts").update(updateData).eq("id", contact.id);
       return;
     }
@@ -545,7 +547,10 @@ export function ContactDetail({
       // Update lead_status to reflect latest action
       if (rdvForm.status === "booked") {
         const updateData: Record<string, string> = { lead_status: "booked" };
-        if (contact.lifecycle_stage === "lead_marketing") updateData.lifecycle_stage = "prospect";
+        // Lead marketing → prospect uniquement si R1 ou supérieur
+        if (contact.lifecycle_stage === "lead_marketing" && ["R1", "R2", "R3", "Signed"].includes(rdvForm.meeting_type)) {
+          updateData.lifecycle_stage = "prospect";
+        }
         await supabase.from("contacts").update(updateData).eq("id", contact.id);
       }
 
