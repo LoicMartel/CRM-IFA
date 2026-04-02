@@ -231,18 +231,20 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
     const periodPlanned = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status === "planned");
 
     return activeTrainers.map(t => {
-      // Done: from delivery
+      // Done: from delivery — count sessions for présentiel (1 session = 8h), sum hours for visio
       const tDoneDelivery = periodDelivery.filter((s: R) => {
         const trainer = s.team_members as { first_name: string; last_name: string } | null;
         return trainer?.first_name === t;
       });
       const doneVisioH = tDoneDelivery.filter((s: R) => s.delivery_mode === "distanciel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
-      const donePresH = tDoneDelivery.filter((s: R) => s.delivery_mode === "présentiel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+      const donePresCount = tDoneDelivery.filter((s: R) => s.delivery_mode === "présentiel").length;
+      const donePresH = donePresCount * 8;
 
-      // Planned: from training_sessions
+      // Planned: from training_sessions — 1 journée = 8h
       const tPlanned = periodPlanned.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
       const plannedVisioH = tPlanned.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const plannedPresH = tPlanned.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+      const plannedPresCount = tPlanned.filter((s: R) => s.session_type === "journee").length;
+      const plannedPresH = plannedPresCount * 8;
 
       const visioH = doneVisioH + plannedVisioH;
       const presH = donePresH + plannedPresH;
