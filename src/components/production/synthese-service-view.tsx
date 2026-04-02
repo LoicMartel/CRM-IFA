@@ -63,7 +63,7 @@ function getMonths(fy: { start: string }) {
   });
 }
 
-export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames }: { sessions: R[]; servicePlans: R[]; deals: R[]; expertNames?: string[] }) {
+export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames, deliverySessions }: { sessions: R[]; servicePlans: R[]; deals: R[]; expertNames?: string[]; deliverySessions?: R[] }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
   const fy = getFiscalYear();
   const [detailPeriod, setDetailPeriod] = useState("year");
@@ -112,24 +112,18 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   const realizationRate = totalHoursSold > 0 ? (totalHoursDelivered / totalHoursSold * 100) : 0;
 
-  // Facturable / non facturable
-  const billableDone = doneSessions.filter((s: R) => s.is_billable !== false);
-  const nonBillableDone = doneSessions.filter((s: R) => s.is_billable === false);
-
-  const totalFacturable = billableDone.reduce((sum: number, s: R) => {
-    const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-    return sum + (Number(s.duration_hours) || 0) * rate;
-  }, 0);
-  const totalNonFacturable = nonBillableDone.reduce((sum: number, s: R) => {
-    const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-    return sum + (Number(s.duration_hours) || 0) * rate;
-  }, 0);
+  // Facturable / non facturable — use deliverySessions (table sessions) for exact amounts
+  const fyDeliverySessions = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, fyStart, fyEnd));
+  const totalFacturable = fyDeliverySessions.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
+  const totalNonFacturable = fyDeliverySessions.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
 
   const nonFactPct = (totalFacturable + totalNonFacturable) > 0 ? (totalNonFacturable / (totalFacturable + totalNonFacturable) * 100) : 0;
 
-  // Average daily rate
+  // Average daily rate — facturable hours only
+  const billableHours = fyDeliverySessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+  const billableDays = hoursToJ(billableHours);
   const totalDaysDelivered = hoursToJ(totalHoursDelivered);
-  const avgDailyRate = totalDaysDelivered > 0 ? totalFacturable / totalDaysDelivered : 0;
+  const avgDailyRate = billableDays > 0 ? totalFacturable / billableDays : 0;
 
   // Days to plan = total training_days from won deals - total planned sessions hours / 8
   const wonDeals = deals.filter((d: R) => d.stage === "closed_won");
@@ -191,14 +185,14 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
       const totalPrevues = visioHours + presentielHours;
       const totalDelivrees = tDone.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
 
-      const facturable = tDone.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
-        const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-        return sum + (Number(s.duration_hours) || 0) * rate;
-      }, 0);
-      const nonFact = tDone.filter((s: R) => s.is_billable === false).reduce((sum: number, s: R) => {
-        const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-        return sum + (Number(s.duration_hours) || 0) * rate;
-      }, 0);
+      // Use deliverySessions for exact financial amounts per trainer
+      const tDelivery = (deliverySessions ?? []).filter((ds: R) => {
+        if (!inRange(ds.session_date as string, start, end)) return false;
+        const trainer = ds.team_members as { first_name: string; last_name: string } | null;
+        return trainer?.first_name === t;
+      });
+      const facturable = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
+      const nonFact = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
 
       // Pipe = deals in pipeline for companies where this trainer works
       const companyIds = new Set<string>();
@@ -254,15 +248,12 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   // ========== FACTURABLE VS NON FACTURABLE CHART ==========
   const factNonFactData = activeTrainers.map(t => {
-    const tDone = doneSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-    const fact = tDone.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
-      const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-      return sum + (Number(s.duration_hours) || 0) * rate;
-    }, 0);
-    const nonF = tDone.filter((s: R) => s.is_billable === false).reduce((sum: number, s: R) => {
-      const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-      return sum + (Number(s.duration_hours) || 0) * rate;
-    }, 0);
+    const tDelivery = fyDeliverySessions.filter((ds: R) => {
+      const trainer = ds.team_members as { first_name: string; last_name: string } | null;
+      return trainer?.first_name === t;
+    });
+    const fact = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
+    const nonF = tDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
     return { name: t, Facturable: fact, "Non Facturable": nonF };
   });
 
