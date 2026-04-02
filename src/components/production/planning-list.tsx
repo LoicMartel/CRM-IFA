@@ -388,12 +388,9 @@ export function PlanningList({
   const kpiLearners = new Set(
     filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
   ).size;
-  const filteredLearnerIds = new Set(
-    filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
-  );
   const trainerMemberId = filterTrainer ? (expertMembers.find((m) => (m as any).first_name === filterTrainer) as any)?.id ?? null : null;
   const kpiLearnersActuel = allLearners.filter((l) =>
-    filteredLearnerIds.has(l.id as string) && l.status === "actuel" && (!trainerMemberId || l.expert_id === trainerMemberId)
+    l.status === "actuel" && (!trainerMemberId || l.expert_id === trainerMemberId)
   ).length;
   const kpiBudget = filtered.reduce((s, p) => s + (Number(p.budget) || 0), 0);
 
