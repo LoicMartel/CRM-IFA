@@ -378,6 +378,22 @@ export function PlanningList({
     return sortDirection === "asc" ? cmp : -cmp;
   });
 
+  // KPIs based on filtered plans
+  const filteredSessions = filtered.flatMap((p) => p.training_sessions ?? []);
+  const kpiPlansCount = filtered.length;
+  const kpiVtDone = filteredSessions.filter((s) => s.session_type === "vt" && s.status === "done").length;
+  const kpiVtTotal = filtered.reduce((s, p) => s + (Number(p.vt_planned) || 0), 0);
+  const kpiDaysDone = filteredSessions.filter((s) => s.session_type === "journee" && s.status === "done").length;
+  const kpiDaysTotal = filtered.reduce((s, p) => s + (Number(p.days_planned) || 0), 0);
+  const kpiLearners = new Set(
+    filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
+  ).size;
+  const filteredLearnerIds = new Set(
+    filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
+  );
+  const kpiLearnersActuel = allLearners.filter((l) => filteredLearnerIds.has(l.id as string) && l.status === "actuel").length;
+  const kpiBudget = filtered.reduce((s, p) => s + (Number(p.budget) || 0), 0);
+
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -713,8 +729,36 @@ export function PlanningList({
     router.refresh();
   }
 
+  function fmtEuro(n: number) {
+    return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+  }
+
   return (
     <>
+      {/* KPI cards */}
+      <div className="grid gap-3 md:grid-cols-5" style={{ marginBottom: 16 }}>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Plans de formation</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{kpiPlansCount}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>VT (réalisées / total)</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{kpiVtDone} / {kpiVtTotal}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Journées (réalisées / total)</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{kpiDaysDone} / {kpiDaysTotal}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Apprenants actuels</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#2ecc71" }}>{kpiLearnersActuel}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Budget total</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#27ae60" }}>{fmtEuro(kpiBudget)}</div>
+        </div>
+      </div>
+
       {/* Filters + new plan button */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <div className="relative" style={{ flex: "0 1 240px", minWidth: 180 }}>
