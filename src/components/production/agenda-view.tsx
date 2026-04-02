@@ -254,12 +254,42 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           <div style={{ fontSize: 9, color: "#5a6f80", marginTop: 2 }}>📍 {s.session_location}</div>
         )}
         {!s.is_billable && <span style={{ fontSize: 9, fontWeight: 600, padding: "0 5px", borderRadius: 6, background: "#f5f5f5", color: "#999" }}>NF</span>}
-        {s.status === "planned" && (
-          <button onClick={() => openSession(s)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px", marginTop: 4 }}>
-            📋 Suivi session
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+          <select
+            defaultValue={s.status}
+            onClick={(e) => e.stopPropagation()}
+            onChange={async (e) => {
+              e.stopPropagation();
+              const sb = createClient();
+              await sb.from("training_sessions").update({ status: e.target.value }).eq("id", s.id);
+              router.refresh();
+            }}
+            style={{ height: 22, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 4px", fontSize: 9, fontWeight: 600, background: sc.bg, color: sc.text, cursor: "pointer" }}
+          >
+            <option value="planned">Planifié</option>
+            <option value="done">Réalisé</option>
+            <option value="cancelled">Annulé</option>
+            <option value="no_show">No show</option>
+          </select>
+          <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+            📋 Suivi
           </button>
-        )}
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!window.confirm("Supprimer cette session ?")) return;
+              const sb = createClient();
+              await sb.from("training_session_learners").delete().eq("training_session_id", s.id);
+              await sb.from("training_sessions").delete().eq("id", s.id);
+              router.refresh();
+            }}
+            style={{ display: "inline-flex", alignItems: "center", height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "#fce4ec", color: "#c62828", fontSize: 9, fontWeight: 700, padding: "0 8px" }}
+            title="Supprimer"
+          >
+            🗑
+          </button>
+        </div>
       </div>
     );
   }
