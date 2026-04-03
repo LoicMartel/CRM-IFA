@@ -134,24 +134,25 @@ export default function LandingPage() {
       {/* ===== SECTION 1: HERO ===== */}
       <section
         id="hero"
-        className="relative overflow-hidden bg-[#EFF5F9]"
+        className="relative overflow-hidden"
+        style={{ background: "#2e7ab5" }}
       >
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <div className="grid items-center gap-12 md:grid-cols-2">
             {/* Left column */}
             <div className="flex flex-col gap-6">
               <Image
-                src="/lca-black-logo.png"
+                src="/logo-lca.png"
                 alt="La Closing Académie"
                 width={120}
                 height={90}
                 className="w-[120px] h-auto"
               />
-              <h1 className="text-3xl font-bold leading-tight text-[#1a2a3a] md:text-4xl lg:text-[36px]">
+              <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl lg:text-[36px]">
                 Doublez la performance commerciale de votre organisme de
                 formation dès le prochain trimestre.
               </h1>
-              <p className="text-base leading-relaxed text-[#4a6274] md:text-lg">
+              <p className="text-base leading-relaxed text-white/80 md:text-lg">
                 {subtitleText}
               </p>
             </div>
@@ -368,7 +369,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== SECTION 7: Final CTA ===== */}
-      <section className="bg-[#1a6b9c]">
+      <section style={{ background: "#2e7ab5" }}>
         <div className="mx-auto max-w-6xl px-4 py-16 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
             Prêt à transformer votre performance commerciale ?
