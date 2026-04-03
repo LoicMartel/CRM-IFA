@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -212,6 +212,53 @@ function getFileIcon(fileType: string | null, size: "sm" | "lg" = "lg") {
   if (t.includes("xls") || t.includes("sheet") || t.includes("excel"))
     return <FileText className={cls} style={{ color: "#2e7d32" }} />;
   return <FileText className={cls} style={{ color: "#1a6b9c" }} />;
+}
+
+function isImageType(fileType: string | null, name: string): boolean {
+  if (!fileType) {
+    const ext = name.split(".").pop()?.toLowerCase() ?? "";
+    return ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext);
+  }
+  return fileType.toLowerCase().includes("image");
+}
+
+function ResourceThumbnail({ resource }: { resource: Resource }) {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!isImageType(resource.file_type, resource.name)) return;
+    const supabase = createClient();
+    supabase.storage.from("resources").createSignedUrl(resource.file_path, 600).then(({ data }) => {
+      if (data?.signedUrl) setThumbUrl(data.signedUrl);
+      else setFailed(true);
+    });
+  }, [resource.file_path, resource.file_type, resource.name]);
+
+  if (isImageType(resource.file_type, resource.name) && thumbUrl && !failed) {
+    return (
+      <div style={{
+        width: 56, height: 52, borderRadius: 8, border: "1px solid #e8ecf1",
+        overflow: "hidden", background: "#f5f8fa",
+      }}>
+        <img
+          src={thumbUrl}
+          alt={resource.name}
+          onError={() => setFailed(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      width: 56, height: 52, display: "flex", alignItems: "center", justifyContent: "center",
+      background: "#f5f8fa", borderRadius: 8, border: "1px solid #e8ecf1",
+    }}>
+      {getFileIcon(resource.file_type ?? resource.name.split(".").pop() ?? null, "lg")}
+    </div>
+  );
 }
 
 function getFileTypeLabel(fileType: string | null): string {
@@ -810,12 +857,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                       if (actions) actions.style.opacity = "0";
                     }}
                   >
-                    <div style={{
-                      width: 56, height: 52, display: "flex", alignItems: "center", justifyContent: "center",
-                      background: "#f5f8fa", borderRadius: 8, border: "1px solid #e8ecf1",
-                    }}>
-                      {getFileIcon(r.file_type ?? r.name.split(".").pop() ?? null, "lg")}
-                    </div>
+                    <ResourceThumbnail resource={r} />
                     <div style={{ fontSize: 11, fontWeight: 500, color: "#1a2a3a", lineHeight: 1.3, maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
                       {r.name}
                     </div>
