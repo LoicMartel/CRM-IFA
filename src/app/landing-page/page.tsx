@@ -142,7 +142,7 @@ export default function LandingPage() {
             {/* Left column */}
             <div className="flex flex-col gap-6">
               <Image
-                src="/logo-lca.png"
+                src="/lca-white-logo.png"
                 alt="La Closing Académie"
                 width={120}
                 height={90}
