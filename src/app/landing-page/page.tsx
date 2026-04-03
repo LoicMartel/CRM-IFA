@@ -290,7 +290,7 @@ export default function LandingPage() {
                   height={450}
                   className="h-full w-full object-cover object-top"
                 />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-end gap-2">
+                <div className="absolute bottom-4 left-0 right-0 flex items-end justify-center gap-2">
                   <Image src="/logos/Qualiopi.webp" alt="Qualiopi" width={140} height={70} className="h-[60px] w-auto rounded-md shadow-md" />
                   <Image src="/logos/Edtech 2.png" alt="EdTech France" width={120} height={60} className="h-[55px] w-auto rounded-md shadow-md" />
                 </div>
