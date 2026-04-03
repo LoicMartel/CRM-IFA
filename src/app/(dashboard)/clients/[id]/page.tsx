@@ -21,7 +21,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
     { data: activities },
     { data: meetings },
     { data: orders },
-    { data: invoices },
+    { data: billingEntries },
     { data: sessions },
     { data: learners },
     { data: companyTypes },
@@ -55,10 +55,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       .eq("stage", "closed_won")
       .order("close_date", { ascending: false }),
     supabase
-      .from("invoices")
-      .select("*")
+      .from("billing_entries")
+      .select("*, billing_months(*)")
       .eq("company_id", id)
-      .order("month", { ascending: false }),
+      .order("client_name"),
     supabase
       .from("sessions")
       .select("*, session_themes(name), team_members(first_name, last_name)")
@@ -94,7 +94,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         activities={activities ?? []}
         meetings={meetings ?? []}
         orders={orders ?? []}
-        invoices={invoices ?? []}
+        billingEntries={billingEntries ?? []}
         sessions={sessions ?? []}
         learners={learners ?? []}
         companyTypes={companyTypes ?? []}

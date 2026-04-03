@@ -132,18 +132,32 @@ export function DealsBoard({
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [docType, setDocType] = useState("devis");
 
-  // Invoices state for deal
-  const [dealInvoices, setDealInvoices] = useState<{ id: string; amount: number; month: string; status: string; is_paid: boolean }[]>([]);
+  // Billing entries state for deal
+  const [dealBillingMonths, setDealBillingMonths] = useState<{ id: string; amount: number; month: string; status: string | null; client_name: string }[]>([]);
 
   async function loadDealData(dealId: string) {
     setLoadingDocs(true);
     const supabase = createClient();
-    const [{ data: docs }, { data: invs }] = await Promise.all([
-      supabase.from("deal_documents").select("*").eq("deal_id", dealId).order("created_at", { ascending: false }),
-      supabase.from("invoices").select("id, amount, month, status, is_paid").eq("deal_id", dealId).order("month", { ascending: false }),
-    ]);
+    // Load deal documents
+    const { data: docs } = await supabase.from("deal_documents").select("*").eq("deal_id", dealId).order("created_at", { ascending: false });
     setDocuments(docs ?? []);
-    setDealInvoices(invs ?? []);
+
+    // Load billing entries for the deal's company
+    const deal = deals.find((d: any) => d.id === dealId);
+    const companyId = deal?.company_id;
+    if (companyId) {
+      const { data: entries } = await supabase
+        .from("billing_entries")
+        .select("client_name, billing_months(id, amount, month, status)")
+        .eq("company_id", companyId);
+      const months = (entries ?? []).flatMap((e: any) =>
+        ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, client_name: e.client_name }))
+      );
+      months.sort((a: any, b: any) => a.month.localeCompare(b.month));
+      setDealBillingMonths(months);
+    } else {
+      setDealBillingMonths([]);
+    }
     setLoadingDocs(false);
   }
 
@@ -655,18 +669,24 @@ export function DealsBoard({
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Facturation</div>
                   {(() => {
                     const dealAmount = Number(selectedDeal.amount) || 0;
-                    const totalInvoiced = dealInvoices.reduce((s, inv) => s + (Number(inv.amount) || 0), 0);
-                    const remaining = dealAmount - totalInvoiced;
-                    const allFacture = dealInvoices.length > 0 && dealInvoices.every(inv => inv.status === "facture" || inv.status === "paye");
-                    const allPaye = dealInvoices.length > 0 && dealInvoices.every(inv => inv.status === "paye");
-                    const isFullyInvoiced = totalInvoiced >= dealAmount && allFacture;
-                    const isFullyPaid = totalInvoiced >= dealAmount && allPaye;
+                    const totalBilling = dealBillingMonths.reduce((s, m) => s + (Number(m.amount) || 0), 0);
+                    const encaisse = dealBillingMonths.filter(m => m.status === "encaisse").reduce((s, m) => s + (Number(m.amount) || 0), 0);
+                    const facture = dealBillingMonths.filter(m => m.status === "facture").reduce((s, m) => s + (Number(m.amount) || 0), 0);
 
-                    const statusBadge = isFullyPaid
-                      ? { label: "Entièrement payé", bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" }
-                      : isFullyInvoiced
-                        ? { label: "Entièrement facturé", bg: "#e8f0fe", text: "#0d4f7a", bar: "#1a6b9c" }
-                        : { label: "Facturation en cours", bg: "#fff3e0", text: "#e65100", bar: "#FF6B35" };
+                    const statusBadge = encaisse >= dealAmount && dealAmount > 0
+                      ? { label: "Entièrement encaissé", bg: "#c6efce", text: "#006100", bar: "#27ae60" }
+                      : (encaisse + facture) >= dealAmount && dealAmount > 0
+                        ? { label: "Entièrement facturé", bg: "#ffc7ce", text: "#9c0006", bar: "#e74c3c" }
+                        : dealBillingMonths.length > 0
+                          ? { label: "Facturation en cours", bg: "#bdd7ee", text: "#1f4e79", bar: "#3498db" }
+                          : { label: "Non facturé", bg: "#f5f5f5", text: "#888", bar: "#bdc3c7" };
+
+                    const BILLING_STATUS_COLORS: Record<string, { label: string; bg: string; text: string }> = {
+                      encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" },
+                      facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006" },
+                      en_cours: { label: "En cours", bg: "#bdd7ee", text: "#1f4e79" },
+                      non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888" },
+                    };
 
                     return (
                       <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }}>
@@ -678,44 +698,35 @@ export function DealsBoard({
                           }}>
                             {statusBadge.label}
                           </span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a" }}>{fmt(totalInvoiced)} / {fmt(dealAmount)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a" }}>{fmt(encaisse)} / {fmt(dealAmount)}</span>
                         </div>
                         <div style={{ height: 6, background: "#e8ecf1", borderRadius: 3, overflow: "hidden", marginBottom: 10 }}>
                           <div style={{
                             height: "100%", borderRadius: 3, transition: "width 0.5s",
-                            width: `${Math.min(100, dealAmount > 0 ? (totalInvoiced / dealAmount) * 100 : 0)}%`,
+                            width: `${Math.min(100, dealAmount > 0 ? (encaisse / dealAmount) * 100 : 0)}%`,
                             background: statusBadge.bar,
                           }} />
                         </div>
 
-                        {dealInvoices.length > 0 ? (
+                        {dealBillingMonths.length > 0 ? (
                           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            {dealInvoices.map(inv => (
-                              <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
-                                <span style={{ color: "#5a6f80" }}>
-                                  {new Date(inv.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-                                </span>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                  <span style={{ fontWeight: 700, color: "#1a2a3a" }}>{fmt(Number(inv.amount))}</span>
-                                  {(() => {
-                                    const ist = inv.status === "paye"
-                                      ? { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" }
-                                      : inv.status === "facture"
-                                        ? { label: "Facturé", bg: "#e8f0fe", text: "#0d4f7a" }
-                                        : { label: "Facturable", bg: "#fff3e0", text: "#e65100" };
-                                    return <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: ist.bg, color: ist.text }}>{ist.label}</span>;
-                                  })()}
+                            {dealBillingMonths.map(m => {
+                              const sc = BILLING_STATUS_COLORS[m.status ?? "non_fait"] ?? BILLING_STATUS_COLORS.non_fait;
+                              return (
+                                <div key={m.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                                  <span style={{ color: "#5a6f80" }}>
+                                    {new Date(m.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                                  </span>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontWeight: 700, color: "#1a2a3a" }}>{fmt(Number(m.amount))}</span>
+                                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                            {remaining > 0 && (
-                              <div style={{ fontSize: 11, color: "#e65100", marginTop: 4, borderTop: "1px solid #e8ecf1", paddingTop: 6 }}>
-                                Reste à facturer : <strong>{fmt(remaining)}</strong>
-                              </div>
-                            )}
+                              );
+                            })}
                           </div>
                         ) : (
-                          <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>Aucune facture émise</div>
+                          <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>Aucune facture pour cette entreprise</div>
                         )}
                       </div>
                     );
