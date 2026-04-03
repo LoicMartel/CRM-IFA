@@ -199,6 +199,21 @@ export function TeamView({ members }: { members: R[] }) {
       }
       if (authUserId) memberData.auth_user_id = authUserId;
       await supabase.from("team_members").insert(memberData);
+
+      // Send welcome email if account was created
+      if (authUserId && form.email.trim()) {
+        try {
+          await fetch("/api/admin/welcome-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              firstName: form.first_name.trim(),
+              email: form.email.trim(),
+              password: form.password || null,
+            }),
+          });
+        } catch {}
+      }
     }
     setSaving(false);
     setPopup(null);
