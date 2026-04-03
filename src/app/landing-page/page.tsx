@@ -136,7 +136,7 @@ export default function LandingPage() {
         id="hero"
         className="relative overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+          background: "#3a7cb8",
         }}
       >
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
@@ -373,7 +373,7 @@ export default function LandingPage() {
       {/* ===== SECTION 7: Final CTA ===== */}
       <section
         style={{
-          background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+          background: "#3a7cb8",
         }}
       >
         <div className="mx-auto max-w-6xl px-4 py-16 text-center">
