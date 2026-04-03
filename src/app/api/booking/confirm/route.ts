@@ -3,6 +3,7 @@ import { createCalendarEvent } from "@/lib/google-calendar";
 import { createClient } from "@supabase/supabase-js";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
+import { getParisOffset } from "@/lib/timezone";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,11 +47,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid assigned member" }, { status: 400 });
   }
 
-  const startDateTime = `${date}T${time}:00+02:00`;
+  const offset = getParisOffset(date);
+  const startDateTime = `${date}T${time}:00${offset}`;
   const [h, m] = time.split(":").map(Number);
   const endM = m + 30;
   const endH = endM >= 60 ? h + 1 : h;
-  const endDateTime = `${date}T${String(endH).padStart(2, "0")}:${String(endM % 60).padStart(2, "0")}:00+02:00`;
+  const endDateTime = `${date}T${String(endH).padStart(2, "0")}:${String(endM % 60).padStart(2, "0")}:00${offset}`;
 
   const locationLabel = mode === "visio" ? "Visioconférence" : "Appel téléphonique";
 

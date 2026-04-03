@@ -154,9 +154,14 @@ const activityTypeColors: Record<string, { bg: string; text: string }> = {
 
 interface SourceRef { id: string; name: string; }
 
+interface CompanyDealData extends DealData {
+  contacts?: { first_name: string; last_name: string } | null;
+}
+
 export function ContactDetail({
   contact,
   deals,
+  companyDeals = [],
   activities,
   meetings,
   companies,
@@ -166,6 +171,7 @@ export function ContactDetail({
 }: {
   contact: ContactData;
   deals: DealData[];
+  companyDeals?: CompanyDealData[];
   activities: ActivityData[];
   meetings: MeetingData[];
   companies: CompanyRef[];
@@ -960,7 +966,7 @@ export function ContactDetail({
                 <Activity className="h-4 w-4 mr-1" /> Vue d&apos;ensemble
               </TabsTrigger>
               <TabsTrigger value="deals">
-                <Briefcase className="h-4 w-4 mr-1" /> Deals ({deals.length})
+                <Briefcase className="h-4 w-4 mr-1" /> Deals ({deals.length + companyDeals.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
                 <PhoneCall className="h-4 w-4 mr-1" /> Activités ({activities.length})
@@ -1058,16 +1064,17 @@ export function ContactDetail({
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" style={{ color: "#FF6B35" }} /> Deals ({deals.length})
+                      <Briefcase className="h-4 w-4" style={{ color: "#FF6B35" }} /> Deals ({deals.length + companyDeals.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {deals.length === 0 ? (
+                    {deals.length === 0 && companyDeals.length === 0 ? (
                       <p style={{ fontSize: 13, color: "#8399a9" }}>Aucun deal associé</p>
                     ) : (
                       <div className="space-y-2">
-                        {deals.slice(0, 3).map((d) => {
+                        {[...deals.slice(0, 3), ...companyDeals.slice(0, Math.max(0, 3 - deals.length))].map((d) => {
                           const ds = dealStageColors[d.stage] ?? { bg: "#f0f0f0", text: "#666" };
+                          const isCompanyDeal = companyDeals.some((cd) => cd.id === d.id);
                           return (
                             <div key={d.id} className="flex items-center justify-between" style={{ padding: "8px 0", borderBottom: "1px solid #e6f0f7" }}>
                               <div>
@@ -1076,6 +1083,11 @@ export function ContactDetail({
                                   <span style={{ background: ds.bg, color: ds.text, padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
                                     {(dealStageColors[d.stage] ?? { label: d.stage }).label}
                                   </span>
+                                  {isCompanyDeal && (
+                                    <span style={{ background: "#f0f4f8", color: "#5a7d9a", padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                                      Entreprise
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <span style={{ fontSize: 14, fontWeight: 700, color: "#27ae60" }}>
@@ -1120,8 +1132,12 @@ export function ContactDetail({
               </div>
             </TabsContent>
 
-            <TabsContent value="deals" className="mt-4">
+            <TabsContent value="deals" className="mt-4 space-y-4">
+              {/* Deals directs du contact */}
               <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Deals du contact ({deals.length})</CardTitle>
+                </CardHeader>
                 <CardContent className="p-0">
                   <div className="rounded-md border">
                     <Table>
@@ -1139,7 +1155,7 @@ export function ContactDetail({
                         {deals.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                              Aucun deal associé
+                              Aucun deal direct
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -1180,6 +1196,67 @@ export function ContactDetail({
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Deals de l'entreprise (autres contacts) */}
+              {contact.companies && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Building2 className="h-4 w-4" style={{ color: "#2d7dd2" }} />
+                      Autres deals de {contact.companies.name} ({companyDeals.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nom</TableHead>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Étape</TableHead>
+                            <TableHead className="text-right">Montant</TableHead>
+                            <TableHead className="text-right">Probabilité</TableHead>
+                            <TableHead>Clôture prévue</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {companyDeals.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                                Aucun autre deal pour cette entreprise
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            companyDeals.map((d) => {
+                              const ds = dealStageColors[d.stage] ?? null;
+                              const dealContact = d.contacts as { first_name: string; last_name: string } | null;
+                              return (
+                                <TableRow key={d.id}>
+                                  <TableCell className="font-medium"><span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span></TableCell>
+                                  <TableCell>{dealContact ? `${dealContact.first_name} ${dealContact.last_name}` : "—"}</TableCell>
+                                  <TableCell>
+                                    {ds ? (
+                                      <span
+                                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                        style={{ backgroundColor: ds.bg, color: ds.text }}
+                                      >
+                                        {ds.label}
+                                      </span>
+                                    ) : d.stage}
+                                  </TableCell>
+                                  <TableCell className="text-right">{formatRevenue(d.amount)}</TableCell>
+                                  <TableCell className="text-right">{d.probability != null ? `${d.probability}%` : "—"}</TableCell>
+                                  <TableCell>{formatDate(d.expected_close_date)}</TableCell>
+                                </TableRow>
+                              );
+                            })
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="activities" className="mt-4">

@@ -35,6 +35,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   const [
     { data: deals },
+    { data: companyDeals },
     { data: activities },
     { data: meetings },
     { data: companies },
@@ -46,6 +47,14 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       .select("*, companies(name)")
       .eq("contact_id", id)
       .order("created_at", { ascending: false }),
+    contact.company_id
+      ? supabase
+          .from("deals")
+          .select("*, companies(name), contacts(first_name, last_name)")
+          .eq("company_id", contact.company_id)
+          .neq("contact_id", id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as any[] }),
     supabase
       .from("activities")
       .select("*, team_members(first_name, last_name)")
@@ -76,6 +85,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       <ContactDetail
         contact={contact}
         deals={deals ?? []}
+        companyDeals={companyDeals ?? []}
         activities={activities ?? []}
         meetings={meetings ?? []}
         companies={companies ?? []}

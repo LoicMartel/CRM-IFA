@@ -91,8 +91,9 @@ export async function POST() {
   const dates = sessions.map(s => s.session_date).filter(Boolean) as string[];
   const minDate = dates.sort()[0];
   const maxDate = dates.sort().reverse()[0];
-  const timeMin = minDate + "T00:00:00+02:00";
-  const timeMax = maxDate + "T23:59:59+02:00";
+  const { getParisOffset } = await import("@/lib/timezone");
+  const timeMin = minDate + "T00:00:00" + getParisOffset(minDate);
+  const timeMax = maxDate + "T23:59:59" + getParisOffset(maxDate);
 
   // Fetch all calendar events for all trainers
   const allEvents: { trainer: string; summary: string; date: string; time: string; calendarId: string }[] = [];

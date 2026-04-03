@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getFreeBusy } from "@/lib/google-calendar";
+import { getParisOffset } from "@/lib/timezone";
 
 // Rafi is priority; Naznine is fallback
 const MEMBERS = [
@@ -96,10 +97,11 @@ export async function GET(request: Request) {
 
     if (accessibleCount === 0) continue; // skip only if NO calendar is accessible
 
+    const offset = getParisOffset(date);
     const availableSlots = allSlots.filter((s) => {
-      // Build proper Date objects for comparison
-      const slotStart = new Date(`${s.start}+02:00`);
-      const slotEnd = new Date(`${s.end}+02:00`);
+      // Build proper Date objects for comparison using dynamic Paris offset
+      const slotStart = new Date(`${s.start}${offset}`);
+      const slotEnd = new Date(`${s.end}${offset}`);
       return !allBusy.some((b) => {
         const bs = new Date(b.start).getTime();
         const be = new Date(b.end).getTime();
@@ -112,7 +114,7 @@ export async function GET(request: Request) {
     const todayStr = now.toLocaleDateString("sv-SE", { timeZone: TZ }); // YYYY-MM-DD
     const filtered = date === todayStr
       ? availableSlots.filter((s) => {
-          const slotTime = new Date(`${s.start}+02:00`);
+          const slotTime = new Date(`${s.start}${offset}`);
           return slotTime > now;
         })
       : availableSlots;

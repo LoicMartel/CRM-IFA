@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
+import { toParisDateTime } from "@/lib/timezone";
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     const contact = meeting.contacts as any;
+    const contactFirstName = contact?.first_name ?? "Contact";
     const contactName = contact ? `${contact.first_name} ${contact.last_name}` : "Contact";
     const companyName = contact?.companies?.name ?? "";
     const contactPhone = contact?.phone ?? "";
@@ -63,12 +65,10 @@ export async function POST(req: NextRequest) {
     const durationMin = meeting.duration_minutes ?? 60;
     const durationLabel = durationMin >= 60 ? `${Math.floor(durationMin / 60)}h${durationMin % 60 > 0 ? String(durationMin % 60).padStart(2, "0") : ""}` : `${durationMin}min`;
 
-    // Parse scheduled_at
-    // Parse scheduled_at — keep raw string to avoid timezone shift
+    // Parse scheduled_at — convert to Europe/Paris local time
     const rawScheduled = meeting.scheduled_at as string;
     const scheduledDate = new Date(rawScheduled);
-    const dateStr = rawScheduled.slice(0, 10);
-    const timeStr = rawScheduled.includes("T") ? rawScheduled.slice(11, 16) : scheduledDate.toISOString().slice(11, 16);
+    const { date: dateStr, time: timeStr } = toParisDateTime(rawScheduled);
     const dateDisplay = scheduledDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Paris" });
 
     // Title
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
       });
 
       const emailBody = [
-        `Bonjour ${contactName},`,
+        `Bonjour ${contactFirstName},`,
         "",
         "Votre rendez-vous est confirmé :",
         "",

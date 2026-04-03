@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Search, Download, Trash2, FolderOpen, Folder, FileText, Image, Film, File,
   ChevronRight, Upload, ArrowLeft, ArrowUpDown, SortAsc, Calendar, FileType, HardDrive, FolderInput,
+  Eye, ExternalLink, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
@@ -287,6 +288,9 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
   const [moveResource, setMoveResource] = useState<Resource | null>(null);
   const [movePath, setMovePath] = useState<string[]>([]);
   const [moving, setMoving] = useState(false);
+  const [previewResource, setPreviewResource] = useState<Resource | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const currentPathStr = currentPath.join("/");
   const subfolders = getFoldersAtPath(currentPath);
@@ -379,6 +383,29 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
 
   function navigateToBreadcrumb(index: number) {
     setCurrentPath(currentPath.slice(0, index));
+  }
+
+  function getPreviewType(resource: Resource): "image" | "pdf" | "video" | "none" {
+    const t = (resource.file_type ?? resource.name.split(".").pop() ?? "").toLowerCase();
+    if (t.includes("image") || t.includes("png") || t.includes("jpg") || t.includes("jpeg") || t.includes("gif") || t.includes("svg") || t.includes("webp")) return "image";
+    if (t.includes("pdf")) return "pdf";
+    if (t.includes("video") || t.includes("mp4") || t.includes("mov") || t.includes("webm")) return "video";
+    return "none";
+  }
+
+  async function openPreview(resource: Resource) {
+    setPreviewResource(resource);
+    setPreviewUrl(null);
+    setPreviewLoading(true);
+    const supabase = createClient();
+    const { data } = await supabase.storage.from("resources").createSignedUrl(resource.file_path, 300);
+    setPreviewUrl(data?.signedUrl ?? null);
+    setPreviewLoading(false);
+  }
+
+  function closePreview() {
+    setPreviewResource(null);
+    setPreviewUrl(null);
   }
 
   async function handleDownload(resource: Resource) {
@@ -633,9 +660,9 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                   {searchMatchedFiles.map((r) => {
                     const rFolderPath = resourcePaths.get(r.id) ?? [];
                     return (
-                      <div key={r.id} style={{
+                      <div key={r.id} onClick={() => openPreview(r)} style={{
                         display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                        borderBottom: "1px solid #f0f4f8", fontSize: 13,
+                        borderBottom: "1px solid #f0f4f8", fontSize: 13, cursor: "pointer",
                       }}>
                         {getFileIcon(r.file_type ?? r.name.split(".").pop() ?? null, "sm")}
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -648,7 +675,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                             <span>{formatSize(r.file_size)}</span>
                           </div>
                         </div>
-                        <button onClick={() => handleDownload(r)} style={{
+                        <button onClick={(e) => { e.stopPropagation(); handleDownload(r); }} style={{
                           background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
                           padding: "6px 10px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
                           fontSize: 12, fontWeight: 500,
@@ -656,14 +683,14 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                           <Download className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Télécharger</span>
                         </button>
-                        <button onClick={() => openMove(r)} style={{
+                        <button onClick={(e) => { e.stopPropagation(); openMove(r); }} style={{
                           background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
                           padding: "6px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
                           fontSize: 12, fontWeight: 500,
                         }} title="Déplacer">
                           <FolderInput className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => handleDelete(r)} style={{
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(r); }} style={{
                           background: "#fff5f5", border: "none", cursor: "pointer", color: "#e74c3c",
                           padding: "6px 8px", borderRadius: 6, display: "flex", alignItems: "center",
                         }} title="Supprimer">
@@ -769,8 +796,9 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                   <div key={r.id} style={{
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                     padding: "16px 8px 10px", borderRadius: 10, textAlign: "center",
-                    position: "relative", transition: "background 0.15s",
+                    position: "relative", transition: "background 0.15s", cursor: "pointer",
                   }}
+                    onClick={() => openPreview(r)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = "#f8fafb";
                       const actions = e.currentTarget.querySelector("[data-actions]") as HTMLElement;
@@ -795,21 +823,21 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                       {sortMode === "date" ? formatDate(r.created_at) : sortMode === "type" ? getFileTypeLabel(r.file_type) : formatSize(r.file_size)}
                     </div>
                     <div data-actions="" style={{ display: "flex", gap: 3, marginTop: 2, opacity: 0, transition: "opacity 0.15s" }}>
-                      <button onClick={() => handleDownload(r)} style={{
+                      <button onClick={(e) => { e.stopPropagation(); handleDownload(r); }} style={{
                         background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
                         padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
                         fontSize: 10, fontWeight: 600,
                       }} title="Télécharger">
                         <Download className="h-3 w-3" />
                       </button>
-                      <button onClick={() => openMove(r)} style={{
+                      <button onClick={(e) => { e.stopPropagation(); openMove(r); }} style={{
                         background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1a6b9c",
                         padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
                         fontSize: 10, fontWeight: 600,
                       }} title="Déplacer vers un autre dossier">
                         <FolderInput className="h-3 w-3" />
                       </button>
-                      <button onClick={() => handleDelete(r)} style={{
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(r); }} style={{
                         background: "#fff5f5", border: "1px solid #fde2e2", cursor: "pointer", color: "#e74c3c",
                         padding: "4px 6px", borderRadius: 5, display: "flex", alignItems: "center",
                       }} title="Supprimer">
@@ -955,6 +983,122 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Preview modal */}
+      {previewResource && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={closePreview}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "white", borderRadius: 16, width: "90vw", maxWidth: 900,
+            maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: "14px 20px", borderBottom: "1px solid #e8ecf1",
+              display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
+            }}>
+              {getFileIcon(previewResource.file_type ?? previewResource.name.split(".").pop() ?? null, "sm")}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {previewResource.name}
+                </div>
+                <div style={{ fontSize: 12, color: "#8399a9", display: "flex", gap: 8 }}>
+                  <span>{getFileTypeLabel(previewResource.file_type)}</span>
+                  <span>·</span>
+                  <span>{formatSize(previewResource.file_size)}</span>
+                  <span>·</span>
+                  <span>{formatDate(previewResource.created_at)}</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                {previewUrl && (
+                  <>
+                    <button onClick={() => handleDownload(previewResource)} style={{
+                      background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1a6b9c",
+                      padding: "7px 14px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 12, fontWeight: 600,
+                    }}>
+                      <Download className="h-3.5 w-3.5" />
+                      Télécharger
+                    </button>
+                    <button onClick={() => window.open(previewUrl, "_blank")} style={{
+                      background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
+                      padding: "7px 14px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6,
+                      fontSize: 12, fontWeight: 600,
+                    }}>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Ouvrir
+                    </button>
+                  </>
+                )}
+                <button onClick={closePreview} style={{
+                  background: "#f5f5f5", border: "none", cursor: "pointer", color: "#666",
+                  padding: "7px 10px", borderRadius: 8, display: "flex", alignItems: "center",
+                }}>
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{
+              flex: 1, overflow: "auto", display: "flex", alignItems: "center", justifyContent: "center",
+              background: "#f5f8fa", minHeight: 300,
+            }}>
+              {previewLoading ? (
+                <div style={{ textAlign: "center", color: "#8399a9", padding: 40 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>Chargement...</div>
+                </div>
+              ) : !previewUrl ? (
+                <div style={{ textAlign: "center", color: "#8399a9", padding: 40 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>Impossible de charger le fichier</div>
+                </div>
+              ) : getPreviewType(previewResource) === "image" ? (
+                <img
+                  src={previewUrl}
+                  alt={previewResource.name}
+                  style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain" }}
+                />
+              ) : getPreviewType(previewResource) === "pdf" ? (
+                <iframe
+                  src={previewUrl}
+                  style={{ width: "100%", height: "70vh", border: "none" }}
+                  title={previewResource.name}
+                />
+              ) : getPreviewType(previewResource) === "video" ? (
+                <video
+                  src={previewUrl}
+                  controls
+                  style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                />
+              ) : (
+                <div style={{ textAlign: "center", padding: 60 }}>
+                  <div style={{ marginBottom: 16 }}>
+                    {getFileIcon(previewResource.file_type ?? previewResource.name.split(".").pop() ?? null, "lg")}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#1a2a3a", marginBottom: 4 }}>
+                    {previewResource.name}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#8399a9", marginBottom: 20 }}>
+                    Aperçu non disponible pour ce type de fichier
+                  </div>
+                  <button onClick={() => window.open(previewUrl, "_blank")} style={{
+                    background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
+                    padding: "10px 24px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 8,
+                    fontSize: 13, fontWeight: 600,
+                  }}>
+                    <ExternalLink className="h-4 w-4" />
+                    Ouvrir le fichier
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
