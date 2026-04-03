@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, Plus, Trash2, Receipt, CreditCard, Clock, AlertTriangle, X, Edit,
+  ExternalLink, Upload, Download, FileText,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -132,6 +133,12 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const editInputRef = useRef<HTMLInputElement>(null);
 
   // Add form state
+  // Detail popup state
+  const [detailEntry, setDetailEntry] = useState<BillingEntryData | null>(null);
+  const [detailDocs, setDetailDocs] = useState<{ id: string; name: string; file_path: string; file_size: number | null; document_type: string; created_at: string }[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+
   const [formCompanyId, setFormCompanyId] = useState("");
   const [formDealId, setFormDealId] = useState("");
   const [formClientName, setFormClientName] = useState("");
@@ -249,6 +256,59 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     const supabase = createClient();
     await supabase.from("billing_entries").delete().eq("id", entryId);
     router.refresh();
+  }
+
+  // ---- Detail popup ----
+
+  async function openDetail(entry: BillingEntryData) {
+    setDetailEntry(entry);
+    setDetailDocs([]);
+    setDetailLoading(true);
+    const supabase = createClient();
+    const { data: docs } = await supabase
+      .from("billing_documents")
+      .select("*")
+      .eq("billing_entry_id", entry.id)
+      .order("created_at", { ascending: false });
+    setDetailDocs(docs ?? []);
+    setDetailLoading(false);
+  }
+
+  async function handleUploadDoc(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !detailEntry) return;
+    setUploadingDoc(true);
+    const supabase = createClient();
+    const storagePath = `${detailEntry.id}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage.from("billing-documents").upload(storagePath, file);
+    if (!uploadError) {
+      await supabase.from("billing_documents").insert({
+        billing_entry_id: detailEntry.id,
+        name: file.name,
+        file_path: storagePath,
+        file_size: file.size,
+        file_type: file.type || file.name.split(".").pop() || null,
+        document_type: "autre",
+      });
+      const { data: docs } = await supabase.from("billing_documents").select("*").eq("billing_entry_id", detailEntry.id).order("created_at", { ascending: false });
+      setDetailDocs(docs ?? []);
+    }
+    setUploadingDoc(false);
+    if (e.target) e.target.value = "";
+  }
+
+  async function handleDeleteDoc(docId: string, filePath: string) {
+    if (!window.confirm("Supprimer ce document ?")) return;
+    const supabase = createClient();
+    await supabase.storage.from("billing-documents").remove([filePath]);
+    await supabase.from("billing_documents").delete().eq("id", docId);
+    setDetailDocs((prev) => prev.filter((d) => d.id !== docId));
+  }
+
+  async function handleDownloadDoc(filePath: string) {
+    const supabase = createClient();
+    const { data } = await supabase.storage.from("billing-documents").createSignedUrl(filePath, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
   // ---- Add form ----
@@ -469,10 +529,10 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                 <th style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 160, borderRight: "1px solid #e8ecf1" }}>
                   Entreprise
                 </th>
-                <th style={{ position: "sticky", left: 160, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 180, borderRight: "1px solid #e8ecf1" }}>
+                <th style={{ position: "sticky", left: 160, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 140, borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
                 </th>
-                <th style={{ position: "sticky", left: 340, zIndex: 10, background: "#f8fafb", padding: "10px 8px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 90, borderRight: "2px solid #dce8f0" }}>
+                <th style={{ position: "sticky", left: 300, zIndex: 10, background: "#f8fafb", padding: "10px 8px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 90, borderRight: "2px solid #dce8f0" }}>
                   Type
                 </th>
                 {fiscalMonths.map((m) => (
@@ -524,13 +584,13 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                         padding: "8px 12px", fontWeight: 600, fontSize: 12, color: "#1a2a3a",
                         borderRight: "1px solid #e8ecf1", cursor: "pointer",
                         maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }} title={entry.client_name} onClick={() => !isReadOnly && openEditForm(entry)}>
+                      }} title={entry.client_name} onClick={() => openDetail(entry)}>
                         <span style={{ color: "#1a6b9c", textDecoration: "underline" }}>{entry.client_name}</span>
                       </td>
 
                       {/* Funding type - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 340, zIndex: 5,
+                        position: "sticky", left: 300, zIndex: 5,
                         padding: "8px 8px", fontSize: 11, color: "#5a6a7a", fontWeight: 600,
                         borderRight: "2px solid #dce8f0",
                       }}>
@@ -635,7 +695,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                     TOTAUX
                   </td>
                   <td className="billing-sticky-header" style={{ position: "sticky", left: 160, zIndex: 5, borderRight: "1px solid #e8ecf1" }}></td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 340, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 300, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
                       padding: "10px 8px", textAlign: "right", fontWeight: 700, fontSize: 12,
@@ -856,6 +916,183 @@ export function BillingGrid({ entries, companies, deals }: Props) {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Detail popup */}
+      {detailEntry && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => setDetailEntry(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: "white", borderRadius: 14, width: "100%", maxWidth: 600,
+            maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          }}>
+            {/* Header */}
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>{detailEntry.client_name}</h3>
+                <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>
+                  {detailEntry.companies?.name ?? "Sans entreprise"}{detailEntry.funding_type ? ` — ${detailEntry.funding_type}` : ""}
+                </div>
+              </div>
+              <button onClick={() => setDetailEntry(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div style={{ padding: 20 }} className="space-y-5">
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <a
+                  href="https://app2.visioformation.fr/formateur/login/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px",
+                    borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none",
+                    background: "#1a6b9c", color: "white", border: "none", cursor: "pointer",
+                  }}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  VisioFormation
+                </a>
+                <label style={{
+                  display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px",
+                  borderRadius: 8, fontSize: 13, fontWeight: 600,
+                  background: "#f0f7ff", color: "#1a6b9c", border: "1px solid #dce8f0",
+                  cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1,
+                }}>
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploadingDoc ? "Envoi..." : "Importer un document"}
+                  <input type="file" style={{ display: "none" }} disabled={uploadingDoc} onChange={handleUploadDoc} />
+                </label>
+                {!isReadOnly && (
+                  <button onClick={() => { setDetailEntry(null); openEditForm(detailEntry); }} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px",
+                    borderRadius: 8, fontSize: 13, fontWeight: 600,
+                    background: "white", color: "#5a6a7a", border: "1px solid #dce8f0", cursor: "pointer",
+                  }}>
+                    <Edit className="h-3.5 w-3.5" />
+                    Modifier
+                  </button>
+                )}
+              </div>
+
+              {/* KPIs récap */}
+              {(() => {
+                const months = detailEntry.billing_months;
+                const total = months.reduce((s, m) => s + Number(m.amount), 0);
+                const enc = months.filter(m => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0);
+                const fac = months.filter(m => m.status === "facture").reduce((s, m) => s + Number(m.amount), 0);
+                const ec = months.filter(m => m.status === "en_cours").reduce((s, m) => s + Number(m.amount), 0);
+                const nf = months.filter(m => m.status === "non_fait").reduce((s, m) => s + Number(m.amount), 0);
+                return (
+                  <div className="grid grid-cols-4 gap-2">
+                    <div style={{ background: "#c6efce", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#006100" }}>ENCAISSÉ</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#006100" }}>{fmtCompact(enc)}</div>
+                    </div>
+                    <div style={{ background: "#ffc7ce", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#9c0006" }}>FACTURÉ</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#9c0006" }}>{fmtCompact(fac)}</div>
+                    </div>
+                    <div style={{ background: "#bdd7ee", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#1f4e79" }}>EN COURS</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#1f4e79" }}>{fmtCompact(ec)}</div>
+                    </div>
+                    <div style={{ background: "#f5f5f5", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>NON FAIT</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#888" }}>{fmtCompact(nf)}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Monthly detail */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#8399a9", marginBottom: 8 }}>
+                  Détail par mois ({detailEntry.billing_months.length})
+                </div>
+                <div style={{ border: "1px solid #e8ecf1", borderRadius: 8, overflow: "hidden" }}>
+                  {detailEntry.billing_months
+                    .sort((a, b) => a.month.localeCompare(b.month))
+                    .map((m, i) => {
+                      const sc = m.status ? STATUS_COLORS[m.status] : null;
+                      return (
+                        <div key={m.id} style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "8px 14px", borderBottom: i < detailEntry.billing_months.length - 1 ? "1px solid #f0f4f8" : "none",
+                          background: i % 2 === 0 ? "#fafcfd" : "white",
+                        }}>
+                          <span style={{ fontSize: 13, color: "#1a2a3a", fontWeight: 500, textTransform: "capitalize" }}>
+                            {new Date(m.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>{fmt(m.amount)}</span>
+                            {sc && (
+                              <span style={{
+                                fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 6,
+                                background: sc.bg, color: sc.text,
+                              }}>
+                                {sc.label}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#8399a9", marginBottom: 8 }}>
+                  Documents ({detailDocs.length})
+                </div>
+                {detailLoading ? (
+                  <div style={{ fontSize: 12, color: "#8399a9", padding: 12 }}>Chargement...</div>
+                ) : detailDocs.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic", padding: 12, background: "#f5f7fa", borderRadius: 8 }}>
+                    Aucun document importé
+                  </div>
+                ) : (
+                  <div style={{ border: "1px solid #e8ecf1", borderRadius: 8, overflow: "hidden" }}>
+                    {detailDocs.map((doc, i) => (
+                      <div key={doc.id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "8px 14px",
+                        borderBottom: i < detailDocs.length - 1 ? "1px solid #f0f4f8" : "none",
+                        background: i % 2 === 0 ? "#fafcfd" : "white",
+                      }}>
+                        <FileText className="h-4 w-4" style={{ color: "#1a6b9c", flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
+                          <div style={{ fontSize: 10, color: "#8399a9" }}>
+                            {doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} Ko` : ""} — {new Date(doc.created_at).toLocaleDateString("fr-FR")}
+                          </div>
+                        </div>
+                        <button onClick={() => handleDownloadDoc(doc.file_path)} style={{
+                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
+                          padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center",
+                        }} title="Télécharger">
+                          <Download className="h-3.5 w-3.5" />
+                        </button>
+                        {!isReadOnly && (
+                          <button onClick={() => handleDeleteDoc(doc.id, doc.file_path)} style={{
+                            background: "#fff5f5", border: "none", cursor: "pointer", color: "#e74c3c",
+                            padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center",
+                          }} title="Supprimer">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
