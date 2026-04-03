@@ -349,6 +349,18 @@ export function BillingGrid({ entries, companies }: Props) {
 
   return (
     <>
+      <style>{`
+        .billing-sticky-cell {
+          background: white !important;
+        }
+        tr:hover .billing-sticky-cell {
+          background: #fafcfd !important;
+        }
+        .billing-sticky-header {
+          background: #f8fafb !important;
+        }
+      `}</style>
+
       {/* KPIs */}
       <div className="grid gap-3 md:grid-cols-5">
         {[
@@ -448,13 +460,10 @@ export function BillingGrid({ entries, companies }: Props) {
                 </tr>
               ) : (
                 filtered.map((entry) => (
-                  <tr key={entry.id} style={{ borderBottom: "1px solid #f0f4f8" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#fafcfd")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  >
+                  <tr key={entry.id} style={{ borderBottom: "1px solid #f0f4f8" }} className="hover:bg-[#fafcfd]">
                     {/* Client name - sticky */}
-                    <td style={{
-                      position: "sticky", left: 0, zIndex: 5, background: "inherit",
+                    <td className="billing-sticky-cell" style={{
+                      position: "sticky", left: 0, zIndex: 5,
                       padding: "8px 12px", fontWeight: 600, fontSize: 12, color: "#1a2a3a",
                       borderRight: "1px solid #e8ecf1", cursor: "pointer",
                       maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -463,8 +472,8 @@ export function BillingGrid({ entries, companies }: Props) {
                     </td>
 
                     {/* Funding type - sticky */}
-                    <td style={{
-                      position: "sticky", left: 200, zIndex: 5, background: "inherit",
+                    <td className="billing-sticky-cell" style={{
+                      position: "sticky", left: 200, zIndex: 5,
                       padding: "8px 8px", fontSize: 11, color: "#5a6a7a", fontWeight: 600,
                       borderRight: "2px solid #dce8f0",
                     }}>
@@ -560,14 +569,14 @@ export function BillingGrid({ entries, companies }: Props) {
               {/* Totals row */}
               {filtered.length > 0 && (
                 <tr style={{ borderTop: "2px solid #dce8f0", background: "#f8fafb" }}>
-                  <td style={{
-                    position: "sticky", left: 0, zIndex: 5, background: "#f8fafb",
+                  <td className="billing-sticky-header" style={{
+                    position: "sticky", left: 0, zIndex: 5,
                     padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#1a2a3a",
                     borderRight: "1px solid #e8ecf1",
                   }}>
                     TOTAUX
                   </td>
-                  <td style={{ position: "sticky", left: 200, zIndex: 5, background: "#f8fafb", borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 200, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
                       padding: "10px 8px", textAlign: "right", fontWeight: 700, fontSize: 12,
