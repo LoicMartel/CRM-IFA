@@ -8,14 +8,19 @@ export default async function InvoicesPage() {
   const [
     { data: entries },
     { data: companies },
+    { data: deals },
   ] = await Promise.all([
     supabase
       .from("billing_entries")
-      .select("*, billing_months(*), companies(id, name)")
+      .select("*, billing_months(*), companies(id, name), deals(id, name, amount)")
       .order("client_name"),
     supabase
       .from("companies")
       .select("id, name")
+      .order("name"),
+    supabase
+      .from("deals")
+      .select("id, name, amount, company_id, companies(name)")
       .order("name"),
   ]);
 
@@ -26,6 +31,7 @@ export default async function InvoicesPage() {
         <BillingGrid
           entries={entries ?? []}
           companies={companies ?? []}
+          deals={deals ?? []}
         />
       </div>
     </>

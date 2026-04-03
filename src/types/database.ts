@@ -338,6 +338,7 @@ export interface ExpenseCategory {
 export interface BillingEntry {
   id: string;
   company_id: string | null;
+  deal_id: string | null;
   client_name: string;
   funding_type: string | null;
   fiscal_year: string;

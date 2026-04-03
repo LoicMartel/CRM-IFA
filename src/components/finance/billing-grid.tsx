@@ -25,12 +25,14 @@ interface BillingMonthData {
 interface BillingEntryData {
   id: string;
   company_id: string | null;
+  deal_id: string | null;
   client_name: string;
   funding_type: string | null;
   fiscal_year: string;
   notes: string | null;
   billing_months: BillingMonthData[];
   companies: { id: string; name: string } | null;
+  deals: { id: string; name: string; amount: number } | null;
 }
 
 interface CompanyRef {
@@ -38,9 +40,18 @@ interface CompanyRef {
   name: string;
 }
 
+interface DealRef {
+  id: string;
+  name: string;
+  amount: number | null;
+  company_id: string | null;
+  companies: { name: string } | { name: string }[] | null;
+}
+
 interface Props {
   entries: BillingEntryData[];
   companies: CompanyRef[];
+  deals: DealRef[];
 }
 
 /* ---- Constants ---- */
@@ -104,7 +115,7 @@ function fmtCompact(n: number) {
 
 /* ---- Component ---- */
 
-export function BillingGrid({ entries, companies }: Props) {
+export function BillingGrid({ entries, companies, deals }: Props) {
   const router = useRouter();
   const { isReadOnly } = useCurrentRoles();
 
@@ -122,6 +133,7 @@ export function BillingGrid({ entries, companies }: Props) {
 
   // Add form state
   const [formCompanyId, setFormCompanyId] = useState("");
+  const [formDealId, setFormDealId] = useState("");
   const [formClientName, setFormClientName] = useState("");
   const [formFundingType, setFormFundingType] = useState("");
   const [formMonthlyFill, setFormMonthlyFill] = useState("");
@@ -225,6 +237,7 @@ export function BillingGrid({ entries, companies }: Props) {
 
   function openAddForm() {
     setFormCompanyId("");
+    setFormDealId("");
     setFormClientName("");
     setFormFundingType("");
     setFormMonthlyFill("");
@@ -237,6 +250,7 @@ export function BillingGrid({ entries, companies }: Props) {
 
   function openEditForm(entry: BillingEntryData) {
     setFormCompanyId(entry.company_id ?? "");
+    setFormDealId(entry.deal_id ?? "");
     setFormClientName(entry.client_name);
     setFormFundingType(entry.funding_type ?? "");
     setFormMonthlyFill("");
@@ -274,6 +288,7 @@ export function BillingGrid({ entries, companies }: Props) {
       // Update entry
       await supabase.from("billing_entries").update({
         company_id: formCompanyId || null,
+        deal_id: formDealId || null,
         client_name: formClientName.trim(),
         funding_type: formFundingType || null,
         updated_at: new Date().toISOString(),
@@ -304,6 +319,7 @@ export function BillingGrid({ entries, companies }: Props) {
       // Create entry
       const { data: newEntry } = await supabase.from("billing_entries").insert({
         company_id: formCompanyId || null,
+        deal_id: formDealId || null,
         client_name: formClientName.trim(),
         funding_type: formFundingType || null,
         fiscal_year: fiscalYear,
@@ -421,7 +437,7 @@ export function BillingGrid({ entries, companies }: Props) {
         {!isReadOnly && (
           <Button onClick={openAddForm} style={{ gap: 8 }}>
             <Plus className="h-4 w-4" />
-            Ajouter une facture
+            Ajouter un plan de facturation
           </Button>
         )}
       </div>
@@ -647,7 +663,7 @@ export function BillingGrid({ entries, companies }: Props) {
       <Sheet open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) setEditEntry(null); }}>
         <SheetContent style={{ width: 520, maxWidth: "95vw", overflowY: "auto" }}>
           <SheetHeader>
-            <SheetTitle>{editEntry ? "Modifier la facture" : "Ajouter une facture"}</SheetTitle>
+            <SheetTitle>{editEntry ? "Modifier le plan de facturation" : "Ajouter un plan de facturation"}</SheetTitle>
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4">
             {/* Company */}
@@ -667,6 +683,38 @@ export function BillingGrid({ entries, companies }: Props) {
                 <option value="">Aucune société</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Deal */}
+            <div className="space-y-2">
+              <Label>Deal associé</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={formDealId}
+                onChange={(e) => {
+                  setFormDealId(e.target.value);
+                  if (e.target.value) {
+                    const deal = deals.find((d) => d.id === e.target.value);
+                    if (deal) {
+                      // Auto-remplir la société si pas encore sélectionnée
+                      if (!formCompanyId && deal.company_id) setFormCompanyId(deal.company_id);
+                      // Auto-remplir la raison sociale si vide
+                      const compName = Array.isArray(deal.companies) ? deal.companies[0]?.name : deal.companies?.name;
+                      if (!formClientName) setFormClientName(compName ?? deal.name);
+                    }
+                  }
+                }}
+              >
+                <option value="">Aucun deal</option>
+                {(formCompanyId
+                  ? deals.filter((d) => d.company_id === formCompanyId)
+                  : deals
+                ).map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}{d.amount ? ` (${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(d.amount)} €)` : ""}{(() => { const cn = Array.isArray(d.companies) ? d.companies[0]?.name : d.companies?.name; return cn ? ` — ${cn}` : ""; })()}
+                  </option>
                 ))}
               </select>
             </div>
@@ -760,7 +808,7 @@ export function BillingGrid({ entries, companies }: Props) {
             </div>
 
             <Button onClick={handleSave} disabled={saving || !formClientName.trim()} className="w-full" style={{ height: 42, marginTop: 8 }}>
-              {saving ? "Enregistrement..." : editEntry ? "Mettre à jour" : "Ajouter la facture"}
+              {saving ? "Enregistrement..." : editEntry ? "Mettre à jour" : "Ajouter le plan"}
             </Button>
           </div>
         </SheetContent>
