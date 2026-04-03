@@ -7,13 +7,13 @@ export default async function FinancesPage() {
 
   const [
     { data: wonDeals },
-    { data: invoices },
+    { data: billingMonths },
     { data: trainingSessions },
     { data: monthlyCharges },
     { data: salesTargets },
   ] = await Promise.all([
     supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won"),
-    supabase.from("invoices").select("id, amount, month, status, deal_id"),
+    supabase.from("billing_months").select("id, amount, month, status"),
     supabase.from("training_sessions").select("*, service_plans(hourly_rate)").eq("status", "done"),
     supabase.from("monthly_charges").select("*"),
     supabase.from("sales_targets").select("month, target_amount").order("month", { ascending: true }),
@@ -25,7 +25,7 @@ export default async function FinancesPage() {
       <div className="p-6">
         <FinanceDashboard
           wonDeals={(wonDeals ?? []) as any}
-          invoices={(invoices ?? []) as any}
+          billingMonths={(billingMonths ?? []) as any}
           trainingSessions={(trainingSessions ?? []) as any}
           monthlyCharges={(monthlyCharges ?? []) as any}
           salesTargets={(salesTargets ?? []) as any}

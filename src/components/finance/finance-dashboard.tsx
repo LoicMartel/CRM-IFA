@@ -20,8 +20,8 @@ function pct(n: number) {
   return (n * 100).toFixed(2) + "%";
 }
 
-export function FinanceDashboard({ wonDeals, invoices, trainingSessions, monthlyCharges, salesTargets }: {
-  wonDeals: R[]; invoices: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[];
+export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets }: {
+  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[];
 }) {
   const now = new Date();
   const fyYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
@@ -46,14 +46,24 @@ export function FinanceDashboard({ wonDeals, invoices, trainingSessions, monthly
     // Facturable / Delivery = sessions done + billable × taux horaire (from delivery)
     const facturableDelivery = delivre;
 
-    // Facturable / ADV = invoices marked "facturable" in Facturation tab
-    const mInvs = invoices.filter((inv: R) => (inv.month as string).startsWith(mStr));
-    const facturableADV = mInvs.filter((inv: R) => inv.status === "facturable").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
-    const facture = mInvs.filter((inv: R) => inv.status === "facture" || inv.status === "paye").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
-    const encaisse = mInvs.filter((inv: R) => inv.status === "paye").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
-
     const ch = chargeMap[mStr] ?? {};
-    const decaisse = Number(ch.charges_ttc) || 0; // Total décaissé = charges_ttc
+
+    // Facturable ADV = total billing_months du mois
+    const mBms = billingMonths.filter((bm: R) => (bm.month as string).startsWith(mStr));
+    const facturableADV = mBms.reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+
+    // Facturé = override manuel sinon calcul auto (facture + encaisse)
+    const factureManual = Number(ch.facture_ht) || 0;
+    const factureCalc = mBms.filter((bm: R) => bm.status === "facture" || bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    const facture = factureManual > 0 ? factureManual : factureCalc;
+
+    // Encaissé HT = encaissé TTC manuel × 0.8
+    const encaisseTTC = Number(ch.encaisse_ttc) || 0;
+    const encaisse = encaisseTTC * 0.8;
+
+    // Décaissé = Charges HT (TTC - 2.5% TVA déductible)
+    const chargesTTC = Number(ch.charges_ttc) || 0;
+    const decaisse = chargesTTC - chargesTTC * 0.025;
     const rbstEmprunt = Number(ch.rbst_dettes) || 0;
     const charges = decaisse - rbstEmprunt; // Charges = Décaissé - Remb. emprunt
 
