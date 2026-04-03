@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from "recharts";
+import { createClient } from "@/lib/supabase/client";
 
 type R = Record<string, unknown>;
 
@@ -134,6 +136,60 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
   }
   function TdPct({ v }: { v: number }) {
     return <td style={{ ...tdStyle, color: v === 0 ? "#ccc" : v < 0 ? "#e74c3c" : "#27ae60", fontWeight: 600 }}>{(v * 100).toFixed(2)}%</td>;
+  }
+
+  function TdEditableEncours({ v, mStr }: { v: number; mStr: string }) {
+    const [editing, setEditing] = useState(false);
+    const [val, setVal] = useState(String(v || ""));
+    const [saving, setSaving] = useState(false);
+
+    const save = useCallback(async () => {
+      const newVal = parseFloat(val) || 0;
+      if (newVal === v) { setEditing(false); return; }
+      setSaving(true);
+      const supabase = createClient();
+      // month in monthly_finances is a date like "2026-01-01"
+      const monthDate = `${mStr}-01`;
+      const { data: existing } = await supabase.from("monthly_finances").select("id").eq("month", monthDate).maybeSingle();
+      if (existing) {
+        await supabase.from("monthly_finances").update({ client_receivables: newVal }).eq("id", existing.id);
+      } else {
+        await supabase.from("monthly_finances").insert({ month: monthDate, client_receivables: newVal });
+      }
+      setSaving(false);
+      setEditing(false);
+      window.location.reload();
+    }, [val, v, mStr]);
+
+    if (editing) {
+      return (
+        <td style={{ ...tdStyle, padding: "2px 4px" }}>
+          <input
+            autoFocus
+            type="number"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onBlur={save}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
+            style={{
+              width: 80, height: 24, fontSize: 11, textAlign: "right",
+              border: "1px solid #1a6b9c", borderRadius: 4, padding: "0 4px",
+              outline: "none", background: saving ? "#f0f7fb" : "white",
+            }}
+          />
+        </td>
+      );
+    }
+
+    return (
+      <td
+        onClick={() => { setVal(String(v || "")); setEditing(true); }}
+        style={{ ...tdStyle, cursor: "pointer", color: v === 0 ? "#ccc" : "#e74c3c" }}
+        title="Cliquer pour modifier"
+      >
+        {fmt(v)}
+      </td>
+    );
   }
 
   return (
@@ -296,7 +352,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <tr><td style={tdLabelStyle}>Facturable / ADV</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableADV} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facturableADV)}</td></tr>
                 <tr><td style={tdLabelStyle}>Facturés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facture} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facture)}</td></tr>
                 <tr><td style={tdLabelStyle}>Encaissés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encaisse} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.encaisse)}</td></tr>
-                <tr><td style={tdLabelStyle}>Encours Clients</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encours} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#e74c3c" }}>{fmt(tot.encours)}</td></tr>
+                <tr><td style={tdLabelStyle}>Encours Clients</td>{monthsWithCum.map(m => <TdEditableEncours key={m.mStr} v={m.encours} mStr={m.mStr} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#e74c3c" }}>{fmt(tot.encours)}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
                 <tr><td style={tdLabelStyle}>Décaissé</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.decaisse} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.decaisse)}</td></tr>
