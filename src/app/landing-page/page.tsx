@@ -282,17 +282,17 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[960px] px-6 py-14">
           <div className="grid items-center gap-10 md:grid-cols-2">
             <div className="flex justify-center">
-              <div className="relative h-[380px] w-[280px] overflow-hidden rounded-lg bg-[#EFF5F9]">
+              <div className="relative h-[450px] w-[320px] overflow-hidden rounded-2xl bg-[#EFF5F9]">
                 <Image
                   src="/photo-rafi.png"
                   alt="Rafi Mouhamad - La Closing Académie"
-                  width={280}
-                  height={380}
+                  width={320}
+                  height={450}
                   className="h-full w-full object-cover object-top"
                 />
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <Image src="/logos/Qualiopi.webp" alt="Qualiopi" width={70} height={35} className="h-[30px] w-auto rounded-sm" />
-                  <Image src="/logos/Edtech 2.png" alt="EdTech France" width={70} height={35} className="h-[30px] w-auto rounded-sm" />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-end gap-2">
+                  <Image src="/logos/Qualiopi.webp" alt="Qualiopi" width={140} height={70} className="h-[60px] w-auto rounded-md shadow-md" />
+                  <Image src="/logos/Edtech 2.png" alt="EdTech France" width={120} height={60} className="h-[55px] w-auto rounded-md shadow-md" />
                 </div>
               </div>
             </div>
