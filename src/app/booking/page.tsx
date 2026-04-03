@@ -167,6 +167,7 @@ export default function BookingPage() {
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           }}
         />
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Rafi Mouhamad</span>
       </div>
 
       {/* Step 1: Calendar + Slots */}
