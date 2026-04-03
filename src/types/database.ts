@@ -7,6 +7,7 @@ export type OpportunityStage = "opportunité" | "pipe" | "gagné" | "perdu";
 export type LearnerStatus = "ancien" | "actuel" | "futur";
 export type DeliveryMode = "présentiel" | "distanciel";
 export type FundingType = "UP FRONT" | "OPCO" | "CPF" | "autre";
+export type BillingStatus = "encaisse" | "facture" | "en_cours" | "non_fait";
 export type ActivityType = "appel" | "email" | "réunion" | "note" | "tâche" | "relance";
 export type Department = "ADMIN" | "MARKETING" | "PÉDAGOGIE" | "VENTE" | "RH";
 
@@ -332,6 +333,27 @@ export interface ExpenseCategory {
   name: string;
   parent_category: string | null;
   created_at: string;
+}
+
+export interface BillingEntry {
+  id: string;
+  company_id: string | null;
+  client_name: string;
+  funding_type: string | null;
+  fiscal_year: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BillingMonth {
+  id: string;
+  billing_entry_id: string;
+  month: string;
+  amount: number;
+  status: BillingStatus | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Labels & Colors helpers
