@@ -55,14 +55,25 @@ export default async function SyntheseSalesPage() {
     .reduce((s, t) => s + (Number(t.target_amount) || 0), 0);
   const ecart = totalCA - targetCumule;
 
-  // Chart data: objectif from targets, réalisé from won deals by month
-  const chartData = targets.filter(t => Number(t.target_amount) > 0).map((t, i, arr) => {
-    const objCum = arr.slice(0, i + 1).reduce((s, x) => s + Number(x.target_amount), 0);
-    const monthEnd = t.month as string;
-    const dealsUpToMonth = orders.filter(d => (d.close_date ?? d.created_at ?? "") <= monthEnd);
-    const realCum = dealsUpToMonth.reduce((s, d) => s + (Number(d.amount) || 0), 0);
-    const monthLabel = new Date(t.month).toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
-    return { month: monthLabel, objectifCumule: objCum, realiseCumule: realCum };
+  // Chart data: fiscal year Sept→Aug, cumulative objectif & réalisé
+  const FY_MONTHS = [
+    { key: "09", label: "sept" }, { key: "10", label: "oct" }, { key: "11", label: "nov" }, { key: "12", label: "déc" },
+    { key: "01", label: "janv" }, { key: "02", label: "févr" }, { key: "03", label: "mars" }, { key: "04", label: "avr" },
+    { key: "05", label: "mai" }, { key: "06", label: "juin" }, { key: "07", label: "juil" }, { key: "08", label: "août" },
+  ];
+  const fyYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  let objCum = 0;
+  let realCum = 0;
+  const chartData = FY_MONTHS.map((m) => {
+    const yr = parseInt(m.key) >= 9 ? fyYear : fyYear + 1;
+    const mStr = `${yr}-${m.key}`;
+    // Find target for this month
+    const target = targets.find(t => (t.month as string).startsWith(mStr));
+    objCum += Number(target?.target_amount) || 0;
+    // Sum deals closed in this month
+    const monthDeals = orders.filter(d => (d.close_date ?? d.created_at ?? "").startsWith(mStr));
+    realCum += monthDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    return { month: m.label, objectifCumule: objCum, realiseCumule: realCum };
   });
 
   // Monthly breakdown: actual from deals per month (deduplicated by month)
