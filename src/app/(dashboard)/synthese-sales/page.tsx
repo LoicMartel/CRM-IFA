@@ -58,18 +58,23 @@ export default async function SyntheseSalesPage() {
     return { month: monthLabel, objectifCumule: objCum, realiseCumule: realCum };
   });
 
-  // Monthly breakdown: actual from deals per month
-  const monthlyData = targets.filter(t => Number(t.target_amount) > 0).map((t) => {
+  // Monthly breakdown: actual from deals per month (deduplicated by month)
+  const monthlyMap = new Map<string, { month: string; target: number; actual: number }>();
+  targets.filter(t => Number(t.target_amount) > 0).forEach((t) => {
     const mStr = (t.month as string).slice(0, 7); // "2025-09"
+    if (monthlyMap.has(mStr)) return; // skip duplicates
     const monthDealsCA = orders.filter(d => (d.close_date ?? d.created_at ?? "").startsWith(mStr)).reduce((s, d) => s + (Number(d.amount) || 0), 0);
     const target = Number(t.target_amount);
-    return {
+    monthlyMap.set(mStr, {
       month: new Date(t.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
       target,
       actual: monthDealsCA,
-      pct: target > 0 ? Math.round((monthDealsCA / target) * 100) : 0,
-    };
+    });
   });
+  const monthlyData = Array.from(monthlyMap.values()).map(m => ({
+    ...m,
+    pct: m.target > 0 ? Math.round((m.actual / m.target) * 100) : 0,
+  }));
 
   // Source breakdown from won deals
   const sourceMap: Record<string, number> = {};
