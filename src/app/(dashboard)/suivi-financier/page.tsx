@@ -8,12 +8,12 @@ export default async function SuiviFinancierPage() {
   const [
     { data: salesTargets },
     { data: wonDeals },
-    { data: invoices },
+    { data: billingMonths },
     { data: monthlyCharges },
   ] = await Promise.all([
     supabase.from("sales_targets").select("month, target_amount").order("month", { ascending: true }),
     supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won"),
-    supabase.from("invoices").select("id, amount, month, status, deal_id"),
+    supabase.from("billing_months").select("id, amount, month, status"),
     supabase.from("monthly_charges").select("*"),
   ]);
 
@@ -24,7 +24,7 @@ export default async function SuiviFinancierPage() {
         <SuiviFinancierView
           salesTargets={(salesTargets ?? []) as any}
           wonDeals={(wonDeals ?? []) as any}
-          invoices={(invoices ?? []) as any}
+          billingMonths={(billingMonths ?? []) as any}
           monthlyCharges={(monthlyCharges ?? []) as any}
         />
       </div>

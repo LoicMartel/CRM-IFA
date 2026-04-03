@@ -21,8 +21,8 @@ function fmtShort(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCharges }: {
-  salesTargets: R[]; wonDeals: R[]; invoices: R[]; monthlyCharges: R[];
+export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, monthlyCharges }: {
+  salesTargets: R[]; wonDeals: R[]; billingMonths: R[]; monthlyCharges: R[];
 }) {
   const router = useRouter();
   const [editingCell, setEditingCell] = useState<{ month: string; field: string } | null>(null);
@@ -54,11 +54,11 @@ export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCh
     const commandes = wonDeals.filter((d: R) => ((d.close_date ?? d.created_at) as string).startsWith(mStr))
       .reduce((s: number, d: R) => s + (Number(d.amount) || 0), 0);
 
-    // Invoices by status
-    const mInvoices = invoices.filter((inv: R) => (inv.month as string).startsWith(mStr));
-    const facturable = mInvoices.filter((inv: R) => inv.status === "facturable").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
-    const facture = mInvoices.filter((inv: R) => inv.status === "facture").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
-    const encaisseTTC = mInvoices.filter((inv: R) => inv.status === "paye").reduce((s: number, inv: R) => s + (Number(inv.amount) || 0), 0);
+    // Billing months by status
+    const mBilling = billingMonths.filter((bm: R) => (bm.month as string).startsWith(mStr));
+    const commandesFacturable = mBilling.reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    const facture = mBilling.filter((bm: R) => bm.status === "facture").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    const encaisseTTC = mBilling.filter((bm: R) => bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
 
     const tvaCollecte = encaisseTTC * 0.20;
     const encaisseHT = encaisseTTC - tvaCollecte;
@@ -78,7 +78,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCh
     const pretTreso = Number(charges.pret_tresorerie) || 0;
 
     return {
-      mStr, mLabel, objectif, commandes, facturable, facture,
+      mStr, mLabel, objectif, commandes, commandesFacturable, facture,
       encaisseTTC, tvaCollecte, encaisseHT,
       rhPrev, chargesDiverses, chargesTTC, tvaDeductible, chargesHT,
       resultat, tresorerie, rbstDettes, pretPGE, pretBPI, pretTreso,
@@ -89,7 +89,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCh
   const cumul = {
     objectif: monthData.reduce((s, m) => s + m.objectif, 0),
     commandes: monthData.reduce((s, m) => s + m.commandes, 0),
-    facturable: monthData.reduce((s, m) => s + m.facturable, 0),
+    commandesFacturable: monthData.reduce((s, m) => s + m.commandesFacturable, 0),
     facture: monthData.reduce((s, m) => s + m.facture, 0),
     encaisseTTC: monthData.reduce((s, m) => s + m.encaisseTTC, 0),
     tvaCollecte: monthData.reduce((s, m) => s + m.tvaCollecte, 0),
@@ -147,7 +147,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCh
   const ROW_COLORS: Record<string, string> = {
     objectif: "#fffef5",
     commandes: "#fefbf0",
-    facturable: "#fef8ed",
+    commandesFacturable: "#fef8ed",
     facture: "#f5f9ff",
     encaisseTTC: "#f3faf5",
     tvaCollecte: "#faf5fd",
@@ -218,7 +218,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, invoices, monthlyCh
           <tbody>
             <Row label="Objectif Commandes" field="objectif" values={monthData.map(m => m.objectif)} isCumul={cumul.objectif} />
             <Row label="Commandes" field="commandes" values={monthData.map(m => m.commandes)} isCumul={cumul.commandes} />
-            <Row label="Commandes facturables" field="facturable" values={monthData.map(m => m.facturable)} isCumul={cumul.facturable} />
+            <Row label="Commandes facturables" field="commandesFacturable" values={monthData.map(m => m.commandesFacturable)} isCumul={cumul.commandesFacturable} />
             <Row label="Facturé HT" field="facture" values={monthData.map(m => m.facture)} isCumul={cumul.facture} />
             <Row label="Encaissé TTC" field="encaisseTTC" values={monthData.map(m => m.encaisseTTC)} isCumul={cumul.encaisseTTC} />
             <Row label="TVA collectée" field="tvaCollecte" values={monthData.map(m => m.tvaCollecte)} isCumul={cumul.tvaCollecte} />
