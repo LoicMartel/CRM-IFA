@@ -305,9 +305,26 @@ export default function LandingPage() {
       {/* ===== LOGOS CLIENTS ===== */}
       <section className="bg-white">
         <div className="mx-auto max-w-[960px] px-6 py-8">
-          <div className="flex flex-wrap items-center justify-center gap-6 text-[11px] font-semibold text-[#888]">
-            {["ADREC", "Cartesia Education", "Business France", "LEYTON", "Training Académie", "Wall Street English", "Great Place to Work", "ABC", "CCI Bordeaux Gironde", "EdTech France"].map((name, i) => (
-              <span key={i} className="rounded border border-gray-200 px-3 py-1.5">{name}</span>
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-8">
+            {[
+              { src: "/logos/ADREC.png", alt: "ADREC" },
+              { src: "/logos/Cartesia.png", alt: "Cartesia Education" },
+              { src: "/logos/Business France.png", alt: "Business France" },
+              { src: "/logos/Leyton.png", alt: "Leyton" },
+              { src: "/logos/Traning academy.png", alt: "Training Academy" },
+              { src: "/logos/Great place to work.png", alt: "Great Place to Work" },
+            ].map((logo, i) => (
+              <Image key={i} src={logo.src} alt={logo.alt} width={120} height={50} className="h-[40px] w-auto object-contain" />
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-8">
+            {[
+              { src: "/logos/Wall street english.png", alt: "Wall Street English" },
+              { src: "/logos/ABC Formation.png", alt: "ABC Cours Particuliers" },
+              { src: "/logos/CCI Gironde.png", alt: "CCI Bordeaux Gironde" },
+              { src: "/logos/Edtech.png", alt: "EdTech France" },
+            ].map((logo, i) => (
+              <Image key={i} src={logo.src} alt={logo.alt} width={120} height={50} className="h-[40px] w-auto object-contain" />
             ))}
           </div>
         </div>
@@ -319,7 +336,7 @@ export default function LandingPage() {
           <div className="mb-8 text-center">
             <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Témoignages</p>
             <h2 className="mb-2 text-[22px] font-bold text-[#1a2a3a]">Ils nous ont fait confiance</h2>
-            <p className="text-[13px] font-semibold text-[#888]">Google ★★★★★</p>
+            <Image src="/logos/Google.png" alt="Google 5 étoiles" width={150} height={40} className="mx-auto h-[35px] w-auto" />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {testimonials.map((t, i) => (
