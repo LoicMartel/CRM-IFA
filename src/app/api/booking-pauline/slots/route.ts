@@ -15,7 +15,7 @@ const PAULINE = {
   bookingCalendarId: "d5338ed9e648d81ad3ef5fcbea38b7a91df6992ba69628c1946410039833d4a5@group.calendar.google.com",
 };
 
-const SLOT_DURATION = 30;
+const SLOT_DURATION = 15;
 const DAY_START_HOUR = 9;
 const DAY_END_HOUR = 18;
 const TZ = "Europe/Paris";
@@ -23,7 +23,7 @@ const TZ = "Europe/Paris";
 function generateSlots(dateStr: string): { start: string; end: string }[] {
   const slots: { start: string; end: string }[] = [];
   for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
-    for (const m of [0, 30]) {
+    for (const m of [0, 15, 30, 45]) {
       if (h === DAY_END_HOUR - 1 && m > 0) continue;
       const start = `${dateStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
       const endH = m + SLOT_DURATION >= 60 ? h + 1 : h;
