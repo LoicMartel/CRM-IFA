@@ -85,7 +85,8 @@ export default function BookingPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setStep(3);
+        window.location.href = "/confirmation-reservation";
+        return;
       } else {
         setError(data.error || "Une erreur est survenue.");
       }
