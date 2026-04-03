@@ -60,8 +60,10 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
     // Billing months by status
     const mBilling = billingMonths.filter((bm: R) => (bm.month as string).startsWith(mStr));
     const commandesFacturable = mBilling.reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
-    // Facturé = facture + encaisse (car encaissé implique d'avoir été facturé)
-    const facture = mBilling.filter((bm: R) => bm.status === "facture" || bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    // Facturé = auto-calculé (facture + encaisse) avec override manuel possible
+    const factureCalc = mBilling.filter((bm: R) => bm.status === "facture" || bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    const factureManual = Number(charges.facture_ht) || 0;
+    const facture = factureManual > 0 ? factureManual : factureCalc;
 
     // Encaissé TTC = saisie manuelle dans monthly_charges
     const encaisseTTC = Number(charges.encaisse_ttc) || 0;
@@ -221,7 +223,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
             <Row label="Objectif Commandes" field="objectif" values={monthData.map(m => m.objectif)} isCumul={cumul.objectif} />
             <Row label="Commandes" field="commandes" values={monthData.map(m => m.commandes)} isCumul={cumul.commandes} />
             <Row label="Commandes facturables" field="commandesFacturable" values={monthData.map(m => m.commandesFacturable)} isCumul={cumul.commandesFacturable} />
-            <Row label="Facturé HT" field="facture" values={monthData.map(m => m.facture)} isCumul={cumul.facture} />
+            <Row label="Facturé HT" field="facture" values={monthData.map(m => m.facture)} isCumul={cumul.facture} isManual manualField="facture_ht" />
             <Row label="Encaissé TTC" field="encaisseTTC" values={monthData.map(m => m.encaisseTTC)} isCumul={cumul.encaisseTTC} isManual manualField="encaisse_ttc" />
             <Row label="TVA collectée" field="tvaCollecte" values={monthData.map(m => m.tvaCollecte)} isCumul={cumul.tvaCollecte} />
             <Row label="Encaissé HT" field="encaisseHT" values={monthData.map(m => m.encaisseHT)} isCumul={cumul.encaisseHT} />
