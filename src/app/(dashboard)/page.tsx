@@ -12,15 +12,15 @@ async function getData() {
     { data: salesTargets },
     { data: trainingSessions },
     { data: servicePlans },
-    { data: allInvoices },
+    { data: billingMonthsData },
     { data: monthlyChargesData },
   ] = await Promise.all([
     supabase.from("deals").select("*, team_members(first_name, last_name), contacts(first_name, last_name)"),
     supabase.from("sales_targets").select("*").order("month", { ascending: true }),
     supabase.from("training_sessions").select("*, service_plans(hourly_rate)").order("session_date", { ascending: true }),
     supabase.from("service_plans").select("id, budget, vt_planned, days_planned"),
-    supabase.from("invoices").select("id, amount, status, month"),
-    supabase.from("monthly_charges").select("month, charges_ttc"),
+    supabase.from("billing_months").select("id, amount, month, status"),
+    supabase.from("monthly_charges").select("month, charges_ttc, encaisse_ttc, facture_ht, tresorerie"),
   ]);
 
   const deals = allDeals ?? [];
@@ -70,18 +70,36 @@ async function getData() {
   }, 0);
   const nonFactPct = (totalFacturable + totalNonFacturable) > 0 ? (totalNonFacturable / (totalFacturable + totalNonFacturable) * 100) : 0;
 
-  // Invoice-based KPIs
-  const invs = allInvoices ?? [];
-  const facturableADV = invs.reduce((s, inv) => s + (Number(inv.amount) || 0), 0); // all invoices = facturable + facturé + payé
-  const totalFacture = invs.filter(inv => inv.status === "facture" || inv.status === "paye").reduce((s, inv) => s + (Number(inv.amount) || 0), 0);
-  const totalEncaisse = invs.filter(inv => inv.status === "paye").reduce((s, inv) => s + (Number(inv.amount) || 0), 0);
+  // Billing-based KPIs
+  const bms = billingMonthsData ?? [];
+  const charges = monthlyChargesData ?? [];
+
+  // Facturable ADV = total de tous les billing_months (commandes facturables)
+  const facturableADV = bms.reduce((s: number, bm: any) => s + (Number(bm.amount) || 0), 0);
+
+  // Facturé = cumul des facture_ht manuels, sinon calcul auto (facture + encaisse)
+  const totalFacture = charges.reduce((s: number, c: any) => {
+    const manual = Number(c.facture_ht) || 0;
+    if (manual > 0) return s + manual;
+    const mStr = c.month as string;
+    const monthBms = bms.filter((bm: any) => (bm.month as string).startsWith(mStr));
+    return s + monthBms.filter((bm: any) => bm.status === "facture" || bm.status === "encaisse").reduce((sum: number, bm: any) => sum + (Number(bm.amount) || 0), 0);
+  }, 0);
+
+  // Encaissé HT = cumul encaissé TTC * 0.8
+  const totalEncaisse = charges.reduce((s: number, c: any) => s + (Number(c.encaisse_ttc) || 0), 0) * 0.8;
 
   // Décaissé = cumul charges HT from monthly_charges
-  const charges = monthlyChargesData ?? [];
-  const totalDecaisse = charges.reduce((s, c) => {
+  const totalDecaisse = charges.reduce((s: number, c: any) => {
     const ttc = Number(c.charges_ttc) || 0;
     return s + (ttc - ttc * 0.025); // charges HT = TTC - 2.5% TVA déductible
   }, 0);
+
+  // Solde du compte = trésorerie du dernier mois renseigné
+  const lastTresorerie = charges
+    .filter((c: any) => Number(c.tresorerie) > 0)
+    .sort((a: any, b: any) => (b.month as string).localeCompare(a.month as string))[0];
+  const soldeCompte = lastTresorerie ? Number(lastTresorerie.tresorerie) : null;
 
   // Chart data: objectif from targets, réalisé from won deals by month
   const chartData = targets.filter(t => Number(t.target_amount) > 0).map((t, i, arr) => {
@@ -109,7 +127,7 @@ async function getData() {
     sessionsCount: doneSessions.length,
     daysDelivered: Math.round(totalHoursDelivered / 8 * 10) / 10,
     daysPlanned: Math.round(totalHoursPlanned / 8 * 10) / 10,
-    facturableADV, totalFacture, totalEncaisse, totalDecaisse,
+    facturableADV, totalFacture, totalEncaisse, totalDecaisse, soldeCompte,
     chartData,
     targets,
   };
@@ -141,7 +159,7 @@ export default async function DashboardPage() {
         <KpiCard bar="green" label="Facturé" value={fmt(d.totalFacture)} sub={`Encaissés : ${fmt(d.totalEncaisse)}`} />
         <KpiCard bar="green" label="Encaissés" value={fmt(d.totalEncaisse)} sub={`Facturés : ${fmt(d.totalFacture)}`} />
         <KpiCard bar="orange" label="Décaissés" value={fmt(d.totalDecaisse)} sub={`Charges cumulées`} />
-        <KpiCard bar="blue" label="Solde du compte" value={"—"} sub="Dernier mois disponible" />
+        <KpiCard bar="blue" label="Solde du compte" value={d.soldeCompte ? fmt(d.soldeCompte) : "—"} sub="Dernier mois disponible" />
         <KpiCard bar="orange" label="Réalisation heures" value={`${d.realizationPct.toFixed(1)}%`} sub={`${d.totalHoursDelivered.toFixed(0)}h / ${d.totalHoursSold}h vendues`} />
       </div>
 
