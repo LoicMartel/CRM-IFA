@@ -188,6 +188,24 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
   const grandTotal = useMemo(() => Object.values(colTotals).reduce((s, v) => s + v, 0), [colTotals]);
 
+  // Group entries by company for display
+  const groupedByCompany = useMemo(() => {
+    const groups: { companyName: string; companyId: string | null; entries: BillingEntryData[] }[] = [];
+    const map = new Map<string, BillingEntryData[]>();
+    const order: string[] = [];
+    for (const e of filtered) {
+      const key = e.company_id ?? "__none__";
+      if (!map.has(key)) { map.set(key, []); order.push(key); }
+      map.get(key)!.push(e);
+    }
+    for (const key of order) {
+      const entries = map.get(key)!;
+      const companyName = entries[0].companies?.name ?? "Sans entreprise";
+      groups.push({ companyName, companyId: key === "__none__" ? null : key, entries });
+    }
+    return groups;
+  }, [filtered]);
+
   // Row total
   function rowTotal(entry: BillingEntryData): number {
     return entry.billing_months.reduce((s, m) => s + Number(m.amount), 0);
@@ -445,13 +463,16 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       {/* Grid */}
       <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 1200 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 1400 }}>
             <thead>
               <tr style={{ background: "#f8fafb", borderBottom: "2px solid #e8ecf1" }}>
-                <th style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 200, borderRight: "1px solid #e8ecf1" }}>
+                <th style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 160, borderRight: "1px solid #e8ecf1" }}>
+                  Entreprise
+                </th>
+                <th style={{ position: "sticky", left: 160, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 180, borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
                 </th>
-                <th style={{ position: "sticky", left: 200, zIndex: 10, background: "#f8fafb", padding: "10px 8px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 90, borderRight: "2px solid #dce8f0" }}>
+                <th style={{ position: "sticky", left: 340, zIndex: 10, background: "#f8fafb", padding: "10px 8px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 90, borderRight: "2px solid #dce8f0" }}>
                   Type
                 </th>
                 {fiscalMonths.map((m) => (
@@ -470,116 +491,137 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={fiscalMonths.length + 4} style={{ padding: 40, textAlign: "center", color: "#8399a9" }}>
+                  <td colSpan={fiscalMonths.length + 5} style={{ padding: 40, textAlign: "center", color: "#8399a9" }}>
                     Aucune entrée de facturation
                   </td>
                 </tr>
               ) : (
-                filtered.map((entry) => (
-                  <tr key={entry.id} style={{ borderBottom: "1px solid #f0f4f8" }} className="hover:bg-[#fafcfd]">
-                    {/* Client name - sticky */}
-                    <td className="billing-sticky-cell" style={{
-                      position: "sticky", left: 0, zIndex: 5,
-                      padding: "8px 12px", fontWeight: 600, fontSize: 12, color: "#1a2a3a",
-                      borderRight: "1px solid #e8ecf1", cursor: "pointer",
-                      maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }} title={entry.client_name} onClick={() => !isReadOnly && openEditForm(entry)}>
-                      <span style={{ color: "#1a6b9c", textDecoration: "underline" }}>{entry.client_name}</span>
-                    </td>
-
-                    {/* Funding type - sticky */}
-                    <td className="billing-sticky-cell" style={{
-                      position: "sticky", left: 200, zIndex: 5,
-                      padding: "8px 8px", fontSize: 11, color: "#5a6a7a", fontWeight: 600,
-                      borderRight: "2px solid #dce8f0",
-                    }}>
-                      {entry.funding_type || "—"}
-                    </td>
-
-                    {/* Month cells */}
-                    {fiscalMonths.map((mk) => {
-                      const md = getMonthData(entry, mk.key);
-                      const sc = md?.status ? STATUS_COLORS[md.status] : null;
-                      const isEditing = editingCell?.entryId === entry.id && editingCell?.monthKey === mk.key;
-
-                      return (
-                        <td key={mk.key} style={{
-                          padding: 0, textAlign: "right", borderRight: "1px solid #f0f4f8",
-                          background: sc?.bg ?? "transparent", color: sc?.text ?? "#1a2a3a",
-                          cursor: md ? "pointer" : "default", position: "relative",
-                        }}
-                          onClick={(e) => {
-                            if (isReadOnly || isEditing || !md) return;
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, rect });
-                          }}
-                          onDoubleClick={() => {
-                            if (isReadOnly) return;
-                            setEditingCell({ entryId: entry.id, monthKey: mk.key });
-                            setEditingValue(md ? String(md.amount) : "");
-                            setPopoverCell(null);
-                          }}
-                        >
-                          {isEditing ? (
-                            <input
-                              ref={editInputRef}
-                              type="number"
-                              value={editingValue}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              onBlur={() => {
-                                const val = parseFloat(editingValue) || 0;
-                                updateCellAmount(entry.id, mk.key, val);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  const val = parseFloat(editingValue) || 0;
-                                  updateCellAmount(entry.id, mk.key, val);
-                                } else if (e.key === "Escape") {
-                                  setEditingCell(null);
-                                }
-                              }}
-                              style={{
-                                width: "100%", height: "100%", padding: "6px 8px", border: "2px solid #1a6b9c",
-                                background: "white", textAlign: "right", fontSize: 12, outline: "none",
-                              }}
-                            />
+                groupedByCompany.map((group) =>
+                  group.entries.map((entry, idx) => (
+                    <tr key={entry.id} style={{ borderBottom: "1px solid #f0f4f8" }} className="hover:bg-[#fafcfd]">
+                      {/* Company name - sticky, rowSpan for group */}
+                      {idx === 0 && (
+                        <td className="billing-sticky-cell" rowSpan={group.entries.length} style={{
+                          position: "sticky", left: 0, zIndex: 5,
+                          padding: "8px 12px", fontWeight: 700, fontSize: 12, color: "#1a2a3a",
+                          borderRight: "1px solid #e8ecf1", verticalAlign: "top",
+                          borderBottom: "2px solid #dce8f0",
+                          maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }} title={group.companyName}>
+                          {group.companyId ? (
+                            <span onClick={() => router.push(`/clients/${group.companyId}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                              {group.companyName}
+                            </span>
                           ) : (
-                            <div style={{ padding: "8px 8px", fontSize: 12, fontWeight: md?.amount ? 500 : 400 }}>
-                              {md?.amount ? fmt(md.amount) : ""}
-                            </div>
+                            <span style={{ color: "#8399a9", fontStyle: "italic" }}>{group.companyName}</span>
                           )}
                         </td>
-                      );
-                    })}
+                      )}
 
-                    {/* Row total */}
-                    <td style={{
-                      padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: 12,
-                      color: "#1a2a3a", borderLeft: "2px solid #dce8f0",
-                    }}>
-                      {rowTotal(entry) > 0 ? fmt(rowTotal(entry)) : ""}
-                    </td>
-
-                    {/* Actions */}
-                    {!isReadOnly && (
-                      <td style={{ padding: "4px 8px", textAlign: "center" }}>
-                        <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
-                          <button onClick={() => openEditForm(entry)} style={{
-                            background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4, borderRadius: 4,
-                          }} title="Modifier">
-                            <Edit className="h-3.5 w-3.5" />
-                          </button>
-                          <button onClick={() => deleteEntry(entry.id)} style={{
-                            background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4, borderRadius: 4,
-                          }} title="Supprimer">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                      {/* Client name - sticky */}
+                      <td className="billing-sticky-cell" style={{
+                        position: "sticky", left: 160, zIndex: 5,
+                        padding: "8px 12px", fontWeight: 600, fontSize: 12, color: "#1a2a3a",
+                        borderRight: "1px solid #e8ecf1", cursor: "pointer",
+                        maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }} title={entry.client_name} onClick={() => !isReadOnly && openEditForm(entry)}>
+                        <span style={{ color: "#1a6b9c", textDecoration: "underline" }}>{entry.client_name}</span>
                       </td>
-                    )}
-                  </tr>
-                ))
+
+                      {/* Funding type - sticky */}
+                      <td className="billing-sticky-cell" style={{
+                        position: "sticky", left: 340, zIndex: 5,
+                        padding: "8px 8px", fontSize: 11, color: "#5a6a7a", fontWeight: 600,
+                        borderRight: "2px solid #dce8f0",
+                      }}>
+                        {entry.funding_type || "—"}
+                      </td>
+
+                      {/* Month cells */}
+                      {fiscalMonths.map((mk) => {
+                        const md = getMonthData(entry, mk.key);
+                        const sc = md?.status ? STATUS_COLORS[md.status] : null;
+                        const isEditing = editingCell?.entryId === entry.id && editingCell?.monthKey === mk.key;
+
+                        return (
+                          <td key={mk.key} style={{
+                            padding: 0, textAlign: "right", borderRight: "1px solid #f0f4f8",
+                            background: sc?.bg ?? "transparent", color: sc?.text ?? "#1a2a3a",
+                            cursor: md ? "pointer" : "default", position: "relative",
+                          }}
+                            onClick={(e) => {
+                              if (isReadOnly || isEditing || !md) return;
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, rect });
+                            }}
+                            onDoubleClick={() => {
+                              if (isReadOnly) return;
+                              setEditingCell({ entryId: entry.id, monthKey: mk.key });
+                              setEditingValue(md ? String(md.amount) : "");
+                              setPopoverCell(null);
+                            }}
+                          >
+                            {isEditing ? (
+                              <input
+                                ref={editInputRef}
+                                type="number"
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onBlur={() => {
+                                  const val = parseFloat(editingValue) || 0;
+                                  updateCellAmount(entry.id, mk.key, val);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const val = parseFloat(editingValue) || 0;
+                                    updateCellAmount(entry.id, mk.key, val);
+                                  } else if (e.key === "Escape") {
+                                    setEditingCell(null);
+                                  }
+                                }}
+                                style={{
+                                  width: "100%", height: "100%", padding: "6px 8px", border: "2px solid #1a6b9c",
+                                  background: "white", textAlign: "right", fontSize: 12, outline: "none",
+                                }}
+                              />
+                            ) : (
+                              <div style={{ padding: "8px 8px", fontSize: 12, fontWeight: md?.amount ? 500 : 400 }}>
+                                {md?.amount ? fmt(md.amount) : ""}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+
+                      {/* Row total */}
+                      <td style={{
+                        padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: 12,
+                        color: "#1a2a3a", borderLeft: "2px solid #dce8f0",
+                      }}>
+                        {rowTotal(entry) > 0 ? fmt(rowTotal(entry)) : ""}
+                      </td>
+
+                      {/* Actions */}
+                      {!isReadOnly && (
+                        <td style={{ padding: "4px 8px", textAlign: "center" }}>
+                          <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                            <button onClick={() => openEditForm(entry)} style={{
+                              background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4, borderRadius: 4,
+                            }} title="Modifier">
+                              <Edit className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => deleteEntry(entry.id)} style={{
+                              background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4, borderRadius: 4,
+                            }} title="Supprimer">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  ))
+                )
               )}
 
               {/* Totals row */}
@@ -592,7 +634,8 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                   }}>
                     TOTAUX
                   </td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 200, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 160, zIndex: 5, borderRight: "1px solid #e8ecf1" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 340, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
                       padding: "10px 8px", textAlign: "right", fontWeight: 700, fontSize: 12,
