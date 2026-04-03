@@ -10,26 +10,26 @@ export default function VSLPage() {
     <div className="min-h-screen flex flex-col">
       {/* Blue section: logo + title + subtitle */}
       <div style={{ background: "#2e7ab5" }} className="pb-36">
-        <div className="mx-auto max-w-4xl px-4 pt-6">
+        <div className="mx-auto max-w-4xl px-4 pt-4">
           {/* Logo */}
-          <div className="mb-4 flex justify-center">
+          <div className="mb-3 flex justify-center">
             <Image
               src="/lca-white-logo.png"
               alt="La Closing Académie"
-              width={80}
-              height={60}
-              className="w-[80px] h-auto"
+              width={70}
+              height={52}
+              className="w-[70px] h-auto"
             />
           </div>
 
           {/* Title */}
-          <h1 className="mb-3 text-center text-2xl font-bold text-white md:text-3xl lg:text-4xl">
+          <h1 className="mb-2 text-center text-xl font-bold text-white md:text-2xl lg:text-3xl">
             Doublez la performance commerciale de votre organisme de formation
             dès le prochain trimestre.
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto mb-6 max-w-2xl text-center text-sm leading-relaxed text-white/80 md:text-base">
+          <p className="mx-auto mb-4 max-w-2xl text-center text-xs leading-relaxed text-white/80 md:text-sm">
             {subtitleText}
           </p>
         </div>
