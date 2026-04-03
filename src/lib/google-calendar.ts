@@ -70,12 +70,19 @@ export async function getCalendarEvents({
       maxResults: 250,
     });
 
-    const events = (res.data.items ?? [])
-      .filter((e) => e.start?.dateTime) // skip all-day events without time
-      .map((e) => ({
-        start: e.start?.dateTime ?? "",
-        end: e.end?.dateTime ?? "",
-      }));
+    const events: { start: string; end: string }[] = [];
+    for (const e of res.data.items ?? []) {
+      if (e.start?.dateTime && e.end?.dateTime) {
+        // Timed event
+        events.push({ start: e.start.dateTime, end: e.end.dateTime });
+      } else if (e.start?.date) {
+        // All-day event → block 00:00 to 23:59 in the given timezone
+        events.push({
+          start: `${e.start.date}T00:00:00`,
+          end: `${e.end?.date ?? e.start.date}T00:00:00`,
+        });
+      }
+    }
 
     return { events };
   } catch (err: any) {
