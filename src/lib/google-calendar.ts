@@ -76,10 +76,13 @@ export async function getCalendarEvents({
         // Timed event
         events.push({ start: e.start.dateTime, end: e.end.dateTime });
       } else if (e.start?.date) {
-        // All-day event → block 00:00 to 23:59 in the given timezone
+        // All-day event → block entire day(s) using ISO format with Z
+        // end date in Google is exclusive (next day), so we use it directly
+        const startDate = e.start.date;
+        const endDate = e.end?.date ?? e.start.date;
         events.push({
-          start: `${e.start.date}T00:00:00`,
-          end: `${e.end?.date ?? e.start.date}T00:00:00`,
+          start: `${startDate}T00:00:00+00:00`,
+          end: `${endDate}T23:59:59+00:00`,
         });
       }
     }
