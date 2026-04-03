@@ -47,9 +47,9 @@ interface Props {
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   encaisse: { bg: "#c6efce", text: "#006100", label: "Encaissé" },
-  facture: { bg: "#bdd7ee", text: "#1f4e79", label: "Facturé" },
-  en_cours: { bg: "#fce4d6", text: "#c65911", label: "En cours" },
-  non_fait: { bg: "#ffc7ce", text: "#9c0006", label: "Non fait" },
+  facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé" },
+  en_cours: { bg: "#bdd7ee", text: "#1f4e79", label: "En cours" },
+  non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait" },
 };
 
 const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
@@ -354,9 +354,9 @@ export function BillingGrid({ entries, companies }: Props) {
         {[
           { label: "Total", value: kpis.total, icon: <Receipt className="h-4 w-4" />, color: "#1a2a3a" },
           { label: "Encaissé", value: kpis.encaisse, icon: <CreditCard className="h-4 w-4" />, color: "#006100" },
-          { label: "Facturé", value: kpis.facture, icon: <Receipt className="h-4 w-4" />, color: "#1f4e79" },
-          { label: "En cours", value: kpis.en_cours, icon: <Clock className="h-4 w-4" />, color: "#c65911" },
-          { label: "Non fait", value: kpis.non_fait, icon: <AlertTriangle className="h-4 w-4" />, color: "#9c0006" },
+          { label: "Facturé", value: kpis.facture, icon: <Receipt className="h-4 w-4" />, color: "#9c0006" },
+          { label: "En cours", value: kpis.en_cours, icon: <Clock className="h-4 w-4" />, color: "#1f4e79" },
+          { label: "Non fait", value: kpis.non_fait, icon: <AlertTriangle className="h-4 w-4" />, color: "#888888" },
         ].map((kpi) => (
           <div key={kpi.label} className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
