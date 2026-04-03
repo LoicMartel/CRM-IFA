@@ -30,6 +30,7 @@ interface FolderNode {
   children?: FolderNode[];
 }
 
+// Exact replica of the disk folder: Production/Supports formation
 const FOLDER_TREE: FolderNode[] = [
   { name: "Formation Formateur" },
   {
@@ -44,7 +45,21 @@ const FOLDER_TREE: FolderNode[] = [
       { name: "BtoB" },
       {
         name: "BtoC",
-        children: [{ name: "10 Steps" }],
+        children: [{
+          name: "10 Steps",
+          children: [
+            { name: "Step 1" },
+            { name: "Step 2" },
+            { name: "Step 3" },
+            { name: "Step 4" },
+            { name: "Step 5" },
+            { name: "Step 6" },
+            { name: "Step 7" },
+            { name: "Step 8" },
+            { name: "Step 9" },
+            { name: "Step 10" },
+          ],
+        }],
       },
       {
         name: "Habillage",
@@ -82,7 +97,6 @@ const FOLDER_TREE: FolderNode[] = [
       { name: "Travail, répétition, entraînement" },
     ],
   },
-  { name: "Autre" },
 ];
 
 // ── Mapping DB category+subcategory → folder path ──
@@ -117,28 +131,27 @@ function getResourceFolderPath(r: Resource): string[] {
       if (sub) return ["Vidéos", sub];
       return ["Vidéos"];
 
-    // Legacy "Slides — X" categories → map to Formation Sales subfolders
+    // "Slides — X" categories → map to Formation Sales subfolders (matching disk structure)
     case "Slides — 10 Steps":
-      // sub = "Step 1" .. "Step 10" or null → all go into 10 Steps folder
+      if (sub && sub.startsWith("Step ")) return ["Formation Sales", "BtoC", "10 Steps", sub];
       return ["Formation Sales", "BtoC", "10 Steps"];
 
     case "Slides — Habillage":
       if (sub && HABILLAGE_SUBFOLDERS.has(sub)) return ["Formation Sales", "Habillage", sub];
-      // Subcategory is a filename (e.g. "AdobeStock_xxx.jpeg", "S1.png") → parent folder
+      // Subcategory is a filename (e.g. "AdobeStock_xxx.jpeg", "S1.png") → Habillage root
       return ["Formation Sales", "Habillage"];
 
     case "Slides — Marston":
       if (sub && MARSTON_SUBFOLDERS.has(sub)) return ["Formation Sales", "Marston", sub];
-      // Subcategory is a filename → parent folder
+      // Subcategory is a filename → Marston root
       return ["Formation Sales", "Marston"];
 
     case "Slides — Objections":
       return ["Formation Sales", "Traitement des objections"];
 
     case "Autre":
-      return ["Autre"];
-
     default:
+      // No "Autre" folder on disk — these files appear at root
       return [];
   }
 }
@@ -156,6 +169,7 @@ function folderPathToDbFields(path: string[]): { category: string; subcategory: 
   if (joined === "Formation Sales/BtoB") return { category: "Formation Sales", subcategory: "BtoB" };
   if (joined === "Formation Sales/BtoC") return { category: "Formation Sales", subcategory: "BtoC" };
   if (joined === "Formation Sales/BtoC/10 Steps") return { category: "Slides — 10 Steps", subcategory: "" };
+  if (joined.startsWith("Formation Sales/BtoC/10 Steps/Step ")) return { category: "Slides — 10 Steps", subcategory: path[3] };
   if (joined.startsWith("Formation Sales/Habillage")) {
     const sub = path.slice(2).join("/");
     if (HABILLAGE_SUBFOLDERS.has(path[2])) return { category: "Slides — Habillage", subcategory: path[2] };
