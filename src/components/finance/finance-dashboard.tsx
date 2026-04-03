@@ -20,14 +20,17 @@ function pct(n: number) {
   return (n * 100).toFixed(2) + "%";
 }
 
-export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets }: {
-  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[];
+export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [] }: {
+  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[];
 }) {
   const now = new Date();
   const fyYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
 
   const chargeMap: Record<string, R> = {};
   monthlyCharges.forEach((c: R) => { chargeMap[c.month as string] = c; });
+
+  const financeMap: Record<string, R> = {};
+  monthlyFinances.forEach((f: R) => { financeMap[(f.month as string).slice(0, 7)] = f; });
 
   // Build monthly rows
   const months = FM.map((m, i) => {
@@ -68,6 +71,9 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
     const rbstEmprunt = Number(ch.rbst_dettes) || 0;
     const charges = decaisse - rbstEmprunt; // Charges = Décaissé - Remb. emprunt
 
+    const fin = financeMap[mStr] ?? {};
+    const encours = Number(fin.client_receivables) || 0;
+
     const fluxTreso = encaisse - decaisse; // Flux = Encaissé - Décaissé
     const solde = Number(ch.tresorerie) || 0;
     const cashMgmt = decaisse > 0 ? fluxTreso / decaisse : 0; // Cash Mgmt = Flux / Décaissé
@@ -77,7 +83,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
 
     return {
       label: m.label, mStr, commandes, delivre, facturableDelivery, facturableADV,
-      facture, encaisse, decaisse, rbstEmprunt, charges,
+      facture, encaisse, encours, decaisse, rbstEmprunt, charges,
       fluxTreso, solde, cashMgmt, ebitda, ebitdaPct,
     };
   });
@@ -98,6 +104,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
     facturableADV: months.reduce((s, m) => s + m.facturableADV, 0),
     facture: months.reduce((s, m) => s + m.facture, 0),
     encaisse: months.reduce((s, m) => s + m.encaisse, 0),
+    encours: [...months].reverse().find(m => m.encours > 0)?.encours ?? 0,
     decaisse: months.reduce((s, m) => s + m.decaisse, 0),
     rbstEmprunt: months.reduce((s, m) => s + m.rbstEmprunt, 0),
     charges: months.reduce((s, m) => s + m.charges, 0),
@@ -289,6 +296,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <tr><td style={tdLabelStyle}>Facturable / ADV</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableADV} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facturableADV)}</td></tr>
                 <tr><td style={tdLabelStyle}>Facturés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facture} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facture)}</td></tr>
                 <tr><td style={tdLabelStyle}>Encaissés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encaisse} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.encaisse)}</td></tr>
+                <tr style={{ background: "#f0faf0" }}><td style={{ ...tdLabelStyle, background: "#f0faf0" }}>Encours Clients</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encours} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#27ae60" }}>{fmt(tot.encours)}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
                 <tr><td style={tdLabelStyle}>Décaissé</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.decaisse} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.decaisse)}</td></tr>

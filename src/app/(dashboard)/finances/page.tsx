@@ -11,12 +11,14 @@ export default async function FinancesPage() {
     { data: trainingSessions },
     { data: monthlyCharges },
     { data: salesTargets },
+    { data: monthlyFinances },
   ] = await Promise.all([
     supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won"),
     supabase.from("billing_months").select("id, amount, month, status"),
     supabase.from("training_sessions").select("*, service_plans(hourly_rate)").eq("status", "done"),
     supabase.from("monthly_charges").select("*"),
     supabase.from("sales_targets").select("month, target_amount").order("month", { ascending: true }),
+    supabase.from("monthly_finances").select("month, client_receivables"),
   ]);
 
   return (
@@ -29,6 +31,7 @@ export default async function FinancesPage() {
           trainingSessions={(trainingSessions ?? []) as any}
           monthlyCharges={(monthlyCharges ?? []) as any}
           salesTargets={(salesTargets ?? []) as any}
+          monthlyFinances={(monthlyFinances ?? []) as any}
         />
       </div>
     </>
