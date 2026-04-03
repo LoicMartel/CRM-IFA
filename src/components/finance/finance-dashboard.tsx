@@ -296,7 +296,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <tr><td style={tdLabelStyle}>Facturable / ADV</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableADV} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facturableADV)}</td></tr>
                 <tr><td style={tdLabelStyle}>Facturés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facture} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facture)}</td></tr>
                 <tr><td style={tdLabelStyle}>Encaissés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encaisse} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.encaisse)}</td></tr>
-                <tr style={{ background: "#f0faf0" }}><td style={{ ...tdLabelStyle, background: "#f0faf0" }}>Encours Clients</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encours} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#27ae60" }}>{fmt(tot.encours)}</td></tr>
+                <tr><td style={tdLabelStyle}>Encours Clients</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encours} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#e74c3c" }}>{fmt(tot.encours)}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
                 <tr><td style={tdLabelStyle}>Décaissé</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.decaisse} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.decaisse)}</td></tr>
