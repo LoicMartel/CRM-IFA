@@ -134,27 +134,24 @@ export default function LandingPage() {
       {/* ===== SECTION 1: HERO ===== */}
       <section
         id="hero"
-        className="relative overflow-hidden"
-        style={{
-          background: "#3a7cb8",
-        }}
+        className="relative overflow-hidden bg-[#EFF5F9]"
       >
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <div className="grid items-center gap-12 md:grid-cols-2">
             {/* Left column */}
             <div className="flex flex-col gap-6">
               <Image
-                src="/logo-lca.png"
+                src="/lca-black-logo.png"
                 alt="La Closing Académie"
-                width={100}
-                height={100}
-                className="rounded-md border-2 border-white"
+                width={120}
+                height={90}
+                className="w-[120px] h-auto"
               />
-              <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl lg:text-[36px]">
+              <h1 className="text-3xl font-bold leading-tight text-[#1a2a3a] md:text-4xl lg:text-[36px]">
                 Doublez la performance commerciale de votre organisme de
                 formation dès le prochain trimestre.
               </h1>
-              <p className="text-base leading-relaxed text-white/80 md:text-lg">
+              <p className="text-base leading-relaxed text-[#4a6274] md:text-lg">
                 {subtitleText}
               </p>
             </div>
@@ -371,11 +368,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== SECTION 7: Final CTA ===== */}
-      <section
-        style={{
-          background: "#3a7cb8",
-        }}
-      >
+      <section className="bg-[#1a6b9c]">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
             Prêt à transformer votre performance commerciale ?
@@ -393,7 +386,7 @@ export default function LandingPage() {
       </section>
 
       {/* ===== SECTION 8: Footer ===== */}
-      <footer className="bg-[#0a3d5f]">
+      <footer className="bg-[#1a2a3a]">
         <div className="mx-auto max-w-6xl px-4 py-8 text-center text-sm text-white/60">
           <div className="mb-3 flex flex-wrap justify-center gap-4">
             <a href="#" className="transition hover:text-white">

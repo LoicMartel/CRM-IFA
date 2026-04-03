@@ -13,11 +13,11 @@ export default function VSLPage() {
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Image
-            src="/logo-lca.png"
+            src="/lca-black-logo.png"
             alt="La Closing Académie"
-            width={80}
-            height={80}
-            className="rounded-md"
+            width={100}
+            height={75}
+            className="w-[100px] h-auto"
           />
         </div>
 
