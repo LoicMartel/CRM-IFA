@@ -139,19 +139,32 @@ export default function BookingPage() {
         </div>
       </div>
 
-      {/* Photo Rafi */}
+      {/* Logo + Photo Rafi */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "center",
-        marginBottom: 24,
+        gap: 14, marginBottom: 24,
       }}>
+        <div style={{
+          width: 56, height: 56, border: "2px solid #0a3d5f", borderRadius: 10,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "4px 6px",
+        }}>
+          <span style={{
+            color: "#0a3d5f", fontSize: 8, fontWeight: 700, lineHeight: 1.2,
+            textAlign: "center", fontFamily: "'Montserrat', sans-serif",
+            letterSpacing: "-0.02em",
+          }}>
+            LA<br />CLOSING<br />ACADÉMIE<span style={{ fontSize: 5, verticalAlign: "super" }}>®</span>
+          </span>
+        </div>
         <img
           src="/photo-rafi.jpeg"
           alt="Rafi Mouhamad"
           style={{
-            width: 80, height: 80, borderRadius: "50%",
+            width: 56, height: 56, borderRadius: "50%",
             objectFit: "cover", objectPosition: "top",
-            border: "3px solid #fff",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+            border: "2px solid #fff",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           }}
         />
       </div>
