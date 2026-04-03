@@ -60,7 +60,8 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
     // Billing months by status
     const mBilling = billingMonths.filter((bm: R) => (bm.month as string).startsWith(mStr));
     const commandesFacturable = mBilling.reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
-    const facture = mBilling.filter((bm: R) => bm.status === "facture").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
+    // Facturé = facture + encaisse (car encaissé implique d'avoir été facturé)
+    const facture = mBilling.filter((bm: R) => bm.status === "facture" || bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
 
     // Encaissé TTC = saisie manuelle dans monthly_charges
     const encaisseTTC = Number(charges.encaisse_ttc) || 0;
