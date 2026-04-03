@@ -65,7 +65,7 @@ export default function VSLPage() {
             {/* Embedded booking - compact card */}
             <div className="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
               <iframe
-                src="/booking-pauline"
+                src="/booking-pauline-commercial"
                 className="w-full border-0"
                 style={{ height: "700px" }}
                 title="Réserver un appel découverte"
