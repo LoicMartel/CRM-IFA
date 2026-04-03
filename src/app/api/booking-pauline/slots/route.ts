@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFreeBusy } from "@/lib/google-calendar";
+import { getCalendarEvents } from "@/lib/google-calendar";
 import { getParisOffset } from "@/lib/timezone";
 
 const PAULINE = {
@@ -50,8 +50,8 @@ export async function GET(request: Request) {
   // Check ALL calendars for busy times
   const allBusy: { start: string; end: string }[] = [];
   for (const calId of PAULINE.calendarIds) {
-    const { busy, error } = await getFreeBusy({ calendarId: calId, timeMin, timeMax, timeZone: TZ });
-    if (!error) allBusy.push(...busy);
+    const { events, error } = await getCalendarEvents({ calendarId: calId, timeMin, timeMax, timeZone: TZ });
+    if (!error) allBusy.push(...events);
   }
 
   const offset = getParisOffset(date);

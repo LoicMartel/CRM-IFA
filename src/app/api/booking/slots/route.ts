@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFreeBusy } from "@/lib/google-calendar";
+import { getCalendarEvents } from "@/lib/google-calendar";
 import { getParisOffset } from "@/lib/timezone";
 
 // Rafi is priority; Naznine is fallback
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
     let accessibleCount = 0;
 
     for (const calId of member.calendarIds) {
-      const { busy, error } = await getFreeBusy({
+      const { events, error } = await getCalendarEvents({
         calendarId: calId,
         timeMin,
         timeMax,
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
       });
       if (!error) {
         accessibleCount++;
-        allBusy.push(...busy);
+        allBusy.push(...events);
       }
     }
 

@@ -40,6 +40,49 @@ function getAuth() {
   }
 }
 
+/**
+ * Get all events from a calendar (not just "busy" ones).
+ * Unlike FreeBusy, this catches events marked as "available/free".
+ */
+export async function getCalendarEvents({
+  calendarId,
+  timeMin,
+  timeMax,
+  timeZone = "Europe/Paris",
+}: {
+  calendarId: string;
+  timeMin: string;
+  timeMax: string;
+  timeZone?: string;
+}): Promise<{ events: { start: string; end: string }[]; error?: string }> {
+  const auth = getAuth();
+  if (!auth) return { events: [], error: "Google Calendar not configured" };
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+    const res = await calendar.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      timeZone,
+      singleEvents: true,
+      orderBy: "startTime",
+      maxResults: 250,
+    });
+
+    const events = (res.data.items ?? [])
+      .filter((e) => e.start?.dateTime) // skip all-day events without time
+      .map((e) => ({
+        start: e.start?.dateTime ?? "",
+        end: e.end?.dateTime ?? "",
+      }));
+
+    return { events };
+  } catch (err: any) {
+    return { events: [], error: err.message };
+  }
+}
+
 export async function getFreeBusy({
   calendarId,
   timeMin,
