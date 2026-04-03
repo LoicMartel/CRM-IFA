@@ -235,7 +235,7 @@ export default function BookingPage() {
                 <MapPin style={{ width: 16, height: 16, color: "#8399a9" }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>Lieu de la réunion</div>
-                  <div style={{ fontSize: 12, color: "#5a6f80" }}>{mode === "visio" ? "Visioconférence" : "Appel téléphonique"}</div>
+                  <div style={{ fontSize: 12, color: "#5a6f80" }}>Appel téléphonique</div>
                 </div>
               </div>
 
@@ -247,32 +247,14 @@ export default function BookingPage() {
                 </div>
               </div>
 
-              {/* Mode toggle */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                <button
-                  onClick={() => setMode("phone")}
-                  style={{
-                    flex: 1, height: 36, borderRadius: 8, border: `2px solid ${mode === "phone" ? "#1a6b9c" : "#dce8f0"}`,
-                    background: mode === "phone" ? "#e8f0fe" : "white",
-                    color: mode === "phone" ? "#1a6b9c" : "#8399a9",
-                    fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  }}
-                >
-                  <Phone style={{ width: 14, height: 14 }} /> Téléphone
-                </button>
-                <button
-                  onClick={() => setMode("visio")}
-                  style={{
-                    flex: 1, height: 36, borderRadius: 8, border: `2px solid ${mode === "visio" ? "#1a6b9c" : "#dce8f0"}`,
-                    background: mode === "visio" ? "#e8f0fe" : "white",
-                    color: mode === "visio" ? "#1a6b9c" : "#8399a9",
-                    fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  }}
-                >
-                  <Video style={{ width: 14, height: 14 }} /> Visio
-                </button>
+              {/* Mode fixe: téléphone */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                height: 36, borderRadius: 8, border: "2px solid #1a6b9c",
+                background: "#e8f0fe", color: "#1a6b9c",
+                fontSize: 12, fontWeight: 600, marginBottom: 16,
+              }}>
+                <Phone style={{ width: 14, height: 14 }} /> Appel téléphonique
               </div>
             </div>
 
