@@ -268,13 +268,14 @@ export default function LandingPage() {
       <section className="bg-white">
         <div className="mx-auto max-w-[960px] px-6 py-14">
           <div className="grid items-center gap-10 md:grid-cols-2">
-            {/* Photo placeholder */}
             <div className="flex justify-center">
-              <div className="relative h-[360px] w-[280px] overflow-hidden rounded-lg bg-[#EFF5F9]">
-                <div className="absolute inset-0 flex items-center justify-center text-[#8399a9] text-sm">
-                  Photo
-                </div>
-              </div>
+              <Image
+                src="/photo-rafi.jpeg"
+                alt="Rafi Mouhamad - La Closing Académie"
+                width={280}
+                height={360}
+                className="h-[360px] w-[280px] rounded-lg object-cover"
+              />
             </div>
 
             {/* Text */}
