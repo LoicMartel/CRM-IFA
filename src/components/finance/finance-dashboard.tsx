@@ -57,9 +57,10 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
     const factureCalc = mBms.filter((bm: R) => bm.status === "facture" || bm.status === "encaisse").reduce((s: number, bm: R) => s + (Number(bm.amount) || 0), 0);
     const facture = factureManual > 0 ? factureManual : factureCalc;
 
-    // Encaissé HT = encaissé TTC / 1.2
+    // Encaissé HT = override manuel si renseigné, sinon TTC / 1.2
     const encaisseTTC = Number(ch.encaisse_ttc) || 0;
-    const encaisse = encaisseTTC / 1.2;
+    const encaisseHTManual = Number(ch.encaisse_ht) || 0;
+    const encaisse = encaisseHTManual > 0 ? encaisseHTManual : (encaisseTTC > 0 ? encaisseTTC / 1.2 : 0);
 
     // Décaissé = Charges HT (TTC - 2.5% TVA déductible)
     const chargesTTC = Number(ch.charges_ttc) || 0;

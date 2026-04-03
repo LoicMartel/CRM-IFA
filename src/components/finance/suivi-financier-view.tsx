@@ -67,7 +67,9 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
 
     // Encaissé TTC = saisie manuelle dans monthly_charges
     const encaisseTTC = Number(charges.encaisse_ttc) || 0;
-    const encaisseHT = encaisseTTC / 1.2;
+    // Encaissé HT = override manuel si renseigné, sinon TTC / 1.2
+    const encaisseHTManual = Number(charges.encaisse_ht) || 0;
+    const encaisseHT = encaisseHTManual > 0 ? encaisseHTManual : (encaisseTTC > 0 ? encaisseTTC / 1.2 : 0);
     const tvaCollecte = encaisseTTC - encaisseHT;
     const rhPrev = Number(charges.rh_previsionnel) || 0;
     const chargesDiverses = Number(charges.charges_diverses) || 0;
@@ -226,7 +228,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
             <Row label="Facturé HT" field="facture" values={monthData.map(m => m.facture)} isCumul={cumul.facture} isManual manualField="facture_ht" />
             <Row label="Encaissé TTC" field="encaisseTTC" values={monthData.map(m => m.encaisseTTC)} isCumul={cumul.encaisseTTC} isManual manualField="encaisse_ttc" />
             <Row label="TVA collectée" field="tvaCollecte" values={monthData.map(m => m.tvaCollecte)} isCumul={cumul.tvaCollecte} />
-            <Row label="Encaissé HT" field="encaisseHT" values={monthData.map(m => m.encaisseHT)} isCumul={cumul.encaisseHT} />
+            <Row label="Encaissé HT" field="encaisseHT" values={monthData.map(m => m.encaisseHT)} isCumul={cumul.encaisseHT} isManual manualField="encaisse_ht" />
             {/* Separator */}
             <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
             <Row label="Rh prévisionnel" field="rhPrev" values={monthData.map(m => m.rhPrev)} isManual manualField="rh_previsionnel" />
