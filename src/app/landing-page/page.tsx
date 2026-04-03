@@ -33,54 +33,63 @@ const testimonials = [
   {
     name: "Natanael Wright",
     company: "Wall Street English France",
+    photo: "/temoins/Natael Wright.jpeg",
     quote:
       "Grâce à une analyse pointue et des solutions ad-hoc, les programmes déployés par M. Rafi MOUHAMAD ont eu un impact conséquent et significatif sur nos performances commerciales. Il s\u2019est inscrit de manière durable au sein de notre réseau comme un partenaire de confiance.",
   },
   {
     name: "Alexandra Attalauziti",
     company: "ADNR Formations",
+    photo: "/temoins/Alexandra.jpeg",
     quote:
       "La technique de Rafi pour closer des prospects s\u2019est avérée extrêmement efficace, portée par une pédagogie claire et une énergie contagieuse. Mon équipe a beaucoup appris grâce à ses enseignements et aux précieux conseils de son équipe.",
   },
   {
     name: "Camille Barel",
     company: "ADREC",
+    photo: "/temoins/Camille.jpeg",
     quote:
       "Un Bootcamp au top grâce à Rafi et Alexandre de la Closing Académie : un contenu riche, des recommandations précises et un accompagnement personnalisé de grande qualité. Si vous aspirez à exceller dans le closing, je recommande vivement cette équipe d\u2019experts passionnés.",
   },
   {
     name: "Nicholas Galtos",
     company: "Swiss Language Group",
+    photo: "/temoins/Nicholas.jpeg",
     quote:
       "Rafi is one of the great Wall Street English success stories, becoming a major sales trainer thanks to his positivity, energy and commitment. I fully recommend him both for his professional sales skills and as a genuine, trustworthy person.",
   },
   {
     name: "Geneviève Machicote",
     company: "EDC",
+    photo: "/temoins/Genevieve.jpeg",
     quote:
       "Rafi insuffle une nouvelle approche commerciale, à la fois axée sur le client et sur la performance. Ses qualités humaines et pédagogiques permettent une assimilation optimale de sa méthode.",
   },
   {
     name: "Constance Herrmann",
     company: "Great Place to Work",
+    photo: "/temoins/Constance.jpeg",
     quote:
       "Les formations de Rafi et de son équipe nous ont donné les bons outils et réflexes pour devenir de meilleurs commerciaux. Grâce à lui, nous sommes plus motivés que jamais : je recommande à 100 % !!",
   },
   {
     name: "Cédric Jarre",
     company: "Coca-Cola Europacific Partners",
+    photo: "/temoins/Cédric.jpeg",
     quote:
       "Rafi est devenu un acteur majeur de nos plans de formation et de coaching, ainsi qu\u2019une véritable référence pour nos équipes. C\u2019est un grand professionnel qui challenge avec bienveillance pour faire grandir chacun. Un grand MERCI de notre part à tous !!",
   },
   {
     name: "Théo Becker",
     company: "RP France",
+    photo: "/temoins/Théo.jpeg",
     quote:
       "Une équipe d\u2019experts très à l\u2019écoute, dont les conseils en management ont concrètement amélioré l\u2019organisation et la cohésion de notre équipe. Un investissement que je recommande sans hésiter.",
   },
   {
     name: "Gautier Fabrègues",
     company: "Wall Street English",
+    photo: "/temoins/Gautier.jpeg",
     quote:
       "Rafi partage son savoir-faire avec expérience, bienveillance et des outils qui fonctionnent réellement. C\u2019est un partenaire de confiance qui fait grandir les gens, et c\u2019est un vrai plaisir de travailler avec lui.",
   },
@@ -281,6 +290,10 @@ export default function LandingPage() {
                   height={380}
                   className="h-full w-full object-cover object-top"
                 />
+                <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                  <Image src="/logos/Qualiopi.webp" alt="Qualiopi" width={70} height={35} className="h-[30px] w-auto rounded-sm" />
+                  <Image src="/logos/Edtech 2.png" alt="EdTech France" width={70} height={35} className="h-[30px] w-auto rounded-sm" />
+                </div>
               </div>
             </div>
 
@@ -348,9 +361,7 @@ export default function LandingPage() {
                   {t.quote}
                 </p>
                 <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e7ab5] text-[11px] font-bold text-white">
-                    {t.name.charAt(0)}
-                  </div>
+                  <Image src={t.photo} alt={t.name} width={32} height={32} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                   <div>
                     <p className="text-[12px] font-bold text-[#1a2a3a]">{t.name}</p>
                     <p className="text-[11px] text-[#888]">{t.company}</p>
