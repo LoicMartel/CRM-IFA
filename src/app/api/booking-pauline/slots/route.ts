@@ -7,6 +7,7 @@ const PAULINE = {
   name: "Pauline BECQUERELLE",
   calendarIds: [
     "pauline.becquerelle@gmail.com",
+    "p.becquerelle@gmail.com",
     "d5338ed9e648d81ad3ef5fcbea38b7a91df6992ba69628c1946410039833d4a5@group.calendar.google.com",
     "12cd9085ed10a2ad840d9e6d02ef8f040de488342e66cffe57a0f2130713b026@group.calendar.google.com",
     "cba1425b9af40c252017aae0d83ec52e93494fc4cb1e1807208bb931e5270d93@group.calendar.google.com",
