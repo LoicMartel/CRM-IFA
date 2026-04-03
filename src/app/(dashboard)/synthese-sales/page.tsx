@@ -21,7 +21,14 @@ export default async function SyntheseSalesPage() {
     supabase.from("deals").select("id, amount, stage").not("stage", "in", '("closed_won","closed_lost")'),
   ]);
 
-  const targets = salesTargets ?? [];
+  // Deduplicate targets by month (YYYY-MM)
+  const targetsSeen = new Set<string>();
+  const targets = (salesTargets ?? []).filter((t: any) => {
+    const mKey = (t.month as string).slice(0, 7);
+    if (targetsSeen.has(mKey)) return false;
+    targetsSeen.add(mKey);
+    return true;
+  });
   const orders = wonDeals ?? [];
   const pipe = pipeDeals ?? [];
 
