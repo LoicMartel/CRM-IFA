@@ -40,16 +40,15 @@ export default function VSLPage() {
         <div className="mx-auto max-w-4xl px-4">
           {/* Video - overlaps blue/white transition */}
           <div className="-mt-32 relative mb-10 w-full overflow-hidden rounded-xl shadow-xl">
-            <video
-              controls
-              preload="metadata"
-              playsInline
-              className="w-full rounded-xl"
-              poster=""
-            >
-              <source src="/api/vsl-video" type="video/mp4" />
-              Votre navigateur ne supporte pas la lecture vidéo.
-            </video>
+            <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+              <iframe
+                src="https://www.youtube.com/embed/q3Dpr2ydjkU?rel=0&modestbranding=1"
+                title="VSL - La Closing Académie"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full rounded-xl"
+              />
+            </div>
           </div>
 
           {/* Booking section */}
