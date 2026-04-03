@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, Download, Trash2, FolderOpen, Folder, FileText, Image, Film, File,
-  ChevronRight, Upload, ArrowLeft, ArrowUpDown, SortAsc, Calendar, FileType, HardDrive,
+  ChevronRight, Upload, ArrowLeft, ArrowUpDown, SortAsc, Calendar, FileType, HardDrive, FolderInput,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
@@ -283,6 +283,10 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
   const [uploadPath, setUploadPath] = useState<string[]>([]);
   const [uploadDescription, setUploadDescription] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [moveResource, setMoveResource] = useState<Resource | null>(null);
+  const [movePath, setMovePath] = useState<string[]>([]);
+  const [moving, setMoving] = useState(false);
 
   const currentPathStr = currentPath.join("/");
   const subfolders = getFoldersAtPath(currentPath);
@@ -388,6 +392,31 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
     const supabase = createClient();
     await supabase.storage.from("resources").remove([resource.file_path]);
     await supabase.from("resources").delete().eq("id", resource.id);
+    router.refresh();
+  }
+
+  function openMove(resource: Resource) {
+    setMoveResource(resource);
+    const currentFolderPath = resourcePaths.get(resource.id) ?? [];
+    setMovePath(currentFolderPath);
+    setMoveOpen(true);
+  }
+
+  async function handleMove() {
+    if (!moveResource) return;
+    setMoving(true);
+    const supabase = createClient();
+    const { category, subcategory } = folderPathToDbFields(movePath);
+
+    await supabase.from("resources").update({
+      category,
+      subcategory: subcategory || null,
+    }).eq("id", moveResource.id);
+
+    setMoving(false);
+    setMoveOpen(false);
+    setMoveResource(null);
+    setMovePath([]);
     router.refresh();
   }
 
@@ -627,6 +656,13 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                           <Download className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">Télécharger</span>
                         </button>
+                        <button onClick={() => openMove(r)} style={{
+                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
+                          padding: "6px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
+                          fontSize: 12, fontWeight: 500,
+                        }} title="Déplacer">
+                          <FolderInput className="h-3.5 w-3.5" />
+                        </button>
                         <button onClick={() => handleDelete(r)} style={{
                           background: "#fff5f5", border: "none", cursor: "pointer", color: "#e74c3c",
                           padding: "6px 8px", borderRadius: 6, display: "flex", alignItems: "center",
@@ -758,14 +794,20 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                     <div style={{ fontSize: 10, color: "#8399a9", lineHeight: 1.2 }}>
                       {sortMode === "date" ? formatDate(r.created_at) : sortMode === "type" ? getFileTypeLabel(r.file_type) : formatSize(r.file_size)}
                     </div>
-                    <div data-actions="" style={{ display: "flex", gap: 4, marginTop: 2, opacity: 0, transition: "opacity 0.15s" }}>
+                    <div data-actions="" style={{ display: "flex", gap: 3, marginTop: 2, opacity: 0, transition: "opacity 0.15s" }}>
                       <button onClick={() => handleDownload(r)} style={{
                         background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
-                        padding: "4px 8px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
+                        padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
                         fontSize: 10, fontWeight: 600,
-                      }} title="Télécharger sur votre ordinateur">
+                      }} title="Télécharger">
                         <Download className="h-3 w-3" />
-                        Télécharger
+                      </button>
+                      <button onClick={() => openMove(r)} style={{
+                        background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1a6b9c",
+                        padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
+                        fontSize: 10, fontWeight: 600,
+                      }} title="Déplacer vers un autre dossier">
+                        <FolderInput className="h-3 w-3" />
                       </button>
                       <button onClick={() => handleDelete(r)} style={{
                         background: "#fff5f5", border: "1px solid #fde2e2", cursor: "pointer", color: "#e74c3c",
@@ -851,6 +893,62 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                 <>
                   <Upload className="h-4 w-4 mr-2" />
                   Importer {selectedFiles.length > 0 ? `${selectedFiles.length} fichier${selectedFiles.length > 1 ? "s" : ""}` : ""}
+                </>
+              )}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Move sheet */}
+      <Sheet open={moveOpen} onOpenChange={(open) => { setMoveOpen(open); if (!open) setMoveResource(null); }}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Déplacer le fichier</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-6 px-4">
+            {moveResource && (
+              <div style={{ padding: "10px 12px", background: "#f5f8fa", borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                {getFileIcon(moveResource.file_type ?? moveResource.name.split(".").pop() ?? null, "sm")}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {moveResource.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8399a9" }}>
+                    Actuellement dans : {(resourcePaths.get(moveResource.id) ?? []).join(" › ") || "Racine"}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Nouveau dossier de destination</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={movePath.join("/")}
+                onChange={(e) => setMovePath(e.target.value ? e.target.value.split("/") : [])}
+              >
+                <option value="">Racine (Supports formation)</option>
+                {allUploadPaths.map((p) => (
+                  <option key={p.path.join("/")} value={p.path.join("/")}>
+                    {p.path.length === 1 ? p.label : "— ".repeat(p.path.length - 1) + p.path[p.path.length - 1]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {movePath.length > 0 && (
+              <div style={{ padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, fontSize: 12, color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6 }}>
+                <Folder className="h-3.5 w-3.5" style={{ flexShrink: 0 }} />
+                <span>Déplacer vers : <strong>{movePath.join(" › ")}</strong></span>
+              </div>
+            )}
+
+            <Button onClick={handleMove} disabled={moving || !moveResource} className="w-full" style={{ height: 42 }}>
+              {moving ? "Déplacement en cours..." : (
+                <>
+                  <FolderInput className="h-4 w-4 mr-2" />
+                  Déplacer
                 </>
               )}
             </Button>
