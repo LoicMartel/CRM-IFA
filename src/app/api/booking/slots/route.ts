@@ -98,13 +98,13 @@ export async function GET(request: Request) {
     if (accessibleCount === 0) continue; // skip only if NO calendar is accessible
 
     const offset = getParisOffset(date);
+    const BUFFER = 15 * 60 * 1000; // 15 min buffer before and after each event
     const availableSlots = allSlots.filter((s) => {
-      // Build proper Date objects for comparison using dynamic Paris offset
       const slotStart = new Date(`${s.start}${offset}`);
       const slotEnd = new Date(`${s.end}${offset}`);
       return !allBusy.some((b) => {
-        const bs = new Date(b.start).getTime();
-        const be = new Date(b.end).getTime();
+        const bs = new Date(b.start).getTime() - BUFFER;
+        const be = new Date(b.end).getTime() + BUFFER;
         return slotStart.getTime() < be && slotEnd.getTime() > bs;
       });
     });
