@@ -2,92 +2,87 @@
 
 import { useState, FormEvent } from "react";
 import Image from "next/image";
-import {
-  TrendingDown,
-  Target,
-  Calendar,
-  ShoppingCart,
-  Users,
-  GraduationCap,
-  CheckCircle,
-  Quote,
-} from "lucide-react";
 
 const subtitleText =
   "Comme plus de 200 dirigeants \u2014 Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
 
-const painPoints = [
-  {
-    icon: TrendingDown,
-    text: "Un chiffre d\u2019affaires insuffisant et des cycles de vente trop longs",
-  },
-  {
-    icon: Target,
-    text: "Des taux de conversion et de closing trop faibles",
-  },
-  {
-    icon: Calendar,
-    text: "Un nombre de RDV hebdomadaires insuffisant",
-  },
-  {
-    icon: ShoppingCart,
-    text: "Des paniers moyens trop bas et un ROAS insuffisant",
-  },
-  {
-    icon: Users,
-    text: "Des commerciaux démotivés ou un turnover élevé",
-  },
-  {
-    icon: GraduationCap,
-    text: "Des difficultés à former et coacher vos équipes",
-  },
+const challenges = [
+  "Chiffre d\u2019affaires insuffisant",
+  "Cycles de vente trop longs",
+  "Taux de conversion trop faible",
+  "Taux de closing insuffisant",
+  "Trop peu de rendez-vous commerciaux par semaine",
+  "Paniers moyens bas",
+  "ROAS insuffisant",
+  "Commerciaux démotivés",
+  "Turnover élevé",
+  "Difficultés à former et coacher vos commerciaux",
 ];
 
 const goals = [
-  "Accélérer la croissance et les ventes",
-  "Augmenter les marges et la rentabilité",
-  "Stabiliser la trésorerie",
-  "Développer le chiffre d\u2019affaires",
-  "Renforcer vos équipes commerciales",
-  "Libérer du temps personnel",
-  "Augmenter la valorisation de l\u2019entreprise",
+  "Accélérer votre croissance et vos ventes",
+  "Augmenter vos marges et votre rentabilité",
+  "Stabiliser votre trésorerie",
+  "Développer votre chiffre d\u2019affaires",
+  "Fiabiliser et motiver vos équipes commerciales",
+  "Libérer du temps pour vous et vos projets personnels",
+  "Valoriser votre entreprise pour préparer une transition réussie",
 ];
 
 const testimonials = [
   {
-    name: "Christophe D.",
-    company: "Cartesia Education",
+    name: "Natanael Wright",
+    company: "Wall Street English France",
     quote:
-      "Analyse pointue et solutions ad-hoc avec un impact conséquent et significatif.",
+      "Grâce à une analyse pointue et des solutions ad-hoc, les programmes déployés par M. Rafi MOUHAMAD ont eu un impact conséquent et significatif sur nos performances commerciales. Il s\u2019est inscrit de manière durable au sein de notre réseau comme un partenaire de confiance.",
   },
   {
-    name: "Sophie M.",
+    name: "Alexandra Attalauziti",
+    company: "ADNR Formations",
+    quote:
+      "La technique de Rafi pour closer des prospects s\u2019est avérée extrêmement efficace, portée par une pédagogie claire et une énergie contagieuse. Mon équipe a beaucoup appris grâce à ses enseignements et aux précieux conseils de son équipe.",
+  },
+  {
+    name: "Camille Barel",
+    company: "ADREC",
+    quote:
+      "Un Bootcamp au top grâce à Rafi et Alexandre de la Closing Académie : un contenu riche, des recommandations précises et un accompagnement personnalisé de grande qualité. Si vous aspirez à exceller dans le closing, je recommande vivement cette équipe d\u2019experts passionnés.",
+  },
+  {
+    name: "Nicholas Galtos",
+    company: "Swiss Language Group",
+    quote:
+      "Rafi is one of the great Wall Street English success stories, becoming a major sales trainer thanks to his positivity, energy and commitment. I fully recommend him both for his professional sales skills and as a genuine, trustworthy person.",
+  },
+  {
+    name: "Geneviève Machicote",
+    company: "EDC",
+    quote:
+      "Rafi insuffle une nouvelle approche commerciale, à la fois axée sur le client et sur la performance. Ses qualités humaines et pédagogiques permettent une assimilation optimale de sa méthode.",
+  },
+  {
+    name: "Constance Herrmann",
+    company: "Great Place to Work",
+    quote:
+      "Les formations de Rafi et de son équipe nous ont donné les bons outils et réflexes pour devenir de meilleurs commerciaux. Grâce à lui, nous sommes plus motivés que jamais : je recommande à 100 % !!",
+  },
+  {
+    name: "Cédric Jarre",
+    company: "Coca-Cola Europacific Partners",
+    quote:
+      "Rafi est devenu un acteur majeur de nos plans de formation et de coaching, ainsi qu\u2019une véritable référence pour nos équipes. C\u2019est un grand professionnel qui challenge avec bienveillance pour faire grandir chacun. Un grand MERCI de notre part à tous !!",
+  },
+  {
+    name: "Théo Becker",
+    company: "RP France",
+    quote:
+      "Une équipe d\u2019experts très à l\u2019écoute, dont les conseils en management ont concrètement amélioré l\u2019organisation et la cohésion de notre équipe. Un investissement que je recommande sans hésiter.",
+  },
+  {
+    name: "Gautier Fabrègues",
     company: "Wall Street English",
-    quote: "One of the great Wall Street English success stories.",
-  },
-  {
-    name: "Laurent P.",
-    company: "Leyton France",
     quote:
-      "Nouvelle approche commerciale, axée sur le client et la performance.",
-  },
-  {
-    name: "Marie T.",
-    company: "ABC Cours Particuliers",
-    quote:
-      "Technique de Rafi pour closer\u2026 extrêmement efficace.",
-  },
-  {
-    name: "Thomas R.",
-    company: "Great Place To Work",
-    quote:
-      "Bootcamp au top\u2026 contenu riche, recommandations précises.",
-  },
-  {
-    name: "Isabelle F.",
-    company: "Business France",
-    quote:
-      "Un accompagnement sur mesure qui a transformé nos résultats commerciaux.",
+      "Rafi partage son savoir-faire avec expérience, bienveillance et des outils qui fonctionnent réellement. C\u2019est un partenaire de confiance qui fait grandir les gens, et c\u2019est un vrai plaisir de travailler avec lui.",
   },
 ];
 
@@ -116,7 +111,7 @@ export default function LandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, source: "landing-page" }),
       });
-      if (!res.ok) throw new Error("Une erreur est survenue.");
+      if (!res.ok) throw new Error("Erreur");
       window.location.href = "/vsl";
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
@@ -130,279 +125,249 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen scroll-smooth">
-      {/* ===== SECTION 1: HERO ===== */}
-      <section
-        id="hero"
-        className="relative overflow-hidden"
-        style={{ background: "#2e7ab5" }}
-      >
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-          <div className="grid items-center gap-12 md:grid-cols-2">
-            {/* Left column */}
-            <div className="flex flex-col gap-6">
+    <div className="min-h-screen scroll-smooth bg-white" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+      {/* ===== HERO ===== */}
+      <section style={{ background: "#2e7ab5" }}>
+        <div className="mx-auto max-w-[960px] px-6 py-16 md:py-20">
+          <div className="grid items-center gap-10 md:grid-cols-2">
+            <div className="flex flex-col gap-5">
               <Image
                 src="/lca-white-logo.png"
                 alt="La Closing Académie"
-                width={120}
-                height={90}
-                className="w-[120px] h-auto"
+                width={110}
+                height={82}
+                className="w-[110px] h-auto"
               />
-              <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl lg:text-[36px]">
-                Doublez la performance commerciale de votre organisme de
-                formation dès le prochain trimestre.
+              <h1 className="text-[26px] font-bold leading-[1.25] text-white md:text-[32px]">
+                Doublez la performance commerciale de votre organisme de formation dès le prochain trimestre.
               </h1>
-              <p className="text-base leading-relaxed text-white/80 md:text-lg">
+              <p className="text-[14px] leading-[1.7] text-white/80">
                 {subtitleText}
               </p>
             </div>
 
-            {/* Right column: Form card */}
-            <div className="rounded-xl bg-white p-6 shadow-lg md:p-8">
-              <h2 className="mb-6 text-xl font-bold text-[#1a2a3a]">
+            <div className="rounded-lg bg-white p-6 shadow-md">
+              <h2 className="mb-5 text-[18px] font-bold text-[#1a2a3a]">
                 Accédez gratuitement à la méthode
               </h2>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Prénom <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    Prénom<span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    name="firstName"
-                    required
-                    placeholder="ex: John"
-                    value={form.firstName}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-[#1a2a3a] outline-none transition focus:ring-2 focus:ring-[#1a6b9c]"
+                    type="text" name="firstName" required placeholder="ex: John"
+                    value={form.firstName} onChange={handleChange}
+                    className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Nom <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    Nom<span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    name="lastName"
-                    required
-                    placeholder="ex: Doe"
-                    value={form.lastName}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-[#1a2a3a] outline-none transition focus:ring-2 focus:ring-[#1a6b9c]"
+                    type="text" name="lastName" required placeholder="ex: Doe"
+                    value={form.lastName} onChange={handleChange}
+                    className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Email <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    Email<span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="ex: johndoe@gmail.com"
-                    value={form.email}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-[#1a2a3a] outline-none transition focus:ring-2 focus:ring-[#1a6b9c]"
+                    type="email" name="email" required placeholder="ex: johndoe@gmail.com"
+                    value={form.email} onChange={handleChange}
+                    className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Numéro de téléphone{" "}
-                    <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    Numéro de téléphone<span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="+33..."
-                    value={form.phone}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-[#1a2a3a] outline-none transition focus:ring-2 focus:ring-[#1a6b9c]"
+                    type="tel" name="phone" required placeholder="+33"
+                    value={form.phone} onChange={handleChange}
+                    className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    URL de la société{" "}
-                    <span className="text-red-500">*</span>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    URL de la société<span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="url"
-                    name="website"
-                    required
-                    placeholder="ex: www.url-de-la-societe.com"
-                    value={form.website}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-[#1a2a3a] outline-none transition focus:ring-2 focus:ring-[#1a6b9c]"
+                    type="url" name="website" required placeholder="ex: www.url-de-la-societe.com"
+                    value={form.website} onChange={handleChange}
+                    className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-2 w-full rounded-lg bg-[#1a6b9c] px-6 py-3 font-semibold text-white transition hover:bg-[#15577d] disabled:opacity-60"
+                  type="submit" disabled={loading}
+                  className="mt-1 w-full rounded bg-[#2e7ab5] py-3 text-[14px] font-semibold text-white transition hover:bg-[#256a9e] disabled:opacity-60"
                 >
                   {loading ? "Envoi en cours\u2026" : "Découvrir la méthode"}
                 </button>
-                {error && (
-                  <p className="text-center text-sm text-red-500">{error}</p>
-                )}
+                {error && <p className="text-center text-[13px] text-red-500">{error}</p>}
               </form>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== SECTION 2: Pour qui ===== */}
-      <section className="bg-[#EFF5F9]">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            Pour qui est cette méthode ?
-          </span>
-          <h2 className="mb-4 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Cette méthode s&apos;adresse...
-          </h2>
-          <p className="max-w-3xl text-base leading-relaxed text-[#1a2a3a]/80 md:text-lg">
-            Aux dirigeants et fondateurs d&apos;organismes de formation qui
-            cherchent à booster la performance de leurs équipes
-            commerciales.
+      {/* ===== POUR QUI ===== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[960px] px-6 py-14 text-center">
+          <p className="mb-2 text-[13px] font-semibold text-[#FF6B35]">Pour qui est cette méthode ?</p>
+          <h2 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">Cette méthode s&apos;adresse...</h2>
+          <p className="text-[14px] leading-[1.7] text-[#555]">
+            Aux dirigeants et fondateurs d&apos;organismes de formation qui veulent augmenter la performance commerciale de leurs équipes.
           </p>
         </div>
       </section>
 
-      {/* ===== SECTION 3: Challenges ===== */}
+      {/* ===== CHALLENGES + OBJECTIFS (side by side) ===== */}
       <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            Vos challenges quotidiens
-          </span>
-          <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Vos équipes ou votre activité souffrent de...
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {painPoints.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 rounded-xl bg-white p-6 shadow-lg transition hover:shadow-xl"
-                >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
-                    <Icon size={24} />
-                  </div>
-                  <p className="text-sm font-medium text-[#1a2a3a] md:text-base">
-                    {item.text}
-                  </p>
-                </div>
-              );
-            })}
+        <div className="mx-auto max-w-[960px] px-6 pb-14">
+          <div className="grid gap-12 md:grid-cols-2">
+            {/* Challenges */}
+            <div>
+              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Vos challenges quotidiens</p>
+              <h3 className="mb-5 text-[18px] font-bold leading-tight text-[#1a2a3a]">
+                Vos équipes ou votre activité souffrent de...
+              </h3>
+              <ul className="flex flex-col gap-2.5">
+                {challenges.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#444]">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Objectifs */}
+            <div>
+              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Vos objectifs finaux</p>
+              <h3 className="mb-5 text-[18px] font-bold leading-tight text-[#1a2a3a]">
+                Avec la bonne stratégie commerciale, vous pouvez :
+              </h3>
+              <ul className="flex flex-col gap-2.5">
+                {goals.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#444]">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ===== SECTION 4: Objectifs ===== */}
-      <section className="bg-[#EFF5F9]">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            Vos objectifs finaux
-          </span>
-          <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Avec la bonne stratégie commerciale, vous pouvez :
-          </h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {goals.map((goal, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-4 rounded-xl bg-white p-6 shadow-lg transition hover:shadow-xl"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-500">
-                  <CheckCircle size={22} />
+      {/* ===== QUI SOMMES-NOUS ===== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[960px] px-6 py-14">
+          <div className="grid items-center gap-10 md:grid-cols-2">
+            {/* Photo placeholder */}
+            <div className="flex justify-center">
+              <div className="relative h-[360px] w-[280px] overflow-hidden rounded-lg bg-[#EFF5F9]">
+                <div className="absolute inset-0 flex items-center justify-center text-[#8399a9] text-sm">
+                  Photo
                 </div>
-                <p className="text-sm font-medium text-[#1a2a3a] md:text-base">
-                  {goal}
-                </p>
               </div>
+            </div>
+
+            {/* Text */}
+            <div>
+              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Qui sommes-nous ?</p>
+              <h3 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">La Closing Académie ®</h3>
+              <p className="mb-5 text-[14px] leading-[1.7] text-[#555]">
+                La Closing Académie ® est le fruit de plus de 25 ans d&apos;accompagnement d&apos;entrepreneurs, de dirigeants, de managers et de commerciaux sur + 20 pays.
+              </p>
+              <button
+                onClick={scrollToTop}
+                className="rounded bg-[#2e7ab5] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#256a9e]"
+              >
+                Découvrir la méthode
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== LOGOS CLIENTS ===== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[960px] px-6 py-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-[11px] font-semibold text-[#888]">
+            {["ADREC", "Cartesia Education", "Business France", "LEYTON", "Training Académie", "Wall Street English", "Great Place to Work", "ABC", "CCI Bordeaux Gironde", "EdTech France"].map((name, i) => (
+              <span key={i} className="rounded border border-gray-200 px-3 py-1.5">{name}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== SECTION 5: Qui sommes-nous ===== */}
+      {/* ===== TÉMOIGNAGES ===== */}
       <section className="bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="mb-4 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Qui sommes-nous ?
-          </h2>
-          <p className="max-w-3xl text-base leading-relaxed text-[#1a2a3a]/80 md:text-lg">
-            La Closing Académie® — Fruit de plus de 25 ans
-            d&apos;accompagnement d&apos;entrepreneurs, dirigeants, managers et
-            commerciaux sur + 20 pays.
-          </p>
-        </div>
-      </section>
-
-      {/* ===== SECTION 6: Testimonials ===== */}
-      <section className="bg-[#EFF5F9]">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            Témoignages
-          </span>
-          <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Ils nous ont fait confiance
-          </h2>
-          <div className="grid gap-6 md:grid-cols-2">
+        <div className="mx-auto max-w-[960px] px-6 py-14">
+          <div className="mb-8 text-center">
+            <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Témoignages</p>
+            <h2 className="mb-2 text-[22px] font-bold text-[#1a2a3a]">Ils nous ont fait confiance</h2>
+            <p className="text-[13px] font-semibold text-[#888]">Google ★★★★★</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className="rounded-xl bg-white p-6 shadow-lg transition hover:shadow-xl"
+                className="flex flex-col justify-between rounded-lg border border-gray-100 bg-[#f8fbfd] p-5"
               >
-                <div className="mb-3 text-[#1a6b9c]/30">
-                  <Quote size={28} />
-                </div>
-                <p className="mb-4 text-sm italic leading-relaxed text-[#1a2a3a]/70 md:text-base">
-                  &ldquo;{t.quote}&rdquo;
+                <p className="mb-4 text-[12px] leading-[1.7] text-[#444]">
+                  {t.quote}
                 </p>
-                <p className="text-sm font-bold text-[#1a2a3a]">{t.name}</p>
-                <p className="text-xs text-[#1a2a3a]/50">{t.company}</p>
+                <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2e7ab5] text-[11px] font-bold text-white">
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-[#1a2a3a]">{t.name}</p>
+                    <p className="text-[11px] text-[#888]">{t.company}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== SECTION 7: Final CTA ===== */}
-      <section style={{ background: "#2e7ab5" }}>
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-          <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-            Prêt à transformer votre performance commerciale ?
-          </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-white/80 md:text-lg">
-            {subtitleText}
-          </p>
-          <button
-            onClick={scrollToTop}
-            className="inline-block rounded-lg bg-[#FF6B35] px-8 py-4 font-semibold text-white transition hover:bg-[#e55a28]"
-          >
-            Découvrir la méthode
-          </button>
+      {/* ===== CTA FINAL ===== */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[700px] px-6 py-14">
+          <div className="rounded-xl px-8 py-10 text-center" style={{ background: "#2e7ab5" }}>
+            <h2 className="mb-3 text-[20px] font-bold leading-tight text-white md:text-[24px]">
+              Doublez la performance commerciale de votre organisme de formation dès le prochain trimestre.
+            </h2>
+            <p className="mx-auto mb-6 max-w-lg text-[12px] leading-[1.7] text-white/80">
+              Comme plus de 200 dirigeants — Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France… génèrez plus de RDV qualifiés, plus de clients et plus de croissance — sans augmenter VOTRE budget publicitaire.
+            </p>
+            <button
+              onClick={scrollToTop}
+              className="rounded bg-white px-5 py-2.5 text-[13px] font-semibold text-[#2e7ab5] transition hover:bg-gray-100"
+            >
+              Découvrir la méthode
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* ===== SECTION 8: Footer ===== */}
-      <footer className="bg-[#1a2a3a]">
-        <div className="mx-auto max-w-6xl px-4 py-8 text-center text-sm text-white/60">
-          <div className="mb-3 flex flex-wrap justify-center gap-4">
-            <a href="#" className="transition hover:text-white">
-              Conditions générales de vente
-            </a>
+      {/* ===== FOOTER ===== */}
+      <footer className="bg-white border-t border-gray-100">
+        <div className="mx-auto max-w-[960px] px-6 py-6 text-center text-[12px] text-[#999]">
+          <div className="mb-2 flex flex-wrap justify-center gap-4">
+            <a href="#" className="transition hover:text-[#555]">Conditions générales de vente</a>
             <span>|</span>
-            <a href="#" className="transition hover:text-white">
-              Politique de confidentialité
-            </a>
+            <a href="#" className="transition hover:text-[#555]">Politique de confidentialité</a>
             <span>|</span>
-            <a href="#" className="transition hover:text-white">
-              Mentions légales
-            </a>
+            <a href="#" className="transition hover:text-[#555]">Mentions légales</a>
           </div>
-          <p>&copy; 2025 La Closing Académie®. Tous droits réservés.</p>
         </div>
       </footer>
     </div>
