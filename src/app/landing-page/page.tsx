@@ -11,11 +11,10 @@ import {
   GraduationCap,
   CheckCircle,
   Quote,
-  Play,
 } from "lucide-react";
 
 const subtitleText =
-  "Comme plus de 200 dirigeants — Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
+  "Comme plus de 200 dirigeants \u2014 Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
 
 const painPoints = [
   {
@@ -36,21 +35,21 @@ const painPoints = [
   },
   {
     icon: Users,
-    text: "Des commerciaux d\u00e9motiv\u00e9s ou un turnover \u00e9lev\u00e9",
+    text: "Des commerciaux démotivés ou un turnover élevé",
   },
   {
     icon: GraduationCap,
-    text: "Des difficult\u00e9s \u00e0 former et coacher vos \u00e9quipes",
+    text: "Des difficultés à former et coacher vos équipes",
   },
 ];
 
 const goals = [
-  "Acc\u00e9l\u00e9rer la croissance et les ventes",
-  "Augmenter les marges et la rentabilit\u00e9",
-  "Stabiliser la tr\u00e9sorerie",
-  "D\u00e9velopper le chiffre d\u2019affaires",
-  "Renforcer vos \u00e9quipes commerciales",
-  "Lib\u00e9rer du temps personnel",
+  "Accélérer la croissance et les ventes",
+  "Augmenter les marges et la rentabilité",
+  "Stabiliser la trésorerie",
+  "Développer le chiffre d\u2019affaires",
+  "Renforcer vos équipes commerciales",
+  "Libérer du temps personnel",
   "Augmenter la valorisation de l\u2019entreprise",
 ];
 
@@ -59,7 +58,7 @@ const testimonials = [
     name: "Christophe D.",
     company: "Cartesia Education",
     quote:
-      "Analyse pointue et solutions ad-hoc avec un impact cons\u00e9quent et significatif.",
+      "Analyse pointue et solutions ad-hoc avec un impact conséquent et significatif.",
   },
   {
     name: "Sophie M.",
@@ -70,25 +69,25 @@ const testimonials = [
     name: "Laurent P.",
     company: "Leyton France",
     quote:
-      "Nouvelle approche commerciale, ax\u00e9e sur le client et la performance.",
+      "Nouvelle approche commerciale, axée sur le client et la performance.",
   },
   {
     name: "Marie T.",
     company: "ABC Cours Particuliers",
     quote:
-      "Technique de Rafi pour closer\u2026 extr\u00eamement efficace.",
+      "Technique de Rafi pour closer\u2026 extrêmement efficace.",
   },
   {
     name: "Thomas R.",
     company: "Great Place To Work",
     quote:
-      "Bootcamp au top\u2026 contenu riche, recommandations pr\u00e9cises.",
+      "Bootcamp au top\u2026 contenu riche, recommandations précises.",
   },
   {
     name: "Isabelle F.",
     company: "Business France",
     quote:
-      "Un accompagnement sur mesure qui a transform\u00e9 nos r\u00e9sultats commerciaux.",
+      "Un accompagnement sur mesure qui a transformé nos résultats commerciaux.",
   },
 ];
 
@@ -120,7 +119,7 @@ export default function LandingPage() {
       if (!res.ok) throw new Error("Une erreur est survenue.");
       window.location.href = "/vsl";
     } catch {
-      setError("Une erreur est survenue. Veuillez r\u00e9essayer.");
+      setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -146,14 +145,14 @@ export default function LandingPage() {
             <div className="flex flex-col gap-6">
               <Image
                 src="/logo-lca.png"
-                alt="La Closing Acad\u00e9mie"
+                alt="La Closing Académie"
                 width={100}
                 height={100}
                 className="rounded-md border-2 border-white"
               />
               <h1 className="text-3xl font-bold leading-tight text-white md:text-4xl lg:text-[36px]">
                 Doublez la performance commerciale de votre organisme de
-                formation d\u00e8s le prochain trimestre.
+                formation dès le prochain trimestre.
               </h1>
               <p className="text-base leading-relaxed text-white/80 md:text-lg">
                 {subtitleText}
@@ -163,12 +162,12 @@ export default function LandingPage() {
             {/* Right column: Form card */}
             <div className="rounded-xl bg-white p-6 shadow-lg md:p-8">
               <h2 className="mb-6 text-xl font-bold text-[#1a2a3a]">
-                Acc\u00e9dez gratuitement \u00e0 la m\u00e9thode
+                Accédez gratuitement à la méthode
               </h2>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Pr\u00e9nom <span className="text-red-500">*</span>
+                    Prénom <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -210,7 +209,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    Num\u00e9ro de t\u00e9l\u00e9phone{" "}
+                    Numéro de téléphone{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -225,7 +224,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[#1a2a3a]">
-                    URL de la soci\u00e9t\u00e9{" "}
+                    URL de la société{" "}
                     <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -243,7 +242,7 @@ export default function LandingPage() {
                   disabled={loading}
                   className="mt-2 w-full rounded-lg bg-[#1a6b9c] px-6 py-3 font-semibold text-white transition hover:bg-[#15577d] disabled:opacity-60"
                 >
-                  {loading ? "Envoi en cours\u2026" : "D\u00e9couvrir la m\u00e9thode"}
+                  {loading ? "Envoi en cours\u2026" : "Découvrir la méthode"}
                 </button>
                 {error && (
                   <p className="text-center text-sm text-red-500">{error}</p>
@@ -258,14 +257,14 @@ export default function LandingPage() {
       <section className="bg-[#EFF5F9]">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            Pour qui est cette m\u00e9thode ?
+            Pour qui est cette méthode ?
           </span>
           <h2 className="mb-4 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Cette m\u00e9thode s&apos;adresse...
+            Cette méthode s&apos;adresse...
           </h2>
           <p className="max-w-3xl text-base leading-relaxed text-[#1a2a3a]/80 md:text-lg">
             Aux dirigeants et fondateurs d&apos;organismes de formation qui
-            cherchent \u00e0 booster la performance de leurs \u00e9quipes
+            cherchent à booster la performance de leurs équipes
             commerciales.
           </p>
         </div>
@@ -278,7 +277,7 @@ export default function LandingPage() {
             Vos challenges quotidiens
           </span>
           <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Vos \u00e9quipes ou votre activit\u00e9 souffrent de...
+            Vos équipes ou votre activité souffrent de...
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {painPoints.map((item, i) => {
@@ -308,7 +307,7 @@ export default function LandingPage() {
             Vos objectifs finaux
           </span>
           <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
-            Avec la bonne strat\u00e9gie commerciale, vous pouvez :
+            Avec la bonne stratégie commerciale, vous pouvez :
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {goals.map((goal, i) => (
@@ -335,7 +334,7 @@ export default function LandingPage() {
             Qui sommes-nous ?
           </h2>
           <p className="max-w-3xl text-base leading-relaxed text-[#1a2a3a]/80 md:text-lg">
-            La Closing Acad\u00e9mie\u00ae — Fruit de plus de 25 ans
+            La Closing Académie® — Fruit de plus de 25 ans
             d&apos;accompagnement d&apos;entrepreneurs, dirigeants, managers et
             commerciaux sur + 20 pays.
           </p>
@@ -346,7 +345,7 @@ export default function LandingPage() {
       <section className="bg-[#EFF5F9]">
         <div className="mx-auto max-w-6xl px-4 py-16">
           <span className="mb-3 inline-block rounded-full bg-[#FF6B35]/10 px-4 py-1 text-sm font-semibold text-[#FF6B35]">
-            T\u00e9moignages
+            Témoignages
           </span>
           <h2 className="mb-8 text-2xl font-bold text-[#1a2a3a] md:text-3xl">
             Ils nous ont fait confiance
@@ -379,7 +378,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto max-w-6xl px-4 py-16 text-center">
           <h2 className="mb-4 text-2xl font-bold text-white md:text-3xl">
-            Pr\u00eat \u00e0 transformer votre performance commerciale ?
+            Prêt à transformer votre performance commerciale ?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-white/80 md:text-lg">
             {subtitleText}
@@ -388,7 +387,7 @@ export default function LandingPage() {
             onClick={scrollToTop}
             className="inline-block rounded-lg bg-[#FF6B35] px-8 py-4 font-semibold text-white transition hover:bg-[#e55a28]"
           >
-            D\u00e9couvrir la m\u00e9thode
+            Découvrir la méthode
           </button>
         </div>
       </section>
@@ -398,18 +397,18 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-8 text-center text-sm text-white/60">
           <div className="mb-3 flex flex-wrap justify-center gap-4">
             <a href="#" className="transition hover:text-white">
-              Conditions g\u00e9n\u00e9rales de vente
+              Conditions générales de vente
             </a>
             <span>|</span>
             <a href="#" className="transition hover:text-white">
-              Politique de confidentialit\u00e9
+              Politique de confidentialité
             </a>
             <span>|</span>
             <a href="#" className="transition hover:text-white">
-              Mentions l\u00e9gales
+              Mentions légales
             </a>
           </div>
-          <p>&copy; 2025 La Closing Acad\u00e9mie\u00ae. Tous droits r\u00e9serv\u00e9s.</p>
+          <p>&copy; 2025 La Closing Académie®. Tous droits réservés.</p>
         </div>
       </footer>
     </div>

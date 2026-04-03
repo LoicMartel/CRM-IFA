@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Play } from "lucide-react";
 
 const subtitleText =
-  "Comme plus de 200 dirigeants — Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
+  "Comme plus de 200 dirigeants \u2014 Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
 
 export default function VSLPage() {
   return (
@@ -14,7 +14,7 @@ export default function VSLPage() {
         <div className="mb-8 flex justify-center">
           <Image
             src="/logo-lca.png"
-            alt="La Closing Acad\u00e9mie"
+            alt="La Closing Académie"
             width={80}
             height={80}
             className="rounded-md"
@@ -24,7 +24,7 @@ export default function VSLPage() {
         {/* Title */}
         <h1 className="mb-4 text-center text-2xl font-bold text-[#1a6b9c] md:text-3xl lg:text-4xl">
           Doublez la performance commerciale de votre organisme de formation
-          d\u00e8s le prochain trimestre.
+          dès le prochain trimestre.
         </h1>
 
         {/* Subtitle */}
@@ -40,7 +40,7 @@ export default function VSLPage() {
                 <Play size={32} className="ml-1" />
               </div>
               <span className="text-sm font-medium text-[#1a2a3a]/60">
-                Vid\u00e9o de pr\u00e9sentation
+                Vidéo de présentation
               </span>
             </div>
           </div>
@@ -52,7 +52,7 @@ export default function VSLPage() {
             href="/booking"
             className="inline-block rounded-lg bg-[#FF6B35] px-8 py-4 text-lg font-semibold text-white transition hover:bg-[#e55a28]"
           >
-            R\u00e9server un appel strat\u00e9gique
+            Réserver un appel stratégique
           </a>
         </div>
       </div>
