@@ -458,11 +458,11 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       {/* KPIs */}
       <div className="grid gap-3 md:grid-cols-5">
         {[
-          { label: "Total HT", value: kpis.total * 0.8, icon: <Receipt className="h-4 w-4" />, color: "#1a2a3a" },
-          { label: "Encaissé HT", value: kpis.encaisse * 0.8, icon: <CreditCard className="h-4 w-4" />, color: "#006100" },
-          { label: "Facturé HT", value: kpis.facture * 0.8, icon: <Receipt className="h-4 w-4" />, color: "#9c0006" },
-          { label: "En cours HT", value: kpis.en_cours * 0.8, icon: <Clock className="h-4 w-4" />, color: "#1f4e79" },
-          { label: "Non fait HT", value: kpis.non_fait * 0.8, icon: <AlertTriangle className="h-4 w-4" />, color: "#888888" },
+          { label: "Total HT", value: kpis.total / 1.2, icon: <Receipt className="h-4 w-4" />, color: "#1a2a3a" },
+          { label: "Encaissé HT", value: kpis.encaisse / 1.2, icon: <CreditCard className="h-4 w-4" />, color: "#006100" },
+          { label: "Facturé HT", value: kpis.facture / 1.2, icon: <Receipt className="h-4 w-4" />, color: "#9c0006" },
+          { label: "En cours HT", value: kpis.en_cours / 1.2, icon: <Clock className="h-4 w-4" />, color: "#1f4e79" },
+          { label: "Non fait HT", value: kpis.non_fait / 1.2, icon: <AlertTriangle className="h-4 w-4" />, color: "#888888" },
         ].map((kpi) => (
           <div key={kpi.label} className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>

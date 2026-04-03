@@ -86,8 +86,8 @@ async function getData() {
     return s + monthBms.filter((bm: any) => bm.status === "facture" || bm.status === "encaisse").reduce((sum: number, bm: any) => sum + (Number(bm.amount) || 0), 0);
   }, 0);
 
-  // Encaissé HT = cumul encaissé TTC * 0.8
-  const totalEncaisse = charges.reduce((s: number, c: any) => s + (Number(c.encaisse_ttc) || 0), 0) * 0.8;
+  // Encaissé HT = cumul encaissé TTC / 1.2
+  const totalEncaisse = charges.reduce((s: number, c: any) => s + (Number(c.encaisse_ttc) || 0), 0) / 1.2;
 
   // Décaissé = cumul charges HT from monthly_charges
   const totalDecaisse = charges.reduce((s: number, c: any) => {

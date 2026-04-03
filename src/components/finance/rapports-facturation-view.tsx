@@ -404,11 +404,11 @@ export function RapportsFacturationView({ entries, companies }: {
       {/* Global KPIs */}
       <div className="grid gap-3 md:grid-cols-5">
         {[
-          { label: "Total HT", value: kpis.total * 0.8, color: "#1a2a3a" },
-          { label: "Encaissé HT", value: kpis.encaisse * 0.8, color: "#006100" },
-          { label: "Facturé HT", value: kpis.facture * 0.8, color: "#9c0006" },
-          { label: "En cours HT", value: kpis.en_cours * 0.8, color: "#1f4e79" },
-          { label: "Non fait HT", value: kpis.non_fait * 0.8, color: "#888888" },
+          { label: "Total HT", value: kpis.total / 1.2, color: "#1a2a3a" },
+          { label: "Encaissé HT", value: kpis.encaisse / 1.2, color: "#006100" },
+          { label: "Facturé HT", value: kpis.facture / 1.2, color: "#9c0006" },
+          { label: "En cours HT", value: kpis.en_cours / 1.2, color: "#1f4e79" },
+          { label: "Non fait HT", value: kpis.non_fait / 1.2, color: "#888888" },
         ].map((k) => (
           <div key={k.label} className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>{k.label}</div>

@@ -67,8 +67,8 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
 
     // Encaissé TTC = saisie manuelle dans monthly_charges
     const encaisseTTC = Number(charges.encaisse_ttc) || 0;
-    const tvaCollecte = encaisseTTC * 0.20;
-    const encaisseHT = encaisseTTC - tvaCollecte;
+    const encaisseHT = encaisseTTC / 1.2;
+    const tvaCollecte = encaisseTTC - encaisseHT;
     const rhPrev = Number(charges.rh_previsionnel) || 0;
     const chargesDiverses = Number(charges.charges_diverses) || 0;
     const chargesTTC = Number(charges.charges_ttc) || 0;
