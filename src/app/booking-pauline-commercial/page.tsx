@@ -243,7 +243,7 @@ export default function BookingPage() {
                 <Clock style={{ width: 16, height: 16, color: "#8399a9" }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>Durée du rendez-vous</div>
-                  <div style={{ fontSize: 12, color: "#5a6f80" }}>30 min</div>
+                  <div style={{ fontSize: 12, color: "#5a6f80" }}>15 min</div>
                 </div>
               </div>
 

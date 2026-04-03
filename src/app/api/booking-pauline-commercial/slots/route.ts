@@ -16,7 +16,7 @@ const PAULINE = {
   bookingCalendarId: "d5338ed9e648d81ad3ef5fcbea38b7a91df6992ba69628c1946410039833d4a5@group.calendar.google.com",
 };
 
-const SLOT_DURATION = 30;
+const SLOT_DURATION = 15;
 const DAY_START_HOUR = 9;
 const DAY_END_HOUR = 18;
 const TZ = "Europe/Paris";

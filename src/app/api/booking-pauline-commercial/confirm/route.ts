@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const offset = getParisOffset(date);
   const startDateTime = `${date}T${time}:00${offset}`;
   const [h, m] = time.split(":").map(Number);
-  const endM = m + 30;
+  const endM = m + 15;
   const endH = endM >= 60 ? h + 1 : h;
   const endDateTime = `${date}T${String(endH).padStart(2, "0")}:${String(endM % 60).padStart(2, "0")}:00${offset}`;
 
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
       meeting_type: "R1",
       status: "booked",
       scheduled_at: startDateTime,
-      duration_minutes: 30,
+      duration_minutes: 15,
       meeting_mode: mode === "visio" ? "visio" : "phone",
       notes: `Réservé via la landing page booking Pauline.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
     });
