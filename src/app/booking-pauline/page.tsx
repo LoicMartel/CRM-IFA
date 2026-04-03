@@ -170,7 +170,7 @@ export default function BookingPage() {
           {/* Left: Calendar */}
           <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
-              Bilan Commercial
+              Appel Découverte
             </h2>
 
             {/* Month nav */}

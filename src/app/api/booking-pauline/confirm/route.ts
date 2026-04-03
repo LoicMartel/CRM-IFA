@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   // 1. Create Google Calendar event on "Closing Académie" calendar
   const { success, eventId, error: calError } = await createCalendarEvent({
     calendarId: PAULINE.calendarId,
-    summary: `Bilan Commercial — ${firstName} ${lastName} (${company})`,
+    summary: `Appel Découverte — ${firstName} ${lastName} (${company})`,
     description: `Prospect: ${firstName} ${lastName}\nEmail: ${email}\nTéléphone: ${phone}\nEntreprise: ${company}\nSite web: ${website || "—"}\nSource: ${source || "—"}\nMode: ${locationLabel}`,
     location: locationLabel,
     startDateTime,
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   // 1b. Send .ics invitation to prospect
   if (email) {
     const icsContent = generateICS({
-      summary: `Bilan Commercial — ${firstName} ${lastName} (${company})`,
+      summary: `Appel Découverte — ${firstName} ${lastName} (${company})`,
       description: `Rendez-vous avec La Closing Académie\nMode : ${locationLabel}`,
       location: locationLabel,
       startDateTime,
