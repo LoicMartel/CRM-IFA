@@ -217,7 +217,7 @@ export default function LandingPage() {
       {/* ===== POUR QUI ===== */}
       <section className="bg-white">
         <div className="mx-auto max-w-[960px] px-6 py-14 text-center">
-          <p className="mb-2 text-[13px] font-semibold text-[#FF6B35]">Pour qui est cette méthode ?</p>
+          <p className="mb-2 text-[13px] font-semibold text-[#2e7ab5]">Pour qui est cette méthode ?</p>
           <h2 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">Cette méthode s&apos;adresse...</h2>
           <p className="text-[14px] leading-[1.7] text-[#555]">
             Aux dirigeants et fondateurs d&apos;organismes de formation qui veulent augmenter la performance commerciale de leurs équipes.
@@ -231,14 +231,16 @@ export default function LandingPage() {
           <div className="grid gap-12 md:grid-cols-2">
             {/* Challenges */}
             <div>
-              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Vos challenges quotidiens</p>
+              <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Vos challenges quotidiens</p>
               <h3 className="mb-5 text-[18px] font-bold leading-tight text-[#1a2a3a]">
                 Vos équipes ou votre activité souffrent de...
               </h3>
-              <ul className="flex flex-col gap-2.5">
+              <ul className="flex flex-col gap-3.5">
                 {challenges.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#444]">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-400" />
+                  <li key={i} className="flex items-center gap-3 text-[14px] text-[#333]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-red-400 text-red-400">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -247,14 +249,16 @@ export default function LandingPage() {
 
             {/* Objectifs */}
             <div>
-              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Vos objectifs finaux</p>
+              <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Vos objectifs finaux</p>
               <h3 className="mb-5 text-[18px] font-bold leading-tight text-[#1a2a3a]">
                 Avec la bonne stratégie commerciale, vous pouvez :
               </h3>
-              <ul className="flex flex-col gap-2.5">
+              <ul className="flex flex-col gap-3.5">
                 {goals.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-[13px] text-[#444]">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-green-400" />
+                  <li key={i} className="flex items-center gap-3 text-[14px] text-[#333]">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-500">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -269,18 +273,20 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[960px] px-6 py-14">
           <div className="grid items-center gap-10 md:grid-cols-2">
             <div className="flex justify-center">
-              <Image
-                src="/photo-rafi.jpeg"
-                alt="Rafi Mouhamad - La Closing Académie"
-                width={280}
-                height={360}
-                className="h-[360px] w-[280px] rounded-lg object-cover"
-              />
+              <div className="relative h-[380px] w-[280px] overflow-hidden rounded-lg bg-[#EFF5F9]">
+                <Image
+                  src="/photo-rafi.png"
+                  alt="Rafi Mouhamad - La Closing Académie"
+                  width={280}
+                  height={380}
+                  className="h-full w-full object-cover object-top"
+                />
+              </div>
             </div>
 
             {/* Text */}
             <div>
-              <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Qui sommes-nous ?</p>
+              <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Qui sommes-nous ?</p>
               <h3 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">La Closing Académie ®</h3>
               <p className="mb-5 text-[14px] leading-[1.7] text-[#555]">
                 La Closing Académie ® est le fruit de plus de 25 ans d&apos;accompagnement d&apos;entrepreneurs, de dirigeants, de managers et de commerciaux sur + 20 pays.
@@ -311,7 +317,7 @@ export default function LandingPage() {
       <section className="bg-white">
         <div className="mx-auto max-w-[960px] px-6 py-14">
           <div className="mb-8 text-center">
-            <p className="mb-1 text-[12px] font-semibold text-[#FF6B35]">Témoignages</p>
+            <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Témoignages</p>
             <h2 className="mb-2 text-[22px] font-bold text-[#1a2a3a]">Ils nous ont fait confiance</h2>
             <p className="text-[13px] font-semibold text-[#888]">Google ★★★★★</p>
           </div>
