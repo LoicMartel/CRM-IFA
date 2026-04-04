@@ -152,53 +152,53 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
         </div>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-        <select value={fiscalYear} onChange={(e) => setFiscalYear(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", fontWeight: 600 }}>
+      {/* Filters — single row */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto" }}>
+        <select value={fiscalYear} onChange={(e) => setFiscalYear(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", fontWeight: 600, flexShrink: 0 }}>
           {fyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
-          <input
-            placeholder="Rechercher entreprise ou participant..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", paddingLeft: 36, paddingRight: 12, fontSize: 13, width: 280, color: "#1a2a3a" }}
-          />
-        </div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
-          <option value="">VT + Journées</option>
-          <option value="vt">VT uniquement</option>
-          <option value="journee">Journées uniquement</option>
-        </select>
-        <select value={filterTrainer} onChange={(e) => setFilterTrainer(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
-          <option value="">Tous les experts</option>
-          {allTrainers.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={filterBillable} onChange={(e) => setFilterBillable(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
-          <option value="">Facturable + Non fact.</option>
-          <option value="yes">Facturable</option>
-          <option value="no">Non facturable</option>
-        </select>
-        <select value={periodMode} onChange={(e) => setPeriodMode(e.target.value as any)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
+        <select value={periodMode} onChange={(e) => setPeriodMode(e.target.value as any)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }}>
           <option value="all">Toutes les dates</option>
           <option value="week">Semaine</option>
           <option value="month">Mois</option>
           <option value="custom">Personnalisé</option>
         </select>
         {periodMode === "week" && (
-          <input type="date" value={filterWeek} onChange={(e) => setFilterWeek(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }} />
+          <input type="date" value={filterWeek} onChange={(e) => setFilterWeek(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }} />
         )}
         {periodMode === "month" && (
-          <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }} />
+          <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }} />
         )}
         {periodMode === "custom" && (
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
-            <span style={{ color: "#8399a9" }}>→</span>
-            <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
-          </div>
+          <>
+            <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, flexShrink: 0 }} />
+            <span style={{ color: "#8399a9", flexShrink: 0 }}>→</span>
+            <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, flexShrink: 0 }} />
+          </>
         )}
+        <div className="relative" style={{ flexShrink: 0 }}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
+          <input
+            placeholder="Rechercher entreprise ou participant..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", paddingLeft: 36, paddingRight: 12, fontSize: 13, width: 260, color: "#1a2a3a" }}
+          />
+        </div>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }}>
+          <option value="">VT + Journées</option>
+          <option value="vt">VT uniquement</option>
+          <option value="journee">Journées uniquement</option>
+        </select>
+        <select value={filterTrainer} onChange={(e) => setFilterTrainer(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }}>
+          <option value="">Tous les experts</option>
+          {allTrainers.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={filterBillable} onChange={(e) => setFilterBillable(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", flexShrink: 0 }}>
+          <option value="">Facturable + Non fact.</option>
+          <option value="yes">Facturable</option>
+          <option value="no">Non facturable</option>
+        </select>
       </div>
 
       {/* Summary */}
