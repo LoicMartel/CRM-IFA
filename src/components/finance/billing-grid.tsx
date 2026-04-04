@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, Plus, Trash2, Receipt, CreditCard, Clock, AlertTriangle, X, Edit,
-  ExternalLink, Upload, Download, FileText,
+  ExternalLink, Upload, Download, FileText, ArrowUpDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -146,6 +146,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [formMonthlyFill, setFormMonthlyFill] = useState("");
   const [formMonths, setFormMonths] = useState<Record<string, { amount: string; status: string }>>({});
   const [saving, setSaving] = useState(false);
+  const [companySort, setCompanySort] = useState<"asc" | "desc" | null>(null);
 
   const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
   const fiscalMonthsFull = useMemo(() => getFiscalMonthsFull(fiscalYear), [fiscalYear]);
@@ -210,8 +211,15 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       const companyName = entries[0].companies?.name ?? "Sans entreprise";
       groups.push({ companyName, companyId: key === "__none__" ? null : key, entries });
     }
+    if (companySort) {
+      groups.sort((a, b) => {
+        const ca = a.companyName.toLowerCase();
+        const cb = b.companyName.toLowerCase();
+        return companySort === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
+      });
+    }
     return groups;
-  }, [filtered]);
+  }, [filtered, companySort]);
 
   // Row total
   function rowTotal(entry: BillingEntryData): number {
@@ -526,8 +534,11 @@ export function BillingGrid({ entries, companies, deals }: Props) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 1100 }}>
             <thead>
               <tr style={{ background: "#f8fafb", borderBottom: "2px solid #e8ecf1" }}>
-                <th style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 160, borderRight: "1px solid #e8ecf1" }}>
-                  Entreprise
+                <th
+                  style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 160, borderRight: "1px solid #e8ecf1", cursor: "pointer" }}
+                  onClick={() => setCompanySort(companySort === "asc" ? "desc" : companySort === "desc" ? null : "asc")}
+                >
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Entreprise <ArrowUpDown style={{ width: 12, height: 12 }} /></span>
                 </th>
                 <th style={{ position: "sticky", left: 160, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 110, borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
