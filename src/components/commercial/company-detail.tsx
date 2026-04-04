@@ -880,6 +880,7 @@ export function CompanyDetail({
                                               onChange={async (e) => {
                                                 const supabaseClient = createClient();
                                                 await supabaseClient.from("training_sessions").update({ status: e.target.value }).eq("id", s(ts.id));
+                                                try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: s(ts.id) }) }); } catch {}
                                                 router.refresh();
                                               }}
                                               style={{ height: 28, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 8px", fontSize: 12, fontWeight: 600, background: current.bg, color: current.text, cursor: "pointer" }}

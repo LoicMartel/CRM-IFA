@@ -718,6 +718,8 @@ export function PlanningList({
 
     // Sync learner statuses (futur → actuel, actuel → ancien)
     try { await fetch("/api/learners/sync-status"); } catch {}
+    // Sync to delivery sessions table
+    try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: sessionId }) }); } catch {}
 
     router.refresh();
   }

@@ -759,6 +759,7 @@ export function LearnerDetailView({
                                     onChange={async (e) => {
                                       const sb = createClient();
                                       await sb.from("training_sessions").update({ status: e.target.value }).eq("id", s.id);
+                                      try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: s.id }) }); } catch {}
                                       router.refresh();
                                     }}
                                     style={{ height: 26, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 6px", fontSize: 11, fontWeight: 600, background: ssc.bg, color: ssc.text, cursor: "pointer" }}

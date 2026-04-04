@@ -101,6 +101,7 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
     const supabase = createClient();
     await supabase.from("training_sessions").update({ status: newStatus }).eq("id", sessionId);
     try { await fetch("/api/learners/sync-status"); } catch {}
+    try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: sessionId }) }); } catch {}
     await fetchPlan();
     router.refresh();
   }
