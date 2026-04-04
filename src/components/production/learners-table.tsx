@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Plus, Search, Trash2, Users, UserCheck, UserPlus, Upload } from "lucide-react";
+import { Plus, Search, Trash2, Users, UserCheck, UserPlus, Upload, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -65,6 +65,8 @@ export function LearnersTable({
   const [deleting, setDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", position: "",
     company_id: "", status: "actuel", program_id: "", training_type_id: "", expert_id: "", notes: "",
@@ -81,6 +83,41 @@ export function LearnersTable({
     if (filterExpert && (l as any).expert_id !== filterExpert) return false;
     return true;
   });
+
+  function toggleSort(key: string) {
+    if (sortKey === key) {
+      if (sortDir === "desc") { setSortKey(null); setSortDir("asc"); }
+      else setSortDir("desc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        let va = "";
+        let vb = "";
+        if (sortKey === "name") {
+          va = `${a.first_name} ${a.last_name}`.toLowerCase();
+          vb = `${b.first_name} ${b.last_name}`.toLowerCase();
+        } else if (sortKey === "email") {
+          va = (a.email ?? "").toLowerCase();
+          vb = (b.email ?? "").toLowerCase();
+        } else if (sortKey === "company") {
+          va = (a.companies?.name ?? "").toLowerCase();
+          vb = (b.companies?.name ?? "").toLowerCase();
+        } else if (sortKey === "status") {
+          va = (a.status ?? "").toLowerCase();
+          vb = (b.status ?? "").toLowerCase();
+        } else if (sortKey === "program") {
+          va = (a.training_programs?.name ?? "").toLowerCase();
+          vb = (b.training_programs?.name ?? "").toLowerCase();
+        }
+        const cmp = va.localeCompare(vb, "fr");
+        return sortDir === "asc" ? cmp : -cmp;
+      })
+    : filtered;
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -271,25 +308,35 @@ export function LearnersTable({
                   <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} />
                 </TableHead>
               )}
-              <TableHead>Nom</TableHead>
-              <TableHead>Email</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("name")}>
+                <span className="flex items-center gap-1">Nom <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("email")}>
+                <span className="flex items-center gap-1">Email <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead>Téléphone</TableHead>
               <TableHead>Poste</TableHead>
-              <TableHead>Entreprise</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Parcours</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("company")}>
+                <span className="flex items-center gap-1">Entreprise <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("status")}>
+                <span className="flex items-center gap-1">Statut <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("program")}>
+                <span className="flex items-center gap-1">Parcours <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead>Type formation</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-8" style={{ color: "#8399a9" }}>
                   Aucun apprenant trouvé
                 </TableCell>
               </TableRow>
-            ) : filtered.map((l) => {
+            ) : sorted.map((l) => {
               const sc = statusColors[l.status] ?? { bg: "#f0f0f0", text: "#666", label: l.status };
               return (
                 <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/learners/${l.id}`)}>

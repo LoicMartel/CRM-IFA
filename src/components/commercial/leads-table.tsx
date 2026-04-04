@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ArrowUpDown } from "lucide-react";
 import type {
   LeadWithRelations,
   SalesMember,
@@ -83,6 +83,8 @@ export function LeadsTable({
     null
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
@@ -109,6 +111,39 @@ export function LeadsTable({
       return true;
     });
   }, [leads, statusFilter, salesFilter, search]);
+
+  function toggleSort(key: string) {
+    if (sortKey === key) {
+      if (sortDir === "desc") { setSortKey(null); setSortDir("asc"); }
+      else setSortDir("desc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const sortedLeads = useMemo(() => {
+    if (!sortKey) return filteredLeads;
+    return [...filteredLeads].sort((a, b) => {
+      let va = "";
+      let vb = "";
+      if (sortKey === "prospect") {
+        va = `${a.contact_first_name ?? ""} ${a.contact_last_name ?? ""}`.toLowerCase();
+        vb = `${b.contact_first_name ?? ""} ${b.contact_last_name ?? ""}`.toLowerCase();
+      } else if (sortKey === "company") {
+        va = (a.company_name ?? "").toLowerCase();
+        vb = (b.company_name ?? "").toLowerCase();
+      } else if (sortKey === "status") {
+        va = (a.status ?? "").toLowerCase();
+        vb = (b.status ?? "").toLowerCase();
+      } else if (sortKey === "source") {
+        va = (a.source_name ?? "").toLowerCase();
+        vb = (b.source_name ?? "").toLowerCase();
+      }
+      const cmp = va.localeCompare(vb, "fr");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filteredLeads, sortKey, sortDir]);
 
   function handleCreate() {
     setEditingLead(null);
@@ -181,12 +216,18 @@ export function LeadsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Prospect</TableHead>
-              <TableHead>Entreprise</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("prospect")}>
+                <span className="flex items-center gap-1">Prospect <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("company")}>
+                <span className="flex items-center gap-1">Entreprise <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Mois</TableHead>
               <TableHead>Sales</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("source")}>
+                <span className="flex items-center gap-1">Source <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead className="text-center">R1</TableHead>
               <TableHead className="text-center">R2</TableHead>
               <TableHead className="text-center">R3</TableHead>
@@ -196,14 +237,14 @@ export function LeadsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLeads.length === 0 ? (
+            {sortedLeads.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLeads.map((lead) => (
+              sortedLeads.map((lead) => (
                 <TableRow
                   key={lead.id}
                   className="cursor-pointer"

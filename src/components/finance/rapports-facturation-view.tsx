@@ -81,6 +81,8 @@ export function RapportsFacturationView({ entries, companies }: {
   const [fiscalYear, setFiscalYear] = useState("2025-2026");
   const [companySortGlobal, setCompanySortGlobal] = useState<"asc" | "desc" | null>(null);
   const [companySortStatus, setCompanySortStatus] = useState<"asc" | "desc" | null>(null);
+  const [nameSortGlobal, setNameSortGlobal] = useState<"asc" | "desc" | null>(null);
+  const [nameSortStatus, setNameSortStatus] = useState<"asc" | "desc" | null>(null);
 
   const yearOptions = ["2024-2025", "2025-2026", "2026-2027"];
   const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
@@ -142,6 +144,12 @@ export function RapportsFacturationView({ entries, companies }: {
           const ca = (a.company ?? "").toLowerCase();
           const cb = (b.company ?? "").toLowerCase();
           return companySortGlobal === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
+        })
+      : nameSortGlobal
+      ? [...clientDataRaw].sort((a, b) => {
+          const na = a.name.toLowerCase();
+          const nb = b.name.toLowerCase();
+          return nameSortGlobal === "asc" ? na.localeCompare(nb, "fr") : nb.localeCompare(na, "fr");
         })
       : clientDataRaw;
 
@@ -231,8 +239,10 @@ export function RapportsFacturationView({ entries, companies }: {
               <TableHeader>
                 <TableRow>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>#</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Raison sociale</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => setCompanySortGlobal(companySortGlobal === "asc" ? "desc" : companySortGlobal === "desc" ? null : "asc")}>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortGlobal(nameSortGlobal === "asc" ? "desc" : nameSortGlobal === "desc" ? null : "asc"); setCompanySortGlobal(null); }}>
+                    <span className="inline-flex items-center gap-1">Raison sociale <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortGlobal(companySortGlobal === "asc" ? "desc" : companySortGlobal === "desc" ? null : "asc"); setNameSortGlobal(null); }}>
                     <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant total</TableHead>
@@ -292,6 +302,12 @@ export function RapportsFacturationView({ entries, companies }: {
           const ca = (a.company ?? "").toLowerCase();
           const cb = (b.company ?? "").toLowerCase();
           return companySortStatus === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
+        })
+      : nameSortStatus
+      ? [...clientDataRaw].sort((a, b) => {
+          const na = a.name.toLowerCase();
+          const nb = b.name.toLowerCase();
+          return nameSortStatus === "asc" ? na.localeCompare(nb, "fr") : nb.localeCompare(na, "fr");
         })
       : clientDataRaw;
 
@@ -373,8 +389,10 @@ export function RapportsFacturationView({ entries, companies }: {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Raison sociale</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => setCompanySortStatus(companySortStatus === "asc" ? "desc" : companySortStatus === "desc" ? null : "asc")}>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortStatus(nameSortStatus === "asc" ? "desc" : nameSortStatus === "desc" ? null : "asc"); setCompanySortStatus(null); }}>
+                    <span className="inline-flex items-center gap-1">Raison sociale <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortStatus(companySortStatus === "asc" ? "desc" : companySortStatus === "desc" ? null : "asc"); setNameSortStatus(null); }}>
                     <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Financement</TableHead>
