@@ -381,9 +381,9 @@ export function PlanningList({
   // KPIs based on filtered plans
   const filteredSessions = filtered.flatMap((p) => p.training_sessions ?? []);
   const kpiPlansCount = filtered.length;
-  const kpiVtDone = filteredSessions.filter((s) => s.session_type === "vt" && s.status === "done").length;
+  const kpiVtDone = filteredSessions.filter((s) => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
   const kpiVtTotal = filtered.reduce((s, p) => s + (Number(p.vt_planned) || 0), 0);
-  const kpiDaysDone = filteredSessions.filter((s) => s.session_type === "journee" && s.status === "done").length;
+  const kpiDaysDone = filteredSessions.filter((s) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
   const kpiDaysTotal = filtered.reduce((s, p) => s + (Number(p.days_planned) || 0), 0);
   const kpiLearners = new Set(
     filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
@@ -842,12 +842,12 @@ export function PlanningList({
           const planLearners = (plan.service_plan_learners ?? []).map((spl) => spl.learners).filter(Boolean) as LearnerNested[];
           const sessions = (plan.training_sessions ?? []) as TrainingSession[];
 
-          const vtDone = sessions.filter(s => s.session_type === "vt" && s.status === "done").length;
+          const vtDone = sessions.filter(s => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
           const vtPlanned = sessions.filter(s => s.session_type === "vt" && s.status === "planned").length;
           const vtTotal = plan.vt_planned ?? 0;
           const vtRemaining = Math.max(0, vtTotal - vtDone - vtPlanned);
 
-          const daysDone = sessions.filter(s => s.session_type === "journee" && s.status === "done").length;
+          const daysDone = sessions.filter(s => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
           const daysPlannedCount = sessions.filter(s => s.session_type === "journee" && s.status === "planned").length;
           const daysTotal = plan.days_planned ?? 0;
           const daysRemaining = Math.max(0, daysTotal - daysDone - daysPlannedCount);
@@ -856,7 +856,7 @@ export function PlanningList({
           const daysPct = daysTotal > 0 ? Math.round((daysDone / daysTotal) * 100) : 0;
 
           const hourlyRate = Number(plan.hourly_rate) || 0;
-          const billableDone = sessions.filter(s => s.status === "done" && s.is_billable !== false);
+          const billableDone = sessions.filter(s => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
           const billablePlanned = sessions.filter(s => s.status === "planned" && s.is_billable !== false);
           const totalHoursDone = billableDone.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);
           const totalHoursPlanned = billablePlanned.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);

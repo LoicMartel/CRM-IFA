@@ -42,7 +42,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
     const commandes = wonDeals.filter((d: R) => ((d.close_date ?? d.created_at) as string).startsWith(mStr)).reduce((s: number, d: R) => s + (Number(d.amount) || 0), 0);
 
     const mSessions = trainingSessions.filter((s: R) => (s.session_date as string).startsWith(mStr));
-    const doneBillable = mSessions.filter((s: R) => s.status === "done" && s.is_billable !== false);
+    const doneBillable = mSessions.filter((s: R) => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
     const delivre = doneBillable.reduce((s: number, sess: R) => {
       const rate = Number((sess.service_plans as R)?.hourly_rate) || 0;
       return s + (Number(sess.duration_hours) || 0) * rate;

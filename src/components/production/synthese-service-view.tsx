@@ -118,7 +118,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const deliveryNonFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
 
   // Also compute facturable from training_sessions (done) using service_plan hourly_rate
-  const doneFySessions = fySessions.filter((s: R) => s.status === "done");
+  const doneFySessions = fySessions.filter((s: R) => s.status === "done" || s.status === "no_show");
   const tsFacturable = doneFySessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
     const hours = Number(s.duration_hours) || 0;
     const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
@@ -151,9 +151,9 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
     // Find training sessions linked to this plan
     return fySessions.filter((s: R) => (s.service_plans as R)?.id === p.id);
   });
-  const vtDone = allPlanSessions.filter((s: R) => s.session_type === "vt" && s.status === "done").length;
+  const vtDone = allPlanSessions.filter((s: R) => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
   const vtTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.vt_planned) || 0), 0);
-  const daysDone = allPlanSessions.filter((s: R) => s.session_type === "journee" && s.status === "done").length;
+  const daysDone = allPlanSessions.filter((s: R) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
   const daysTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.days_planned) || 0), 0);
   const remainingVt = Math.max(0, vtTotal - vtDone);
   const remainingDays = Math.max(0, daysTotal - daysDone);

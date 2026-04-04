@@ -59,7 +59,7 @@ async function getData() {
   const lastTarget = targets.find(t => t.month && t.month.startsWith(currentMonthStr)) ?? targets[targets.length - 1];
 
   // Sessions stats
-  const doneSessions = sessions.filter(s => s.status === "done");
+  const doneSessions = sessions.filter(s => s.status === "done" || s.status === "no_show");
   const allActiveSessions = sessions.filter(s => s.status !== "cancelled");
   const totalHoursDelivered = doneSessions.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);
   const totalHoursPlanned = allActiveSessions.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);

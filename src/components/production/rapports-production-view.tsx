@@ -127,7 +127,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
         const isBillable = s.is_billable !== false;
         c.sessionsTotal++;
         c.hoursTotal += hours;
-        if (s.status === "done") {
+        if (s.status === "done" || s.status === "no_show") {
           c.sessionsDone++;
           c.hoursDone += hours;
           c.consumedAmount += hours * hourlyRate;
@@ -150,7 +150,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       // Also compute from training_sessions done+billable for this company
       const companyTS = sessions.filter((s: R) => {
         const sp = s.service_plans as { company_id: string } | null;
-        return sp?.company_id === c.companyId && s.status === "done" && s.is_billable !== false;
+        return sp?.company_id === c.companyId && (s.status === "done" || s.status === "no_show") && s.is_billable !== false;
       });
       const tsFact = companyTS.reduce((sum: number, s: R) => {
         const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
@@ -238,7 +238,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                       const planBudget = Number(plan.budget) || 0;
                       const hourlyRate = Number(plan.hourly_rate) || 0;
                       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
-                      const doneSessions = planSessions.filter((s: R) => s.status === "done");
+                      const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
                       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
                       const consumed = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const facturable = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
@@ -434,7 +434,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
           const planSessions = sessions.filter((s: R) => s.service_plan_id === plan.id);
           planSessions.forEach((s: R) => {
             c.totalSessions++;
-            if (s.status === "done") { c.doneSessions++; if (String(s.session_date) > c.lastSessionDate) c.lastSessionDate = String(s.session_date); }
+            if (s.status === "done" || s.status === "no_show") { c.doneSessions++; if (String(s.session_date) > c.lastSessionDate) c.lastSessionDate = String(s.session_date); }
             if (s.status === "cancelled") c.cancelledSessions++;
           });
         });

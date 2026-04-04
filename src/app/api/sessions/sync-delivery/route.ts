@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
 
   const plan = ts.service_plans as { id: string; company_id: string | null; hourly_rate: number | null; format: string | null; mode: string | null } | null;
 
-  // If status is "done", upsert into delivery sessions
-  if (ts.status === "done") {
+  // If status is "done" or "no_show" (billable), upsert into delivery sessions
+  if (ts.status === "done" || ts.status === "no_show") {
     const hours = Number(ts.duration_hours) || 0;
     const rate = Number(plan?.hourly_rate) || 0;
     const isBillable = ts.is_billable !== false;

@@ -26,7 +26,7 @@ export default async function DeliveryPage() {
         *,
         service_plans(id, company_id, hourly_rate, companies(id, name))
       `)
-      .eq("status", "done"),
+      .in("status", ["done", "no_show"]),
   ]);
 
   const items = (sessions ?? []) as any[];
