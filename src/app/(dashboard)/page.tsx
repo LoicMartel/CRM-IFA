@@ -37,8 +37,19 @@ async function getData() {
   const pipeDeals = deals.filter(d => !["closed_won", "closed_lost"].includes(d.stage));
   const totalPipe = pipeDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-  // Annual target (only target_amount from sales_targets, actual comes from deals)
-  const annualTarget = targets.reduce((s, t) => s + (Number(t.target_amount) || 0), 0) || 860000;
+  // Deduplicate targets: keep only one entry per year-month (prefer end-of-month)
+  const targetsByMonth = new Map<string, typeof targets[0]>();
+  for (const t of targets) {
+    const ym = (t.month as string).slice(0, 7); // "2025-09"
+    const existing = targetsByMonth.get(ym);
+    if (!existing || (t.month as string) > (existing.month as string)) {
+      targetsByMonth.set(ym, t);
+    }
+  }
+  const dedupedTargets = Array.from(targetsByMonth.values()).sort((a, b) => (a.month as string).localeCompare(b.month as string));
+
+  // Annual target (only target_amount from deduplicated sales_targets)
+  const annualTarget = dedupedTargets.reduce((s, t) => s + (Number(t.target_amount) || 0), 0) || 860000;
   const annualPct = annualTarget > 0 ? (totalCA / annualTarget) * 100 : 0;
 
   // Current month: compute actual from deals closed this month
@@ -106,12 +117,15 @@ async function getData() {
     .sort((a: any, b: any) => (b.month as string).localeCompare(a.month as string))[0];
   const soldeCompte = lastTresorerie ? Number(lastTresorerie.tresorerie) : null;
 
-  // Chart data: objectif from targets, réalisé from won deals by month
-  const chartData = targets.filter(t => Number(t.target_amount) > 0).map((t, i, arr) => {
+  // Chart data: objectif from deduplicated targets, réalisé from won deals by end of month
+  const chartData = dedupedTargets.filter(t => Number(t.target_amount) > 0).map((t, i, arr) => {
     const objCum = arr.slice(0, i + 1).reduce((s, x) => s + Number(x.target_amount), 0);
-    // Compute realized from deals closed up to this month
-    const monthEnd = t.month as string; // e.g. "2025-09-30"
-    const dealsUpToMonth = wonDeals.filter(d => (d.close_date ?? d.created_at ?? "") <= monthEnd);
+    // Use end of month to capture all deals closed within the month
+    const monthEnd = (t.month as string).slice(0, 7); // "2025-09"
+    const dealsUpToMonth = wonDeals.filter(d => {
+      const dealMonth = (d.close_date ?? d.created_at ?? "").slice(0, 7);
+      return dealMonth <= monthEnd;
+    });
     const realCum = dealsUpToMonth.reduce((s, d) => s + (Number(d.amount) || 0), 0);
     const monthLabel = new Date(t.month).toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
     return { month: monthLabel, objectifCumule: objCum, realiseCumule: realCum };
