@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Phone, Video, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
 
@@ -21,6 +21,14 @@ function formatDateFr(dateStr: string) {
 }
 
 export default function BookingPage() {
+  return (
+    <Suspense>
+      <BookingContent />
+    </Suspense>
+  );
+}
+
+function BookingContent() {
   const searchParams = useSearchParams();
   const clientType = searchParams.get("type") || "";
   const today = new Date();

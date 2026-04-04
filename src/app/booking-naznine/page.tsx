@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Phone, Video, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
 
 const DAYS = ["LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM.", "DIM."];
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -10,7 +10,7 @@ const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet"
 function getMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const offset = firstDay === 0 ? 6 : firstDay - 1; // Monday=0
+  const offset = firstDay === 0 ? 6 : firstDay - 1;
   return { daysInMonth, offset };
 }
 
@@ -20,15 +20,15 @@ function formatDateFr(dateStr: string) {
   return `${dayName} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export default function BookingPage() {
+export default function BookingNazninePage() {
   return (
     <Suspense>
-      <BookingContent />
+      <BookingNaznineContent />
     </Suspense>
   );
 }
 
-function BookingContent() {
+function BookingNaznineContent() {
   const searchParams = useSearchParams();
   const clientType = searchParams.get("type") || "";
   const today = new Date();
@@ -40,8 +40,8 @@ function BookingContent() {
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string | null>(null);
   const [assignedName, setAssignedName] = useState<string | null>(null);
-  const [step, setStep] = useState<1 | 2 | 3>(1); // 1=calendar, 2=form, 3=confirmation
-  const [mode, setMode] = useState<"phone" | "visio">("phone");
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [mode] = useState<"phone">("phone");
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "", company: "", source: "", website: "",
   });
@@ -68,7 +68,7 @@ function BookingContent() {
     setSlots([]);
 
     try {
-      const res = await fetch(`/api/booking-pauline/slots?date=${dateStr}`);
+      const res = await fetch(`/api/booking-naznine/slots?date=${dateStr}`);
       const data = await res.json();
       setSlots(data.slots ?? []);
       setAssignedTo(data.assignedTo);
@@ -83,7 +83,7 @@ function BookingContent() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/booking-pauline/confirm", {
+      const res = await fetch("/api/booking-naznine/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,7 +152,7 @@ function BookingContent() {
         </div>
       </div>
 
-      {/* Logo + Photo Pauline */}
+      {/* Logo + Photo Naznine */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "center",
         gap: 14, marginBottom: 24,
@@ -171,8 +171,8 @@ function BookingContent() {
           </span>
         </div>
         <img
-          src="/photo-pauline.jpeg"
-          alt="Pauline Becquerelle"
+          src="/photo-naznine.jpeg"
+          alt="Naznine Mouhamad"
           style={{
             width: 56, height: 56, borderRadius: "50%",
             objectFit: "cover", objectPosition: "top",
@@ -180,7 +180,7 @@ function BookingContent() {
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           }}
         />
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Pauline Becquerelle</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Naznine Mouhamad</span>
       </div>
 
       {/* Step 1: Calendar + Slots */}
@@ -194,7 +194,7 @@ function BookingContent() {
           {/* Left: Calendar */}
           <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
-              Appel Découverte
+              Bilan Commercial
             </h2>
 
             {/* Month nav */}
@@ -357,7 +357,7 @@ function BookingContent() {
             <strong>{formatDateFr(selectedDate!)}</strong> à <strong>{selectedSlot}</strong>
           </p>
           <p style={{ fontSize: 12, color: "#8399a9", marginBottom: 20 }}>
-            <MapPin style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> {mode === "visio" ? "Visioconférence" : "Appel téléphonique"}
+            <MapPin style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> Appel téléphonique
             <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#1a6b9c", fontWeight: 600, cursor: "pointer", marginLeft: 8, fontSize: 12 }}>Modifier</button>
           </p>
 
@@ -452,7 +452,7 @@ function BookingContent() {
             <strong style={{ color: "#1a2a3a" }}>{formatDateFr(selectedDate!)} à {selectedSlot}</strong>
           </p>
           <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 8 }}>
-            <MapPin style={{ width: 14, height: 14, display: "inline", verticalAlign: "middle" }} /> {mode === "visio" ? "Visioconférence" : "Appel téléphonique"}
+            <MapPin style={{ width: 14, height: 14, display: "inline", verticalAlign: "middle" }} /> Appel téléphonique
           </p>
           <p style={{ fontSize: 13, color: "#8399a9" }}>
             Avec <strong>{assignedName}</strong>

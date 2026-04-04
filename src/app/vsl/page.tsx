@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
@@ -7,6 +8,14 @@ const subtitleText =
   "Comme plus de 200 dirigeants \u2014 Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
 
 export default function VSLPage() {
+  return (
+    <Suspense>
+      <VSLContent />
+    </Suspense>
+  );
+}
+
+function VSLContent() {
   const searchParams = useSearchParams();
   const clientType = searchParams.get("type") || "";
 
