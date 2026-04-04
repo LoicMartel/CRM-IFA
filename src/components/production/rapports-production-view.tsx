@@ -140,13 +140,23 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
 
     });
 
-    // Set facturable from deliverySessions (exact amounts per company)
+    // Set facturable: use MAX of deliverySessions amounts vs training_sessions calculation
     Object.values(companyMap).forEach(c => {
       const companyDelivery = (deliverySessions ?? []).filter((ds: R) => {
         const dsCompany = ds.companies as { id: string } | null;
         return dsCompany?.id === c.companyId;
       });
-      c.facturableAmount = companyDelivery.reduce((sum: number, ds: R) => sum + (Number(ds.billable_amount) || 0), 0);
+      const deliveryFact = companyDelivery.reduce((sum: number, ds: R) => sum + (Number(ds.billable_amount) || 0), 0);
+      // Also compute from training_sessions done+billable for this company
+      const companyTS = sessions.filter((s: R) => {
+        const sp = s.service_plans as { company_id: string } | null;
+        return sp?.company_id === c.companyId && s.status === "done" && s.is_billable !== false;
+      });
+      const tsFact = companyTS.reduce((sum: number, s: R) => {
+        const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
+        return sum + (Number(s.duration_hours) || 0) * rate;
+      }, 0);
+      c.facturableAmount = Math.max(deliveryFact, tsFact);
     });
 
     // Filter: only companies with remaining sessions (not all done)
