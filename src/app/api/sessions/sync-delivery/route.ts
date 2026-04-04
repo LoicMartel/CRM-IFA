@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Syncs a training_session to the delivery `sessions` table.
- * - When status is "done": upsert a delivery session record
- * - When status is anything else: remove the delivery record if it exists
+ * - When status is "done" or "no_show": upsert a delivery session record with all info
+ * - Includes: participants, theme, learner count, trainer, hours, amounts
  */
 export async function POST(req: NextRequest) {
   const { trainingSessionId } = await req.json();
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createClient();
 
-  // Fetch the training session with its service plan
+  // Fetch the training session with service plan, company, and linked learners
   const { data: ts, error: tsError } = await supabase
     .from("training_sessions")
     .select(`
@@ -22,6 +22,10 @@ export async function POST(req: NextRequest) {
       service_plans(
         id, company_id, hourly_rate, format, mode,
         companies(id, name)
+      ),
+      training_session_learners(
+        learner_id,
+        learners(first_name, last_name)
       )
     `)
     .eq("id", trainingSessionId)
@@ -54,7 +58,20 @@ export async function POST(req: NextRequest) {
       trainerId = member?.id ?? null;
     }
 
+    // Build attendee names from linked learners
+    const learnerLinks = (ts.training_session_learners ?? []) as { learner_id: string; learners: { first_name: string; last_name: string } | null }[];
+    const attendeeNames = learnerLinks
+      .map(l => l.learners ? `${l.learners.first_name}` : "")
+      .filter(Boolean)
+      .join(", ");
+    const learnersCount = learnerLinks.length;
+
     const deliveryMode = ts.session_type === "journee" ? "présentiel" : (plan?.mode === "présentiel" ? "présentiel" : "distanciel");
+
+    // Build theme/label from session type + notes
+    const typeLabel = ts.session_type === "journee" ? "J" : "VT";
+    const durationLabel = hours >= 8 ? "" : hours >= 1 ? ` ${hours}H` : ` ${Math.round(hours * 60)}min`;
+    const sessionLabel = `${typeLabel}${durationLabel}`;
 
     // Check if a delivery record already exists for this training session
     const { data: existing } = await supabase
@@ -62,40 +79,35 @@ export async function POST(req: NextRequest) {
       .select("id")
       .eq("session_date", ts.session_date)
       .eq("company_id", plan?.company_id ?? "")
-      .eq("hours_delivered", hours)
       .eq("trainer_id", trainerId ?? "")
+      .eq("hours_delivered", hours)
       .maybeSingle();
 
+    const sessionData = {
+      session_date: ts.session_date,
+      company_id: plan?.company_id ?? null,
+      delivery_mode: deliveryMode,
+      is_billable: isBillable,
+      hours_planned: hours,
+      hours_delivered: hours,
+      hourly_rate: rate,
+      billable_amount: billableAmt,
+      non_billable_amount: nonBillableAmt,
+      trainer_id: trainerId,
+      session_label: sessionLabel,
+      attendee_names: attendeeNames || null,
+      learners_planned: learnersCount > 0 ? learnersCount : null,
+      learners_delivered: learnersCount > 0 ? learnersCount : null,
+      notes: ts.notes,
+    };
+
     if (existing) {
-      // Update existing
       await supabase.from("sessions").update({
-        hours_planned: hours,
-        hours_delivered: hours,
-        hourly_rate: rate,
-        is_billable: isBillable,
-        billable_amount: billableAmt,
-        non_billable_amount: nonBillableAmt,
-        delivery_mode: deliveryMode,
-        session_label: `${ts.session_type === "journee" ? "Journée" : "VT"} — Plan #${plan?.id?.slice(0, 8) ?? ""}`,
-        notes: ts.notes,
+        ...sessionData,
         updated_at: new Date().toISOString(),
       }).eq("id", existing.id);
     } else {
-      // Insert new
-      await supabase.from("sessions").insert({
-        session_date: ts.session_date,
-        company_id: plan?.company_id ?? null,
-        delivery_mode: deliveryMode,
-        is_billable: isBillable,
-        hours_planned: hours,
-        hours_delivered: hours,
-        hourly_rate: rate,
-        billable_amount: billableAmt,
-        non_billable_amount: nonBillableAmt,
-        trainer_id: trainerId,
-        session_label: `${ts.session_type === "journee" ? "Journée" : "VT"} — Plan #${plan?.id?.slice(0, 8) ?? ""}`,
-        notes: ts.notes,
-      });
+      await supabase.from("sessions").insert(sessionData);
     }
   }
 
