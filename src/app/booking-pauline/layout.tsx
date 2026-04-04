@@ -4,6 +4,6 @@ export const metadata: Metadata = {
   title: "La Closing Académie - Booking",
 };
 
-export default function BookingLayout({ children }: { children: React.ReactNode }) {
+export default function BookingPaulineLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
