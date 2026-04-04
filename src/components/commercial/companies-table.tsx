@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -267,36 +268,39 @@ export function CompaniesTable({
                   <TableRow
                     key={c.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/clients/${c.id}`)}
                   >
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>{c.city ?? "—"}</TableCell>
-                    <TableCell>
-                      {lc ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={{ backgroundColor: lc.bg, color: lc.text }}
-                        >
-                          {lc.label}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0 font-medium"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.name}</Link></TableCell>
+                    <TableCell className="p-0"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.city ?? "—"}</Link></TableCell>
+                    <TableCell className="p-0">
+                      <Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {lc ? (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: lc.bg, color: lc.text }}
+                          >
+                            {lc.label}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
-                    <TableCell className="text-center">{getContactCount(c)}</TableCell>
-                    <TableCell className="text-center">{getDealCount(c)}</TableCell>
-                    <TableCell>
-                      {c.team_members ? (
-                        <span
-                          style={{
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            width: 28, height: 28, borderRadius: "50%",
-                            background: "#0d4f7a", color: "white",
-                            fontSize: 10, fontWeight: 700,
-                          }}
-                          title={`${c.team_members.first_name} ${c.team_members.last_name}`}
-                        >
-                          {c.team_members.first_name[0]}{c.team_members.last_name[0]}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0 text-center"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{getContactCount(c)}</Link></TableCell>
+                    <TableCell className="p-0 text-center"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{getDealCount(c)}</Link></TableCell>
+                    <TableCell className="p-0">
+                      <Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {c.team_members ? (
+                          <span
+                            style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 28, height: 28, borderRadius: "50%",
+                              background: "#0d4f7a", color: "white",
+                              fontSize: 10, fontWeight: 700,
+                            }}
+                            title={`${c.team_members.first_name} ${c.team_members.last_name}`}
+                          >
+                            {c.team_members.first_name[0]}{c.team_members.last_name[0]}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );

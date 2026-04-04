@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCurrentMember } from "@/lib/use-current-member";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -350,57 +351,64 @@ export function ContactsTable({
                   <TableRow
                     key={c.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => router.push(`/contacts/${c.id}`)}
                   >
-                    <TableCell className="font-medium">{c.first_name} {c.last_name}</TableCell>
-                    <TableCell>{c.email ?? "—"}</TableCell>
-                    <TableCell>{formatPhone(c.phone)}</TableCell>
-                    <TableCell>{c.companies?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      {lc ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={{ backgroundColor: lc.bg, color: lc.text }}
-                        >
-                          {lc.label}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0 font-medium"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.first_name} {c.last_name}</Link></TableCell>
+                    <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.email ?? "—"}</Link></TableCell>
+                    <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{formatPhone(c.phone)}</Link></TableCell>
+                    <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.companies?.name ?? "—"}</Link></TableCell>
+                    <TableCell className="p-0">
+                      <Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {lc ? (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: lc.bg, color: lc.text }}
+                          >
+                            {lc.label}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
-                    <TableCell>
-                      {ls ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={{ backgroundColor: ls.bg, color: ls.text }}
-                        >
-                          {ls.label}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0">
+                      <Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {ls ? (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: ls.bg, color: ls.text }}
+                          >
+                            {ls.label}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
-                    <TableCell>{formatDate(c.last_contacted_at)}</TableCell>
-                    <TableCell>
-                      {ct ? (
-                        <span
-                          className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                          style={{ backgroundColor: ct.bg, color: ct.text }}
-                        >
-                          {ct.label}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{formatDate(c.last_contacted_at)}</Link></TableCell>
+                    <TableCell className="p-0">
+                      <Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {ct ? (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                            style={{ backgroundColor: ct.bg, color: ct.text }}
+                          >
+                            {ct.label}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
-                    <TableCell>
-                      {c.team_members ? (
-                        <span
-                          style={{
-                            display: "inline-flex", alignItems: "center", justifyContent: "center",
-                            width: 28, height: 28, borderRadius: "50%",
-                            background: "#0d4f7a", color: "white",
-                            fontSize: 10, fontWeight: 700,
-                          }}
-                          title={`${c.team_members.first_name} ${c.team_members.last_name}`}
-                        >
-                          {c.team_members.first_name[0]}{c.team_members.last_name[0]}
-                        </span>
-                      ) : "—"}
+                    <TableCell className="p-0">
+                      <Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {c.team_members ? (
+                          <span
+                            style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 28, height: 28, borderRadius: "50%",
+                              background: "#0d4f7a", color: "white",
+                              fontSize: 10, fontWeight: 700,
+                            }}
+                            title={`${c.team_members.first_name} ${c.team_members.last_name}`}
+                          >
+                            {c.team_members.first_name[0]}{c.team_members.last_name[0]}
+                          </span>
+                        ) : "—"}
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );
