@@ -1750,7 +1750,7 @@ export function ContactDetail({
             </div>
             <Button
               onClick={handleSave}
-              disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
+              disabled={saving || (!form.first_name.trim() && !form.last_name.trim())}
               className="w-full"
             >
               {saving ? "Enregistrement..." : "Enregistrer"}

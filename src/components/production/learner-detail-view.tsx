@@ -1017,7 +1017,7 @@ export function LearnerDetailView({
                 <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                 <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
               </div>
-              <Button onClick={handleSave} disabled={saving || !form.first_name.trim() || !form.last_name.trim()} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
+              <Button onClick={handleSave} disabled={saving || (!form.first_name.trim() && !form.last_name.trim())} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
                 {saving ? "Enregistrement..." : "Enregistrer les modifications"}
               </Button>
             </div>
