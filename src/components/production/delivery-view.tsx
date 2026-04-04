@@ -36,8 +36,25 @@ function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
+function getFiscalYearOptions() {
+  const now = new Date();
+  const currentFY = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  return [
+    { value: `${currentFY}`, label: `${currentFY}/${currentFY + 1}` },
+    { value: `${currentFY - 1}`, label: `${currentFY - 1}/${currentFY}` },
+    { value: "", label: "Toutes les années" },
+  ];
+}
+
+function inFiscalYear(dateStr: string, fyStart: number): boolean {
+  return dateStr >= `${fyStart}-09-01` && dateStr <= `${fyStart + 1}-08-31`;
+}
+
 export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
   const router = useRouter();
+  const now = new Date();
+  const defaultFY = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  const [fiscalYear, setFiscalYear] = useState<string>(String(defaultFY));
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
@@ -67,7 +84,12 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
     return "vt";
   }
 
+  const fyOptions = getFiscalYearOptions();
+
   const filtered = sessions.filter(s => {
+    // Fiscal year filter
+    if (fiscalYear && !inFiscalYear(s.session_date, parseInt(fiscalYear))) return false;
+
     const sessionType = getSessionType(s);
     if (filterType && sessionType !== filterType) return false;
     if (filterTrainer) {
@@ -100,12 +122,41 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
 
   // Totals for filtered
   const totalHours = filtered.reduce((acc, s) => acc + (Number(s.hours_delivered) || 0), 0);
+  const totalBillableHours = filtered.filter(s => s.is_billable !== false).reduce((acc, s) => acc + (Number(s.hours_delivered) || 0), 0);
   const totalAmount = filtered.reduce((acc, s) => acc + (Number(s.billable_amount) || 0), 0);
+  const totalNonBillable = filtered.reduce((acc, s) => acc + (Number(s.non_billable_amount) || 0), 0);
 
   return (
     <div className="space-y-4">
+      {/* KPIs */}
+      <div className="grid gap-3 md:grid-cols-5">
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions réalisées</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{filtered.length}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures délivrées</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalHours.toFixed(1)}h</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures facturables</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#27ae60" }}>{totalBillableHours.toFixed(0)}h</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Facturable sur Delivery</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#27ae60" }}>{fmt(totalAmount)}</div>
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Non facturable</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{fmt(totalNonBillable)}</div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+        <select value={fiscalYear} onChange={(e) => setFiscalYear(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a", fontWeight: 600 }}>
+          {fyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#8399a9" }} />
           <input
