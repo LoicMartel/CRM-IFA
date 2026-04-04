@@ -22,8 +22,8 @@ function pct(n: number) {
   return (n * 100).toFixed(2) + "%";
 }
 
-export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [] }: {
-  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[];
+export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [], deliverySessions = [] }: {
+  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[]; deliverySessions?: R[];
 }) {
   const now = new Date();
   const fyYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
@@ -41,15 +41,10 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
 
     const commandes = wonDeals.filter((d: R) => ((d.close_date ?? d.created_at) as string).startsWith(mStr)).reduce((s: number, d: R) => s + (Number(d.amount) || 0), 0);
 
-    const mSessions = trainingSessions.filter((s: R) => (s.session_date as string).startsWith(mStr));
-    const doneBillable = mSessions.filter((s: R) => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
-    const delivre = doneBillable.reduce((s: number, sess: R) => {
-      const rate = Number((sess.service_plans as R)?.hourly_rate) || 0;
-      return s + (Number(sess.duration_hours) || 0) * rate;
-    }, 0);
-
-    // Facturable / Delivery = sessions done + billable × taux horaire (from delivery)
-    const facturableDelivery = delivre;
+    // Délivré & Facturable / Delivery from sessions (delivery) table — source of truth
+    const mDelivery = deliverySessions.filter((s: R) => (s.session_date as string).startsWith(mStr));
+    const delivre = mDelivery.reduce((s: number, sess: R) => s + (Number(sess.billable_amount) || 0) + (Number(sess.non_billable_amount) || 0), 0);
+    const facturableDelivery = mDelivery.filter((s: R) => s.is_billable !== false).reduce((s: number, sess: R) => s + (Number(sess.billable_amount) || 0), 0);
 
     const ch = chargeMap[mStr] ?? {};
 

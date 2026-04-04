@@ -12,13 +12,15 @@ export default async function FinancesPage() {
     { data: monthlyCharges },
     { data: salesTargets },
     { data: monthlyFinances },
+    { data: deliverySessions },
   ] = await Promise.all([
     supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won"),
     supabase.from("billing_months").select("id, amount, month, status"),
-    supabase.from("training_sessions").select("*, service_plans(hourly_rate)").eq("status", "done"),
+    supabase.from("training_sessions").select("*, service_plans(hourly_rate)").in("status", ["done", "no_show"]),
     supabase.from("monthly_charges").select("*"),
     supabase.from("sales_targets").select("month, target_amount").order("month", { ascending: true }),
     supabase.from("monthly_finances").select("month, client_receivables"),
+    supabase.from("sessions").select("session_date, billable_amount, non_billable_amount, is_billable, hours_delivered").not("company_id", "is", null),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function FinancesPage() {
           monthlyCharges={(monthlyCharges ?? []) as any}
           salesTargets={(salesTargets ?? []) as any}
           monthlyFinances={(monthlyFinances ?? []) as any}
+          deliverySessions={(deliverySessions ?? []) as any}
         />
       </div>
     </>
