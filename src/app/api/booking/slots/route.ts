@@ -105,7 +105,8 @@ export async function GET(request: Request) {
     // Skip this member entirely if they have a présentiel event that day
     if (hasPresentielEvent) continue;
 
-    if (accessibleCount === 0) continue; // skip only if NO calendar is accessible
+    // If no calendar is accessible, still show all slots (calendar not yet linked)
+    // This allows Naznine to serve as fallback even before her calendar is configured
 
     const offset = getParisOffset(date);
     const BUFFER = 15 * 60 * 1000; // 15 min buffer before and after each event
