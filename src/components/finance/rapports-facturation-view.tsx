@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Receipt, CreditCard, Clock, AlertTriangle, Building2 } from "lucide-react";
+import { Receipt, CreditCard, Clock, AlertTriangle, Building2, ArrowUpDown } from "lucide-react";
 
 /* ---- Types ---- */
 
@@ -79,6 +79,8 @@ export function RapportsFacturationView({ entries, companies }: {
   const router = useRouter();
   const [selectedReport, setSelectedReport] = useState("global");
   const [fiscalYear, setFiscalYear] = useState("2025-2026");
+  const [companySortGlobal, setCompanySortGlobal] = useState<"asc" | "desc" | null>(null);
+  const [companySortStatus, setCompanySortStatus] = useState<"asc" | "desc" | null>(null);
 
   const yearOptions = ["2024-2025", "2025-2026", "2026-2027"];
   const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
@@ -134,7 +136,14 @@ export function RapportsFacturationView({ entries, companies }: {
       const total = e.billing_months.reduce((s, m) => s + Number(m.amount), 0);
       byClient[e.id] = { name: e.client_name, amount: total, company: e.companies?.name ?? null };
     }
-    const clientData = Object.values(byClient).sort((a, b) => b.amount - a.amount).slice(0, 15);
+    const clientDataRaw = Object.values(byClient).sort((a, b) => b.amount - a.amount).slice(0, 15);
+    const clientData = companySortGlobal
+      ? [...clientDataRaw].sort((a, b) => {
+          const ca = (a.company ?? "").toLowerCase();
+          const cb = (b.company ?? "").toLowerCase();
+          return companySortGlobal === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
+        })
+      : clientDataRaw;
 
     return (
       <>
@@ -223,7 +232,9 @@ export function RapportsFacturationView({ entries, companies }: {
                 <TableRow>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>#</TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Raison sociale</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Société</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => setCompanySortGlobal(companySortGlobal === "asc" ? "desc" : companySortGlobal === "desc" ? null : "asc")}>
+                    <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant total</TableHead>
                 </TableRow>
               </TableHeader>
@@ -275,7 +286,14 @@ export function RapportsFacturationView({ entries, companies }: {
       byClient[key].amount += Number(m.amount);
       byClient[key].count += 1;
     }
-    const clientData = Object.values(byClient).sort((a, b) => b.amount - a.amount);
+    const clientDataRaw = Object.values(byClient).sort((a, b) => b.amount - a.amount);
+    const clientData = companySortStatus
+      ? [...clientDataRaw].sort((a, b) => {
+          const ca = (a.company ?? "").toLowerCase();
+          const cb = (b.company ?? "").toLowerCase();
+          return companySortStatus === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
+        })
+      : clientDataRaw;
 
     // Pie by client
     const pieData = clientData.slice(0, 8).map((c) => ({ name: c.name, value: c.amount }));
@@ -356,7 +374,9 @@ export function RapportsFacturationView({ entries, companies }: {
               <TableHeader>
                 <TableRow>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Raison sociale</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Société</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => setCompanySortStatus(companySortStatus === "asc" ? "desc" : companySortStatus === "desc" ? null : "asc")}>
+                    <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
+                  </TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Financement</TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Mois</TableHead>
                   <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
