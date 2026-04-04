@@ -125,12 +125,22 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const totalDaysDelivered = hoursToJ(totalHoursDelivered);
   const avgDailyRate = billableDays > 0 ? totalFacturable / billableDays : 0;
 
-  // Days to plan = total training_days from won deals - total planned sessions hours / 8
-  const wonDeals = deals.filter((d: R) => d.stage === "closed_won");
-  const totalWonDays = wonDeals.reduce((sum: number, d: R) => sum + (Number(d.training_days) || 0), 0);
-  const totalPlannedDays = hoursToJ(totalHoursPlanned);
-  const daysToplan = Math.max(0, totalWonDays - totalPlannedDays);
-  const hoursToplan = daysToplan * 8;
+  // Days to plan = remaining VT + remaining days from service plans
+  // VT: each done session of type "vt" counts as 1, total from vt_planned
+  // Days: each done session of type "journee" counts as 1, total from days_planned
+  const allPlanSessions = servicePlans.flatMap((p: R) => {
+    // Find training sessions linked to this plan
+    return fySessions.filter((s: R) => (s.service_plans as R)?.id === p.id);
+  });
+  const vtDone = allPlanSessions.filter((s: R) => s.session_type === "vt" && s.status === "done").length;
+  const vtTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.vt_planned) || 0), 0);
+  const daysDone = allPlanSessions.filter((s: R) => s.session_type === "journee" && s.status === "done").length;
+  const daysTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.days_planned) || 0), 0);
+  const remainingVt = Math.max(0, vtTotal - vtDone);
+  const remainingDays = Math.max(0, daysTotal - daysDone);
+  // Convert remaining VT to days (1 VT ≈ 1h, so /8), add remaining days
+  const hoursToplan = remainingVt + remainingDays * 8;
+  const daysToplan = hoursToplan / 8;
 
   // Unique trainers with data (from both sources)
   const activeTrainers = TRAINERS.filter(t => {
