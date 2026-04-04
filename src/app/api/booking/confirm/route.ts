@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { createCalendarEvent } from "@/lib/google-calendar";
 import { createClient } from "@supabase/supabase-js";
-import { sendSessionEmail } from "@/lib/send-email";
-import { generateICS } from "@/lib/ics";
 import { getParisOffset } from "@/lib/timezone";
 
 const supabase = createClient(
@@ -10,16 +7,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Same member list as slots route — bookingCalendarId is where events are created
-const MEMBERS: Record<string, { name: string; calendarId: string }> = {
-  "93469203-fa59-4ffb-8877-7486a82addab": {
-    name: "Rafi MOUHAMAD",
-    calendarId: "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com",
-  },
-  "9bcd91e5-0c11-44ba-9bc8-1de4bad9c040": {
-    name: "Naznine MOUHAMAD",
-    calendarId: "naznine@closing-academie.com",
-  },
+const MEMBERS: Record<string, string> = {
+  "93469203-fa59-4ffb-8877-7486a82addab": "Rafi MOUHAMAD",
+  "9bcd91e5-0c11-44ba-9bc8-1de4bad9c040": "Naznine MOUHAMAD",
 };
 
 export async function POST(request: Request) {
@@ -42,67 +32,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const member = MEMBERS[assignedTo];
-  if (!member) {
+  const memberName = MEMBERS[assignedTo];
+  if (!memberName) {
     return NextResponse.json({ error: "Invalid assigned member" }, { status: 400 });
   }
 
   const offset = getParisOffset(date);
   const startDateTime = `${date}T${time}:00${offset}`;
-  const [h, m] = time.split(":").map(Number);
-  const endM = m + 30;
-  const endH = endM >= 60 ? h + 1 : h;
-  const endDateTime = `${date}T${String(endH).padStart(2, "0")}:${String(endM % 60).padStart(2, "0")}:00${offset}`;
 
-  const locationLabel = mode === "visio" ? "Visioconférence" : "Appel téléphonique";
-
-  // 1. Create Google Calendar event
-  const { success, eventId, error: calError } = await createCalendarEvent({
-    calendarId: member.calendarId,
-    summary: `Bilan Commercial — ${firstName} ${lastName} (${company})`,
-    description: `Prospect: ${firstName} ${lastName}\nEmail: ${email}\nTéléphone: ${phone}\nEntreprise: ${company}\nSite web: ${website || "—"}\nSource: ${source || "—"}\nMode: ${locationLabel}`,
-    location: locationLabel,
-    startDateTime,
-    endDateTime,
-  });
-
-  if (!success) {
-    return NextResponse.json({ error: calError || "Failed to create calendar event" }, { status: 500 });
-  }
-
-  // 1b. Send .ics invitation to prospect
-  if (email) {
-    const icsContent = generateICS({
-      summary: `Bilan Commercial — ${firstName} ${lastName} (${company})`,
-      description: `Rendez-vous avec La Closing Académie\nMode : ${locationLabel}`,
-      location: locationLabel,
-      startDateTime,
-      endDateTime,
-      organizerName: "La Closing Académie",
-      organizerEmail: "contact@closing-academie.com",
-    });
-    await sendSessionEmail({
-      to: email,
-      subject: `Confirmation de votre rendez-vous — La Closing Académie`,
-      body: [
-        `Bonjour ${firstName},`,
-        "",
-        "Votre rendez-vous est confirmé :",
-        "",
-        `📆 ${date} à ${time}`,
-        `🖥️ ${locationLabel}`,
-        "",
-        "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
-        "",
-        "À très bientôt,",
-        "",
-        "L'équipe La Closing Académie",
-      ].join("\n"),
-      attachments: [{ filename: "invitation.ics", content: icsContent }],
-    });
-  }
-
-  // 2. Find or create company
+  // 1. Find or create company
   let companyId: string | null = null;
   const { data: existingCompany } = await supabase
     .from("companies")
@@ -121,7 +59,7 @@ export async function POST(request: Request) {
     companyId = newCompany?.id ?? null;
   }
 
-  // 3. Find or create contact (Inbound) — avoid duplicates
+  // 2. Find or create contact
   let contact: { id: string } | null = null;
   const { data: existingContact } = await supabase
     .from("contacts")
@@ -130,7 +68,6 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (existingContact) {
-    // Update existing contact
     await supabase.from("contacts").update({
       phone,
       company_id: companyId,
@@ -158,9 +95,10 @@ export async function POST(request: Request) {
     contact = newContact;
   }
 
-  // 4. Create meeting in CRM
+  // 3. Create meeting in CRM
+  let meetingId: string | null = null;
   if (contact) {
-    await supabase.from("meetings").insert({
+    const { data: newMeeting } = await supabase.from("meetings").insert({
       contact_id: contact.id,
       company_id: companyId,
       assigned_to: assignedTo,
@@ -170,13 +108,24 @@ export async function POST(request: Request) {
       duration_minutes: 30,
       meeting_mode: mode === "visio" ? "visio" : "phone",
       notes: `Réservé via la landing page booking.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
+    }).select("id").single();
+    meetingId = newMeeting?.id ?? null;
+  }
+
+  // 4. Trigger centralized notify (calendar + prospect email + Slack/email to assignee)
+  if (meetingId) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
+    await fetch(`${baseUrl}/api/meetings/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meetingId }),
     });
   }
 
   return NextResponse.json({
     success: true,
-    eventId,
     contactId: contact?.id,
-    assignedName: member.name,
+    meetingId,
+    assignedName: memberName,
   });
 }

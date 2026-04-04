@@ -118,7 +118,7 @@ export async function POST(request: Request) {
         body: notifBody,
       }),
       sendSessionEmail({
-        to: "rafi.mouhamad.nmfconsulting@gmail.com",
+        to: "rafi@closing-academie.com",
         subject: notifSubject,
         body: notifBody,
       }),

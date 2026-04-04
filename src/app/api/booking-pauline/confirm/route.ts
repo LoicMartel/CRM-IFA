@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { createCalendarEvent } from "@/lib/google-calendar";
 import { createClient } from "@supabase/supabase-js";
-import { sendSessionEmail } from "@/lib/send-email";
-import { generateICS } from "@/lib/ics";
 import { getParisOffset } from "@/lib/timezone";
 
 const supabase = createClient(
@@ -13,8 +10,6 @@ const supabase = createClient(
 const PAULINE = {
   id: "55e425cb-5041-4ea4-92c3-ce2f1dbce6a0",
   name: "Pauline BECQUERELLE",
-  // RDV créés sur l'agenda "Closing Académie"
-  calendarId: "d5338ed9e648d81ad3ef5fcbea38b7a91df6992ba69628c1946410039833d4a5@group.calendar.google.com",
 };
 
 export async function POST(request: Request) {
@@ -30,60 +25,8 @@ export async function POST(request: Request) {
 
   const offset = getParisOffset(date);
   const startDateTime = `${date}T${time}:00${offset}`;
-  const [h, m] = time.split(":").map(Number);
-  const endM = m + 15;
-  const endH = endM >= 60 ? h + 1 : h;
-  const endDateTime = `${date}T${String(endH).padStart(2, "0")}:${String(endM % 60).padStart(2, "0")}:00${offset}`;
 
-  const locationLabel = mode === "visio" ? "Visioconférence" : "Appel téléphonique";
-
-  // 1. Create Google Calendar event on "Closing Académie" calendar
-  const { success, eventId, error: calError } = await createCalendarEvent({
-    calendarId: PAULINE.calendarId,
-    summary: `Appel Découverte — ${firstName} ${lastName} (${company})`,
-    description: `Prospect: ${firstName} ${lastName}\nEmail: ${email}\nTéléphone: ${phone}\nEntreprise: ${company}\nSite web: ${website || "—"}\nSource: ${source || "—"}\nMode: ${locationLabel}`,
-    location: locationLabel,
-    startDateTime,
-    endDateTime,
-  });
-
-  if (!success) {
-    return NextResponse.json({ error: calError || "Failed to create calendar event" }, { status: 500 });
-  }
-
-  // 1b. Send .ics invitation to prospect
-  if (email) {
-    const icsContent = generateICS({
-      summary: `Appel Découverte — ${firstName} ${lastName} (${company})`,
-      description: `Rendez-vous avec La Closing Académie\nMode : ${locationLabel}`,
-      location: locationLabel,
-      startDateTime,
-      endDateTime,
-      organizerName: "La Closing Académie",
-      organizerEmail: "contact@closing-academie.com",
-    });
-    await sendSessionEmail({
-      to: email,
-      subject: `Confirmation de votre rendez-vous — La Closing Académie`,
-      body: [
-        `Bonjour ${firstName},`,
-        "",
-        "Votre rendez-vous est confirmé :",
-        "",
-        `📆 ${date} à ${time}`,
-        `🖥️ ${locationLabel}`,
-        "",
-        "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
-        "",
-        "À très bientôt,",
-        "",
-        "L'équipe La Closing Académie",
-      ].join("\n"),
-      attachments: [{ filename: "invitation.ics", content: icsContent }],
-    });
-  }
-
-  // 2. Find or create company
+  // 1. Find or create company
   let companyId: string | null = null;
   const { data: existingCompany } = await supabase
     .from("companies")
@@ -102,7 +45,7 @@ export async function POST(request: Request) {
     companyId = newCompany?.id ?? null;
   }
 
-  // 3. Find or create contact (Inbound)
+  // 2. Find or create contact
   let contact: { id: string } | null = null;
   const { data: existingContact } = await supabase
     .from("contacts")
@@ -138,9 +81,10 @@ export async function POST(request: Request) {
     contact = newContact;
   }
 
-  // 4. Create meeting in CRM
+  // 3. Create meeting in CRM
+  let meetingId: string | null = null;
   if (contact) {
-    await supabase.from("meetings").insert({
+    const { data: newMeeting } = await supabase.from("meetings").insert({
       contact_id: contact.id,
       company_id: companyId,
       assigned_to: PAULINE.id,
@@ -150,13 +94,24 @@ export async function POST(request: Request) {
       duration_minutes: 15,
       meeting_mode: mode === "visio" ? "visio" : "phone",
       notes: `Réservé via la landing page booking Pauline.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
+    }).select("id").single();
+    meetingId = newMeeting?.id ?? null;
+  }
+
+  // 4. Trigger centralized notify (calendar + prospect email + Slack/email to assignee)
+  if (meetingId) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
+    await fetch(`${baseUrl}/api/meetings/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meetingId }),
     });
   }
 
   return NextResponse.json({
     success: true,
-    eventId,
     contactId: contact?.id,
+    meetingId,
     assignedName: PAULINE.name,
   });
 }
