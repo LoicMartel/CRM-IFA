@@ -95,13 +95,13 @@ export function RapportsFacturationView({ entries, companies }: {
     filtered.flatMap((e) => e.billing_months.map((m) => ({ ...m, entry: e }))),
   [filtered]);
 
-  // Global KPIs
+  // Global KPIs (HT = montant / 1.2)
   const kpis = useMemo(() => {
-    const total = allMonths.reduce((s, m) => s + Number(m.amount), 0);
-    const encaisse = allMonths.filter((m) => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0);
-    const facture = allMonths.filter((m) => m.status === "facture").reduce((s, m) => s + Number(m.amount), 0);
-    const en_cours = allMonths.filter((m) => m.status === "en_cours").reduce((s, m) => s + Number(m.amount), 0);
-    const non_fait = allMonths.filter((m) => m.status === "non_fait").reduce((s, m) => s + Number(m.amount), 0);
+    const total = allMonths.reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const encaisse = allMonths.filter((m) => m.status === "encaisse").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const facture = allMonths.filter((m) => m.status === "facture").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const en_cours = allMonths.filter((m) => m.status === "en_cours").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const non_fait = allMonths.filter((m) => m.status === "non_fait").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
     return { total, encaisse, facture, en_cours, non_fait };
   }, [allMonths]);
 
@@ -112,7 +112,7 @@ export function RapportsFacturationView({ entries, companies }: {
     for (const mk of fiscalMonths) byMonthStatus[mk] = { encaisse: 0, facture: 0, en_cours: 0, non_fait: 0 };
     for (const m of allMonths) {
       if (byMonthStatus[m.month] && m.status) {
-        byMonthStatus[m.month][m.status] += Number(m.amount);
+        byMonthStatus[m.month][m.status] += Number(m.amount) / 1.2;
       }
     }
     const stackedData = fiscalMonths.map((mk) => ({
@@ -124,7 +124,7 @@ export function RapportsFacturationView({ entries, companies }: {
     const byFunding: Record<string, number> = {};
     for (const m of allMonths) {
       const ft = m.entry.funding_type || "Non défini";
-      byFunding[ft] = (byFunding[ft] || 0) + Number(m.amount);
+      byFunding[ft] = (byFunding[ft] || 0) + Number(m.amount) / 1.2;
     }
     const fundingData = Object.entries(byFunding)
       .sort((a, b) => b[1] - a[1])
@@ -133,7 +133,7 @@ export function RapportsFacturationView({ entries, companies }: {
     // By client (top 15)
     const byClient: Record<string, { name: string; amount: number; company: string | null }> = {};
     for (const e of filtered) {
-      const total = e.billing_months.reduce((s, m) => s + Number(m.amount), 0);
+      const total = e.billing_months.reduce((s, m) => s + Number(m.amount) / 1.2, 0);
       byClient[e.id] = { name: e.client_name, amount: total, company: e.companies?.name ?? null };
     }
     const clientDataRaw = Object.values(byClient).sort((a, b) => b.amount - a.amount).slice(0, 15);
@@ -259,14 +259,14 @@ export function RapportsFacturationView({ entries, companies }: {
   function renderStatusReport(status: string) {
     const meta = STATUS_META[status];
     const statusMonths = allMonths.filter((m) => m.status === status);
-    const totalAmount = statusMonths.reduce((s, m) => s + Number(m.amount), 0);
+    const totalAmount = statusMonths.reduce((s, m) => s + Number(m.amount) / 1.2, 0);
     const uniqueClients = new Set(statusMonths.map((m) => m.entry.id)).size;
 
     // By month
     const byMonth: Record<string, number> = {};
     for (const mk of fiscalMonths) byMonth[mk] = 0;
     for (const m of statusMonths) {
-      if (byMonth[m.month] !== undefined) byMonth[m.month] += Number(m.amount);
+      if (byMonth[m.month] !== undefined) byMonth[m.month] += Number(m.amount) / 1.2;
     }
     const monthData = fiscalMonths
       .filter((mk) => byMonth[mk] > 0)
@@ -283,7 +283,7 @@ export function RapportsFacturationView({ entries, companies }: {
         amount: 0,
         count: 0,
       };
-      byClient[key].amount += Number(m.amount);
+      byClient[key].amount += Number(m.amount) / 1.2;
       byClient[key].count += 1;
     }
     const clientDataRaw = Object.values(byClient).sort((a, b) => b.amount - a.amount);
@@ -424,11 +424,11 @@ export function RapportsFacturationView({ entries, companies }: {
       {/* Global KPIs */}
       <div className="grid gap-3 md:grid-cols-5">
         {[
-          { label: "Total HT", value: kpis.total / 1.2, color: "#1a2a3a" },
-          { label: "Encaissé HT", value: kpis.encaisse / 1.2, color: "#006100" },
-          { label: "Facturé HT", value: kpis.facture / 1.2, color: "#9c0006" },
-          { label: "En cours HT", value: kpis.en_cours / 1.2, color: "#1f4e79" },
-          { label: "Non fait HT", value: kpis.non_fait / 1.2, color: "#888888" },
+          { label: "Total HT", value: kpis.total, color: "#1a2a3a" },
+          { label: "Encaissé HT", value: kpis.encaisse, color: "#006100" },
+          { label: "Facturé HT", value: kpis.facture, color: "#9c0006" },
+          { label: "En cours HT", value: kpis.en_cours, color: "#1f4e79" },
+          { label: "Non fait HT", value: kpis.non_fait, color: "#888888" },
         ].map((k) => (
           <div key={k.label} className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>{k.label}</div>
