@@ -13,7 +13,7 @@ const MEMBERS = [
       "lm5dnmkg9k8jpk2eeb009e2ev4@group.calendar.google.com", // RA:Admin et prépa
       "qnat0fo43j8hn7369kld0vnv1c@group.calendar.google.com", // RA:Team NMF Consulting
       "j2d3ldvcaj4c76lmefv6qjr0lk@group.calendar.google.com", // RA:Perso
-      "r4df33kl5s8mnk2sd0ipird7fg@group.calendar.google.com", // RA:Présentiel
+      "r4df33kl5s8mnk2sd0ipird7fg@group.calendar.google.com", // RA:F Présentiel (blocks entire day)
       "eea3flj6iqn5stu896e2tubo4o@group.calendar.google.com", // RA:Trajets
     ],
     bookingCalendarId: "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com", // where to create events
@@ -76,11 +76,14 @@ export async function GET(request: Request) {
 
   const allSlots = generateSlots(date);
 
+  const PRESENTIEL_CALENDAR_ID = "r4df33kl5s8mnk2sd0ipird7fg@group.calendar.google.com";
+
   // Try Rafi first, then Naznine
   for (const member of MEMBERS) {
     // Fetch busy times from ALL calendars of this member (skip inaccessible ones)
     const allBusy: { start: string; end: string }[] = [];
     let accessibleCount = 0;
+    let hasPresentielEvent = false;
 
     for (const calId of member.calendarIds) {
       const { events, error } = await getCalendarEvents({
@@ -91,9 +94,16 @@ export async function GET(request: Request) {
       });
       if (!error) {
         accessibleCount++;
+        // If any event exists on the Présentiel calendar, block the entire day
+        if (calId === PRESENTIEL_CALENDAR_ID && events.length > 0) {
+          hasPresentielEvent = true;
+        }
         allBusy.push(...events);
       }
     }
+
+    // Skip this member entirely if they have a présentiel event that day
+    if (hasPresentielEvent) continue;
 
     if (accessibleCount === 0) continue; // skip only if NO calendar is accessible
 
