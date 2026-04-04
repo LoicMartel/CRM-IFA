@@ -114,13 +114,32 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const realizationRate = totalHoursSold > 0 ? (totalHoursDelivered / totalHoursSold * 100) : 0;
 
   // Facturable / non facturable from deliverySessions
-  const totalFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
-  const totalNonFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
+  const deliveryFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.billable_amount) || 0), 0);
+  const deliveryNonFacturable = fyDelivery.reduce((sum: number, s: R) => sum + (Number(s.non_billable_amount) || 0), 0);
+
+  // Also compute facturable from training_sessions (done) using service_plan hourly_rate
+  const doneFySessions = fySessions.filter((s: R) => s.status === "done");
+  const tsFacturable = doneFySessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
+    const hours = Number(s.duration_hours) || 0;
+    const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
+    return sum + hours * rate;
+  }, 0);
+  const tsNonFacturable = doneFySessions.filter((s: R) => s.is_billable === false).reduce((sum: number, s: R) => {
+    const hours = Number(s.duration_hours) || 0;
+    const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
+    return sum + hours * rate;
+  }, 0);
+
+  // Combine both sources (use the higher value to avoid double-counting)
+  const totalFacturable = Math.max(deliveryFacturable, tsFacturable);
+  const totalNonFacturable = Math.max(deliveryNonFacturable, tsNonFacturable);
 
   const nonFactPct = (totalFacturable + totalNonFacturable) > 0 ? (totalNonFacturable / (totalFacturable + totalNonFacturable) * 100) : 0;
 
-  // Average daily rate — facturable hours only
-  const billableHours = fyDelivery.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+  // Average daily rate — from training_sessions (more up to date) or deliverySessions
+  const tsBillableHours = doneFySessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+  const deliveryBillableHours = fyDelivery.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
+  const billableHours = Math.max(tsBillableHours, deliveryBillableHours);
   const billableDays = hoursToJ(billableHours);
   const totalDaysDelivered = hoursToJ(totalHoursDelivered);
   const avgDailyRate = billableDays > 0 ? totalFacturable / billableDays : 0;
