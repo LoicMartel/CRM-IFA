@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContactsTable } from "@/components/commercial/contacts-table";
 import { createClient } from "@/lib/supabase/server";
 import { User, UserCheck } from "lucide-react";

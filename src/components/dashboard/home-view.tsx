@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar, Clock, Target, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone, Mic, MicOff } from "lucide-react";
+import { Calendar, Clock, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone, Mic, MicOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type R = Record<string, unknown>;

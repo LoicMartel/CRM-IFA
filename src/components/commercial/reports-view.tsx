@@ -8,7 +8,7 @@ import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { X, User, Building2, MapPin, Mic, MicOff, Video, Phone, Download } from "lucide-react";
+import { X, User, Building2, MapPin, Mic, MicOff } from "lucide-react";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import {

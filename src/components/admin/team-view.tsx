@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Plus, Pencil, Trash2, KeyRound, Shield, HelpCircle } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, KeyRound, Shield } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { createClient } from "@/lib/supabase/client";

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Plus, Search, Trash2, Users, UserCheck, UserPlus, Upload, ArrowUpDown } from "lucide-react";
+import { Plus, Search, Trash2, Users, UserCheck, UserPlus, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";

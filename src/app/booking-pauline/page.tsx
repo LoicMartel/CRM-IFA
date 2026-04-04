@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Phone, Video, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
 
 const DAYS = ["LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM.", "DIM."];
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];

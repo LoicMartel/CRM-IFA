@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Mic, MicOff, X, Phone, Video, User, Building2, MapPin, CheckSquare, Square, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mic, MicOff, X, Phone, Video, User, Building2, MapPin, Square } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";

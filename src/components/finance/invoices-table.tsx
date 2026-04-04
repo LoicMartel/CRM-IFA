@@ -12,7 +12,7 @@ import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Search, Trash2, Pencil, X, Building2, Handshake, Calendar, Receipt, Upload, FileText, Download } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, X, Building2, Handshake, Calendar, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
