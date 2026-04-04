@@ -16,9 +16,9 @@ export default function VSLPage() {
             <Image
               src="/lca-white-logo.png"
               alt="La Closing Académie"
-              width={70}
-              height={52}
-              className="w-[70px] h-auto"
+              width={120}
+              height={90}
+              className="w-[120px] h-auto"
             />
           </div>
 
