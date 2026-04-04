@@ -148,7 +148,7 @@ async function getData() {
     daysPlanned: Math.round(totalHoursPlanned / 8 * 10) / 10,
     facturableADV, totalFacture, totalEncaisse, totalDecaisse, soldeCompte,
     chartData,
-    targets,
+    targets: dedupedTargets,
   };
 }
 
