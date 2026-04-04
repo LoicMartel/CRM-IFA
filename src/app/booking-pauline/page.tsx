@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Phone, Video, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
 
 const DAYS = ["LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM.", "DIM."];
@@ -20,6 +21,8 @@ function formatDateFr(dateStr: string) {
 }
 
 export default function BookingPage() {
+  const searchParams = useSearchParams();
+  const clientType = searchParams.get("type") || "";
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -80,6 +83,7 @@ export default function BookingPage() {
           time: selectedSlot,
           assignedTo,
           mode,
+          clientType,
           ...form,
         }),
       });

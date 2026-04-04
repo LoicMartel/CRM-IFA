@@ -102,6 +102,7 @@ export default function LandingPage() {
     email: "",
     phone: "",
     website: "",
+    clientType: "" as "particulier" | "entreprise" | "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -121,7 +122,7 @@ export default function LandingPage() {
         body: JSON.stringify({ ...form, source: "landing-page" }),
       });
       if (!res.ok) throw new Error("Erreur");
-      window.location.href = "/vsl";
+      window.location.href = `/vsl?type=${form.clientType}`;
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
@@ -210,8 +211,37 @@ export default function LandingPage() {
                     className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
                 </div>
+                <div>
+                  <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
+                    Vous êtes<span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, clientType: "particulier" })}
+                      className={`flex-1 rounded border px-3 py-2.5 text-[14px] font-medium transition ${
+                        form.clientType === "particulier"
+                          ? "border-[#2e7ab5] bg-[#2e7ab5]/10 text-[#2e7ab5]"
+                          : "border-gray-200 text-[#1a2a3a] hover:border-[#2e7ab5]/50"
+                      }`}
+                    >
+                      Particulier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, clientType: "entreprise" })}
+                      className={`flex-1 rounded border px-3 py-2.5 text-[14px] font-medium transition ${
+                        form.clientType === "entreprise"
+                          ? "border-[#2e7ab5] bg-[#2e7ab5]/10 text-[#2e7ab5]"
+                          : "border-gray-200 text-[#1a2a3a] hover:border-[#2e7ab5]/50"
+                      }`}
+                    >
+                      Entreprise
+                    </button>
+                  </div>
+                </div>
                 <button
-                  type="submit" disabled={loading}
+                  type="submit" disabled={loading || !form.clientType}
                   className="mt-1 w-full rounded bg-[#2e7ab5] py-3 text-[14px] font-semibold text-white transition hover:bg-[#256a9e] disabled:opacity-60"
                 >
                   {loading ? "Envoi en cours\u2026" : "Découvrir la méthode"}

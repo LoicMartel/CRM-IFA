@@ -1,11 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
 const subtitleText =
   "Comme plus de 200 dirigeants \u2014 Wall Street English, Cartesia Education, ABC Cours Particuliers, Great Place To Work France, Leyton France, Berlitz France\u2026 Transformez vos leads en RDV, plus de clients et plus de croissance, sans augmenter VOTRE budget publicitaire.";
 
 export default function VSLPage() {
+  const searchParams = useSearchParams();
+  const clientType = searchParams.get("type") || "";
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Blue section: logo + title + subtitle */}
@@ -65,7 +69,7 @@ export default function VSLPage() {
             {/* Embedded booking - compact card */}
             <div className="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
               <iframe
-                src="/booking-pauline-commercial"
+                src={`/booking-pauline-commercial${clientType ? `?type=${clientType}` : ""}`}
                 className="w-full border-0"
                 style={{ height: "700px" }}
                 title="Réserver un appel découverte"

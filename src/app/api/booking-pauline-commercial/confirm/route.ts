@@ -17,7 +17,10 @@ export async function POST(request: Request) {
   const {
     date, time, firstName, lastName, email, phone, company, source, website,
     mode, // "visio" | "phone"
+    clientType, // "particulier" | "entreprise"
   } = body;
+
+  const isEntreprise = clientType === "entreprise";
 
   if (!date || !time || !firstName || !lastName || !email || !phone || !company) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
         email,
         phone,
         company_id: companyId,
-        contact_type: "inbound",
+        contact_type: isEntreprise ? "outbound" : "inbound",
         lifecycle_stage: "lead",
         lead_status: "booked",
         owner_id: PAULINE.id,
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
       contact_id: contact.id,
       company_id: companyId,
       assigned_to: PAULINE.id,
-      meeting_type: "R1",
+      meeting_type: isEntreprise ? "R0" : "R1",
       status: "booked",
       scheduled_at: startDateTime,
       duration_minutes: 15,

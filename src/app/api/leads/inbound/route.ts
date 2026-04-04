@@ -21,7 +21,7 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { firstName, lastName, email, phone, website, source } = body;
+    const { firstName, lastName, email, phone, website, source, clientType } = body;
 
     if (!firstName || !lastName || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: CORS_HEADERS });
@@ -84,10 +84,10 @@ export async function POST(request: Request) {
           email,
           phone: phone || null,
           company_id: companyId,
-          contact_type: "inbound",
+          contact_type: clientType === "entreprise" ? "outbound" : "inbound",
           lifecycle_stage: "lead_marketing",
           lead_status: "lead",
-          notes: `Source: Landing Page\nSite web: ${website || "—"}`,
+          notes: `Source: Landing Page\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
         })
         .select("id")
         .single();
