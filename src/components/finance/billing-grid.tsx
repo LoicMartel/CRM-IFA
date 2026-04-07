@@ -534,7 +534,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
             <colgroup>
               <col style={{ width: 130 }} />
-              <col style={{ width: 120 }} />
+              <col style={{ width: 100 }} />
               <col style={{ width: 70 }} />
               {fiscalMonths.map((m) => (
                 <col key={m.key} style={{ width: 75 }} />
@@ -553,7 +553,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                 <th style={{ position: "sticky", left: 130, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
                 </th>
-                <th style={{ position: "sticky", left: 250, zIndex: 10, background: "#f8fafb", padding: "8px 4px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "2px solid #dce8f0" }}>
+                <th style={{ position: "sticky", left: 230, zIndex: 10, background: "#f8fafb", padding: "8px 4px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "2px solid #dce8f0" }}>
                   Type
                 </th>
                 {fiscalMonths.map((m) => (
@@ -611,7 +611,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
                       {/* Funding type - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 250, zIndex: 5,
+                        position: "sticky", left: 230, zIndex: 5,
                         padding: "6px 4px", fontSize: 10, color: "#5a6a7a", fontWeight: 600,
                         borderRight: "2px solid #dce8f0",
                       }}>
@@ -716,7 +716,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                     TOTAUX
                   </td>
                   <td className="billing-sticky-header" style={{ position: "sticky", left: 130, zIndex: 6, borderRight: "1px solid #e8ecf1" }}></td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 250, zIndex: 6, borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 230, zIndex: 6, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
                       padding: "8px 3px", textAlign: "right", fontWeight: 700, fontSize: 10,
