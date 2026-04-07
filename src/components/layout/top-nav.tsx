@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -77,61 +77,40 @@ export function TopNav() {
     router.push("/login");
   }
 
-  async function handleSearch(q: string) {
-    setQuery(q);
-    if (q.length < 2) { setResults([]); setOpen(false); return; }
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const executeSearch = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults([]); setOpen(false); setLoading(false); return; }
 
     setLoading(true);
     const supabase = createClient();
-    const searchTerm = `%${q}%`;
 
-    const [
-      { data: contacts },
-      { data: companies },
-      { data: deals },
-      { data: learners },
-    ] = await Promise.all([
-      supabase.from("contacts").select("id, first_name, last_name, email, companies!contacts_company_id_fkey(name)").or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm}`).limit(5),
-      supabase.from("companies").select("id, name, city").ilike("name", searchTerm).limit(5),
-      supabase.from("deals").select("id, name, amount, companies(name)").ilike("name", searchTerm).limit(5),
-      supabase.from("learners").select("id, first_name, last_name, email, companies(name)").or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},email.ilike.${searchTerm}`).limit(5),
-    ]);
+    const { data, error } = await supabase.rpc("global_search", {
+      search_query: q,
+      max_per_type: 5,
+    });
 
-    const r: SearchResult[] = [];
-    (companies ?? []).forEach((c) => r.push({
-      id: c.id, type: "company", label: c.name,
-      sub: c.city ?? "Entreprise", href: `/clients/${c.id}`,
+    if (error) { setLoading(false); return; }
+
+    const r: SearchResult[] = (data ?? []).map((row: { id: string; result_type: string; label: string; sub: string; href: string }) => ({
+      id: row.id,
+      type: row.result_type as SearchResult["type"],
+      label: row.label,
+      sub: row.sub,
+      href: row.href,
     }));
-    (contacts ?? []).forEach((c) => {
-      const co = c.companies as unknown as { name: string } | null;
-      r.push({
-        id: c.id, type: "contact",
-        label: `${c.first_name} ${c.last_name}`,
-        sub: co?.name ?? c.email ?? "Contact",
-        href: `/contacts/${c.id}`,
-      });
-    });
-    (deals ?? []).forEach((d) => {
-      const co = d.companies as unknown as { name: string } | null;
-      r.push({
-        id: d.id, type: "deal", label: d.name,
-        sub: co?.name ?? (d.amount ? `${Number(d.amount).toLocaleString("fr-FR")} €` : "Deal"),
-        href: `/deals`,
-      });
-    });
-    (learners ?? []).forEach((l) => {
-      const co = l.companies as unknown as { name: string } | null;
-      r.push({
-        id: l.id, type: "learner",
-        label: `${l.first_name} ${l.last_name}`,
-        sub: co?.name ?? l.email ?? "Apprenant",
-        href: `/learners/${l.id}`,
-      });
-    });
 
     setResults(r);
     setOpen(r.length > 0);
     setLoading(false);
+  }, []);
+
+  function handleSearch(q: string) {
+    setQuery(q);
+    if (q.length < 2) { setResults([]); setOpen(false); return; }
+    setLoading(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => executeSearch(q), 250);
   }
 
   function handleSelect(result: SearchResult) {
