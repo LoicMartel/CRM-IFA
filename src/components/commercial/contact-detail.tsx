@@ -1747,7 +1747,7 @@ export function ContactDetail({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
-              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
+              <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}
@@ -1865,7 +1865,7 @@ export function ContactDetail({
                 value={activityForm.description}
                 onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })}
               />
-              <VoiceButton isRecording={activityVoice.isRecording} onClick={activityVoice.toggleRecording} />
+              <VoiceButton isRecording={activityVoice.isRecording} isFormatting={activityVoice.isFormatting} onClick={activityVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleLogActivity}
@@ -1962,7 +1962,7 @@ export function ContactDetail({
                 onChange={(e) => setRdvForm({ ...rdvForm, notes: e.target.value })}
                 placeholder={editingMeetingId ? "Écrivez vos notes de RDV ici..." : "Objectifs du RDV, points clés..."}
               />
-              <VoiceButton isRecording={rdvNotesVoice.isRecording} onClick={rdvNotesVoice.toggleRecording} />
+              <VoiceButton isRecording={rdvNotesVoice.isRecording} isFormatting={rdvNotesVoice.isFormatting} onClick={rdvNotesVoice.toggleRecording} />
             </div>
 
             {/* Status - key for post-RDV workflow */}
@@ -2128,7 +2128,7 @@ export function ContactDetail({
                 placeholder="Écrivez votre message..."
                 style={{ width: "100%", minHeight: 200, borderRadius: 8, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", lineHeight: 1.6, resize: "vertical", outline: "none" }}
               />
-              <VoiceButton isRecording={emailBodyVoice.isRecording} onClick={emailBodyVoice.toggleRecording} />
+              <VoiceButton isRecording={emailBodyVoice.isRecording} isFormatting={emailBodyVoice.isFormatting} onClick={emailBodyVoice.toggleRecording} />
 
               {/* Signature preview */}
               {senderInfo && (

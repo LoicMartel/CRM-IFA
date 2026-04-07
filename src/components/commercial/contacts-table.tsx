@@ -602,7 +602,7 @@ export function ContactsTable({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
-              <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
+              <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} />
             </div>
             <Button
               onClick={handleSave}
@@ -728,7 +728,7 @@ export function ContactsTable({
                 value={companyForm.notes}
                 onChange={(e) => setCompanyForm({ ...companyForm, notes: e.target.value })}
               />
-              <VoiceButton isRecording={companyNotesVoice.isRecording} onClick={companyNotesVoice.toggleRecording} />
+              <VoiceButton isRecording={companyNotesVoice.isRecording} isFormatting={companyNotesVoice.isFormatting} onClick={companyNotesVoice.toggleRecording} />
             </div>
             <Button onClick={handleSaveCompany} disabled={savingCompany || !companyForm.name.trim()} className="w-full">
               {savingCompany ? "Enregistrement..." : "Enregistrer"}

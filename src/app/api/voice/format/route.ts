@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+export async function POST(request: Request) {
+  const { rawText, existingText } = await request.json();
+
+  if (!rawText?.trim()) {
+    return NextResponse.json({ error: "Missing rawText" }, { status: 400 });
+  }
+
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 1024,
+    system: `Tu es un assistant de reformatage de dictée vocale en français.
+Tu reçois du texte brut issu d'une reconnaissance vocale (sans ponctuation, sans majuscules, sans mise en forme).
+Tu dois le reformater en texte écrit propre :
+- Ajouter la ponctuation correcte (points, virgules, points d'exclamation, points d'interrogation)
+- Mettre les majuscules en début de phrase et sur les noms propres
+- Ajouter des retours à la ligne pour séparer les paragraphes ou idées distinctes
+- Corriger les petites erreurs de reconnaissance vocale évidentes
+- Garder le sens exact du texte original, ne rien ajouter ni supprimer
+- Ne pas ajouter de guillemets autour du texte
+- Répondre UNIQUEMENT avec le texte reformaté, sans commentaire ni explication`,
+    messages: [
+      {
+        role: "user",
+        content: existingText
+          ? `Texte déjà écrit dans le champ :\n"""${existingText}"""\n\nNouveau texte dicté à reformater et ajouter à la suite :\n"""${rawText}"""`
+          : `Texte dicté à reformater :\n"""${rawText}"""`,
+      },
+    ],
+  });
+
+  const formatted = response.content[0].type === "text" ? response.content[0].text : rawText;
+
+  return NextResponse.json({ formatted });
+}

@@ -926,7 +926,7 @@ export function LearnerDetailView({
                   value={activityForm.description}
                   onChange={(e) => setActivityForm({ ...activityForm, description: e.target.value })}
                 />
-                <VoiceButton isRecording={activityVoice.isRecording} onClick={activityVoice.toggleRecording} />
+                <VoiceButton isRecording={activityVoice.isRecording} isFormatting={activityVoice.isFormatting} onClick={activityVoice.toggleRecording} />
               </div>
               <Button
                 onClick={handleLogActivity}
@@ -1016,7 +1016,7 @@ export function LearnerDetailView({
               <div className="space-y-2">
                 <Label>Notes</Label>
                 <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                <VoiceButton isRecording={notesVoice.isRecording} onClick={notesVoice.toggleRecording} />
+                <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} />
               </div>
               <Button onClick={handleSave} disabled={saving || (!form.first_name.trim() && !form.last_name.trim())} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
                 {saving ? "Enregistrement..." : "Enregistrer les modifications"}
