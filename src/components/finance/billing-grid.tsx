@@ -531,31 +531,41 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       {/* Grid */}
       <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 1100 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: 130 }} />
+              <col style={{ width: 120 }} />
+              <col style={{ width: 70 }} />
+              {fiscalMonths.map((m) => (
+                <col key={m.key} style={{ width: 75 }} />
+              ))}
+              <col style={{ width: 80 }} />
+              {!isReadOnly && <col style={{ width: 40 }} />}
+            </colgroup>
             <thead>
               <tr style={{ background: "#f8fafb", borderBottom: "2px solid #e8ecf1" }}>
                 <th
-                  style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 160, borderRight: "1px solid #e8ecf1", cursor: "pointer" }}
+                  style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1", cursor: "pointer" }}
                   onClick={() => setCompanySort(companySort === "asc" ? "desc" : companySort === "desc" ? null : "asc")}
                 >
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Entreprise <ArrowUpDown style={{ width: 12, height: 12 }} /></span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>Entreprise <ArrowUpDown style={{ width: 10, height: 10 }} /></span>
                 </th>
-                <th style={{ position: "sticky", left: 160, zIndex: 10, background: "#f8fafb", padding: "10px 12px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 110, borderRight: "1px solid #e8ecf1" }}>
+                <th style={{ position: "sticky", left: 130, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
                 </th>
-                <th style={{ position: "sticky", left: 270, zIndex: 10, background: "#f8fafb", padding: "10px 8px", textAlign: "left", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 90, borderRight: "2px solid #dce8f0" }}>
+                <th style={{ position: "sticky", left: 250, zIndex: 10, background: "#f8fafb", padding: "8px 4px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "2px solid #dce8f0" }}>
                   Type
                 </th>
                 {fiscalMonths.map((m) => (
-                  <th key={m.key} style={{ padding: "10px 6px", textAlign: "right", fontWeight: 700, fontSize: 11, color: "#5a6a7a", minWidth: 95, borderRight: "1px solid #f0f4f8" }}>
+                  <th key={m.key} style={{ padding: "8px 3px", textAlign: "right", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #f0f4f8" }}>
                     {m.label}
                   </th>
                 ))}
-                <th style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, fontSize: 11, color: "#1a2a3a", minWidth: 100, borderLeft: "2px solid #dce8f0" }}>
+                <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, fontSize: 10, color: "#1a2a3a", borderLeft: "2px solid #dce8f0" }}>
                   TOTAL
                 </th>
                 {!isReadOnly && (
-                  <th style={{ padding: "10px 8px", width: 60 }}></th>
+                  <th style={{ padding: "8px 4px", width: 40 }}></th>
                 )}
               </tr>
             </thead>
@@ -574,10 +584,10 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                       {idx === 0 && (
                         <td className="billing-sticky-cell" rowSpan={group.entries.length} style={{
                           position: "sticky", left: 0, zIndex: 5,
-                          padding: "8px 12px", fontWeight: 700, fontSize: 12, color: "#1a2a3a",
+                          padding: "6px 6px", fontWeight: 700, fontSize: 11, color: "#1a2a3a",
                           borderRight: "1px solid #e8ecf1", verticalAlign: "top",
                           borderBottom: "2px solid #dce8f0",
-                          maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }} title={group.companyName}>
                           {group.companyId ? (
                             <span onClick={() => router.push(`/clients/${group.companyId}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
@@ -591,18 +601,18 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
                       {/* Client name - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 160, zIndex: 5,
-                        padding: "8px 12px", fontWeight: 600, fontSize: 12, color: "#1a2a3a",
+                        position: "sticky", left: 130, zIndex: 5,
+                        padding: "6px 6px", fontWeight: 600, fontSize: 11, color: "#1a2a3a",
                         borderRight: "1px solid #e8ecf1", cursor: "pointer",
-                        maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                       }} title={entry.client_name} onClick={() => openDetail(entry)}>
                         <span style={{ color: "#1a6b9c", textDecoration: "underline" }}>{entry.client_name}</span>
                       </td>
 
                       {/* Funding type - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 270, zIndex: 5,
-                        padding: "8px 8px", fontSize: 11, color: "#5a6a7a", fontWeight: 600,
+                        position: "sticky", left: 250, zIndex: 5,
+                        padding: "6px 4px", fontSize: 10, color: "#5a6a7a", fontWeight: 600,
                         borderRight: "2px solid #dce8f0",
                       }}>
                         {entry.funding_type || "—"}
@@ -657,7 +667,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                                 }}
                               />
                             ) : (
-                              <div style={{ padding: "8px 8px", fontSize: 12, fontWeight: md?.amount ? 500 : 400 }}>
+                              <div style={{ padding: "4px 3px", fontSize: 10, fontWeight: md?.amount ? 500 : 400 }}>
                                 {md?.amount ? fmt(md.amount) : ""}
                               </div>
                             )}
@@ -667,7 +677,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
                       {/* Row total */}
                       <td style={{
-                        padding: "8px 12px", textAlign: "right", fontWeight: 700, fontSize: 12,
+                        padding: "4px 6px", textAlign: "right", fontWeight: 700, fontSize: 10,
                         color: "#1a2a3a", borderLeft: "2px solid #dce8f0",
                       }}>
                         {rowTotal(entry) > 0 ? fmt(rowTotal(entry)) : ""}
@@ -699,24 +709,24 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               {filtered.length > 0 && (
                 <tr style={{ borderTop: "2px solid #dce8f0", background: "#f8fafb" }}>
                   <td className="billing-sticky-header" style={{
-                    position: "sticky", left: 0, zIndex: 5,
-                    padding: "10px 12px", fontWeight: 800, fontSize: 12, color: "#1a2a3a",
+                    position: "sticky", left: 0, zIndex: 6,
+                    padding: "8px 6px", fontWeight: 800, fontSize: 10, color: "#1a2a3a",
                     borderRight: "1px solid #e8ecf1",
                   }}>
                     TOTAUX
                   </td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 160, zIndex: 5, borderRight: "1px solid #e8ecf1" }}></td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 270, zIndex: 5, borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 130, zIndex: 6, borderRight: "1px solid #e8ecf1" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: 250, zIndex: 6, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
-                      padding: "10px 8px", textAlign: "right", fontWeight: 700, fontSize: 12,
+                      padding: "8px 3px", textAlign: "right", fontWeight: 700, fontSize: 10,
                       color: "#1a2a3a", borderRight: "1px solid #f0f4f8",
                     }}>
                       {colTotals[mk.key] > 0 ? fmt(colTotals[mk.key]) : ""}
                     </td>
                   ))}
                   <td style={{
-                    padding: "10px 12px", textAlign: "right", fontWeight: 800, fontSize: 13,
+                    padding: "8px 6px", textAlign: "right", fontWeight: 800, fontSize: 11,
                     color: "#1a2a3a", borderLeft: "2px solid #dce8f0",
                   }}>
                     {fmtCompact(grandTotal)}
