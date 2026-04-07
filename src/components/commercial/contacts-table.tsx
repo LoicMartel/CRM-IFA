@@ -11,8 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 import { formatPhone } from "@/lib/utils";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -109,6 +111,10 @@ export function ContactsTable({
     company_id: "", is_client: false, notes: "", lifecycle_stage: "prospect",
     lead_status: "lead", linkedin_url: "", contact_type: "", source_id: "",
   });
+  const [localCompanies, setLocalCompanies] = useState(companies);
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
+  const [companyForm, setCompanyForm] = useState({ name: "", phone: "", email: "", city: "", industry: "", lifecycle_stage: "prospect" });
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = contacts
@@ -185,6 +191,35 @@ export function ContactsTable({
       lead_status: "lead", linkedin_url: "", contact_type: "", source_id: "",
     });
     router.refresh();
+  }
+
+  async function handleSaveCompany() {
+    setSavingCompany(true);
+    if (companyForm.name) {
+      const dup = await checkCompanyDuplicate(companyForm.name);
+      if (dup.isDuplicate) {
+        if (!window.confirm(`⚠ Doublon détecté !\n\n${dup.message}\n\nVoulez-vous quand même créer cette entreprise ?`)) {
+          setSavingCompany(false);
+          return;
+        }
+      }
+    }
+    const supabase = createClient();
+    const { data } = await supabase.from("companies").insert({
+      name: companyForm.name,
+      phone: companyForm.phone || null,
+      email: companyForm.email || null,
+      city: companyForm.city || null,
+      industry: companyForm.industry || null,
+      lifecycle_stage: companyForm.lifecycle_stage || "prospect",
+    }).select("id, name").single();
+    if (data) {
+      setLocalCompanies((prev) => [...prev, { id: data.id, name: data.name }].sort((a, b) => a.name.localeCompare(b.name)));
+      setForm((f) => ({ ...f, company_id: data.id }));
+    }
+    setSavingCompany(false);
+    setCompanyDialogOpen(false);
+    setCompanyForm({ name: "", phone: "", email: "", city: "", industry: "", lifecycle_stage: "prospect" });
   }
 
   function formatDate(d: string | null): string {
@@ -462,16 +497,21 @@ export function ContactsTable({
             </div>
             <div className="space-y-2">
               <Label>Entreprise{form.contact_type === "outbound" ? " *" : ""}</Label>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                value={form.company_id}
-                onChange={(e) => setForm({ ...form, company_id: e.target.value })}
-              >
-                <option value="">Sélectionner</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={form.company_id}
+                  onChange={(e) => setForm({ ...form, company_id: e.target.value })}
+                >
+                  <option value="">Sélectionner</option>
+                  {localCompanies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setCompanyDialogOpen(true)}>
+                  <Plus className="h-3 w-3 mr-1" />Créer
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Source</Label>
@@ -546,6 +586,43 @@ export function ContactsTable({
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Créer une entreprise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Nom *</Label>
+              <Input value={companyForm.name} onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Téléphone</Label>
+                <Input value={companyForm.phone} onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={companyForm.email} onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ville</Label>
+                <Input value={companyForm.city} onChange={(e) => setCompanyForm({ ...companyForm, city: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Industrie</Label>
+                <Input value={companyForm.industry} onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })} />
+              </div>
+            </div>
+            <Button onClick={handleSaveCompany} disabled={savingCompany || !companyForm.name.trim()} className="w-full">
+              {savingCompany ? "Enregistrement..." : "Créer l'entreprise"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

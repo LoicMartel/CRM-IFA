@@ -6,7 +6,7 @@ const NAZNINE = {
   id: "9bcd91e5-0c11-44ba-9bc8-1de4bad9c040",
   name: "Naznine MOUHAMAD",
   calendarIds: [
-    "naznine@closing-academie.com", // placeholder — will be updated with real calendar IDs
+    "naznine@closing-academie.com",
   ],
 };
 
