@@ -3,12 +3,22 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const TONE_INSTRUCTIONS: Record<string, string> = {
+  neutral: "Reformate le texte de manière neutre et naturelle, comme un texte écrit standard.",
+  professional: "Reformate le texte dans un ton professionnel et formel. Utilise un vocabulaire soutenu, des formulations business. Vouvoiement si pertinent.",
+  friendly: "Reformate le texte dans un ton amical et chaleureux. Garde un style décontracté mais correct. Tutoiement si pertinent.",
+  concise: "Reformate le texte de manière très concise. Va droit à l'essentiel, supprime les répétitions et les mots superflus. Phrases courtes.",
+  detailed: "Reformate le texte de manière détaillée et structurée. Développe les idées, ajoute des connecteurs logiques, organise en paragraphes clairs.",
+};
+
 export async function POST(request: Request) {
-  const { rawText, existingText } = await request.json();
+  const { rawText, existingText, tone } = await request.json();
 
   if (!rawText?.trim()) {
     return NextResponse.json({ error: "Missing rawText" }, { status: 400 });
   }
+
+  const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.neutral;
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -22,7 +32,9 @@ Tu dois le reformater en texte écrit propre :
 - Corriger les petites erreurs de reconnaissance vocale évidentes
 - Garder le sens exact du texte original, ne rien ajouter ni supprimer
 - Ne pas ajouter de guillemets autour du texte
-- Répondre UNIQUEMENT avec le texte reformaté, sans commentaire ni explication`,
+- Répondre UNIQUEMENT avec le texte reformaté, sans commentaire ni explication
+
+STYLE ET TON : ${toneInstruction}`,
     messages: [
       {
         role: "user",

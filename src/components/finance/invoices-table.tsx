@@ -632,7 +632,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
-              <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} />
+              <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.deal_id || !form.amount || (monthlyMode && selectedMonths.length === 0)} className="w-full">
               {saving ? "Enregistrement..." : editingId ? "Mettre à jour" : "Enregistrer"}

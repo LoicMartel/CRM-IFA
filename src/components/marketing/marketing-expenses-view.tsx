@@ -355,7 +355,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Détails optionnels..."
               />
-              <VoiceButton isRecording={descVoice.isRecording} isFormatting={descVoice.isFormatting} onClick={descVoice.toggleRecording} />
+              <VoiceButton isRecording={descVoice.isRecording} isFormatting={descVoice.isFormatting} onClick={descVoice.toggleRecording} tone={descVoice.tone} onToneChange={descVoice.setTone} />
             </div>
             {/* Documents section — only for existing expenses */}
             {editingId && (

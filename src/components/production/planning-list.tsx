@@ -1728,7 +1728,7 @@ export function PlanningList({
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
-              <VoiceButton isRecording={planNotesVoice.isRecording} isFormatting={planNotesVoice.isFormatting} onClick={planNotesVoice.toggleRecording} />
+              <VoiceButton isRecording={planNotesVoice.isRecording} isFormatting={planNotesVoice.isFormatting} onClick={planNotesVoice.toggleRecording} tone={planNotesVoice.tone} onToneChange={planNotesVoice.setTone} />
             </div>
 
             <Button

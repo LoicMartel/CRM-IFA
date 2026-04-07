@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import type { VoiceTone } from "@/components/ui/voice-button";
 
 export function useVoiceDictation(
   getValue: () => string,
@@ -8,9 +9,16 @@ export function useVoiceDictation(
 ) {
   const [isRecording, setIsRecording] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
+  const [tone, setTone] = useState<VoiceTone>("neutral");
   const recognitionRef = useRef<any>(null);
   const rawPartsRef = useRef<string[]>([]);
   const baseTextRef = useRef("");
+  const toneRef = useRef<VoiceTone>("neutral");
+
+  const updateTone = useCallback((t: VoiceTone) => {
+    setTone(t);
+    toneRef.current = t;
+  }, []);
 
   const formatWithAI = useCallback(async (rawText: string, existingText: string) => {
     setIsFormatting(true);
@@ -18,14 +26,13 @@ export function useVoiceDictation(
       const res = await fetch("/api/voice/format", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawText, existingText }),
+        body: JSON.stringify({ rawText, existingText, tone: toneRef.current }),
       });
       const data = await res.json();
       if (data.formatted) {
         setValue(existingText ? existingText.trimEnd() + "\n" + data.formatted : data.formatted);
       }
     } catch {
-      // If AI formatting fails, keep the raw text with basic cleanup
       const cleaned = rawText.charAt(0).toUpperCase() + rawText.slice(1);
       setValue(existingText ? existingText.trimEnd() + "\n" + cleaned : cleaned);
     }
@@ -54,7 +61,6 @@ export function useVoiceDictation(
           interim = transcript;
         }
       }
-      // Show raw text as preview while recording
       const rawSoFar = rawPartsRef.current.join(" ") + (interim ? " " + interim : "");
       const prefix = baseTextRef.current ? baseTextRef.current.trimEnd() + "\n" : "";
       setValue(prefix + rawSoFar);
@@ -88,5 +94,5 @@ export function useVoiceDictation(
     if (isRecording) stopRecording(); else startRecording();
   }, [isRecording, startRecording, stopRecording]);
 
-  return { isRecording, isFormatting, startRecording, stopRecording, toggleRecording };
+  return { isRecording, isFormatting, tone, setTone: updateTone, startRecording, stopRecording, toggleRecording };
 }

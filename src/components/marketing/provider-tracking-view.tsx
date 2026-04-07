@@ -609,7 +609,7 @@ export function ProviderTrackingView({
                 onChange={(e) => setForm({ ...form, comment: e.target.value })}
                 placeholder="Observations, contexte..."
               />
-              <VoiceButton isRecording={commentVoice.isRecording} isFormatting={commentVoice.isFormatting} onClick={commentVoice.toggleRecording} />
+              <VoiceButton isRecording={commentVoice.isRecording} isFormatting={commentVoice.isFormatting} onClick={commentVoice.toggleRecording} tone={commentVoice.tone} onToneChange={commentVoice.setTone} />
             </div>
 
             <Button
