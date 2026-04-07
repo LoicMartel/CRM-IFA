@@ -114,7 +114,13 @@ export function ContactsTable({
   const [localCompanies, setLocalCompanies] = useState(companies);
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
-  const [companyForm, setCompanyForm] = useState({ name: "", phone: "", email: "", city: "", industry: "", lifecycle_stage: "prospect" });
+  const [companyTypes, setCompanyTypes] = useState<{ id: string; name: string }[]>([]);
+  const [companyForm, setCompanyForm] = useState({
+    name: "", company_type_id: "", phone: "", email: "", address: "", city: "",
+    website: "", notes: "", industry: "", lifecycle_stage: "prospect",
+    employee_count: "", annual_revenue: "", linkedin_url: "", siret: "", opco: "",
+  });
+  const companyNotesVoice = useVoiceDictation(() => companyForm.notes, (t) => setCompanyForm((f) => ({ ...f, notes: t })));
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const filtered = contacts
@@ -193,6 +199,21 @@ export function ContactsTable({
     router.refresh();
   }
 
+  async function openCompanyDialog() {
+    setCompanyDialogOpen(true);
+    if (companyTypes.length === 0) {
+      const supabase = createClient();
+      const { data } = await supabase.from("company_types").select("id, name").order("name");
+      if (data) setCompanyTypes(data);
+    }
+  }
+
+  const emptyCompanyForm = {
+    name: "", company_type_id: "", phone: "", email: "", address: "", city: "",
+    website: "", notes: "", industry: "", lifecycle_stage: "prospect",
+    employee_count: "", annual_revenue: "", linkedin_url: "", siret: "", opco: "",
+  };
+
   async function handleSaveCompany() {
     setSavingCompany(true);
     if (companyForm.name) {
@@ -207,11 +228,20 @@ export function ContactsTable({
     const supabase = createClient();
     const { data } = await supabase.from("companies").insert({
       name: companyForm.name,
+      company_type_id: companyForm.company_type_id || null,
       phone: companyForm.phone || null,
       email: companyForm.email || null,
+      address: companyForm.address || null,
       city: companyForm.city || null,
+      website: companyForm.website || null,
+      notes: companyForm.notes || null,
       industry: companyForm.industry || null,
       lifecycle_stage: companyForm.lifecycle_stage || "prospect",
+      employee_count: companyForm.employee_count ? parseInt(companyForm.employee_count) : null,
+      annual_revenue: companyForm.annual_revenue ? parseFloat(companyForm.annual_revenue) : null,
+      linkedin_url: companyForm.linkedin_url || null,
+      siret: companyForm.siret || null,
+      opco: companyForm.opco || null,
     }).select("id, name").single();
     if (data) {
       setLocalCompanies((prev) => [...prev, { id: data.id, name: data.name }].sort((a, b) => a.name.localeCompare(b.name)));
@@ -219,7 +249,7 @@ export function ContactsTable({
     }
     setSavingCompany(false);
     setCompanyDialogOpen(false);
-    setCompanyForm({ name: "", phone: "", email: "", city: "", industry: "", lifecycle_stage: "prospect" });
+    setCompanyForm(emptyCompanyForm);
   }
 
   function formatDate(d: string | null): string {
@@ -508,7 +538,7 @@ export function ContactsTable({
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
-                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setCompanyDialogOpen(true)}>
+                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={openCompanyDialog}>
                   <Plus className="h-3 w-3 mr-1" />Créer
                 </Button>
               </div>
@@ -588,14 +618,45 @@ export function ContactsTable({
       </Sheet>
 
       <Dialog open={companyDialogOpen} onOpenChange={setCompanyDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Créer une entreprise</DialogTitle>
+            <DialogTitle>Nouvelle entreprise</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label>Nom *</Label>
               <Input value={companyForm.name} onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={companyForm.company_type_id}
+                onChange={(e) => setCompanyForm({ ...companyForm, company_type_id: e.target.value })}
+              >
+                <option value="">Sélectionner</option>
+                {companyTypes.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Industrie</Label>
+              <Input value={companyForm.industry} onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cycle de vie</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={companyForm.lifecycle_stage}
+                onChange={(e) => setCompanyForm({ ...companyForm, lifecycle_stage: e.target.value })}
+              >
+                <option value="lead">Lead</option>
+                <option value="prospect">Prospect</option>
+                <option value="customer">Client</option>
+                <option value="partner">Partenaire</option>
+                <option value="former_customer">Ancien client</option>
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -607,18 +668,70 @@ export function ContactsTable({
                 <Input type="email" value={companyForm.email} onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })} />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Adresse</Label>
+              <Input value={companyForm.address} onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Ville</Label>
                 <Input value={companyForm.city} onChange={(e) => setCompanyForm({ ...companyForm, city: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Industrie</Label>
-                <Input value={companyForm.industry} onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })} />
+                <Label>Site web</Label>
+                <Input value={companyForm.website} onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })} />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>SIRET</Label>
+              <Input value={companyForm.siret} onChange={(e) => setCompanyForm({ ...companyForm, siret: e.target.value })} placeholder="Ex: 123 456 789 00012" />
+            </div>
+            <div className="space-y-2">
+              <Label>OPCO</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={companyForm.opco}
+                onChange={(e) => setCompanyForm({ ...companyForm, opco: e.target.value })}
+              >
+                <option value="">Aucun</option>
+                <option value="AFDAS">AFDAS</option>
+                <option value="AGEFICE">AGEFICE</option>
+                <option value="AKTO">AKTO</option>
+                <option value="ATLAS">ATLAS</option>
+                <option value="FIFPL">FIFPL</option>
+                <option value="OCAPIAT">OCAPIAT</option>
+                <option value="OPCO Commerce">OPCO Commerce</option>
+                <option value="OPCO EP">OPCO EP</option>
+                <option value="OPCO Mobilité">OPCO Mobilité</option>
+                <option value="OPCO2I">OPCO2I</option>
+                <option value="Uniformation">Uniformation</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>LinkedIn</Label>
+              <Input value={companyForm.linkedin_url} onChange={(e) => setCompanyForm({ ...companyForm, linkedin_url: e.target.value })} placeholder="https://linkedin.com/company/..." />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nb employés</Label>
+                <Input type="number" value={companyForm.employee_count} onChange={(e) => setCompanyForm({ ...companyForm, employee_count: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Revenue annuel (€)</Label>
+                <Input type="number" value={companyForm.annual_revenue} onChange={(e) => setCompanyForm({ ...companyForm, annual_revenue: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <textarea
+                className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+                value={companyForm.notes}
+                onChange={(e) => setCompanyForm({ ...companyForm, notes: e.target.value })}
+              />
+              <VoiceButton isRecording={companyNotesVoice.isRecording} onClick={companyNotesVoice.toggleRecording} />
+            </div>
             <Button onClick={handleSaveCompany} disabled={savingCompany || !companyForm.name.trim()} className="w-full">
-              {savingCompany ? "Enregistrement..." : "Créer l'entreprise"}
+              {savingCompany ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>
         </DialogContent>

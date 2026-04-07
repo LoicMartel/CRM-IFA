@@ -44,9 +44,14 @@ export async function GET(request: Request) {
 
   // Check ALL calendars for busy times
   const allBusy: { start: string; end: string }[] = [];
+  const calendarErrors: string[] = [];
   for (const calId of NAZNINE.calendarIds) {
     const { events, error } = await getCalendarEvents({ calendarId: calId, timeMin, timeMax, timeZone: TZ });
-    if (!error) allBusy.push(...events);
+    if (error) {
+      calendarErrors.push(`${calId}: ${error}`);
+    } else {
+      allBusy.push(...events);
+    }
   }
 
   const offset = getParisOffset(date);
@@ -72,5 +77,6 @@ export async function GET(request: Request) {
     slots: filtered.map((s) => ({ start: s.start, end: s.end })),
     assignedTo: NAZNINE.id,
     assignedName: NAZNINE.name,
+    _debug: { busyCount: allBusy.length, calendarErrors: calendarErrors.length > 0 ? calendarErrors : undefined },
   });
 }
