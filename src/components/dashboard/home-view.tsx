@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar, Clock, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone, Mic, MicOff } from "lucide-react";
+import { Calendar, Clock, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 
 type R = Record<string, unknown>;
 
@@ -159,57 +161,15 @@ export function HomeView({
   const [taskForm, setTaskForm] = useState({ title: "", description: "", due_date: "", task_deadline: "" });
   const [savingTask, setSavingTask] = useState(false);
 
-  // ===== Voice dictation state =====
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordTarget, setRecordTarget] = useState<"notes" | "outcome">("notes");
-  const [recordContext, setRecordContext] = useState<"rdv" | "session">("rdv");
-  const recognitionRef = useRef<any>(null);
-
-  // ===== Handlers =====
+  // ===== Voice dictation =====
+  const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm(f => ({ ...f, notes: t })));
+  const rdvOutcomeVoice = useVoiceDictation(() => rdvForm.outcome, (t) => setRdvForm(f => ({ ...f, outcome: t })));
+  const sessionNotesVoice = useVoiceDictation(() => sessionForm.notes, (t) => setSessionForm(f => ({ ...f, notes: t })));
 
   function stopRecording() {
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-      recognitionRef.current = null;
-    }
-    setIsRecording(false);
-  }
-
-  function startRecording(target: "notes" | "outcome", context: "rdv" | "session") {
-    if (typeof window === "undefined") return;
-    stopRecording();
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-    const recognition = new SR();
-    recognition.lang = "fr-FR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    let finalTranscript = context === "rdv"
-      ? (target === "notes" ? rdvForm.notes : rdvForm.outcome)
-      : sessionForm.notes;
-    recognition.onresult = (e: any) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? " " : "") + e.results[i][0].transcript;
-        } else {
-          interim += e.results[i][0].transcript;
-        }
-      }
-      const value = finalTranscript + (interim ? " " + interim : "");
-      if (context === "rdv") {
-        setRdvForm(f => ({ ...f, [target]: value }));
-      } else {
-        setSessionForm(f => ({ ...f, notes: value }));
-      }
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-    setRecordTarget(target);
-    setRecordContext(context);
+    rdvNotesVoice.stopRecording();
+    rdvOutcomeVoice.stopRecording();
+    sessionNotesVoice.stopRecording();
   }
 
   function openMeeting(m: R) {
@@ -808,26 +768,14 @@ export function HomeView({
 
                 {/* Notes */}
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Notes du RDV</div>
-                    <button
-                      onClick={() => isRecording && recordTarget === "notes" && recordContext === "rdv" ? stopRecording() : startRecording("notes", "rdv")}
-                      style={{
-                        height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording && recordTarget === "notes" && recordContext === "rdv" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                        color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                        animation: isRecording && recordTarget === "notes" && recordContext === "rdv" ? "pulse 1.5s infinite" : "none",
-                      }}
-                    >
-                      {isRecording && recordTarget === "notes" && recordContext === "rdv" ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Notes du RDV</div>
                   <textarea
                     value={rdvForm.notes}
                     onChange={(e) => setRdvForm({ ...rdvForm, notes: e.target.value })}
                     placeholder="Écrivez ou dictez vos notes de RDV..."
                     style={{ width: "100%", minHeight: 100, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
                   />
+                  <VoiceButton isRecording={rdvNotesVoice.isRecording} isFormatting={rdvNotesVoice.isFormatting} onClick={rdvNotesVoice.toggleRecording} tone={rdvNotesVoice.tone} onToneChange={rdvNotesVoice.setTone} />
                 </div>
 
                 {/* Statut du RDV */}
@@ -890,26 +838,14 @@ export function HomeView({
 
                 {/* Outcome (résumé) */}
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Résumé / Outcome</div>
-                    <button
-                      onClick={() => isRecording && recordTarget === "outcome" && recordContext === "rdv" ? stopRecording() : startRecording("outcome", "rdv")}
-                      style={{
-                        height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording && recordTarget === "outcome" && recordContext === "rdv" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                        color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                        animation: isRecording && recordTarget === "outcome" && recordContext === "rdv" ? "pulse 1.5s infinite" : "none",
-                      }}
-                    >
-                      {isRecording && recordTarget === "outcome" && recordContext === "rdv" ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Résumé / Outcome</div>
                   <textarea
                     value={rdvForm.outcome}
                     onChange={(e) => setRdvForm({ ...rdvForm, outcome: e.target.value })}
                     placeholder="Résumé du RDV, prochaine étape..."
                     style={{ width: "100%", minHeight: 70, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
                   />
+                  <VoiceButton isRecording={rdvOutcomeVoice.isRecording} isFormatting={rdvOutcomeVoice.isFormatting} onClick={rdvOutcomeVoice.toggleRecording} tone={rdvOutcomeVoice.tone} onToneChange={rdvOutcomeVoice.setTone} />
                 </div>
               </div>
 
@@ -1050,26 +986,14 @@ export function HomeView({
 
                 {/* Notes */}
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Notes</div>
-                    <button
-                      onClick={() => isRecording && recordTarget === "notes" && recordContext === "session" ? stopRecording() : startRecording("notes", "session")}
-                      style={{
-                        height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording && recordTarget === "notes" && recordContext === "session" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                        color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                        animation: isRecording && recordTarget === "notes" && recordContext === "session" ? "pulse 1.5s infinite" : "none",
-                      }}
-                    >
-                      {isRecording && recordTarget === "notes" && recordContext === "session" ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Notes</div>
                   <textarea
                     value={sessionForm.notes}
                     onChange={(e) => setSessionForm({ ...sessionForm, notes: e.target.value })}
                     placeholder="Écrire ou dicter vos notes..."
                     style={{ width: "100%", minHeight: 140, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
                   />
+                  <VoiceButton isRecording={sessionNotesVoice.isRecording} isFormatting={sessionNotesVoice.isFormatting} onClick={sessionNotesVoice.toggleRecording} tone={sessionNotesVoice.tone} onToneChange={sessionNotesVoice.setTone} />
                 </div>
               </div>
 

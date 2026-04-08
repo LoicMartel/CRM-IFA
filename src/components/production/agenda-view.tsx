@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Mic, MicOff, X, Video, Building2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Video, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useVoiceDictation } from "@/hooks/use-voice-dictation";
+import { VoiceButton } from "@/components/ui/voice-button";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
@@ -80,8 +82,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
   const [selectedSession, setSelectedSession] = useState<AgendaSession | null>(null);
   const [notesText, setNotesText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const agendaNotesVoice = useVoiceDictation(() => notesText, (t) => setNotesText(t));
   const [filterTrainer, setFilterTrainer] = useState("");
 
   const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
@@ -168,67 +169,8 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     router.refresh();
   }
 
-  // Speech recognition
-  function autoPunctuate(text: string): string {
-    let result = text;
-    result = result.charAt(0).toUpperCase() + result.slice(1);
-    result = result.replace(/\s*virgule\s*/gi, ", ");
-    result = result.replace(/\s*point d'exclamation\s*/gi, "! ");
-    result = result.replace(/\s*point d'interrogation\s*/gi, "? ");
-    result = result.replace(/\s*point\s*$/gi, ".");
-    result = result.replace(/\s*point\s+/gi, ". ");
-    result = result.replace(/\s*deux[ -]points\s*/gi, " : ");
-    result = result.replace(/\s*point-virgule\s*/gi, " ; ");
-    result = result.replace(/\s*tiret\s*/gi, " - ");
-    result = result.replace(/\s*retour [àa] la ligne\s*/gi, "\n");
-    result = result.replace(/\s*aller [àa] la ligne\s*/gi, "\n");
-    result = result.replace(/\s*nouvelle ligne\s*/gi, "\n");
-    result = result.replace(/\s*saut de ligne\s*/gi, "\n");
-    result = result.replace(/\s*[àa] la ligne\s*/gi, "\n");
-    result = result.replace(/([.!?]\s+|[\n])(\w)/g, (_, p, c) => p + c.toUpperCase());
-    result = result.replace(/ {2,}/g, " ");
-    return result.trim();
-  }
-
-  function startRecording() {
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) { alert("Reconnaissance vocale non supportée."); return; }
-    const recognition = new SR();
-    recognition.lang = "fr-FR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    let finalTranscript = notesText;
-
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          const punctuated = autoPunctuate(transcript);
-          const startsWithNewline = punctuated.startsWith("\n");
-          if (startsWithNewline) {
-            finalTranscript = finalTranscript.trimEnd() + punctuated;
-          } else {
-            if (finalTranscript && !/[.!?:;\n]\s*$/.test(finalTranscript)) finalTranscript += ". ";
-            else if (finalTranscript && !/[\s\n]$/.test(finalTranscript)) finalTranscript += " ";
-            finalTranscript += punctuated;
-          }
-        } else {
-          interim = transcript;
-        }
-      }
-      setNotesText(finalTranscript + (interim ? " " + interim : ""));
-    };
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => setIsRecording(false);
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-  }
-
   function stopRecording() {
-    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null; }
-    setIsRecording(false);
+    agendaNotesVoice.stopRecording();
   }
 
   function renderSessionCard(s: AgendaSession) {
@@ -570,24 +512,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                     placeholder="Écrire ou dicter vos notes..."
                     style={{ width: "100%", minHeight: 140, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
                   />
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-                    <button
-                      onClick={() => isRecording ? stopRecording() : startRecording()}
-                      style={{
-                        height: 38, width: 38, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                        color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: isRecording ? "0 0 0 4px rgba(231,76,60,0.2)" : "none",
-                        animation: isRecording ? "pulse 1.5s infinite" : "none",
-                      }}
-                      title={isRecording ? "Arrêter" : "Dicter"}
-                    >
-                      {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    </button>
-                    <span style={{ fontSize: 12, color: isRecording ? "#e74c3c" : "#8399a9", fontWeight: isRecording ? 600 : 400 }}>
-                      {isRecording ? "Enregistrement..." : "Dicter les notes"}
-                    </span>
-                  </div>
+                  <VoiceButton isRecording={agendaNotesVoice.isRecording} isFormatting={agendaNotesVoice.isFormatting} onClick={agendaNotesVoice.toggleRecording} tone={agendaNotesVoice.tone} onToneChange={agendaNotesVoice.setTone} />
                 </div>
               </div>
 
