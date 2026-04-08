@@ -7,6 +7,9 @@ const NAZNINE = {
   name: "Naznine MOUHAMAD",
   calendarIds: [
     "nazninemouhamad@gmail.com",
+    "te0dovkg65qhgpnk6jgq044ol0@group.calendar.google.com",
+    "g3riosgeldlc8tka3554md01bo@group.calendar.google.com",
+    "97bvpqcqfrd638kotnhgu41pv0@group.calendar.google.com",
   ],
 };
 
