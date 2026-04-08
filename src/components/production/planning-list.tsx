@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -16,7 +16,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, Mic, MicOff, X, HelpCircle, ArrowUpDown } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, X, HelpCircle, ArrowUpDown } from "lucide-react";
 type PlanImportRow = Record<string, any>;
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -556,8 +556,10 @@ export function PlanningList({
 
   // Notes popup state
   const [notesPopup, setNotesPopup] = useState<{ sessionId: string; notes: string } | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const sessionNotesVoice = useVoiceDictation(
+    () => notesPopup?.notes ?? "",
+    (t) => setNotesPopup(prev => prev ? { ...prev, notes: t } : null),
+  );
 
   function openNotesPopup(s: TrainingSession) {
     setNotesPopup({ sessionId: s.id, notes: s.notes ?? "" });
@@ -568,91 +570,12 @@ export function PlanningList({
     const supabase = createClient();
     await supabase.from("training_sessions").update({ notes: notesPopup.notes || null }).eq("id", notesPopup.sessionId);
     setNotesPopup(null);
-    stopRecording();
+    sessionNotesVoice.stopRecording();
     router.refresh();
   }
 
-  function autoPunctuate(text: string): string {
-    let result = text;
-    // Capitalize first letter
-    result = result.charAt(0).toUpperCase() + result.slice(1);
-    // Spoken punctuation → real punctuation
-    result = result.replace(/\s*virgule\s*/gi, ", ");
-    result = result.replace(/\s*point d'exclamation\s*/gi, "! ");
-    result = result.replace(/\s*point d'interrogation\s*/gi, "? ");
-    result = result.replace(/\s*point\s*$/gi, ".");
-    result = result.replace(/\s*point\s+/gi, ". ");
-    result = result.replace(/\s*deux[ -]points\s*/gi, " : ");
-    result = result.replace(/\s*point-virgule\s*/gi, " ; ");
-    result = result.replace(/\s*tiret\s*/gi, " - ");
-    result = result.replace(/\s*ouvrez? la parenthèse\s*/gi, " (");
-    result = result.replace(/\s*fermez? la parenthèse\s*/gi, ") ");
-    result = result.replace(/\s*retour à la ligne\s*/gi, "\n");
-    result = result.replace(/\s*retour a la ligne\s*/gi, "\n");
-    result = result.replace(/\s*aller à la ligne\s*/gi, "\n");
-    result = result.replace(/\s*aller a la ligne\s*/gi, "\n");
-    result = result.replace(/\s*nouvelle ligne\s*/gi, "\n");
-    result = result.replace(/\s*saut de ligne\s*/gi, "\n");
-    result = result.replace(/\s*[àa] la ligne\s*/gi, "\n");
-    // Capitalize after . ! ? and newlines
-    result = result.replace(/([.!?]\s+|[\n])(\w)/g, (_, p, c) => p + c.toUpperCase());
-    // Clean double spaces
-    result = result.replace(/ {2,}/g, " ");
-    return result.trim();
-  }
-
-  function startRecording() {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("La reconnaissance vocale n'est pas supportée par ce navigateur."); return; }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "fr-FR";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    let finalTranscript = notesPopup?.notes ?? "";
-
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          const punctuated = autoPunctuate(transcript);
-          // Check if the segment starts with a newline (from "à la ligne")
-          const startsWithNewline = punctuated.startsWith("\n");
-          if (startsWithNewline) {
-            // Trim trailing space, add the newline-prefixed text
-            finalTranscript = finalTranscript.trimEnd() + punctuated;
-          } else {
-            // If previous text doesn't end with punctuation, add a period
-            if (finalTranscript && !/[.!?:;\n]\s*$/.test(finalTranscript)) {
-              finalTranscript += ". ";
-            } else if (finalTranscript && !/[\s\n]$/.test(finalTranscript)) {
-              finalTranscript += " ";
-            }
-            finalTranscript += punctuated;
-          }
-        } else {
-          interim = transcript;
-        }
-      }
-      setNotesPopup(prev => prev ? { ...prev, notes: finalTranscript + (interim ? " " + interim : "") } : null);
-    };
-
-    recognition.onerror = () => { setIsRecording(false); };
-    recognition.onend = () => { setIsRecording(false); };
-
-    recognition.start();
-    recognitionRef.current = recognition;
-    setIsRecording(true);
-  }
-
   function stopRecording() {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    setIsRecording(false);
+    sessionNotesVoice.stopRecording();
   }
 
   async function handleSessionStatus(sessionId: string, newStatus: string) {
@@ -1877,25 +1800,7 @@ export function PlanningList({
                 }}
               />
 
-              {/* Mic button */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-                <button
-                  onClick={() => isRecording ? stopRecording() : startRecording()}
-                  style={{
-                    height: 42, width: 42, borderRadius: "50%", border: "none", cursor: "pointer",
-                    background: isRecording ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: isRecording ? "0 0 0 4px rgba(231,76,60,0.2)" : "none",
-                    animation: isRecording ? "pulse 1.5s infinite" : "none",
-                  }}
-                  title={isRecording ? "Arrêter la dictée" : "Dicter les notes"}
-                >
-                  {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-                </button>
-                <span style={{ fontSize: 13, color: isRecording ? "#e74c3c" : "#8399a9", fontWeight: isRecording ? 600 : 400 }}>
-                  {isRecording ? "Enregistrement en cours... Cliquez pour arrêter" : "Cliquez pour dicter vos notes"}
-                </span>
-              </div>
+              <VoiceButton isRecording={sessionNotesVoice.isRecording} isFormatting={sessionNotesVoice.isFormatting} onClick={sessionNotesVoice.toggleRecording} tone={sessionNotesVoice.tone} onToneChange={sessionNotesVoice.setTone} />
             </div>
 
             {/* Footer */}
