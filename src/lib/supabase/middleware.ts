@@ -25,28 +25,28 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Public routes — no auth required
+  const publicPrefixes = [
+    "/login", "/auth", "/reset-password",
+    "/booking", "/landing-page", "/vsl", "/confirmation-reservation", "/embed-form",
+    "/api/booking", "/api/leads", "/api/meetings/notify", "/api/webhooks", "/api/voice",
+  ];
+  const isPublic = publicPrefixes.some((p) => request.nextUrl.pathname.startsWith(p));
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/reset-password") &&
-    !request.nextUrl.pathname.startsWith("/booking") &&
-    !request.nextUrl.pathname.startsWith("/landing-page") &&
-    !request.nextUrl.pathname.startsWith("/vsl") &&
-    !request.nextUrl.pathname.startsWith("/confirmation-reservation") &&
-    !request.nextUrl.pathname.startsWith("/embed-form") &&
-    !request.nextUrl.pathname.startsWith("/api/booking") &&
-    !request.nextUrl.pathname.startsWith("/api/leads") &&
-    !request.nextUrl.pathname.startsWith("/api/meetings/notify") &&
-    !request.nextUrl.pathname.startsWith("/api/webhooks")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (!isPublic) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Only redirect if no user AND no Supabase auth cookies present (avoids flash on token refresh)
+    if (!user) {
+      const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+      if (!hasAuthCookie) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return supabaseResponse;
