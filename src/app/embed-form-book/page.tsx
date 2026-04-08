@@ -53,7 +53,7 @@ export default function EmbedFormBookPage() {
   return (
     <div style={{ fontFamily: "'Montserrat', sans-serif", padding: 0, background: "transparent" }}>
       <div style={{ background: "white", borderRadius: 8, padding: 24, maxWidth: 440, margin: "0 auto", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", marginBottom: 20, marginTop: 0 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", marginBottom: 20, marginTop: 0, whiteSpace: "nowrap" }}>
           Obtenir le book &eacute;dition 2026 gratuitement
         </h2>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>

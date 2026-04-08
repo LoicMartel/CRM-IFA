@@ -87,7 +87,8 @@ export async function POST(request: Request) {
           contact_type: clientType === "entreprise" ? "outbound" : "inbound",
           lifecycle_stage: "lead_marketing",
           lead_status: "lead",
-          notes: `Source: Landing Page\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
+          source_id: source === "embed-form" || source === "embed-form-book" ? "3e404a7f-c1b5-4d71-8dcd-2fa54aba0585" : null,
+          notes: `Source: ${source || "Landing Page"}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
         })
         .select("id")
         .single();
