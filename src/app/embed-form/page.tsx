@@ -103,7 +103,7 @@ export default function EmbedFormPage() {
               URL de la soci&eacute;t&eacute;<span style={{ color: "#e74c3c" }}>*</span>
             </label>
             <input
-              type="url" name="website" required placeholder="ex: www.url-de-la-societe.com"
+              type="text" name="website" required placeholder="ex: www.url-de-la-societe.com"
               value={form.website} onChange={handleChange}
               style={{ width: "100%", borderRadius: 4, border: "1px solid #e0e0e0", padding: "10px 12px", fontSize: 14, color: "#1a2a3a", outline: "none", boxSizing: "border-box" }}
             />
