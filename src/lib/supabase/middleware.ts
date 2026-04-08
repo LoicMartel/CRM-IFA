@@ -35,10 +35,14 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/reset-password") &&
     !request.nextUrl.pathname.startsWith("/booking") &&
+    !request.nextUrl.pathname.startsWith("/landing-page") &&
+    !request.nextUrl.pathname.startsWith("/vsl") &&
+    !request.nextUrl.pathname.startsWith("/confirmation-reservation") &&
+    !request.nextUrl.pathname.startsWith("/embed-form") &&
     !request.nextUrl.pathname.startsWith("/api/booking") &&
     !request.nextUrl.pathname.startsWith("/api/leads") &&
-    !request.nextUrl.pathname.startsWith("/embed-form") &&
-    !request.nextUrl.pathname.startsWith("/embed-form-book")
+    !request.nextUrl.pathname.startsWith("/api/meetings/notify") &&
+    !request.nextUrl.pathname.startsWith("/api/webhooks")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
