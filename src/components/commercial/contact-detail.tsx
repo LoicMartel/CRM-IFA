@@ -48,6 +48,7 @@ interface ContactData {
   last_contacted_at: string | null;
   linkedin_url: string | null;
   owner_id: string | null;
+  source_id: string | null;
   created_at: string;
   companies: { id: string; name: string } | null;
   team_members: { id: string; first_name: string; last_name: string } | null;
@@ -897,6 +898,16 @@ export function ContactDetail({
                   {contact.team_members
                     ? `${contact.team_members.first_name} ${contact.team_members.last_name}`
                     : <span style={{ color: "#8399a9" }}>Non assigné</span>
+                  }
+                </span>
+              </div>
+
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Source</span>
+                <span className="text-sm font-medium">
+                  {contact.source_id
+                    ? sources.find((s: any) => s.id === contact.source_id)?.name ?? "—"
+                    : <span style={{ color: "#8399a9" }}>Non renseignée</span>
                   }
                 </span>
               </div>
