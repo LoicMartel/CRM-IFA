@@ -93,13 +93,17 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     return d >= weekStart && d <= weekEnd && s.status !== "cancelled";
   });
 
+  function sortByTime(a: AgendaSession, b: AgendaSession) {
+    return (a.session_time ?? "99:99").localeCompare(b.session_time ?? "99:99");
+  }
+
   function getSessionsForDayAndTrainer(day: Date, trainer: string) {
     return weekSessions.filter(s => {
       const d = new Date(s.session_date);
       if (!isSameDay(d, day)) return false;
       const t = s.trainers ?? [];
       return t.includes(trainer);
-    });
+    }).sort(sortByTime);
   }
 
   // Also get unassigned sessions (no trainer)
@@ -108,7 +112,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
       const d = new Date(s.session_date);
       if (!isSameDay(d, day)) return false;
       return !s.trainers || s.trainers.length === 0;
-    });
+    }).sort(sortByTime);
   }
 
   const displayTrainers = onlyOwnData && currentFirstName
