@@ -284,6 +284,11 @@ export function ContactDetail({
     }).eq("id", contact.id);
     if (error) { alert("Erreur: " + error.message); console.error(error); }
 
+    // Sync deals company_id when contact's company changes
+    if (form.company_id && form.company_id !== (contact.company_id ?? "")) {
+      await supabase.from("deals").update({ company_id: form.company_id }).eq("contact_id", contact.id);
+    }
+
     // Sync learner entry
     if (form.is_learner && !wasLearner) {
       // Check if learner already linked

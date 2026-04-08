@@ -536,7 +536,10 @@ export function DealsBoard({
             </div>
             <div className="space-y-2">
               <Label>Contact</Label>
-              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.contact_id} onChange={(e) => setForm({ ...form, contact_id: e.target.value })}>
+              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.contact_id} onChange={(e) => {
+                const selectedContact = contacts.find((c) => c.id === e.target.value);
+                setForm({ ...form, contact_id: e.target.value, company_id: selectedContact?.company_id ?? form.company_id });
+              }}>
                 <option value="">Sélectionner</option>
                 {contacts.filter((c) => !form.company_id || c.company_id === form.company_id).map((c) => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
               </select>
