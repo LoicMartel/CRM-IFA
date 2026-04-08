@@ -952,7 +952,24 @@ export function CompanyDetail({
                               <TableCell>{s(l.email) || "—"}</TableCell>
                               <TableCell>{formatPhone(s(l.phone) || null)}</TableCell>
                               <TableCell>{s(l.position) || "—"}</TableCell>
-                              <TableCell><Badge bg={ls.bg} text={ls.text} label={ls.label} /></TableCell>
+                              <TableCell>
+                                <select
+                                  value={s(l.status) || ""}
+                                  onChange={async (e) => {
+                                    const supabase = createClient();
+                                    await supabase.from("learners").update({ status: e.target.value }).eq("id", s(l.id));
+                                    router.refresh();
+                                  }}
+                                  style={{
+                                    fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 10, border: "none", cursor: "pointer",
+                                    background: ls.bg, color: ls.text,
+                                  }}
+                                >
+                                  {Object.entries(learnerStatus).map(([k, v]) => (
+                                    <option key={k} value={k}>{v.label}</option>
+                                  ))}
+                                </select>
+                              </TableCell>
                               <TableCell>{prog?.name ?? "—"}</TableCell>
                               <TableCell>{tt?.name ?? "—"}</TableCell>
                             </TableRow>
