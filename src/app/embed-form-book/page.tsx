@@ -34,7 +34,7 @@ export default function EmbedFormBookPage() {
       if (window.top !== window.self) {
         window.top?.postMessage({ type: "lca-form-success", clientType: form.clientType }, "*");
       }
-      window.top!.location.href = "https://www.closing-academie.com/vsl";
+      window.top!.location.href = "https://www.closing-academie.com/book-financement-2026-typ";
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
@@ -146,7 +146,7 @@ export default function EmbedFormBookPage() {
               background: "#2e7ab5", opacity: loading || !form.clientType ? 0.6 : 1,
             }}
           >
-            {loading ? "Envoi en cours\u2026" : "Obtenir le book gratuitement"}
+            {loading ? "Envoi en cours\u2026" : "T\u00e9l\u00e9charger le book offert"}
           </button>
           {error && <p style={{ textAlign: "center", fontSize: 13, color: "#e74c3c", margin: 0 }}>{error}</p>}
         </form>
