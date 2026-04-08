@@ -82,7 +82,8 @@ export default async function HomePage() {
         .eq("team_member_id", currentMemberId)
         .not("due_date", "is", null)
         .gte("due_date", `${today}T00:00:00`)
-        .lte("due_date", `${today}T23:59:59`),
+        .lte("due_date", `${today}T23:59:59`)
+        .order("due_date", { ascending: true }),
 
       // Upcoming meetings assigned to me
       supabase.from("meetings").select("*, contacts!meetings_contact_id_fkey(first_name, last_name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
@@ -106,7 +107,8 @@ export default async function HomePage() {
         .eq("is_completed", false)
         .eq("team_member_id", currentMemberId)
         .not("task_deadline", "is", null)
-        .lte("task_deadline", today),
+        .lte("task_deadline", today)
+        .order("task_deadline", { ascending: true }),
     ]);
 
     todayMeetings = tm ?? [];
