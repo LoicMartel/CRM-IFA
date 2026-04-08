@@ -97,7 +97,7 @@ function BookingContent() {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.href = "/confirmation-reservation";
+        window.top!.location.href = "https://www.closing-academie.com/confirmation-reservation-bilan-commercial";
         return;
       } else {
         setError(data.error || "Une erreur est survenue.");
