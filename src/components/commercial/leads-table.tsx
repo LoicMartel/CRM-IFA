@@ -139,6 +139,9 @@ export function LeadsTable({
       } else if (sortKey === "source") {
         va = (a.source_name ?? "").toLowerCase();
         vb = (b.source_name ?? "").toLowerCase();
+      } else if (sortKey === "created_at") {
+        va = a.created_at ?? "";
+        vb = b.created_at ?? "";
       }
       const cmp = va.localeCompare(vb, "fr");
       return sortDir === "asc" ? cmp : -cmp;
@@ -216,6 +219,9 @@ export function LeadsTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>
+                <span className="flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("prospect")}>
                 <span className="flex items-center gap-1">Prospect <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
@@ -239,7 +245,7 @@ export function LeadsTable({
           <TableBody>
             {sortedLeads.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
@@ -250,6 +256,9 @@ export function LeadsTable({
                   className="cursor-pointer"
                   onClick={() => handleEdit(lead)}
                 >
+                  <TableCell style={{ fontSize: 11, color: "#5a6f80" }}>
+                    {lead.created_at ? new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                  </TableCell>
                   <TableCell className="font-medium">
                     {lead.contact_first_name || lead.contact_last_name
                       ? `${lead.contact_first_name ?? ""} ${lead.contact_last_name ?? ""}`.trim()
