@@ -35,7 +35,7 @@ export default function EmbedFormPage() {
       if (window.top !== window.self) {
         window.top?.postMessage({ type: "lca-form-success", clientType: form.clientType }, "*");
       }
-      window.top!.location.href = "https://www.closing-academie.com/confirmation-reservation-bilan-commercial";
+      window.top!.location.href = "https://www.closing-academie.com/vsl";
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
