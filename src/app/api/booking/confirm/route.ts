@@ -69,9 +69,12 @@ export async function POST(request: Request) {
 
   if (existingContact) {
     await supabase.from("contacts").update({
+      first_name: firstName,
+      last_name: lastName,
       phone,
       company_id: companyId,
       lead_status: "booked",
+      owner_id: assignedTo,
       notes: source ? `Source: ${source}` : null,
     }).eq("id", existingContact.id);
     contact = existingContact;
