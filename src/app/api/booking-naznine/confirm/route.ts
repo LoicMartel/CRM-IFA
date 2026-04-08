@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   } else {
     const { data: newCompany } = await supabase
       .from("companies")
-      .insert({ name: company, lifecycle_stage: "lead", website: website || null })
+      .insert({ name: company, lifecycle_stage: "prospect", website: website || null })
       .select("id")
       .single();
     companyId = newCompany?.id ?? null;
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         phone,
         company_id: companyId,
         contact_type: isEntreprise ? "outbound" : "inbound",
-        lifecycle_stage: "lead",
+        lifecycle_stage: "prospect",
         lead_status: "booked",
         owner_id: NAZNINE.id,
         notes: source ? `Source: ${source}` : null,

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
           .insert({
             name: companyName,
             website,
-            lifecycle_stage: "lead",
+            lifecycle_stage: "prospect",
           })
           .select("id")
           .single();
