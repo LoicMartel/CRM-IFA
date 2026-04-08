@@ -29,7 +29,7 @@ function getName(rel: { name: string }[] | { name: string } | null): string | nu
   return rel.name;
 }
 
-type SortKey = "last_name" | "first_name" | "source" | "email" | "phone" | "company";
+type SortKey = "created_at" | "last_name" | "first_name" | "source" | "email" | "phone" | "company";
 
 export function LeadsTable({ leads }: { leads: Lead[] }) {
   const router = useRouter();
@@ -51,6 +51,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     .sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
+        case "created_at": cmp = (a.created_at ?? "").localeCompare(b.created_at ?? ""); break;
         case "last_name": cmp = (a.last_name ?? "").localeCompare(b.last_name ?? ""); break;
         case "first_name": cmp = (a.first_name ?? "").localeCompare(b.first_name ?? ""); break;
         case "source": cmp = (getName(a.lead_sources) ?? "").localeCompare(getName(b.lead_sources) ?? ""); break;
@@ -111,6 +112,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>
+                <span className="flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("last_name")}>
                 <span className="flex items-center gap-1">Nom <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
@@ -134,7 +138,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
@@ -145,6 +149,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => router.push(`/contacts/${l.id}`)}
                 >
+                  <TableCell style={{ fontSize: 11, color: "#5a6f80" }}>
+                    {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                  </TableCell>
                   <TableCell className="font-medium">{l.last_name}</TableCell>
                   <TableCell>{l.first_name}</TableCell>
                   <TableCell>{getName(l.lead_sources) ?? "—"}</TableCell>
