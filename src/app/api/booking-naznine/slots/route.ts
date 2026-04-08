@@ -14,21 +14,24 @@ const NAZNINE = {
 };
 
 const SLOT_DURATION = 15;
-const DAY_START_HOUR = 9;
+const DAY_START_HOUR = 8;
+const DAY_START_MIN = 30;
 const DAY_END_HOUR = 18;
+const DAY_END_MIN = 30;
 const TZ = "Europe/Paris";
 
 function generateSlots(dateStr: string): { start: string; end: string }[] {
   const slots: { start: string; end: string }[] = [];
-  for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
-    for (const m of [0, 30]) {
-      if (h === DAY_END_HOUR - 1 && m > 0) continue;
-      const start = `${dateStr}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-      const endH = m + SLOT_DURATION >= 60 ? h + 1 : h;
-      const endM = (m + SLOT_DURATION) % 60;
-      const end = `${dateStr}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
-      slots.push({ start, end });
-    }
+  const startTotal = DAY_START_HOUR * 60 + DAY_START_MIN;
+  const endTotal = DAY_END_HOUR * 60 + DAY_END_MIN;
+  for (let t = startTotal; t + SLOT_DURATION <= endTotal; t += 30) {
+    const sH = Math.floor(t / 60);
+    const sM = t % 60;
+    const eH = Math.floor((t + SLOT_DURATION) / 60);
+    const eM = (t + SLOT_DURATION) % 60;
+    const start = `${dateStr}T${String(sH).padStart(2, "0")}:${String(sM).padStart(2, "0")}:00`;
+    const end = `${dateStr}T${String(eH).padStart(2, "0")}:${String(eM).padStart(2, "0")}:00`;
+    slots.push({ start, end });
   }
   return slots;
 }
@@ -58,7 +61,7 @@ export async function GET(request: Request) {
   }
 
   const offset = getParisOffset(date);
-  const BUFFER = 15 * 60 * 1000;
+  const BUFFER = 30 * 60 * 1000;
   const availableSlots = allSlots.filter((s) => {
     const slotStart = new Date(`${s.start}${offset}`);
     const slotEnd = new Date(`${s.end}${offset}`);
