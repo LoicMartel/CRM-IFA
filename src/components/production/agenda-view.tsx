@@ -132,32 +132,36 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
   async function handleSaveSession() {
     if (!selectedSession) return;
     setSavingNotes(true);
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // Save both notes and status
-    await supabase.from("training_sessions").update({
-      notes: notesText || null,
-      status: sessionStatus,
-    }).eq("id", selectedSession.id);
+      // Save both notes and status
+      await supabase.from("training_sessions").update({
+        notes: notesText || null,
+        status: sessionStatus,
+      }).eq("id", selectedSession.id);
 
-    // If done, check if all sessions of the plan's company are done → "former_customer"
-    if (sessionStatus === "done" && selectedSession.service_plans?.company_id) {
-      const companyId = selectedSession.service_plans.company_id as string;
-      const { data: companySessions } = await supabase
-        .from("training_sessions")
-        .select("id, status, service_plans!inner(company_id)")
-        .eq("service_plans.company_id", companyId);
-      const remaining = (companySessions ?? []).filter(s => s.id !== selectedSession.id && s.status === "planned");
-      if (remaining.length === 0) {
-        await supabase.from("companies").update({ lifecycle_stage: "former_customer" }).eq("id", companyId);
-        await supabase.from("contacts").update({ is_client: false, lifecycle_stage: "former_customer" }).eq("company_id", companyId);
+      // If done, check if all sessions of the plan's company are done → "former_customer"
+      if (sessionStatus === "done" && selectedSession.service_plans?.company_id) {
+        try {
+          const companyId = selectedSession.service_plans.company_id as string;
+          const { data: companySessions } = await supabase
+            .from("training_sessions")
+            .select("id, status, service_plans!inner(company_id)")
+            .eq("service_plans.company_id", companyId);
+          const remaining = (companySessions ?? []).filter(s => s.id !== selectedSession.id && s.status === "planned");
+          if (remaining.length === 0) {
+            await supabase.from("companies").update({ lifecycle_stage: "former_customer" }).eq("id", companyId);
+            await supabase.from("contacts").update({ is_client: false, lifecycle_stage: "former_customer" }).eq("company_id", companyId);
+          }
+        } catch {}
       }
-    }
 
-    // Sync learner statuses
-    try { await fetch("/api/learners/sync-status"); } catch {}
+      // Sync learner statuses (fire and forget)
+      fetch("/api/learners/sync-status").catch(() => {});
 
-    setStatusOverrides(prev => ({ ...prev, [selectedSession.id]: sessionStatus }));
+      setStatusOverrides(prev => ({ ...prev, [selectedSession.id]: sessionStatus }));
+    } catch {}
     setSavingNotes(false);
     setSelectedSession(null);
     stopRecording();
