@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }).eq("id", existingContact.id);
     contact = existingContact;
   } else {
-    const { data: newContact } = await supabase
+    const { data: newContact, error: contactError } = await supabase
       .from("contacts")
       .insert({
         first_name: firstName,
@@ -81,13 +81,16 @@ export async function POST(request: Request) {
       })
       .select("id")
       .single();
+    if (contactError) {
+      return NextResponse.json({ error: "Contact creation failed", detail: contactError.message }, { status: 500 });
+    }
     contact = newContact;
   }
 
   // 3. Create meeting in CRM
   let meetingId: string | null = null;
   if (contact) {
-    const { data: newMeeting } = await supabase.from("meetings").insert({
+    const { data: newMeeting, error: meetingError } = await supabase.from("meetings").insert({
       contact_id: contact.id,
       company_id: companyId,
       assigned_to: PAULINE.id,
@@ -96,8 +99,11 @@ export async function POST(request: Request) {
       scheduled_at: startDateTime,
       duration_minutes: 15,
       meeting_mode: mode === "visio" ? "visio" : "phone",
-      notes: `Réservé via la landing page booking Pauline.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
+      notes: `Réservé via la booking page Pauline.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
     }).select("id").single();
+    if (meetingError) {
+      return NextResponse.json({ error: "Meeting creation failed", detail: meetingError.message, contactId: contact.id }, { status: 500 });
+    }
     meetingId = newMeeting?.id ?? null;
   }
 
