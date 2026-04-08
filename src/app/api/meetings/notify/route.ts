@@ -94,37 +94,41 @@ export async function POST(req: NextRequest) {
     // 1. Google Calendar (non-Externe only)
     const commercialCalId = assignedMember.google_calendar_id_commercial || assignedMember.google_calendar_id;
     if (commercialCalId && !isExterne) {
-      const startDT = `${dateStr}T${timeStr}:00`;
-      const [startH, startM] = timeStr.split(":").map(Number);
-      const totalMinutes = startH * 60 + startM + durationMin;
-      const endH = Math.floor(totalMinutes / 60);
-      const endM = totalMinutes % 60;
-      const endDT = `${dateStr}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
+      try {
+        const startDT = `${dateStr}T${timeStr}:00`;
+        const [startH, startM] = timeStr.split(":").map(Number);
+        const totalMinutes = startH * 60 + startM + durationMin;
+        const endH = Math.floor(totalMinutes / 60);
+        const endM = totalMinutes % 60;
+        const endDT = `${dateStr}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
 
-      const description = [
-        `📋 ${typeLabel}`,
-        `👤 Contact : ${contactName}`,
-        companyName ? `🏢 Entreprise : ${companyName}` : "",
-        contactPhone ? `📞 Tél : ${contactPhone}` : "",
-        contactEmail ? `✉️ Email : ${contactEmail}` : "",
-        `🖥️ Mode : ${modeLabel}`,
-        `⏱️ Durée : ${durationLabel}`,
-        "",
-        meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
-        meeting.location ? `📍 Lieu : ${meeting.location}` : "",
-        meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
-      ].filter(Boolean).join("\n");
+        const description = [
+          `📋 ${typeLabel}`,
+          `👤 Contact : ${contactName}`,
+          companyName ? `🏢 Entreprise : ${companyName}` : "",
+          contactPhone ? `📞 Tél : ${contactPhone}` : "",
+          contactEmail ? `✉️ Email : ${contactEmail}` : "",
+          `🖥️ Mode : ${modeLabel}`,
+          `⏱️ Durée : ${durationLabel}`,
+          "",
+          meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+          meeting.location ? `📍 Lieu : ${meeting.location}` : "",
+          meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
+        ].filter(Boolean).join("\n");
 
-      const gcalResult = await createCalendarEvent({
-        calendarId: commercialCalId,
-        summary: title,
-        description,
-        location,
-        startDateTime: startDT,
-        endDateTime: endDT,
-      });
+        const gcalResult = await createCalendarEvent({
+          calendarId: commercialCalId,
+          summary: title,
+          description,
+          location,
+          startDateTime: startDT,
+          endDateTime: endDT,
+        });
 
-      results.push({ action: "Google Calendar", status: gcalResult.success ? "Ajouté" : gcalResult.error ?? "Erreur" });
+        results.push({ action: "Google Calendar", status: gcalResult.success ? "Ajouté" : gcalResult.error ?? "Erreur" });
+      } catch (e: any) {
+        results.push({ action: "Google Calendar", status: `Erreur: ${e.message}` });
+      }
     }
 
     // 2. Slack DM (non-Externe only)
@@ -162,85 +166,93 @@ export async function POST(req: NextRequest) {
 
     // 3. Email (Externe only)
     if (isExterne && assignedMember.email) {
-      const emailBody = [
-        `Bonjour ${assignedMember.first_name},`,
-        "",
-        "Un rendez-vous commercial vient d'être planifié :",
-        "",
-        `📋 ${typeLabel}`,
-        `👤 Contact : ${contactName}`,
-        companyName ? `🏢 Entreprise : ${companyName}` : "",
-        contactPhone ? `📞 Tél : ${contactPhone}` : "",
-        `📅 Date : ${dateDisplay} à ${timeStr} (${durationLabel})`,
-        `🖥️ Mode : ${modeLabel}`,
-        meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
-        meeting.location ? `📍 Lieu : ${meeting.location}` : "",
-        "",
-        "⚠️ Pense à vérifier ta disponibilité.",
-        "",
-        "Belle journée,",
-        "",
-        "Loïc ⚡",
-      ].filter(Boolean).join("\n");
+      try {
+        const emailBody = [
+          `Bonjour ${assignedMember.first_name},`,
+          "",
+          "Un rendez-vous commercial vient d'être planifié :",
+          "",
+          `📋 ${typeLabel}`,
+          `👤 Contact : ${contactName}`,
+          companyName ? `🏢 Entreprise : ${companyName}` : "",
+          contactPhone ? `📞 Tél : ${contactPhone}` : "",
+          `📅 Date : ${dateDisplay} à ${timeStr} (${durationLabel})`,
+          `🖥️ Mode : ${modeLabel}`,
+          meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+          meeting.location ? `📍 Lieu : ${meeting.location}` : "",
+          "",
+          "⚠️ Pense à vérifier ta disponibilité.",
+          "",
+          "Belle journée,",
+          "",
+          "Loïc ⚡",
+        ].filter(Boolean).join("\n");
 
-      const emailResult = await sendSessionEmail({
-        to: assignedMember.email,
-        subject: `Nouveau RDV — ${title}`,
-        body: emailBody,
-      });
-      results.push({ action: "Email", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
+        const emailResult = await sendSessionEmail({
+          to: assignedMember.email,
+          subject: `Nouveau RDV — ${title}`,
+          body: emailBody,
+        });
+        results.push({ action: "Email", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
+      } catch (e: any) {
+        results.push({ action: "Email", status: `Erreur: ${e.message}` });
+      }
     }
 
     // 4. Send .ics invitation to prospect
     if (contactEmail) {
-      const icsStart = `${dateStr}T${timeStr}:00`;
-      const [iH, iM] = timeStr.split(":").map(Number);
-      const iTotalMin = iH * 60 + iM + durationMin;
-      const icsEnd = `${dateStr}T${String(Math.floor(iTotalMin / 60)).padStart(2, "0")}:${String(iTotalMin % 60).padStart(2, "0")}:00`;
+      try {
+        const icsStart = `${dateStr}T${timeStr}:00`;
+        const [iH, iM] = timeStr.split(":").map(Number);
+        const iTotalMin = iH * 60 + iM + durationMin;
+        const icsEnd = `${dateStr}T${String(Math.floor(iTotalMin / 60)).padStart(2, "0")}:${String(iTotalMin % 60).padStart(2, "0")}:00`;
 
-      const icsContent = generateICS({
-        summary: title,
-        description: [
-          typeLabel,
-          `Contact : ${contactName}`,
-          companyName ? `Entreprise : ${companyName}` : "",
-          `Mode : ${modeLabel}`,
-          `Durée : ${durationLabel}`,
-          meeting.meeting_mode === "visio" && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
-          meeting.location ? `Lieu : ${meeting.location}` : "",
-        ].filter(Boolean).join("\n"),
-        location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconférence") : (meeting.location || ""),
-        startDateTime: icsStart,
-        endDateTime: icsEnd,
-        organizerName: assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "La Closing Académie",
-        organizerEmail: (assignedMember?.email as string) || "contact@closing-academie.com",
-      });
+        const icsContent = generateICS({
+          summary: title,
+          description: [
+            typeLabel,
+            `Contact : ${contactName}`,
+            companyName ? `Entreprise : ${companyName}` : "",
+            `Mode : ${modeLabel}`,
+            `Durée : ${durationLabel}`,
+            meeting.meeting_mode === "visio" && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
+            meeting.location ? `Lieu : ${meeting.location}` : "",
+          ].filter(Boolean).join("\n"),
+          location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconférence") : (meeting.location || ""),
+          startDateTime: icsStart,
+          endDateTime: icsEnd,
+          organizerName: assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "La Closing Académie",
+          organizerEmail: (assignedMember?.email as string) || "contact@closing-academie.com",
+        });
 
-      const emailBody = [
-        `Bonjour ${contactFirstName},`,
-        "",
-        "Votre rendez-vous est confirmé :",
-        "",
-        `📋 ${typeLabel}`,
-        `📆 ${dateDisplay} à ${timeStr} (${durationLabel})`,
-        `🖥️ ${modeLabel}`,
-        meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
-        meeting.location ? `📍 Lieu : ${meeting.location}` : "",
-        "",
-        "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
-        "",
-        "À très bientôt,",
-        "",
-        "L'équipe La Closing Académie",
-      ].filter(Boolean).join("\n");
+        const emailBody = [
+          `Bonjour ${contactFirstName},`,
+          "",
+          "Votre rendez-vous est confirmé :",
+          "",
+          `📋 ${typeLabel}`,
+          `📆 ${dateDisplay} à ${timeStr} (${durationLabel})`,
+          `🖥️ ${modeLabel}`,
+          meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+          meeting.location ? `📍 Lieu : ${meeting.location}` : "",
+          "",
+          "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
+          "",
+          "À très bientôt,",
+          "",
+          "L'équipe La Closing Académie",
+        ].filter(Boolean).join("\n");
 
-      const emailResult = await sendSessionEmail({
-        to: contactEmail,
-        subject: `Confirmation RDV : ${title}`,
-        body: emailBody,
-        attachments: [{ filename: "invitation.ics", content: icsContent }],
-      });
-      results.push({ action: "Email prospect (.ics)", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
+        const emailResult = await sendSessionEmail({
+          to: contactEmail,
+          subject: `Confirmation RDV : ${title}`,
+          body: emailBody,
+          attachments: [{ filename: "invitation.ics", content: icsContent }],
+        });
+        results.push({ action: "Email prospect (.ics)", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
+      } catch (e: any) {
+        results.push({ action: "Email prospect (.ics)", status: `Erreur: ${e.message}` });
+      }
     }
 
     return NextResponse.json({ success: true, title, results });
