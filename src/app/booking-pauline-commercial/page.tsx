@@ -153,11 +153,11 @@ function BookingContent() {
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          maxWidth: 780, width: "100%", overflow: "hidden", margin: "0 auto",
+          maxWidth: 680, width: "100%", overflow: "hidden", margin: "0 auto",
           display: "flex", flexWrap: "wrap",
         }}>
           {/* Left: Calendar */}
-          <div style={{ flex: "1 1 320px", padding: "16px 16px", borderRight: "1px solid #e8ecf1" }}>
+          <div style={{ flex: "1 1 280px", padding: "16px 12px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
             </h2>
@@ -217,7 +217,7 @@ function BookingContent() {
           </div>
 
           {/* Right: Slots + Options */}
-          <div style={{ flex: "1 1 240px", padding: "16px 16px" }}>
+          <div style={{ flex: "1 1 200px", padding: "16px 12px" }}>
             {/* Meeting info */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
