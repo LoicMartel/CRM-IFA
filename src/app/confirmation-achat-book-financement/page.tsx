@@ -127,26 +127,31 @@ export default function ConfirmationAchatBookFinancement() {
         </div>
       </section>
 
-      {/* ===== CTA FINAL ===== */}
+      {/* ===== CTA FINAL — Finances Finder ===== */}
       <section style={{ background: "white", padding: "50px 24px" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <div style={{ borderRadius: 16, padding: "40px 32px", textAlign: "center", background: "#2e7ab5" }}>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: "white", marginBottom: 12, lineHeight: 1.3 }}>
-              Aidez vos clients &agrave; s&apos;offrir vos formations !
+              D&eacute;couvrez Finances Finder
             </h2>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.7, maxWidth: 500, margin: "0 auto 20px" }}>
-              Vous avez d&eacute;sormais toutes les cl&eacute;s en main pour transformer les financements publics en levier strat&eacute;gique de vente.
-              Appliquez la m&eacute;thode et observez l&apos;impact sur vos conversions.
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 8px" }}>
+              L&apos;outil qui identifie automatiquement les financements disponibles pour vos apprenants.
+            </p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.7, maxWidth: 520, margin: "0 auto 20px" }}>
+              En quelques clics, trouvez les dispositifs adapt&eacute;s (CPF, OPCO, France Travail, R&eacute;gion...)
+              et maximisez les prises en charge pour vos clients.
             </p>
             <a
-              href="/booking-pauline"
+              href="https://finances-finder.vercel.app/login.html"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                display: "inline-block", padding: "12px 24px", borderRadius: 6,
-                border: "2px solid white", color: "white", fontSize: 13, fontWeight: 600,
+                display: "inline-block", padding: "14px 28px", borderRadius: 8,
+                background: "white", color: "#2e7ab5", fontSize: 14, fontWeight: 700,
                 textDecoration: "none",
               }}
             >
-              Prendre rendez-vous avec un expert
+              Essayer Finances Finder
             </a>
           </div>
         </div>
