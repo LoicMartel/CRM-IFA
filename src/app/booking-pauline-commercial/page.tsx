@@ -192,7 +192,7 @@ function BookingContent() {
           display: "flex", flexWrap: "wrap",
         }}>
           {/* Left: Calendar */}
-          <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
+          <div style={{ flex: "1 1 320px", padding: "24px 20px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
             </h2>
@@ -252,7 +252,7 @@ function BookingContent() {
           </div>
 
           {/* Right: Slots + Options */}
-          <div style={{ flex: "1 1 300px", padding: "30px 24px" }}>
+          <div style={{ flex: "1 1 240px", padding: "24px 20px" }}>
             {/* Meeting info */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
