@@ -109,11 +109,18 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      expertise, city, budget,
+      planId, expertise, city, budget,
       clientAvailableDays, vtRhythm, vtTimeSlot, vtDuration,
       journeeRhythm, journeeLocation,
       startDate, endDate, vtCount, daysCount,
     } = body;
+
+    // Fetch plan format to know if sessions are individual or group
+    let planFormat = "individuel"; // default: individual VTs can coexist with journées same week
+    if (planId) {
+      const { data: plan } = await supabase.from("service_plans").select("format").eq("id", planId).single();
+      if (plan?.format) planFormat = plan.format;
+    }
 
     // Step A: Fetch and score experts
     const { data: teamMembers } = await supabase
@@ -191,7 +198,36 @@ export async function POST(req: NextRequest) {
     // Step C: Generate schedule with flexible date finding
     const proposedSessions: ProposedSession[] = [];
     const warnings: string[] = [];
-    const bookedDates = new Set<string>(); // Track dates already used (no VT + journée same day)
+    const bookedDates = new Set<string>(); // Track dates already used
+    const bookedWeeks = new Map<string, "vt" | "journee">(); // Track weeks with journée (for collectif format)
+
+    // Helper: get ISO week key "2026-W19"
+    function getWeekKey(dateStr: string): string {
+      const d = new Date(dateStr + "T00:00:00");
+      const jan1 = new Date(d.getFullYear(), 0, 1);
+      const dayOfYear = Math.floor((d.getTime() - jan1.getTime()) / 86400000) + 1;
+      const weekNum = Math.ceil((dayOfYear + jan1.getDay()) / 7);
+      return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+    }
+
+    // Check if a VT can be placed this week considering the format
+    // collectif: no VT the same week as a journée (same group of people)
+    // individuel or mixte: VT can coexist with journée (different people)
+    function canPlaceVTInWeek(dateStr: string): boolean {
+      if (planFormat === "collectif") {
+        const wk = getWeekKey(dateStr);
+        return bookedWeeks.get(wk) !== "journee";
+      }
+      return true; // individuel or mixte: always OK
+    }
+
+    function canPlaceJourneeInWeek(dateStr: string): boolean {
+      if (planFormat === "collectif") {
+        const wk = getWeekKey(dateStr);
+        return bookedWeeks.get(wk) !== "vt";
+      }
+      return true;
+    }
 
     // Build preferred time slots
     function buildPreferredSlots(timeSlotStr: string): string[] {
@@ -259,12 +295,15 @@ export async function POST(req: NextRequest) {
       // For each trainer (priority order), try each candidate day
       for (const trainer of trainersWithBusy) {
         for (const date of candidateDays) {
-          if (bookedDates.has(date) && sessionType === "journee") continue; // Don't put journée on a day with VT
-          if (sessionType === "vt") {
-            // Check this day doesn't already have a journée
-            const hasJournee = proposedSessions.some(s => s.session_date === date && s.session_type === "journee");
-            if (hasJournee) continue;
-          }
+          // Never put two different session types on the same day
+          const hasJournee = proposedSessions.some(s => s.session_date === date && s.session_type === "journee");
+          const hasVT = proposedSessions.some(s => s.session_date === date && s.session_type === "vt");
+          if (sessionType === "journee" && hasVT) continue;
+          if (sessionType === "vt" && hasJournee) continue;
+
+          // Collectif format: no VT same week as journée (same group of people)
+          if (sessionType === "vt" && !canPlaceVTInWeek(date)) continue;
+          if (sessionType === "journee" && !canPlaceJourneeInWeek(date)) continue;
 
           if (sessionType === "vt") {
             const slot = tryAssignVT(date, duration, trainer);
@@ -311,6 +350,7 @@ export async function POST(req: NextRequest) {
         if (session) {
           proposedSessions.push(session);
           bookedDates.add(session.session_date);
+          bookedWeeks.set(getWeekKey(session.session_date), "vt");
           placed++;
         }
         cursor.setDate(cursor.getDate() + vtInterval);
@@ -327,6 +367,7 @@ export async function POST(req: NextRequest) {
         if (session) {
           proposedSessions.push(session);
           bookedDates.add(session.session_date);
+          bookedWeeks.set(getWeekKey(session.session_date), "journee");
           placed++;
         }
         cursor.setDate(cursor.getDate() + journeeInterval);
@@ -362,6 +403,7 @@ export async function POST(req: NextRequest) {
         messages: [{
           role: "user",
           content: `Voici le planning généré pour un client :
+Format : ${planFormat} (${planFormat === "collectif" ? "pas de VT la même semaine qu'une journée car même groupe" : planFormat === "individuel" ? "VT individuelles peuvent coexister avec journées groupe" : "mixte"})
 Jours dispo client : ${clientAvailableDays.join(", ") || "tous"}
 Rythme VT : ${vtRhythm} | Rythme Journées : ${journeeRhythm || "N/A"}
 Période : ${startDate} → ${endDate}
