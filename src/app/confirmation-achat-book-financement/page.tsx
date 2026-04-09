@@ -141,30 +141,16 @@ export default function ConfirmationAchatBookFinancement() {
               En quelques clics, trouvez les dispositifs adapt&eacute;s (CPF, OPCO, France Travail, R&eacute;gion...)
               et maximisez les prises en charge pour vos clients.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-              <a
-                href="https://finances-finder.vercel.app/login.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-block", padding: "14px 28px", borderRadius: 8,
-                  background: "white", color: "#2e7ab5", fontSize: 14, fontWeight: 700,
-                  textDecoration: "none",
-                }}
-              >
-                Essayer Finances Finder
-              </a>
-              <a
-                href="/booking-pauline"
-                style={{
-                  display: "inline-block", padding: "14px 28px", borderRadius: 8,
-                  border: "2px solid white", color: "white", fontSize: 14, fontWeight: 700,
-                  textDecoration: "none",
-                }}
-              >
-                R&eacute;server un appel d&eacute;couverte
-              </a>
-            </div>
+            <a
+              href="/booking-pauline"
+              style={{
+                display: "inline-block", padding: "14px 28px", borderRadius: 8,
+                background: "white", color: "#2e7ab5", fontSize: 14, fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Essayer Finances Finder
+            </a>
           </div>
         </div>
       </section>
