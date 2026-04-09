@@ -91,9 +91,9 @@ export async function POST(req: NextRequest) {
       ? (meeting.location ?? "Lieu non renseigné")
       : meeting.meeting_mode === "visio" ? zoomLink : "";
 
-    // 1. Google Calendar (non-Externe only)
+    // 1. Google Calendar (for everyone with a calendar configured)
     const commercialCalId = assignedMember.google_calendar_id_commercial || assignedMember.google_calendar_id;
-    if (commercialCalId && !isExterne) {
+    if (commercialCalId) {
       try {
         const startDT = `${dateStr}T${timeStr}:00`;
         const [startH, startM] = timeStr.split(":").map(Number);
@@ -131,8 +131,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Slack DM (non-Externe only)
-    if (assignedMember.slack_user_id && slackToken && !isExterne) {
+    // 2. Slack DM (for everyone with a Slack user ID)
+    if (assignedMember.slack_user_id && slackToken) {
       const slackMsg = [
         `Bonjour ${assignedMember.first_name},`,
         "",
