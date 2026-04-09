@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users, Plus, Pencil, Trash2, KeyRound, Shield } from "lucide-react";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles, DEFAULT_PERMISSIONS, type MemberPermissions } from "@/lib/use-current-roles";
@@ -648,9 +649,7 @@ export function TeamView({ members }: { members: R[] }) {
               {/* Notes */}
               <div className="space-y-2">
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Notes</label>
-                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  placeholder="Notes internes..."
-                  className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} placeholder="Notes internes..." storageFolder="team" />
                 <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
               </div>
 

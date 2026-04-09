@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 
 import { Plus, Search, Trash2, Users, UserCheck, UserPlus, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
@@ -460,7 +461,7 @@ export function LearnersTable({
               </div>
               <div className="space-y-2">
                 <Label>Notes</Label>
-                <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="learners" />
               </div>
               <Button onClick={handleSave} disabled={saving || !form.first_name.trim() || !form.last_name.trim()} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
                 {saving ? "Enregistrement..." : "Créer l'apprenant"}

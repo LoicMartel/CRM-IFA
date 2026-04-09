@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -1015,7 +1016,7 @@ export function LearnerDetailView({
               </div>
               <div className="space-y-2">
                 <Label>Notes</Label>
-                <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="learners" />
                 <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
               </div>
               <Button onClick={handleSave} disabled={saving || (!form.first_name.trim() && !form.last_name.trim())} className="w-full" style={{ background: "#FF6B35", color: "white" }}>

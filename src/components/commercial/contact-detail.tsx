@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -922,7 +923,7 @@ export function ContactDetail({
                   <Separator />
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">Notes</span>
-                    <p className="text-sm whitespace-pre-wrap">{contact.notes}</p>
+                    <RichNotes value={contact.notes} onChange={() => {}} readOnly />
                   </div>
                 </>
               )}
@@ -1758,11 +1759,7 @@ export function ContactDetail({
             </label>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <textarea
-                className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
+              <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder={`contacts/${contact.id}`} />
               <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
             </div>
             <Button

@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -587,7 +588,7 @@ export function DealsBoard({
             )}
             <div className="space-y-2">
               <Label>Notes</Label>
-              <textarea className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="deals" />
               <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full" style={{ background: "#e8632b", color: "white" }}>

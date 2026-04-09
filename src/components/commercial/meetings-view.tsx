@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Search, Video, Phone, MapPin, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -341,7 +342,7 @@ export function MeetingsView({
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Objectifs du RDV, points clés..." />
+              <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} placeholder="Objectifs du RDV, points clés..." storageFolder="meetings" />
               <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.scheduled_at} className="w-full" style={{ background: "#e8632b", color: "white" }}>

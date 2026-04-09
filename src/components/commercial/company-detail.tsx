@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
+import { RichNotes } from "@/components/ui/rich-notes";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { PlanPopup } from "@/components/production/plan-popup";
@@ -1067,7 +1068,7 @@ export function CompanyDetail({
             </div>
             <div className="space-y-2">
               <Label>Notes</Label>
-              <textarea className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="companies" />
             </div>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full" style={{ background: "#e8632b", color: "white" }}>
               {saving ? "Enregistrement..." : "Sauvegarder"}
