@@ -28,7 +28,7 @@ export async function updateSession(request: NextRequest) {
   // Public routes — no auth required
   const publicPrefixes = [
     "/login", "/auth", "/reset-password",
-    "/booking", "/landing-page", "/landing-book-financement-2026", "/vsl", "/confirmation-reservation", "/confirmation-decouverte", "/embed-form",
+    "/booking", "/landing-page", "/landing-book-financement", "/vsl", "/confirmation-reservation", "/confirmation-decouverte", "/embed-form",
     "/api/booking", "/api/leads", "/api/meetings/notify", "/api/webhooks", "/api/voice",
   ];
   const isPublic = publicPrefixes.some((p) => request.nextUrl.pathname.startsWith(p));
