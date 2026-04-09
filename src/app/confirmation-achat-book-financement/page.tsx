@@ -110,7 +110,7 @@ export default function ConfirmationAchatBookFinancement() {
             et &agrave; maximiser les prises en charge pour vos clients.
           </p>
           <a
-            href="/booking-naznine-decouverte"
+            href="/booking-pauline"
             style={{
               display: "inline-block", padding: "14px 28px", borderRadius: 8,
               background: "#2e7ab5", color: "white", fontSize: 14, fontWeight: 700,
@@ -134,7 +134,7 @@ export default function ConfirmationAchatBookFinancement() {
               Appliquez la m&eacute;thode et observez l&apos;impact sur vos conversions.
             </p>
             <a
-              href="/booking-naznine-decouverte"
+              href="/booking-pauline"
               style={{
                 display: "inline-block", padding: "12px 24px", borderRadius: 6,
                 border: "2px solid white", color: "white", fontSize: 13, fontWeight: 600,
