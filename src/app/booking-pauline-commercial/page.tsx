@@ -121,9 +121,9 @@ function BookingContent() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
+      background: "white",
       display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "30px 16px",
+      padding: "20px 16px",
     }}>
       {/* Progress steps */}
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
@@ -464,7 +464,7 @@ function BookingContent() {
       )}
 
       {/* Footer */}
-      <p style={{ fontSize: 11, color: "#8399a9", marginTop: 30 }}>
+      <p style={{ fontSize: 11, color: "#8399a9", marginTop: 16 }}>
         © {new Date().getFullYear()} La Closing Académie® — Tous droits réservés
       </p>
     </div>
