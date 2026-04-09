@@ -110,7 +110,7 @@ export default function LandingBookFinancement() {
         body: JSON.stringify({ ...form, source: "landing-book-financement" }),
       });
       if (!res.ok) throw new Error("Erreur");
-      window.location.href = "https://www.closing-academie.com/book-financement-2026-typ";
+      window.location.href = "/book-financement-vsl";
     } catch {
       setError("Une erreur est survenue. Veuillez r\u00e9essayer.");
     } finally {

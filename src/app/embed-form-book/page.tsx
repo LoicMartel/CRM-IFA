@@ -34,7 +34,7 @@ export default function EmbedFormBookPage() {
       if (window.top !== window.self) {
         window.top?.postMessage({ type: "lca-form-success", clientType: form.clientType }, "*");
       }
-      window.top!.location.href = "https://www.closing-academie.com/book-financement-2026-typ";
+      window.top!.location.href = "https://crm-lca.vercel.app/book-financement-vsl";
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
