@@ -41,14 +41,15 @@ export default function ConfirmationDecouverte() {
           fontSize: 32, fontWeight: 700, marginBottom: 18,
           lineHeight: 1.3,
         }}>
-          Votre appel de d&eacute;couverte est r&eacute;serv&eacute;.
+          Votre appel d&eacute;couverte est r&eacute;serv&eacute;.
         </h1>
         <p style={{
           fontSize: 16, lineHeight: 1.6, color: "rgba(255,255,255,0.85)",
           maxWidth: 580, margin: "0 auto", fontWeight: 500,
         }}>
-          Merci pour votre confiance. Vous allez b&eacute;n&eacute;ficier d&apos;un appel de d&eacute;couverte offert,
-          enti&egrave;rement d&eacute;di&eacute; &agrave; la performance commerciale de votre entreprise.
+          Merci pour votre confiance. Vous allez b&eacute;n&eacute;ficier d&apos;un appel offert,
+          enti&egrave;rement d&eacute;di&eacute; aux solutions de financement et de prise en charge
+          disponibles pour vos apprenants.
         </p>
       </section>
 
@@ -59,17 +60,17 @@ export default function ConfirmationDecouverte() {
             Voici ce que nous allons faire ensemble
           </h2>
           <p style={{ fontSize: 16, color: "#5a6f80", marginBottom: 20, lineHeight: 1.6 }}>
-            Durant cet appel de d&eacute;couverte, nous allons :
+            Durant cet appel, nous allons :
           </p>
           <ul style={{
             listStyle: "none", padding: 0, margin: "0 0 28px 0",
             display: "flex", flexDirection: "column", gap: 10,
           }}>
             {[
-              "Comprendre vos enjeux et vos objectifs commerciaux",
-              "Identifier les freins actuels de votre organisation",
-              "Explorer les opportunit\u00e9s de croissance de votre activit\u00e9",
-              "D\u00e9finir ensemble les prochaines \u00e9tapes pour avancer",
+              "Analyser le profil de vos apprenants et leur \u00e9ligibilit\u00e9 aux dispositifs existants",
+              "Identifier les financements mobilisables (CPF, OPCO, France Travail, R\u00e9gion, etc.)",
+              "\u00c9tudier comment structurer vos offres pour maximiser les prises en charge",
+              "D\u00e9finir ensemble les leviers pour lever les freins financiers \u00e0 l\u2019inscription",
             ].map((item, i) => (
               <li key={i} style={{ fontSize: 16, color: "#1a2a3a", lineHeight: 1.6, paddingLeft: 20, position: "relative" }}>
                 <span style={{ position: "absolute", left: 0, color: "#FF6B35" }}>&mdash;</span>
@@ -79,13 +80,15 @@ export default function ConfirmationDecouverte() {
           </ul>
 
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 18 }}>
-            L&apos;objectif est simple : comprendre pr&eacute;cis&eacute;ment votre situation et d&eacute;terminer les leviers prioritaires d&apos;am&eacute;lioration.
+            L&apos;objectif est simple : comprendre pr&eacute;cis&eacute;ment votre situation et d&eacute;terminer
+            quels dispositifs de financement sont accessibles &agrave; vos clients pour s&apos;offrir vos formations.
           </p>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 18 }}>
-            Si nous estimons pouvoir vous aider, nous vous expliquerons comment d&eacute;ployer une culture commerciale plus performante et structur&eacute;e au sein de votre organisme.
+            Si nous estimons pouvoir vous aider, nous vous expliquerons comment int&eacute;grer ces solutions
+            dans votre parcours de vente pour augmenter vos taux de conversion et votre chiffre d&apos;affaires.
           </p>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7 }}>
-            Vous repartirez &eacute;galement avec une premi&egrave;re vision claire d&apos;une strat&eacute;gie commerciale adapt&eacute;e &agrave; votre entreprise.
+            Vous repartirez avec une premi&egrave;re vision claire des financements adapt&eacute;s &agrave; votre organisme.
           </p>
         </div>
       </section>
@@ -101,9 +104,10 @@ export default function ConfirmationDecouverte() {
             Un engagement r&eacute;ciproque
           </h2>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7 }}>
-            Nous sommes une entreprise &agrave; taille humaine. Chaque session est pr&eacute;par&eacute;e avec attention.
-            Nous comptons donc sur votre pr&eacute;sence. En cas d&apos;impr&eacute;vu, merci de nous pr&eacute;venir &agrave; l&apos;avance
-            afin que nous puissions r&eacute;attribuer ce cr&eacute;neau.
+            Nous sommes une entreprise &agrave; taille humaine. Chaque &eacute;change est pr&eacute;par&eacute;
+            avec attention pour vous apporter des solutions concr&egrave;tes et actionnables directement.
+            Nous comptons donc sur votre pr&eacute;sence. En cas d&apos;impr&eacute;vu, merci de nous pr&eacute;venir
+            &agrave; l&apos;avance afin que nous puissions r&eacute;attribuer ce cr&eacute;neau.
           </p>
         </div>
       </section>
@@ -118,7 +122,8 @@ export default function ConfirmationDecouverte() {
             Prenez 2 minutes pour d&eacute;couvrir le t&eacute;moignage d&apos;un dirigeant accompagn&eacute; par la Closing Acad&eacute;mie.
           </p>
           <p style={{ fontSize: 16, color: "#1a2a3a", fontWeight: 600, lineHeight: 1.7, marginBottom: 10 }}>
-            Il est pass&eacute; de 1,5 M&euro; &agrave; 2,7 M&euro; de chiffre d&apos;affaires en 12 mois apr&egrave;s avoir structur&eacute; son approche commerciale.
+            Il est pass&eacute; de 1,5 M&euro; &agrave; 2,7 M&euro; de chiffre d&apos;affaires en 12 mois
+            apr&egrave;s avoir structur&eacute; son approche commerciale.
           </p>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 28 }}>
             Cette vid&eacute;o vous permettra d&apos;aborder notre appel avec une vision plus concr&egrave;te des r&eacute;sultats possibles.
