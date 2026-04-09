@@ -101,7 +101,7 @@ export default function BookFinancementTyp() {
         </div>
 
         <a
-          href="https://www.closing-academie.com/book-financement-2026"
+          href="https://buy.stripe.com/bJedR8dso89x6vd2MqfYY07"
           style={{
             display: "inline-block", padding: "12px 28px", borderRadius: 6,
             background: "#2e7ab5", color: "white", fontSize: 14, fontWeight: 600,
