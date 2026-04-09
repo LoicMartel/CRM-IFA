@@ -120,8 +120,7 @@ function BookingContent() {
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "white",
+      background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "20px 16px",
     }}>
