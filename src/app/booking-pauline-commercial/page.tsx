@@ -125,62 +125,27 @@ function BookingContent() {
       padding: "20px 16px",
       maxWidth: 820, margin: "0 auto",
     }}>
-      {/* Progress steps */}
-      <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: step >= 1 ? "#FF6B35" : "#dce8f0",
-            color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700,
-          }}>
-            {step > 1 ? <CheckCircle style={{ width: 16, height: 16 }} /> : "1"}
+      {/* Progress steps + Logo compact */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= 1 ? "#FF6B35" : "#dce8f0", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+              {step > 1 ? <CheckCircle style={{ width: 14, height: 14 }} /> : "1"}
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: step >= 1 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>Heure</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: step >= 1 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>Choisir l&apos;heure</span>
-        </div>
-        <div style={{ width: 80, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: step >= 2 ? "#FF6B35" : "#dce8f0",
-            color: step >= 2 ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700,
-          }}>
-            {step > 2 ? <CheckCircle style={{ width: 16, height: 16 }} /> : "2"}
+          <div style={{ width: 50, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 6px 16px" }} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= 2 ? "#FF6B35" : "#dce8f0", color: step >= 2 ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+              {step > 2 ? <CheckCircle style={{ width: 14, height: 14 }} /> : "2"}
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: step >= 2 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>Infos</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: step >= 2 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>Vos informations</span>
         </div>
-      </div>
-
-      {/* Logo + Photo Pauline */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        gap: 14, marginBottom: 24,
-      }}>
-        <div style={{
-          width: 56, height: 56, border: "2px solid #0a3d5f", borderRadius: 10,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "4px 6px",
-        }}>
-          <span style={{
-            color: "#0a3d5f", fontSize: 8, fontWeight: 700, lineHeight: 1.2,
-            textAlign: "center", fontFamily: "'Montserrat', sans-serif",
-            letterSpacing: "-0.02em",
-          }}>
-            LA<br />CLOSING<br />ACADÉMIE<span style={{ fontSize: 5, verticalAlign: "super" }}>®</span>
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/photo-pauline.jpeg" alt="Pauline Becquerelle" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>Pauline Becquerelle</span>
         </div>
-        <img
-          src="/photo-pauline.jpeg"
-          alt="Pauline Becquerelle"
-          style={{
-            width: 56, height: 56, borderRadius: "50%",
-            objectFit: "cover", objectPosition: "top",
-            border: "2px solid #fff",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-          }}
-        />
-        <span style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Pauline Becquerelle</span>
       </div>
 
       {/* Step 1: Calendar + Slots */}
@@ -192,7 +157,7 @@ function BookingContent() {
           display: "flex", flexWrap: "wrap",
         }}>
           {/* Left: Calendar */}
-          <div style={{ flex: "1 1 320px", padding: "24px 20px", borderRight: "1px solid #e8ecf1" }}>
+          <div style={{ flex: "1 1 320px", padding: "16px 16px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
             </h2>
@@ -252,7 +217,7 @@ function BookingContent() {
           </div>
 
           {/* Right: Slots + Options */}
-          <div style={{ flex: "1 1 240px", padding: "24px 20px" }}>
+          <div style={{ flex: "1 1 240px", padding: "16px 16px" }}>
             {/* Meeting info */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
