@@ -1971,6 +1971,19 @@ export function PlanningList({
         planId={planificateurPlanId}
         prefill={planificateurPrefill}
         learnerIds={planificateurLearnerIds}
+        plans={servicePlans.map(p => ({
+          id: p.id,
+          companyName: p.companies?.name ?? "Sans entreprise",
+          vtPlanned: p.vt_planned ?? 0,
+          daysPlanned: p.days_planned ?? 0,
+          startDate: p.start_date ?? "",
+          endDate: p.end_date ?? "",
+          city: (p.companies as any)?.city ?? "",
+          budget: p.budget ?? 0,
+          address: (p.companies as any)?.address ? `${(p.companies as any).address}${(p.companies as any).city ? ", " + (p.companies as any).city : ""}` : "",
+          format: p.format ?? "individuel",
+          learnerIds: (p.service_plan_learners ?? []).map((spl: any) => spl.learner_id),
+        }))}
         onCreateSession={(session, pid) => {
           setSessionPlanId(pid);
           setEditingSessionId(null);

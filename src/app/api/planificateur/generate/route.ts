@@ -115,11 +115,49 @@ export async function POST(req: NextRequest) {
       startDate, endDate, vtCount, daysCount,
     } = body;
 
-    // Fetch plan format to know if sessions are individual or group
-    let planFormat = "individuel"; // default: individual VTs can coexist with journées same week
+    // Fetch plan format and check for already assigned expert
+    let planFormat = "individuel";
+    let existingExpertName: string | null = null;
     if (planId) {
       const { data: plan } = await supabase.from("service_plans").select("format").eq("id", planId).single();
       if (plan?.format) planFormat = plan.format;
+
+      // Check existing sessions for an already assigned trainer
+      const { data: existingSessions } = await supabase
+        .from("training_sessions")
+        .select("trainers")
+        .eq("service_plan_id", planId)
+        .neq("status", "cancelled");
+      const existingTrainers = (existingSessions ?? []).flatMap((s: any) => s.trainers ?? []);
+      if (existingTrainers.length > 0) {
+        // Most frequent trainer
+        const freq: Record<string, number> = {};
+        for (const t of existingTrainers) freq[t] = (freq[t] || 0) + 1;
+        existingExpertName = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+      }
+
+      // Also check learners' expert_id
+      if (!existingExpertName) {
+        const { data: planLearners } = await supabase
+          .from("service_plan_learners")
+          .select("learner_id, learners(expert_id)")
+          .eq("service_plan_id", planId);
+        const expertIds = (planLearners ?? [])
+          .map((spl: any) => spl.learners?.expert_id)
+          .filter(Boolean);
+        if (expertIds.length > 0) {
+          // Get the most common expert_id
+          const freq: Record<string, number> = {};
+          for (const eid of expertIds) freq[eid] = (freq[eid] || 0) + 1;
+          const topExpertId = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+          const { data: expertMember } = await supabase
+            .from("team_members")
+            .select("first_name")
+            .eq("id", topExpertId)
+            .single();
+          if (expertMember) existingExpertName = expertMember.first_name;
+        }
+      }
     }
 
     // Step A: Fetch and score experts
@@ -447,6 +485,7 @@ Analyse ce planning et donne une recommandation courte.`,
       })),
       warnings,
       aiRecommendation,
+      existingExpertName,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

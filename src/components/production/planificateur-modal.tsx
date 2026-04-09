@@ -40,7 +40,22 @@ interface PlanificateurResult {
   alternativeTrainers: { name: string; coveredSessions: number; totalSessions: number }[];
   warnings: string[];
   aiRecommendation?: string;
+  existingExpertName?: string | null;
   error?: string;
+}
+
+interface PlanOption {
+  id: string;
+  companyName: string;
+  vtPlanned: number;
+  daysPlanned: number;
+  startDate: string;
+  endDate: string;
+  city: string;
+  budget: number;
+  address: string;
+  format: string;
+  learnerIds: string[];
 }
 
 interface Props {
@@ -53,6 +68,7 @@ interface Props {
   };
   learnerIds?: string[];
   onCreateSession?: (session: ProposedSession, planId: string) => void;
+  plans?: PlanOption[];
 }
 
 const LOADING_MESSAGES = [
@@ -62,7 +78,11 @@ const LOADING_MESSAGES = [
   "Génération du planning optimal...",
 ];
 
-export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds = [], onCreateSession }: Props) {
+export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefill, learnerIds: initialLearnerIds = [], onCreateSession, plans = [] }: Props) {
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(initialPlanId ?? null);
+  const planId = selectedPlanId || initialPlanId;
+  const selectedPlan = plans.find(p => p.id === planId);
+  const learnerIds = selectedPlan?.learnerIds ?? initialLearnerIds;
   const [step, setStep] = useState<"form" | "loading" | "results">("form");
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [result, setResult] = useState<PlanificateurResult | null>(null);
@@ -178,6 +198,41 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
         {/* Step 1: Form */}
         {step === "form" && (
           <div style={{ padding: 24 }} className="space-y-5">
+            {/* Plan selector (when opened from global button) */}
+            {plans.length > 0 && !initialPlanId && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+                  Client / Plan de formation
+                </div>
+                <select
+                  value={selectedPlanId || ""}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setSelectedPlanId(pid || null);
+                    const p = plans.find(pl => pl.id === pid);
+                    if (p) {
+                      setForm(f => ({
+                        ...f,
+                        vtCount: String(p.vtPlanned || ""),
+                        daysCount: String(p.daysPlanned || ""),
+                        startDate: p.startDate || f.startDate,
+                        endDate: p.endDate || f.endDate,
+                        city: p.city || f.city,
+                        budget: p.budget ? String(p.budget) : f.budget,
+                        journeeLocation: p.address || f.journeeLocation,
+                      }));
+                    }
+                  }}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                >
+                  <option value="">S&eacute;lectionner un plan</option>
+                  {plans.map(p => (
+                    <option key={p.id} value={p.id}>{p.companyName} — VT: {p.vtPlanned} / J: {p.daysPlanned}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Jours disponibles */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
@@ -390,6 +445,46 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                     {result.selectedTrainer.budgetOk && " · Budget OK ✓"}
                   </div>
                 </div>
+
+                {/* Existing expert alert */}
+                {result.existingExpertName && result.existingExpertName !== result.selectedTrainer.firstName && (
+                  <div style={{ padding: 14, borderRadius: 10, background: "#fff3e0", border: "1px solid #ffb74d" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <AlertTriangle style={{ width: 16, height: 16, color: "#e65100" }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#e65100" }}>Expert d&eacute;j&agrave; assign&eacute; : {result.existingExpertName}</span>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#5a6f80", margin: "0 0 10px" }}>
+                      Ce client travaille d&eacute;j&agrave; avec <strong>{result.existingExpertName}</strong>. Le planificateur recommande <strong>{result.selectedTrainer.firstName}</strong> selon les crit&egrave;res.
+                    </p>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => {
+                          if (!result) return;
+                          const updated = { ...result, proposedSessions: result.proposedSessions.map(s => ({ ...s, trainer_name: result.existingExpertName!, warning: undefined })) };
+                          setResult(updated);
+                        }}
+                        style={{ height: 30, borderRadius: 6, border: "2px solid #e65100", background: "white", color: "#e65100", fontSize: 11, fontWeight: 700, padding: "0 14px", cursor: "pointer" }}
+                      >
+                        Garder {result.existingExpertName}
+                      </button>
+                      <button
+                        onClick={() => {}}
+                        style={{ height: 30, borderRadius: 6, border: "1px solid #dce8f0", background: "white", color: "#5a6f80", fontSize: 11, fontWeight: 600, padding: "0 14px", cursor: "pointer" }}
+                        disabled
+                      >
+                        Garder {result.selectedTrainer.firstName} (recommand&eacute;)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {result.existingExpertName && result.existingExpertName === result.selectedTrainer.firstName && (
+                  <div style={{ padding: 12, borderRadius: 8, background: "#e8f5e9", borderLeft: "4px solid #27ae60" }}>
+                    <span style={{ fontSize: 12, color: "#2e7d32", fontWeight: 600 }}>
+                      L&apos;expert d&eacute;j&agrave; assign&eacute; ({result.existingExpertName}) correspond &agrave; l&apos;expert recommand&eacute;.
+                    </span>
+                  </div>
+                )}
 
                 {/* Warnings */}
                 {result.warnings.length > 0 && (
