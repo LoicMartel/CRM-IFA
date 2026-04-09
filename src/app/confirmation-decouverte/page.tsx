@@ -119,11 +119,12 @@ export default function ConfirmationDecouverte() {
             En attendant notre &eacute;change...
           </h2>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 10 }}>
-            Prenez 2 minutes pour d&eacute;couvrir le t&eacute;moignage d&apos;un dirigeant accompagn&eacute; par la Closing Acad&eacute;mie.
+            Prenez 2 minutes pour d&eacute;couvrir le t&eacute;moignage d&apos;une dirigeante accompagn&eacute;e par la Closing Acad&eacute;mie.
           </p>
           <p style={{ fontSize: 16, color: "#1a2a3a", fontWeight: 600, lineHeight: 1.7, marginBottom: 10 }}>
-            Il est pass&eacute; de 1,5 M&euro; &agrave; 2,7 M&euro; de chiffre d&apos;affaires en 12 mois
-            apr&egrave;s avoir structur&eacute; son approche commerciale.
+            Fondatrice et dirigeante de l&apos;organisme de formation &quot;French As You Like It&quot;,
+            Marguerite est pass&eacute;e de 300 K&euro; &agrave; 600 K&euro; de chiffre d&apos;affaires
+            avec notre accompagnement commercial.
           </p>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 28 }}>
             Cette vid&eacute;o vous permettra d&apos;aborder notre appel avec une vision plus concr&egrave;te des r&eacute;sultats possibles.
