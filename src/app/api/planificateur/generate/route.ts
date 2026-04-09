@@ -187,16 +187,16 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // Step C: Generate schedule
+    // Step C: Generate schedule with flexible date finding
     const proposedSessions: ProposedSession[] = [];
     const warnings: string[] = [];
+    const bookedDates = new Set<string>(); // Track dates already used (no VT + journée same day)
 
-    // Build preferred time slots from vtTimeSlot (can be "09:00" or "09:00-12:00" or "09:00,10:00,14:00")
-    function buildPreferredSlots(vtTimeSlot: string): string[] {
-      if (!vtTimeSlot) return ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
-      // Range format: "09:00-12:00"
-      if (vtTimeSlot.includes("-")) {
-        const [startStr, endStr] = vtTimeSlot.split("-").map((s: string) => s.trim());
+    // Build preferred time slots
+    function buildPreferredSlots(timeSlotStr: string): string[] {
+      if (!timeSlotStr) return ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
+      if (timeSlotStr.includes("-")) {
+        const [startStr, endStr] = timeSlotStr.split("-").map((s: string) => s.trim());
         const [sH, sM] = startStr.split(":").map(Number);
         const [eH, eM] = endStr.split(":").map(Number);
         const startMin = sH * 60 + sM;
@@ -207,138 +207,128 @@ export async function POST(req: NextRequest) {
         }
         return slots.length > 0 ? slots : [startStr];
       }
-      // Comma-separated: "09:00,10:00,14:00"
-      if (vtTimeSlot.includes(",")) {
-        return vtTimeSlot.split(",").map((s: string) => s.trim()).filter(Boolean);
-      }
-      // Single time: "10:00"
-      return [vtTimeSlot];
+      if (timeSlotStr.includes(",")) return timeSlotStr.split(",").map((s: string) => s.trim()).filter(Boolean);
+      return [timeSlotStr];
     }
 
     const preferredSlots = buildPreferredSlots(vtTimeSlot);
-
-    // All possible slots from 08:00 to 18:00 (fallback)
     const allDaySlots: string[] = [];
     for (let h = 8; h <= 17; h++) {
-      for (const m of ["00", "30"]) {
-        allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
-      }
+      for (const m of ["00", "30"]) allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
     }
 
-    // Generate VT dates
-    if ((parseInt(vtCount) || 0) > 0) {
-      const vtDates = generateCandidateDates(startDate, endDate, vtRhythm, clientAvailableDays, parseInt(vtCount));
-      const duration = parseFloat(vtDuration) || 1;
+    // Helper: get all available days in a week window starting from a given date
+    function getAvailableDaysInWindow(windowStart: Date, windowDays: number, availDays: string[]): string[] {
+      const dates: string[] = [];
+      const end = new Date(endDate + "T23:59:59");
+      for (let d = 0; d < windowDays; d++) {
+        const cur = new Date(windowStart);
+        cur.setDate(cur.getDate() + d);
+        if (cur > end) break;
+        const dayName = DAY_NAMES[cur.getDay()];
+        if (availDays.length === 0 || availDays.includes(dayName)) {
+          dates.push(cur.toISOString().split("T")[0]);
+        }
+      }
+      return dates;
+    }
 
-      for (const date of vtDates) {
-        let assigned = false;
+    // Try to find a slot for a session on a specific date with a trainer
+    function tryAssignVT(date: string, duration: number, trainer: TrainerData): string | null {
+      for (const slot of preferredSlots) {
+        if (!isConflicting(date, slot, duration, trainer.busyEvents)) return slot;
+      }
+      for (const slot of allDaySlots) {
+        if (!isConflicting(date, slot, duration, trainer.busyEvents)) return slot;
+      }
+      return null;
+    }
 
-        // Priority 1: Try preferred slots with trainer #1 (best scored)
-        // Priority 2: Try preferred slots with trainer #2, #3
-        // Priority 3: Try ALL slots with trainer #1
-        // Priority 4: Try ALL slots with trainer #2, #3
-        for (const trainer of trainersWithBusy) {
-          for (const slot of preferredSlots) {
-            if (!isConflicting(date, slot, duration, trainer.busyEvents)) {
+    function tryAssignJournee(date: string, trainer: TrainerData): boolean {
+      return !isConflicting(date, "09:00", 8, trainer.busyEvents);
+    }
+
+    // Flexible session finder: tries the target date first, then nearby days in the same window
+    function findSlotFlexible(
+      windowStart: Date, windowDays: number, sessionType: "vt" | "journee",
+      duration: number, availDays: string[]
+    ): ProposedSession | null {
+      const candidateDays = getAvailableDaysInWindow(windowStart, windowDays, availDays);
+
+      // For each trainer (priority order), try each candidate day
+      for (const trainer of trainersWithBusy) {
+        for (const date of candidateDays) {
+          if (bookedDates.has(date) && sessionType === "journee") continue; // Don't put journée on a day with VT
+          if (sessionType === "vt") {
+            // Check this day doesn't already have a journée
+            const hasJournee = proposedSessions.some(s => s.session_date === date && s.session_type === "journee");
+            if (hasJournee) continue;
+          }
+
+          if (sessionType === "vt") {
+            const slot = tryAssignVT(date, duration, trainer);
+            if (slot) {
               const isAlternative = trainer !== trainersWithBusy[0];
-              proposedSessions.push({
-                session_type: "vt",
-                session_date: date,
-                session_time: slot,
-                duration_hours: duration,
-                trainer_name: trainer.firstName,
+              if (isAlternative) warnings.push(`${date} (VT) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName}`);
+              return {
+                session_type: "vt", session_date: date, session_time: slot,
+                duration_hours: duration, trainer_name: trainer.firstName,
                 session_location: null,
                 warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
-              });
-              if (isAlternative) {
-                warnings.push(`${date} (VT) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName} assigné`);
-              }
-              assigned = true;
-              break;
+              };
+            }
+          } else {
+            if (tryAssignJournee(date, trainer)) {
+              const isAlternative = trainer !== trainersWithBusy[0];
+              if (isAlternative) warnings.push(`${date} (Journée) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName}`);
+              return {
+                session_type: "journee", session_date: date, session_time: "09:00",
+                duration_hours: 8, trainer_name: trainer.firstName,
+                session_location: journeeLocation || null,
+                warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
+              };
             }
           }
-          if (assigned) break;
         }
+      }
+      return null;
+    }
 
-        // Fallback: try all day slots with each trainer
-        if (!assigned) {
-          for (const trainer of trainersWithBusy) {
-            for (const slot of allDaySlots) {
-              if (!isConflicting(date, slot, duration, trainer.busyEvents)) {
-                const isAlternative = trainer !== trainersWithBusy[0];
-                const warning = isAlternative
-                  ? `Créneau alternatif ${slot} — ${trainersWithBusy[0].firstName} indisponible`
-                  : `Créneau alternatif (${slot})`;
-                proposedSessions.push({
-                  session_type: "vt",
-                  session_date: date,
-                  session_time: slot,
-                  duration_hours: duration,
-                  trainer_name: trainer.firstName,
-                  session_location: null,
-                  warning,
-                });
-                warnings.push(`${date} (VT) : créneau ${slot} avec ${trainer.firstName}`);
-                assigned = true;
-                break;
-              }
-            }
-            if (assigned) break;
-          }
-        }
+    const { intervalDays: vtInterval } = parseRhythm(vtRhythm);
+    const { intervalDays: journeeInterval } = parseRhythm(journeeRhythm || "1x/mois");
+    const rangeStart = new Date(startDate + "T00:00:00");
+    const rangeEnd = new Date(endDate + "T23:59:59");
 
-        if (!assigned) {
-          proposedSessions.push({
-            session_type: "vt",
-            session_date: date,
-            session_time: preferredSlots[0] || "09:00",
-            duration_hours: duration,
-            trainer_name: trainersWithBusy[0].firstName,
-            session_location: null,
-            warning: "Aucun expert disponible — assignation manuelle nécessaire",
-          });
-          warnings.push(`${date} (VT) : aucun expert disponible`);
+    // Generate VT sessions with flexible dates
+    const vtTotal = parseInt(vtCount) || 0;
+    const vtDur = parseFloat(vtDuration) || 1;
+    if (vtTotal > 0) {
+      const cursor = new Date(rangeStart);
+      let placed = 0;
+      while (cursor <= rangeEnd && placed < vtTotal) {
+        const session = findSlotFlexible(cursor, Math.min(vtInterval, 7), "vt", vtDur, clientAvailableDays);
+        if (session) {
+          proposedSessions.push(session);
+          bookedDates.add(session.session_date);
+          placed++;
         }
+        cursor.setDate(cursor.getDate() + vtInterval);
       }
     }
 
-    // Generate journée dates
-    if ((parseInt(daysCount) || 0) > 0) {
-      const journeeDates = generateCandidateDates(startDate, endDate, journeeRhythm || "1x/mois", clientAvailableDays, parseInt(daysCount));
-
-      for (const date of journeeDates) {
-        let assigned = false;
-        for (const trainer of trainersWithBusy) {
-          if (!isConflicting(date, "09:00", 8, trainer.busyEvents)) {
-            const isAlternative = trainer !== trainersWithBusy[0];
-            proposedSessions.push({
-              session_type: "journee",
-              session_date: date,
-              session_time: "09:00",
-              duration_hours: 8,
-              trainer_name: trainer.firstName,
-              session_location: journeeLocation || null,
-              warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
-            });
-            if (isAlternative) {
-              warnings.push(`${date} (Journée) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName} assigné`);
-            }
-            assigned = true;
-            break;
-          }
+    // Generate journée sessions with flexible dates
+    const jourTotal = parseInt(daysCount) || 0;
+    if (jourTotal > 0) {
+      const cursor = new Date(rangeStart);
+      let placed = 0;
+      while (cursor <= rangeEnd && placed < jourTotal) {
+        const session = findSlotFlexible(cursor, Math.min(journeeInterval, 14), "journee", 8, clientAvailableDays);
+        if (session) {
+          proposedSessions.push(session);
+          bookedDates.add(session.session_date);
+          placed++;
         }
-        if (!assigned) {
-          proposedSessions.push({
-            session_type: "journee",
-            session_date: date,
-            session_time: "09:00",
-            duration_hours: 8,
-            trainer_name: trainersWithBusy[0].firstName,
-            session_location: journeeLocation || null,
-            warning: "Aucun expert disponible — assignation manuelle nécessaire",
-          });
-          warnings.push(`${date} (Journée) : aucun expert disponible`);
-        }
+        cursor.setDate(cursor.getDate() + journeeInterval);
       }
     }
 
