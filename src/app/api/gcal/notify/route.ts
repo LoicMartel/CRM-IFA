@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
       const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
       const timeDisplay = `${session.session_date} à ${sessionTime}`;
 
-      // 1. Google Calendar (only for non-Externe)
-      if (calendarId && !isExterne) {
+      // 1. Google Calendar (for everyone with a calendar configured)
+      if (calendarId) {
         const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
         const [startH, startM] = sessionTime.split(":").map(Number);
         const startDT = `${session.session_date}T${sessionTime}:00`;
@@ -128,8 +128,8 @@ export async function POST(req: NextRequest) {
         results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "created" : gcalResult.error });
       }
 
-      // 2. Slack DM (only for non-Externe)
-      if (trainer.slack_user_id && slackToken && !isExterne) {
+      // 2. Slack DM (for everyone with a Slack user ID)
+      if (trainer.slack_user_id && slackToken) {
         const slackMsg = [
           `Bonjour ${trainer.first_name},`,
           "",
@@ -158,8 +158,30 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3. Email for "Externe" trainers (like Guillaume)
+      // 3. Email for "Externe" trainers with .ics
       if (isExterne && trainer.email) {
+        const icsStartExt = `${session.session_date}T${sessionTime}:00`;
+        const [extH, extM] = sessionTime.split(":").map(Number);
+        const extTotalMin = extH * 60 + extM + durationHours * 60;
+        const icsEndExt = `${session.session_date}T${String(Math.floor(extTotalMin / 60)).padStart(2, "0")}:${String(extTotalMin % 60).padStart(2, "0")}:00`;
+
+        const icsContentExt = generateICS({
+          summary: title,
+          description: [
+            `${typeLabel} ${sessionIndex}/${totalSessions}`,
+            `Entreprise : ${companyName}`,
+            `Apprenants : ${learnerFullNames || "Non assignés"}`,
+            `Durée : ${durationHours}h`,
+            isJournee ? `Lieu : ${sessionLoc || fullAddress || "Non renseigné"}` : "",
+            !isJournee && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
+          ].filter(Boolean).join("\n"),
+          location: isJournee ? (sessionLoc || fullAddress || companyName) : (zoomLink || "Visioconférence"),
+          startDateTime: icsStartExt,
+          endDateTime: icsEndExt,
+          organizerName: "La Closing Académie",
+          organizerEmail: "contact@closing-academie.com",
+        });
+
         const emailBody = [
           `Bonjour ${trainer.first_name},`,
           "",
@@ -172,7 +194,7 @@ export async function POST(req: NextRequest) {
           isJournee ? `📍 Lieu : ${sessionLoc || fullAddress || "Non renseigné"}` : "",
           !isJournee && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
           "",
-          "⚠️ Pense à vérifier ta disponibilité et à te préparer en amont.",
+          "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
           "",
           "Belle journée,",
           "",
@@ -183,6 +205,7 @@ export async function POST(req: NextRequest) {
           to: trainer.email,
           subject: `Nouvelle session planifiée — ${title}`,
           body: emailBody,
+          attachments: [{ filename: "invitation.ics", content: icsContentExt }],
         });
         results.push({ trainer: trainer.first_name, email: emailResult.success ? "sent" : emailResult.error });
       }
