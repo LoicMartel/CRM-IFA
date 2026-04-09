@@ -90,19 +90,6 @@ export default function ConfirmationAchatBookFinancement() {
         </div>
       </section>
 
-      {/* ===== SÉQUENCE POUR MINIMISER LE RAC ===== */}
-      <section style={{ background: "white", padding: "60px 24px" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <Image
-            src="/confirmation-financement-sequence.png"
-            alt="S\u00e9quence pour minimiser le reste \u00e0 charge (RAC)"
-            width={800}
-            height={500}
-            className="w-full h-auto rounded-xl shadow-md"
-          />
-        </div>
-      </section>
-
       {/* ===== BESOIN D'ACCOMPAGNEMENT ===== */}
       <section style={{ background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 100%)", padding: "60px 24px", textAlign: "center" }}>
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
