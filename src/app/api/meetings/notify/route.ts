@@ -164,9 +164,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Email (Externe only)
+    // 3. Email (Externe only) with .ics
     if (isExterne && assignedMember.email) {
       try {
+        const icsStartExt = `${dateStr}T${timeStr}:00`;
+        const [eH, eM] = timeStr.split(":").map(Number);
+        const eTotalMin = eH * 60 + eM + durationMin;
+        const icsEndExt = `${dateStr}T${String(Math.floor(eTotalMin / 60)).padStart(2, "0")}:${String(eTotalMin % 60).padStart(2, "0")}:00`;
+
+        const icsContentExt = generateICS({
+          summary: title,
+          description: [
+            typeLabel,
+            `Contact : ${contactName}`,
+            companyName ? `Entreprise : ${companyName}` : "",
+            contactPhone ? `Tél : ${contactPhone}` : "",
+            `Mode : ${modeLabel}`,
+            `Durée : ${durationLabel}`,
+            meeting.meeting_mode === "visio" && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
+            meeting.location ? `Lieu : ${meeting.location}` : "",
+          ].filter(Boolean).join("\n"),
+          location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconférence") : (meeting.location || ""),
+          startDateTime: icsStartExt,
+          endDateTime: icsEndExt,
+          organizerName: "La Closing Académie",
+          organizerEmail: "contact@closing-academie.com",
+        });
+
         const emailBody = [
           `Bonjour ${assignedMember.first_name},`,
           "",
@@ -181,7 +205,7 @@ export async function POST(req: NextRequest) {
           meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
           meeting.location ? `📍 Lieu : ${meeting.location}` : "",
           "",
-          "⚠️ Pense à vérifier ta disponibilité.",
+          "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
           "",
           "Belle journée,",
           "",
@@ -192,6 +216,7 @@ export async function POST(req: NextRequest) {
           to: assignedMember.email,
           subject: `Nouveau RDV — ${title}`,
           body: emailBody,
+          attachments: [{ filename: "invitation.ics", content: icsContentExt }],
         });
         results.push({ action: "Email", status: emailResult.success ? "Envoyé" : emailResult.error ?? "Erreur" });
       } catch (e: any) {
