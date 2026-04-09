@@ -30,7 +30,7 @@ export async function sendSessionEmail({
       .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 
     const emailPayload: any = {
-      from: "CRM La Closing Académie <noreply@closing-academie.com>",
+      from: "L'équipe Closing Académie <noreply@closing-academie.com>",
       to,
       subject,
       html: `
