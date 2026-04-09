@@ -136,7 +136,7 @@ export default function ConfirmationDecouverte() {
             boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
           }}>
             <iframe
-              src="https://www.youtube.com/embed/qxPHiC96_ss"
+              src="https://www.youtube.com/embed/k9TUjjsDe6A"
               title="T&eacute;moignage - La Closing Acad&eacute;mie"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
