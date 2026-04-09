@@ -46,7 +46,7 @@ export default async function PlanningPage() {
 
   const { data: teamMembersData } = await supabase
     .from("team_members")
-    .select("id, first_name, last_name, roles, expertises, city, region, tjm, days_per_week, preferred_days, expert_status, mobility")
+    .select("id, first_name, last_name, roles, expertises, city, region, tjm, days_per_week, preferred_days, expert_status, mobility, google_calendar_id, google_calendar_id_presentiel")
     .eq("is_active", true);
 
   const experts = (teamMembersData ?? []).filter((m: any) => ((m.roles as string[]) ?? []).some(r => r === "Expert" || r === "Experte")).map((m: any) => m.first_name as string);

@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
+import { PlanificateurModal } from "@/components/production/planificateur-modal";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -333,6 +334,12 @@ export function PlanningList({
   // Aide à la décision
   const [decisionOpen, setDecisionOpen] = useState(false);
   const [decisionForm, setDecisionForm] = useState({ expertise: "", city: "", days: "", budget: "" });
+
+  // Planificateur
+  const [planificateurOpen, setPlanificateurOpen] = useState(false);
+  const [planificateurPlanId, setPlanificateurPlanId] = useState<string | null>(null);
+  const [planificateurPrefill, setPlanificateurPrefill] = useState<any>(null);
+  const [planificateurLearnerIds, setPlanificateurLearnerIds] = useState<string[]>([]);
 
   // Extract unique trainer names from all training sessions
   const allTrainerNames = Array.from(
@@ -743,6 +750,13 @@ export function PlanningList({
           Aide Décision
         </button>
         <button
+          onClick={() => { setPlanificateurPlanId(null); setPlanificateurPrefill(null); setPlanificateurLearnerIds([]); setPlanificateurOpen(true); }}
+          style={{ height: 38, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: 700, border: "2px solid #27ae60", cursor: "pointer", background: "white", color: "#27ae60", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <CalendarPlus className="h-4 w-4" />
+          Planificateur
+        </button>
+        <button
           onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
           style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
         >
@@ -956,14 +970,33 @@ export function PlanningList({
                   <div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
-                      {!isRestrictedExterne && !isReadOnly && (
+                      {!isRestrictedExterne && !isReadOnly && (<>
                       <button
                         onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
                       </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          setPlanificateurPlanId(plan.id);
+                          setPlanificateurPrefill({
+                            startDate: plan.start_date ?? "",
+                            endDate: plan.end_date ?? "",
+                            vtCount: plan.vt_planned ?? 0,
+                            daysCount: plan.days_planned ?? 0,
+                            city: plan.companies?.city ?? "",
+                            budget: plan.budget ?? 0,
+                            journeeLocation: plan.companies?.address ? `${plan.companies.address}${plan.companies.city ? ", " + plan.companies.city : ""}` : "",
+                          });
+                          setPlanificateurLearnerIds((plan.service_plan_learners ?? []).map((spl: any) => spl.learner_id));
+                          setPlanificateurOpen(true);
+                        }}
+                        style={{ height: 32, borderRadius: 6, background: "white", color: "#27ae60", fontSize: 12, fontWeight: 600, padding: "0 12px", border: "2px solid #27ae60", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                      >
+                        <CalendarPlus className="h-3.5 w-3.5" /> Planificateur
+                      </button>
+                      </>)}
                     </div>
 
                     {/* Session form is now rendered as a popup modal outside the plan loop */}
@@ -1949,6 +1982,15 @@ export function PlanningList({
           100% { box-shadow: 0 0 0 0 rgba(231,76,60,0); }
         }
       `}</style>
+
+      {/* Planificateur modal */}
+      <PlanificateurModal
+        open={planificateurOpen}
+        onClose={() => setPlanificateurOpen(false)}
+        planId={planificateurPlanId}
+        prefill={planificateurPrefill}
+        learnerIds={planificateurLearnerIds}
+      />
 
       {/* Aide à la décision popup */}
       {decisionOpen && (() => {
