@@ -1,0 +1,161 @@
+"use client";
+
+import { CheckCircle } from "lucide-react";
+
+export default function ConfirmationDecouverte() {
+  return (
+    <div style={{ minHeight: "100vh", fontFamily: "'Inter', Arial, sans-serif" }}>
+
+      {/* ===== HERO HEADER ===== */}
+      <section style={{
+        background: "#2e7ab5",
+        padding: "60px 24px 80px",
+        textAlign: "center",
+        color: "white",
+      }}>
+        {/* Logo */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 72, height: 72, border: "2px solid rgba(255,255,255,0.7)", borderRadius: 10,
+          padding: "6px 8px", marginBottom: 40,
+        }}>
+          <span style={{
+            color: "white", fontSize: 11, fontWeight: 700, lineHeight: 1.2,
+            textAlign: "center", fontFamily: "'Montserrat', sans-serif",
+            letterSpacing: "-0.02em",
+          }}>
+            LA<br />CLOSING<br />ACAD&Eacute;MIE<span style={{ fontSize: 7, verticalAlign: "super" }}>&reg;</span>
+          </span>
+        </div>
+
+        {/* Check icon */}
+        <div style={{
+          width: 64, height: 64, borderRadius: "50%", background: "rgba(255,255,255,0.15)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "0 auto 24px",
+        }}>
+          <CheckCircle style={{ width: 40, height: 40, color: "#4caf50" }} />
+        </div>
+
+        <h1 style={{
+          fontSize: 32, fontWeight: 700, marginBottom: 18,
+          lineHeight: 1.3,
+        }}>
+          Votre appel de d&eacute;couverte est r&eacute;serv&eacute;.
+        </h1>
+        <p style={{
+          fontSize: 16, lineHeight: 1.6, color: "rgba(255,255,255,0.85)",
+          maxWidth: 580, margin: "0 auto", fontWeight: 500,
+        }}>
+          Merci pour votre confiance. Vous allez b&eacute;n&eacute;ficier d&apos;un appel de d&eacute;couverte offert,
+          enti&egrave;rement d&eacute;di&eacute; &agrave; la performance commerciale de votre entreprise.
+        </p>
+      </section>
+
+      {/* ===== CE QUE NOUS ALLONS FAIRE ===== */}
+      <section style={{ background: "white", padding: "60px 24px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a2a3a", marginBottom: 8 }}>
+            Voici ce que nous allons faire ensemble
+          </h2>
+          <p style={{ fontSize: 16, color: "#5a6f80", marginBottom: 20, lineHeight: 1.6 }}>
+            Durant cet appel de d&eacute;couverte, nous allons :
+          </p>
+          <ul style={{
+            listStyle: "none", padding: 0, margin: "0 0 28px 0",
+            display: "flex", flexDirection: "column", gap: 10,
+          }}>
+            {[
+              "Comprendre vos enjeux et vos objectifs commerciaux",
+              "Identifier les freins actuels de votre organisation",
+              "Explorer les opportunit\u00e9s de croissance de votre activit\u00e9",
+              "D\u00e9finir ensemble les prochaines \u00e9tapes pour avancer",
+            ].map((item, i) => (
+              <li key={i} style={{ fontSize: 16, color: "#1a2a3a", lineHeight: 1.6, paddingLeft: 20, position: "relative" }}>
+                <span style={{ position: "absolute", left: 0, color: "#FF6B35" }}>&mdash;</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 18 }}>
+            L&apos;objectif est simple : comprendre pr&eacute;cis&eacute;ment votre situation et d&eacute;terminer les leviers prioritaires d&apos;am&eacute;lioration.
+          </p>
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 18 }}>
+            Si nous estimons pouvoir vous aider, nous vous expliquerons comment d&eacute;ployer une culture commerciale plus performante et structur&eacute;e au sein de votre organisme.
+          </p>
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7 }}>
+            Vous repartirez &eacute;galement avec une premi&egrave;re vision claire d&apos;une strat&eacute;gie commerciale adapt&eacute;e &agrave; votre entreprise.
+          </p>
+        </div>
+      </section>
+
+      {/* ===== ENGAGEMENT RÉCIPROQUE ===== */}
+      <section style={{
+        background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 100%)",
+        padding: "60px 24px",
+        textAlign: "center",
+      }}>
+        <div style={{ maxWidth: 580, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>
+            Un engagement r&eacute;ciproque
+          </h2>
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7 }}>
+            Nous sommes une entreprise &agrave; taille humaine. Chaque session est pr&eacute;par&eacute;e avec attention.
+            Nous comptons donc sur votre pr&eacute;sence. En cas d&apos;impr&eacute;vu, merci de nous pr&eacute;venir &agrave; l&apos;avance
+            afin que nous puissions r&eacute;attribuer ce cr&eacute;neau.
+          </p>
+        </div>
+      </section>
+
+      {/* ===== VIDÉO TÉMOIGNAGE ===== */}
+      <section style={{ background: "white", padding: "60px 24px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a2a3a", marginBottom: 8 }}>
+            En attendant notre &eacute;change...
+          </h2>
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 10 }}>
+            Prenez 2 minutes pour d&eacute;couvrir le t&eacute;moignage d&apos;un dirigeant accompagn&eacute; par la Closing Acad&eacute;mie.
+          </p>
+          <p style={{ fontSize: 16, color: "#1a2a3a", fontWeight: 600, lineHeight: 1.7, marginBottom: 10 }}>
+            Il est pass&eacute; de 1,5 M&euro; &agrave; 2,7 M&euro; de chiffre d&apos;affaires en 12 mois apr&egrave;s avoir structur&eacute; son approche commerciale.
+          </p>
+          <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 28 }}>
+            Cette vid&eacute;o vous permettra d&apos;aborder notre appel avec une vision plus concr&egrave;te des r&eacute;sultats possibles.
+          </p>
+
+          {/* YouTube embed */}
+          <div style={{
+            position: "relative", paddingBottom: "56.25%", height: 0,
+            borderRadius: 12, overflow: "hidden",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          }}>
+            <iframe
+              src="https://www.youtube.com/embed/qxPHiC96_ss"
+              title="T&eacute;moignage - La Closing Acad&eacute;mie"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: "absolute", top: 0, left: 0,
+                width: "100%", height: "100%", border: "none",
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FOOTER ===== */}
+      <footer style={{
+        borderTop: "1px solid #e8ecf1",
+        padding: "20px 24px",
+        textAlign: "center",
+        fontSize: 11, color: "#8399a9",
+        display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
+      }}>
+        <span>Conditions g&eacute;n&eacute;rales de vente</span>
+        <span>Politique de confidentialit&eacute;</span>
+        <span>Mentions l&eacute;gales</span>
+      </footer>
+    </div>
+  );
+}
