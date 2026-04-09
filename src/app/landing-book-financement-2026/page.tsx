@@ -245,9 +245,9 @@ export default function LandingBookFinancement() {
       </section>
 
       {/* ===== ACCROCHE ===== */}
-      <section style={{ background: "#1a2a3a" }}>
+      <section style={{ background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 100%)" }}>
         <div className="mx-auto max-w-[960px] px-6 py-14 text-center">
-          <p className="text-[16px] font-bold leading-[1.6] text-white md:text-[18px]">
+          <p className="text-[16px] font-bold leading-[1.6] text-[#1a2a3a] md:text-[18px]">
             80% des organismes de formation n&apos;utilisent pas les financements disponibles.
             Non pas parce qu&apos;ils n&apos;existent pas... Mais parce qu&apos;ils ne savent pas les mobiliser.
           </p>
@@ -286,29 +286,29 @@ export default function LandingBookFinancement() {
       {/* ===== CE QUE VOUS ALLEZ DÉCOUVRIR ===== */}
       <section className="bg-white">
         <div className="mx-auto max-w-[960px] px-6 pb-14">
-          <div className="mx-auto max-w-[700px] rounded-xl border border-gray-100 bg-[#f8fbfd] p-8">
-            <p className="mb-2 text-[12px] font-semibold text-[#2e7ab5]">Le contenu du book</p>
-            <h3 className="mb-5 text-[18px] font-bold text-[#1a2a3a]">
+          <div className="mx-auto max-w-[700px] rounded-xl border border-gray-100 bg-[#f8fbfd] p-8 md:p-10">
+            <p className="mb-2 text-[13px] font-semibold text-[#2e7ab5]">Le sommaire</p>
+            <h3 className="mb-6 text-[22px] font-bold text-[#1a2a3a]">
               Ce que vous allez d&eacute;couvrir dans ce book
             </h3>
-            <ul className="mb-6 flex flex-col gap-3">
+            <ul className="mb-8 flex flex-col gap-4">
               {bookPoints.map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-[14px] text-[#333]">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600 text-[11px]">{"\u2713"}</span>
+                <li key={i} className="flex items-center gap-4 text-[15px] text-[#1a2a3a]">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-500">
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </span>
                   {item}
                 </li>
               ))}
             </ul>
-            <p className="mb-6 text-[13px] leading-[1.7] text-[#555]">
+            <p className="mb-8 text-[14px] leading-[1.7] text-[#555]">
               Aux dirigeants d&apos;organismes de formation et aux responsables commerciaux qui souhaitent aider leurs clients &agrave; s&apos;offrir leurs formations.
             </p>
-            <Image
-              src="/logos/book-financement.png"
-              alt="Book Financements 2026"
-              width={400}
-              height={250}
-              className="mx-auto h-auto w-full max-w-[400px] rounded-lg"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://cdn.prod.website-files.com/67e00f1e3ff67c09e7e3920f/67f61f2fdcc3c9406a9e2e01_Book%20Cover.png"
+              alt="Book Financements 2026 - Ten Steps"
+              className="mx-auto h-auto w-full max-w-[500px] rounded-lg"
             />
           </div>
         </div>
