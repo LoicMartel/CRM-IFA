@@ -304,10 +304,11 @@ export default function LandingBookFinancement() {
             <p className="mb-8 text-[14px] leading-[1.7] text-[#555]">
               Aux dirigeants d&apos;organismes de formation et aux responsables commerciaux qui souhaitent aider leurs clients &agrave; s&apos;offrir leurs formations.
             </p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://cdn.prod.website-files.com/67e00f1e3ff67c09e7e3920f/67f61f2fdcc3c9406a9e2e01_Book%20Cover.png"
+            <Image
+              src="/book-cover-financement.png"
               alt="Book Financements 2026 - Ten Steps"
+              width={500}
+              height={350}
               className="mx-auto h-auto w-full max-w-[500px] rounded-lg"
             />
           </div>
