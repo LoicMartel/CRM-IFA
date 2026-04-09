@@ -123,6 +123,7 @@ function BookingContent() {
       background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "20px 16px",
+      maxWidth: 820, margin: "0 auto",
     }}>
       {/* Progress steps */}
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
@@ -187,7 +188,7 @@ function BookingContent() {
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          maxWidth: 900, width: "100%", overflow: "hidden",
+          maxWidth: 780, width: "100%", overflow: "hidden", margin: "0 auto",
           display: "flex", flexWrap: "wrap",
         }}>
           {/* Left: Calendar */}
