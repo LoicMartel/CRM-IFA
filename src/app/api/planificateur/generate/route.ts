@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import Anthropic from "@anthropic-ai/sdk";
 import { getCalendarEventsAllPages } from "@/lib/google-calendar";
 
 export const maxDuration = 30;
@@ -342,6 +343,45 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Step D: AI optimization — Claude reviews the planning and suggests improvements
+    let aiRecommendation = "";
+    try {
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const planSummary = proposedSessions.map(s =>
+        `${s.session_date} | ${s.session_type === "vt" ? "VT" : "Journée"} | ${s.session_time} | ${s.duration_hours}h | ${s.trainer_name}${s.warning ? " ⚠️ " + s.warning : ""}`
+      ).join("\n");
+
+      const trainersInfo = trainersWithBusy.map(t =>
+        `${t.name} (score: ${t.score}/3, TJM: ${t.tjm}€, expertise: ${t.hasExpertise ? "oui" : "non"}, même région: ${t.sameRegion ? "oui" : "non"}, calendrier: ${t.hasCalendar ? "lié" : "non lié"})`
+      ).join("\n");
+
+      const response = await anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 500,
+        system: `Tu es un assistant de planification de formations. Tu analyses un planning généré automatiquement et donnes une recommandation concise en français (3-5 phrases max). Identifie les points forts et les points d'attention (répartition, charge formateur, continuité pédagogique).`,
+        messages: [{
+          role: "user",
+          content: `Voici le planning généré pour un client :
+Jours dispo client : ${clientAvailableDays.join(", ") || "tous"}
+Rythme VT : ${vtRhythm} | Rythme Journées : ${journeeRhythm || "N/A"}
+Période : ${startDate} → ${endDate}
+
+Experts candidats :
+${trainersInfo}
+
+Planning proposé :
+${planSummary}
+
+${warnings.length > 0 ? "Alertes : " + warnings.join(", ") : ""}
+
+Analyse ce planning et donne une recommandation courte.`,
+        }],
+      });
+      aiRecommendation = response.content[0].type === "text" ? response.content[0].text : "";
+    } catch {
+      // AI optimization is optional, continue without it
+    }
+
     // Compute availability percentage for primary trainer
     const primaryTrainer = trainersWithBusy[0];
     const primaryAssigned = proposedSessions.filter(s => s.trainer_name === primaryTrainer.firstName && !s.warning).length;
@@ -364,6 +404,7 @@ export async function POST(req: NextRequest) {
         totalSessions: proposedSessions.length,
       })),
       warnings,
+      aiRecommendation,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

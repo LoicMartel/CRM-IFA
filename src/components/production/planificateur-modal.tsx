@@ -39,6 +39,7 @@ interface PlanificateurResult {
   };
   alternativeTrainers: { name: string; coveredSessions: number; totalSessions: number }[];
   warnings: string[];
+  aiRecommendation?: string;
   error?: string;
 }
 
@@ -397,6 +398,16 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                     {result.warnings.map((w, i) => (
                       <div key={i} style={{ fontSize: 11, color: "#e65100", marginBottom: 2 }}>• {w}</div>
                     ))}
+                  </div>
+                )}
+
+                {/* AI Recommendation */}
+                {result.aiRecommendation && (
+                  <div style={{ padding: 14, borderRadius: 10, background: "#f0f7fb", border: "1px solid #bdd7ee" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#1a6b9c", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                      Recommandation IA
+                    </div>
+                    <p style={{ fontSize: 13, color: "#1a2a3a", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" }}>{result.aiRecommendation}</p>
                   </div>
                 )}
 
