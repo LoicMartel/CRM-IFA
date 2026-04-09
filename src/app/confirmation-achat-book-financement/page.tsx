@@ -37,8 +37,13 @@ export default function ConfirmationAchatBookFinancement() {
           fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,0.85)",
           maxWidth: 580, margin: "0 auto 24px", fontWeight: 400,
         }}>
-          Votre Book Financements &eacute;dition 2026 (version compl&egrave;te) est confirm&eacute;.
-          Vous allez recevoir un email avec votre book en pi&egrave;ce jointe.
+          Votre book 2026 sera bient&ocirc;t pr&ecirc;t !
+        </p>
+        <p style={{
+          fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.7)",
+          maxWidth: 580, margin: "0 auto", fontStyle: "italic",
+        }}>
+          *Le book 2026 sera disponible mi-avril en raison des r&eacute;centes r&eacute;glementations en vigueur. Vous le recevrez par email sit&ocirc;t disponible.
         </p>
       </section>
 
