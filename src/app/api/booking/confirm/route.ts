@@ -108,7 +108,7 @@ export async function POST(request: Request) {
       contact_id: contact.id,
       company_id: companyId,
       assigned_to: assignedTo,
-      meeting_type: "R1",
+      meeting_type: "R0",
       status: "booked",
       scheduled_at: startDateTime,
       duration_minutes: 30,
