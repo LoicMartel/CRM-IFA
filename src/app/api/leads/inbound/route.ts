@@ -125,6 +125,47 @@ export async function POST(request: Request) {
       }),
     ]);
 
+    // 4. Send thank-you email with book PDF for book-related sources
+    if ((source === "landing-book-financement" || source === "embed-form-book") && email) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
+        const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);
+        const pdfBuffer = await pdfRes.arrayBuffer();
+        const pdfContent = Buffer.from(pdfBuffer).toString("binary");
+
+        await sendSessionEmail({
+          to: email,
+          subject: "Votre Book Financements 2026 est prêt !",
+          body: [
+            `Bonjour ${firstName},`,
+            "",
+            "Merci pour votre intérêt ! Votre Book Financements édition 2026 est disponible en pièce jointe.",
+            "",
+            "Dans ce guide, vous découvrirez :",
+            "",
+            "— Comment intégrer les financements dans votre discours commercial",
+            "— Comment identifier les bons dispositifs selon vos prospects",
+            "— Comment transformer un « je n'ai pas le budget » en solution",
+            "— Un premier dispositif détaillé : le PDC OPCO",
+            "",
+            "Ce book a été conçu pour les dirigeants d'organismes de formation et les responsables commerciaux qui souhaitent aider leurs clients à s'offrir leurs formations.",
+            "",
+            "Pour aller plus loin et accéder à la version complète avec tous les dispositifs (OPCO, FAF, CPF, France Travail...), une méthode claire et une stratégie commerciale fondée sur les financements :",
+            "https://buy.stripe.com/bJedR8dso89x6vd2MqfYY07",
+            "",
+            "Si vous avez la moindre question, n'hésitez pas à nous répondre directement.",
+            "",
+            "À très bientôt,",
+            "",
+            "L'équipe La Closing Académie",
+          ].join("\n"),
+          attachments: [{ filename: "Book-Financements-2026.pdf", content: pdfContent, contentType: "application/pdf" }],
+        });
+      } catch {
+        // Email is best-effort, don't block the response
+      }
+    }
+
     return NextResponse.json({ success: true, contactId }, { headers: CORS_HEADERS });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500, headers: CORS_HEADERS });
