@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
@@ -53,6 +51,7 @@ interface Props {
     city?: string; budget?: number; journeeLocation?: string;
   };
   learnerIds?: string[];
+  onCreateSession?: (session: ProposedSession, planId: string) => void;
 }
 
 const LOADING_MESSAGES = [
@@ -62,13 +61,11 @@ const LOADING_MESSAGES = [
   "Génération du planning optimal...",
 ];
 
-export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds = [] }: Props) {
-  const router = useRouter();
+export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds = [], onCreateSession }: Props) {
   const [step, setStep] = useState<"form" | "loading" | "results">("form");
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [result, setResult] = useState<PlanificateurResult | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
-  const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
     clientAvailableDays: [] as string[],
@@ -146,43 +143,9 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
     }
   }
 
-  async function handleValidate() {
-    if (!result || !planId) return;
-    setSaving(true);
-    const supabase = createClient();
-    const sessions = result.proposedSessions.filter((_, i) => selectedIndices.has(i));
-
-    for (const session of sessions) {
-      const { data: newSession } = await supabase.from("training_sessions").insert({
-        service_plan_id: planId,
-        session_type: session.session_type,
-        session_date: session.session_date,
-        session_time: session.session_time,
-        duration_hours: session.duration_hours,
-        session_location: session.session_location || null,
-        trainers: [session.trainer_name],
-        is_billable: true,
-        status: "planned",
-      }).select("id").single();
-
-      if (newSession && learnerIds.length > 0) {
-        await supabase.from("training_session_learners").insert(
-          learnerIds.map(lid => ({ training_session_id: newSession.id, learner_id: lid }))
-        );
-      }
-
-      if (newSession) {
-        fetch("/api/gcal/sync-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: newSession.id }),
-        }).catch(() => {});
-      }
-    }
-
-    setSaving(false);
-    onClose();
-    router.refresh();
+  function handleOpenSession(session: ProposedSession) {
+    if (!planId || !onCreateSession) return;
+    onCreateSession(session, planId);
   }
 
   if (!open) return null;
@@ -465,6 +428,7 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                         <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
                         <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Lieu</th>
                         <th style={{ padding: "8px 6px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Note</th>
+                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -488,6 +452,19 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                           <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.trainer_name}</td>
                           <td style={{ padding: "8px 10px", color: "#5a6f80", fontSize: 11 }}>{s.session_location || "Visio"}</td>
                           <td style={{ padding: "8px 6px", fontSize: 10, color: "#e65100" }}>{s.warning || ""}</td>
+                          <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                            <button
+                              onClick={() => handleOpenSession(s)}
+                              disabled={!planId || !onCreateSession}
+                              style={{
+                                height: 26, borderRadius: 6, border: "none", padding: "0 10px",
+                                background: "#1a6b9c", color: "white", fontSize: 10, fontWeight: 700,
+                                cursor: "pointer", opacity: (!planId || !onCreateSession) ? 0.4 : 1,
+                              }}
+                            >
+                              Créer
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -499,17 +476,9 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                   <button onClick={() => setStep("form")} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
                     Modifier les critères
                   </button>
-                  <button
-                    onClick={handleValidate}
-                    disabled={saving || selectedIndices.size === 0 || !planId}
-                    style={{
-                      height: 40, borderRadius: 8, border: "none", padding: "0 24px",
-                      background: saving ? "#8399a9" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                      color: "white", fontSize: 13, fontWeight: 700, cursor: saving ? "default" : "pointer",
-                    }}
-                  >
-                    {saving ? "Création en cours..." : `Valider et créer ${selectedIndices.size} session${selectedIndices.size > 1 ? "s" : ""}`}
-                  </button>
+                  <p style={{ fontSize: 11, color: "#8399a9", margin: 0 }}>
+                    Cliquez sur &quot;Créer&quot; pour ouvrir le formulaire de chaque session pré-rempli.
+                  </p>
                 </div>
               </>
             )}

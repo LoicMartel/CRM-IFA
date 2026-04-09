@@ -977,25 +977,6 @@ export function PlanningList({
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
                       </button>
-                      <button
-                        onClick={() => {
-                          setPlanificateurPlanId(plan.id);
-                          setPlanificateurPrefill({
-                            startDate: plan.start_date ?? "",
-                            endDate: plan.end_date ?? "",
-                            vtCount: plan.vt_planned ?? 0,
-                            daysCount: plan.days_planned ?? 0,
-                            city: plan.companies?.city ?? "",
-                            budget: plan.budget ?? 0,
-                            journeeLocation: plan.companies?.address ? `${plan.companies.address}${plan.companies.city ? ", " + plan.companies.city : ""}` : "",
-                          });
-                          setPlanificateurLearnerIds((plan.service_plan_learners ?? []).map((spl: any) => spl.learner_id));
-                          setPlanificateurOpen(true);
-                        }}
-                        style={{ height: 32, borderRadius: 6, background: "white", color: "#27ae60", fontSize: 12, fontWeight: 600, padding: "0 12px", border: "2px solid #27ae60", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
-                      >
-                        <CalendarPlus className="h-3.5 w-3.5" /> Planificateur
-                      </button>
                       </>)}
                     </div>
 
@@ -1990,6 +1971,21 @@ export function PlanningList({
         planId={planificateurPlanId}
         prefill={planificateurPrefill}
         learnerIds={planificateurLearnerIds}
+        onCreateSession={(session, pid) => {
+          setSessionPlanId(pid);
+          setEditingSessionId(null);
+          setSessionForm({
+            session_type: session.session_type,
+            session_date: session.session_date,
+            session_time: session.session_time,
+            duration_hours: String(session.duration_hours),
+            session_location: session.session_location || "",
+            trainers: [session.trainer_name],
+            is_billable: true,
+            notes: "",
+            learner_ids: planificateurLearnerIds,
+          });
+        }}
       />
 
       {/* Aide à la décision popup */}
