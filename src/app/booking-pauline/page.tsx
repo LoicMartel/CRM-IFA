@@ -97,7 +97,7 @@ function BookingContent() {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.href = "/confirmation-reservation";
+        window.location.href = "/confirmation-decouverte";
         return;
       } else {
         setError(data.error || "Une erreur est survenue.");
