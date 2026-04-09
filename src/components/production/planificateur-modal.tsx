@@ -73,7 +73,8 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
   const [form, setForm] = useState({
     clientAvailableDays: [] as string[],
     vtRhythm: "1x/semaine",
-    vtTimeSlot: "09:00",
+    vtTimeFrom: "09:00",
+    vtTimeTo: "12:00",
     vtDuration: "1",
     vtCount: String(prefill?.vtCount ?? ""),
     journeeRhythm: "1x/mois",
@@ -121,7 +122,7 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
           budget: form.budget,
           clientAvailableDays: form.clientAvailableDays,
           vtRhythm: form.vtRhythm,
-          vtTimeSlot: form.vtTimeSlot,
+          vtTimeSlot: `${form.vtTimeFrom}-${form.vtTimeTo}`,
           vtDuration: form.vtDuration,
           vtCount: form.vtCount,
           journeeRhythm: form.journeeRhythm,
@@ -244,7 +245,7 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Visio Training (VT)
               </div>
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-5 gap-3">
                 <div className="space-y-1">
                   <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb de VT</label>
                   <input type="number" value={form.vtCount} onChange={(e) => setForm({ ...form, vtCount: e.target.value })}
@@ -258,8 +259,13 @@ export function PlanificateurModal({ open, onClose, planId, prefill, learnerIds 
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Heure préférée</label>
-                  <input type="time" value={form.vtTimeSlot} onChange={(e) => setForm({ ...form, vtTimeSlot: e.target.value })}
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Plage horaire (de)</label>
+                  <input type="time" value={form.vtTimeFrom} onChange={(e) => setForm({ ...form, vtTimeFrom: e.target.value })}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Plage horaire (à)</label>
+                  <input type="time" value={form.vtTimeTo} onChange={(e) => setForm({ ...form, vtTimeTo: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
                 <div className="space-y-1">

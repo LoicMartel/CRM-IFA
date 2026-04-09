@@ -191,71 +191,113 @@ export async function POST(req: NextRequest) {
     const proposedSessions: ProposedSession[] = [];
     const warnings: string[] = [];
 
+    // Build preferred time slots from vtTimeSlot (can be "09:00" or "09:00-12:00" or "09:00,10:00,14:00")
+    function buildPreferredSlots(vtTimeSlot: string): string[] {
+      if (!vtTimeSlot) return ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
+      // Range format: "09:00-12:00"
+      if (vtTimeSlot.includes("-")) {
+        const [startStr, endStr] = vtTimeSlot.split("-").map((s: string) => s.trim());
+        const [sH, sM] = startStr.split(":").map(Number);
+        const [eH, eM] = endStr.split(":").map(Number);
+        const startMin = sH * 60 + sM;
+        const endMin = eH * 60 + eM;
+        const slots: string[] = [];
+        for (let t = startMin; t < endMin; t += 30) {
+          slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`);
+        }
+        return slots.length > 0 ? slots : [startStr];
+      }
+      // Comma-separated: "09:00,10:00,14:00"
+      if (vtTimeSlot.includes(",")) {
+        return vtTimeSlot.split(",").map((s: string) => s.trim()).filter(Boolean);
+      }
+      // Single time: "10:00"
+      return [vtTimeSlot];
+    }
+
+    const preferredSlots = buildPreferredSlots(vtTimeSlot);
+
+    // All possible slots from 08:00 to 18:00 (fallback)
+    const allDaySlots: string[] = [];
+    for (let h = 8; h <= 17; h++) {
+      for (const m of ["00", "30"]) {
+        allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
+      }
+    }
+
     // Generate VT dates
     if ((parseInt(vtCount) || 0) > 0) {
       const vtDates = generateCandidateDates(startDate, endDate, vtRhythm, clientAvailableDays, parseInt(vtCount));
       const duration = parseFloat(vtDuration) || 1;
-      const time = vtTimeSlot || "09:00";
 
       for (const date of vtDates) {
         let assigned = false;
+
+        // Priority 1: Try preferred slots with trainer #1 (best scored)
+        // Priority 2: Try preferred slots with trainer #2, #3
+        // Priority 3: Try ALL slots with trainer #1
+        // Priority 4: Try ALL slots with trainer #2, #3
         for (const trainer of trainersWithBusy) {
-          if (!isConflicting(date, time, duration, trainer.busyEvents)) {
-            const isAlternative = trainer !== trainersWithBusy[0];
-            proposedSessions.push({
-              session_type: "vt",
-              session_date: date,
-              session_time: time,
-              duration_hours: duration,
-              trainer_name: trainer.firstName,
-              session_location: null,
-              warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
-            });
-            if (isAlternative) {
-              warnings.push(`${date} (VT) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName} assigné`);
+          for (const slot of preferredSlots) {
+            if (!isConflicting(date, slot, duration, trainer.busyEvents)) {
+              const isAlternative = trainer !== trainersWithBusy[0];
+              proposedSessions.push({
+                session_type: "vt",
+                session_date: date,
+                session_time: slot,
+                duration_hours: duration,
+                trainer_name: trainer.firstName,
+                session_location: null,
+                warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
+              });
+              if (isAlternative) {
+                warnings.push(`${date} (VT) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName} assigné`);
+              }
+              assigned = true;
+              break;
             }
-            assigned = true;
-            break;
+          }
+          if (assigned) break;
+        }
+
+        // Fallback: try all day slots with each trainer
+        if (!assigned) {
+          for (const trainer of trainersWithBusy) {
+            for (const slot of allDaySlots) {
+              if (!isConflicting(date, slot, duration, trainer.busyEvents)) {
+                const isAlternative = trainer !== trainersWithBusy[0];
+                const warning = isAlternative
+                  ? `Créneau alternatif ${slot} — ${trainersWithBusy[0].firstName} indisponible`
+                  : `Créneau alternatif (${slot})`;
+                proposedSessions.push({
+                  session_type: "vt",
+                  session_date: date,
+                  session_time: slot,
+                  duration_hours: duration,
+                  trainer_name: trainer.firstName,
+                  session_location: null,
+                  warning,
+                });
+                warnings.push(`${date} (VT) : créneau ${slot} avec ${trainer.firstName}`);
+                assigned = true;
+                break;
+              }
+            }
+            if (assigned) break;
           }
         }
+
         if (!assigned) {
-          // Try alternative time slots (30min increments from 08:00 to 18:00)
-          let found = false;
-          for (let h = 8; h <= 17 && !found; h++) {
-            for (const m of ["00", "30"]) {
-              const altTime = `${String(h).padStart(2, "0")}:${m}`;
-              if (altTime === time) continue;
-              for (const trainer of trainersWithBusy) {
-                if (!isConflicting(date, altTime, duration, trainer.busyEvents)) {
-                  proposedSessions.push({
-                    session_type: "vt",
-                    session_date: date,
-                    session_time: altTime,
-                    duration_hours: duration,
-                    trainer_name: trainer.firstName,
-                    session_location: null,
-                    warning: `Créneau alternatif (${altTime} au lieu de ${time})`,
-                  });
-                  warnings.push(`${date} (VT) : créneau décalé à ${altTime} avec ${trainer.firstName}`);
-                  found = true;
-                  break;
-                }
-              }
-              if (found) break;
-            }
-          }
-          if (!found) {
-            proposedSessions.push({
-              session_type: "vt",
-              session_date: date,
-              session_time: time,
-              duration_hours: duration,
-              trainer_name: trainersWithBusy[0].firstName,
-              session_location: null,
-              warning: "Aucun expert disponible — assignation manuelle nécessaire",
-            });
-            warnings.push(`${date} (VT) : aucun expert disponible`);
-          }
+          proposedSessions.push({
+            session_type: "vt",
+            session_date: date,
+            session_time: preferredSlots[0] || "09:00",
+            duration_hours: duration,
+            trainer_name: trainersWithBusy[0].firstName,
+            session_location: null,
+            warning: "Aucun expert disponible — assignation manuelle nécessaire",
+          });
+          warnings.push(`${date} (VT) : aucun expert disponible`);
         }
       }
     }
