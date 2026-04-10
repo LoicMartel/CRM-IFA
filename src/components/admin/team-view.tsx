@@ -312,14 +312,22 @@ export function TeamView({ members }: { members: R[] }) {
             <div key={member.id as string} className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ height: 4, background: "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
               <div style={{ padding: "16px 20px", display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
-                  background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-                  color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, fontWeight: 700,
-                }}>
-                  {initials}
-                </div>
+                {(member.avatar_url as string) ? (
+                  <img
+                    src={member.avatar_url as string}
+                    alt={initials}
+                    style={{ width: 48, height: 48, borderRadius: "50%", flexShrink: 0, objectFit: "cover" }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
+                    background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16, fontWeight: 700,
+                  }}>
+                    {initials}
+                  </div>
+                )}
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>{member.first_name as string} {member.last_name as string}</span>
