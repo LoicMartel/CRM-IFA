@@ -64,6 +64,11 @@ const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
   "Pauline": { bg: "#f3e5f5", text: "#6a1b9a" },
   "Hugo": { bg: "#e8f5e9", text: "#2e7d32" },
   "Agence Personnelle": { bg: "#fff3e0", text: "#e65100" },
+  "Pub": { bg: "#fce4ec", text: "#c62828" },
+  "ASPNL": { bg: "#e0f2f1", text: "#00695c" },
+  "Skaale": { bg: "#ede7f6", text: "#4527a0" },
+  "LK Premium": { bg: "#e8eaf6", text: "#283593" },
+  "Oliver List": { bg: "#f1f8e9", text: "#558b2f" },
 };
 
 export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
@@ -337,9 +342,14 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                 <option value="Pauline">Pauline</option>
                 <option value="Hugo">Hugo</option>
                 <option value="Agence Personnelle">Agence Personnelle</option>
+                <option value="Pub">Pub</option>
+                <option value="ASPNL">ASPNL</option>
+                <option value="Skaale">Skaale</option>
+                <option value="LK Premium">LK Premium</option>
+                <option value="Oliver List">Oliver List</option>
               </select>
               {/* Custom provider */}
-              {!["Baptiste", "Pauline", "Hugo", "Agence Personnelle", ""].includes(form.provider_name) && (
+              {!["Baptiste", "Pauline", "Hugo", "Agence Personnelle", "Pub", "ASPNL", "Skaale", "LK Premium", "Oliver List", ""].includes(form.provider_name) && (
                 <Input value={form.provider_name} onChange={(e) => setForm({ ...form, provider_name: e.target.value })} placeholder="Nom du prestataire" />
               )}
             </div>
