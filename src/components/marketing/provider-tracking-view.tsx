@@ -484,9 +484,9 @@ export function ProviderTrackingView({
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.r1_done, 0)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.rdv_done_inbound, 0)}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const totalRdvB = filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0); return totalRdvB > 0 ? fmt(totalExpenses / totalRdvB) : "—"; })()}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const totalRdvD = filtered.reduce((a, s) => a + s.rdv_done_inbound, 0); return totalRdvD > 0 ? fmt(totalExpenses / totalRdvD) : "—"; })()}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px" }}>{fmtPct(totalLeads > 0 ? filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0) / totalLeads : 0)}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const vals = filtered.map(s => computeMetrics(s)).filter(m => m.cprdvBooked > 0).map(m => m.cprdvBooked); return vals.length > 0 ? fmt(vals.reduce((a, v) => a + v, 0) / vals.length) : "—"; })()}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const vals = filtered.map(s => computeMetrics(s)).filter(m => m.cprdvDone > 0).map(m => m.cprdvDone); return vals.length > 0 ? fmt(vals.reduce((a, v) => a + v, 0) / vals.length) : "—"; })()}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const vals = filtered.map(s => computeMetrics(s)).filter(m => m.txPriseRdv > 0).map(m => m.txPriseRdv); return vals.length > 0 ? fmtPct(vals.reduce((a, v) => a + v, 0) / vals.length) : "—"; })()}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{totalSales}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalSales > 0 ? fmt(totalRevenue / totalSales) : "—"}</td>
