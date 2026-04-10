@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -182,6 +182,10 @@ export function ContactDetail({
   learnerSessions?: Record<string, unknown>[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const cameFromLeads = searchParams.get("from") === "leads";
+  const backUrl = cameFromLeads ? "/marketing/leads" : "/contacts";
+  const backLabel = cameFromLeads ? "Retour aux leads" : "Retour aux contacts";
   const currentMemberId = useCurrentMember();
   const isInbound = (contact as any).contact_type === "inbound";
   const defaultMeetingType = isInbound ? "R1" : "R0";
@@ -258,7 +262,7 @@ export function ContactDetail({
   async function handleDelete() {
     const supabase = createClient();
     await supabase.from("contacts").delete().eq("id", contact.id);
-    router.push("/contacts");
+    router.push(backUrl);
   }
 
   async function handleSave() {
@@ -736,8 +740,8 @@ export function ContactDetail({
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" onClick={() => router.push("/contacts")}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux contacts
+        <Button variant="ghost" onClick={() => router.push(backUrl)}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> {backLabel}
         </Button>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingActivityId(null); setActivityForm({ type: "appel", title: "Appel", description: "", due_date: now, call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>

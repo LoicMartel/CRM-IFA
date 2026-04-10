@@ -147,7 +147,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <TableRow
                   key={l.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/contacts/${l.id}`)}
+                  onClick={() => router.push(`/contacts/${l.id}?from=leads`)}
                 >
                   <TableCell style={{ fontSize: 11, color: "#5a6f80" }}>
                     {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
