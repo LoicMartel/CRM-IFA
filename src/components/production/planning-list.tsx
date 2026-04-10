@@ -195,7 +195,7 @@ export function PlanningList({
 
   // Session add state
   const [sessionPlanId, setSessionPlanId] = useState<string | null>(null);
-  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[] });
+  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[], custom_title: "" });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const importQueue: PlanImportRow[] = [];
@@ -513,7 +513,7 @@ export function PlanningList({
         const notifyRes = await fetch("/api/gcal/notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: editingSessionId, isUpdate: true }),
+          body: JSON.stringify({ sessionId: editingSessionId, isUpdate: true, customTitle: sessionForm.custom_title || undefined }),
         });
         const notifyData = await notifyRes.json();
         if (notifyData.success) {
@@ -539,7 +539,7 @@ export function PlanningList({
           const notifyRes = await fetch("/api/gcal/notify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: newSession.id }),
+            body: JSON.stringify({ sessionId: newSession.id, customTitle: sessionForm.custom_title || undefined }),
           });
           const notifyData = await notifyRes.json();
           if (notifyData.success) {
@@ -552,7 +552,7 @@ export function PlanningList({
     setSavingSession(false);
     setSessionPlanId(null);
     setEditingSessionId(null);
-    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] });
+    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [], custom_title: "" });
     router.refresh();
   }
 
@@ -570,6 +570,7 @@ export function PlanningList({
       is_billable: s.is_billable ?? true,
       notes: s.notes ?? "",
       learner_ids: existingLearnerIds,
+      custom_title: "",
     });
   }
 
@@ -984,7 +985,7 @@ export function PlanningList({
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
                       {!isRestrictedExterne && !isReadOnly && (<>
                       <button
-                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] }); }}
+                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [], custom_title: "" }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
@@ -1743,6 +1744,10 @@ export function PlanningList({
                   </div>
                 )}
                 <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Nom de l&apos;événement <span style={{ fontWeight: 400, color: "#b0bec5" }}>(optionnel — sinon généré automatiquement)</span></div>
+                  <input type="text" value={sessionForm.custom_title} onChange={(e) => setSessionForm({ ...sessionForm, custom_title: e.target.value })} placeholder="Ex: VT 3/6 Mouki WSE Chartres x Alexandre" style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, width: "100%" }} />
+                </div>
+                <div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Notes</div>
                   <input type="text" value={sessionForm.notes} onChange={(e) => setSessionForm({ ...sessionForm, notes: e.target.value })} placeholder="Notes (optionnel)" style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, width: "100%" }} />
                 </div>
@@ -2009,6 +2014,7 @@ export function PlanningList({
             is_billable: true,
             notes: "",
             learner_ids: planificateurLearnerIds,
+            custom_title: "",
           });
         }}
       />

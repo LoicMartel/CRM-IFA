@@ -7,7 +7,7 @@ import { generateICS } from "@/lib/ics";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId, isUpdate } = body;
+    const { sessionId, isUpdate, customTitle } = body;
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
@@ -66,7 +66,8 @@ export async function POST(req: NextRequest) {
 
     // Title
     const trainerFirstNames = trainers.join(", ");
-    const title = `${typeLabel} ${sessionIndex}/${totalSessions} ${learnerNames} ${companyName}${trainerFirstNames ? " x " + trainerFirstNames : ""}`;
+    const autoTitle = `${typeLabel} ${sessionIndex}/${totalSessions} ${learnerNames} ${companyName}${trainerFirstNames ? " x " + trainerFirstNames : ""}`;
+    const title = customTitle || autoTitle;
 
     // Get trainer details
     const { data: trainerMembers } = await supabase
