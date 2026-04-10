@@ -484,7 +484,9 @@ export function ProviderTrackingView({
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.r1_done, 0)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.rdv_done_inbound, 0)}</td>
-                <td colSpan={3}></td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const totalRdvB = filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0); return totalRdvB > 0 ? fmt(totalExpenses / totalRdvB) : "—"; })()}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{(() => { const totalRdvD = filtered.reduce((a, s) => a + s.rdv_done_inbound, 0); return totalRdvD > 0 ? fmt(totalExpenses / totalRdvD) : "—"; })()}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{fmtPct(totalLeads > 0 ? filtered.reduce((a, s) => a + s.rdv_booked_inbound, 0) / totalLeads : 0)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{totalSales}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalSales > 0 ? fmt(totalRevenue / totalSales) : "—"}</td>
