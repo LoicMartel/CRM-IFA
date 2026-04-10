@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
       clientAvailableDays, vtRhythm, vtTimeSlot, vtDuration,
       journeeRhythm, journeeLocation,
       startDate, endDate, vtCount, daysCount,
+      selectedTrainerIds,
     } = body;
 
     // Fetch plan format and check for already assigned expert
@@ -160,7 +161,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Step A: Fetch and score experts
+    // Step A: Fetch experts — use selectedTrainerIds if provided, otherwise score and pick top 3
     const { data: teamMembers } = await supabase
       .from("team_members")
       .select("id, first_name, last_name, roles, expertises, city, region, tjm, days_per_week, preferred_days, mobility, google_calendar_id, google_calendar_id_presentiel")
@@ -188,6 +189,7 @@ export async function POST(req: NextRequest) {
       const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
       const marge = budgetHT > 0 ? budgetHT - totalHT : 0;
       return {
+        id: m.id as string,
         firstName: m.first_name as string,
         name: `${m.first_name} ${m.last_name}`,
         score, hasExpertise, sameRegion, budgetOk,
@@ -197,7 +199,16 @@ export async function POST(req: NextRequest) {
       };
     }).sort((a: any, b: any) => b.score - a.score || a.totalHT - b.totalHT);
 
-    const topCandidates = scored.slice(0, 3);
+    // If user selected specific trainers, use those in the given order; otherwise fallback to top 3
+    const selectedIds = (selectedTrainerIds as string[] | undefined) ?? [];
+    let topCandidates;
+    if (selectedIds.length > 0) {
+      topCandidates = selectedIds
+        .map((id: string) => scored.find((s: any) => s.id === id))
+        .filter(Boolean);
+    } else {
+      topCandidates = scored.slice(0, 3);
+    }
 
     if (topCandidates.length === 0) {
       return NextResponse.json({ success: false, error: "Aucun expert trouvé correspondant aux critères" });

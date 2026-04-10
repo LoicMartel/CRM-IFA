@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle } from "lucide-react";
+import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle, Users, Star, ChevronLeft } from "lucide-react";
 
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
@@ -44,6 +44,27 @@ interface PlanificateurResult {
   error?: string;
 }
 
+interface ExpertData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  expertises: string[];
+  city: string;
+  region: string;
+  tjm: number;
+  score: number;
+  hasExpertise: boolean;
+  sameRegion: boolean;
+  budgetOk: boolean;
+  costTjm: number;
+  prepa: number;
+  deplacement: number;
+  totalHT: number;
+  marge: number;
+  hasCalendar: boolean;
+}
+
 interface PlanOption {
   id: string;
   companyName: string;
@@ -72,10 +93,10 @@ interface Props {
 }
 
 const LOADING_MESSAGES = [
-  "Analyse des experts disponibles...",
   "Scan des agendas Google Calendar...",
   "Vérification des disponibilités...",
   "Génération du planning optimal...",
+  "Optimisation IA en cours...",
 ];
 
 export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefill, learnerIds: initialLearnerIds = [], onCreateSession, plans = [] }: Props) {
@@ -83,10 +104,16 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
   const planId = selectedPlanId || initialPlanId;
   const selectedPlan = plans.find(p => p.id === planId);
   const learnerIds = selectedPlan?.learnerIds ?? initialLearnerIds;
-  const [step, setStep] = useState<"form" | "loading" | "results">("form");
+  const [step, setStep] = useState<"form" | "experts" | "loading" | "results">("form");
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [result, setResult] = useState<PlanificateurResult | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+
+  // Expert selection state
+  const [expertLoading, setExpertLoading] = useState(false);
+  const [recommendedExperts, setRecommendedExperts] = useState<ExpertData[]>([]);
+  const [otherExperts, setOtherExperts] = useState<ExpertData[]>([]);
+  const [selectedTrainerIds, setSelectedTrainerIds] = useState<Set<string>>(new Set());
 
   const [form, setForm] = useState({
     clientAvailableDays: [] as string[],
@@ -122,6 +149,45 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
     });
   }
 
+  function toggleTrainer(id: string) {
+    setSelectedTrainerIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  // Step 1 → Step 2: Analyze experts
+  async function handleAnalyzeExperts() {
+    setExpertLoading(true);
+    try {
+      const res = await fetch("/api/planificateur/experts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expertise: form.expertise,
+          city: form.city,
+          budget: form.budget,
+          daysCount: form.daysCount,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRecommendedExperts(data.recommended);
+        setOtherExperts(data.others);
+        // Pre-select the 2 recommended experts
+        const preSelected = new Set<string>(data.recommended.map((e: ExpertData) => e.id));
+        setSelectedTrainerIds(preSelected);
+        setStep("experts");
+      }
+    } catch {
+      // fallback: go directly to generate without expert selection
+    } finally {
+      setExpertLoading(false);
+    }
+  }
+
+  // Step 2 → Step 3/4: Generate planning with selected trainers
   async function handleGenerate() {
     setStep("loading");
     setLoadingMsg(0);
@@ -148,6 +214,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           daysCount: form.daysCount,
           startDate: form.startDate,
           endDate: form.endDate,
+          selectedTrainerIds: Array.from(selectedTrainerIds),
         }),
       });
       const data: PlanificateurResult = await res.json();
@@ -171,12 +238,13 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
   if (!open) return null;
 
-  const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+  const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " \u20ac";
   const fmtDate = (d: string) => {
     try { return new Date(d + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }); }
     catch { return d; }
   };
   const formationRegion = CITY_REGION[form.city] ?? "";
+  const allExperts = [...recommendedExperts, ...otherExperts];
 
   return (
     <div
@@ -189,6 +257,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <CalendarPlus style={{ width: 18, height: 18, color: "#1a6b9c" }} />
             Planificateur intelligent
+            {step === "experts" && <span style={{ fontSize: 12, fontWeight: 500, color: "#8399a9" }}> — S\u00e9lection des formateurs</span>}
           </h3>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>
             <X style={{ width: 20, height: 20 }} />
@@ -236,7 +305,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
             {/* Jours disponibles */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
-                Disponibilités du client
+                Disponibilit\u00e9s du client
               </div>
               <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 6 }}>Jours disponibles</label>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -283,12 +352,12 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Plage horaire (à)</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Plage horaire (\u00e0)</label>
                   <input type="time" value={form.vtTimeTo} onChange={(e) => setForm({ ...form, vtTimeTo: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Durée</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Dur\u00e9e</label>
                   <select value={form.vtDuration} onChange={(e) => setForm({ ...form, vtDuration: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
                     {VT_DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
@@ -297,14 +366,14 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
               </div>
             </div>
 
-            {/* Journée config */}
+            {/* Journ\u00e9e config */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
-                Journées présentielles
+                Journ\u00e9es pr\u00e9sentielles
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb de journées</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb de journ\u00e9es</label>
                   <input type="number" value={form.daysCount} onChange={(e) => setForm({ ...form, daysCount: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="2" />
                 </div>
@@ -323,10 +392,10 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
               </div>
             </div>
 
-            {/* Critères expert */}
+            {/* Crit\u00e8res expert */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
-                Critères de sélection expert
+                Crit\u00e8res de s\u00e9lection expert
               </div>
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-1">
@@ -353,21 +422,21 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="4000" />
                 </div>
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb jours (coût)</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb jours (co\u00fbt)</label>
                   <input type="number" value={form.daysCount} onChange={(e) => setForm({ ...form, daysCount: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="2" />
                 </div>
               </div>
             </div>
 
-            {/* Période */}
+            {/* P\u00e9riode */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
-                Période de formation
+                P\u00e9riode de formation
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Date de début</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Date de d\u00e9but</label>
                   <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
@@ -385,24 +454,101 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 Annuler
               </button>
               <button
-                onClick={handleGenerate}
-                disabled={!form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))}
+                onClick={handleAnalyzeExperts}
+                disabled={expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))}
                 style={{
                   height: 40, borderRadius: 8, border: "none", padding: "0 24px",
                   background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  opacity: (!form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))) ? 0.5 : 1,
+                  opacity: (expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))) ? 0.5 : 1,
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <CalendarPlus style={{ width: 14, height: 14 }} /> Générer le planning
+                  {expertLoading ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Users style={{ width: 14, height: 14 }} />}
+                  {expertLoading ? "Analyse en cours..." : "Analyser les formateurs"}
                 </span>
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 2: Loading */}
+        {/* Step 2: Expert Selection */}
+        {step === "experts" && (
+          <div style={{ padding: 24 }} className="space-y-5">
+            {/* Recommended experts */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#2e7d32", borderBottom: "1px solid #c8e6c9", paddingBottom: 4, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <Star style={{ width: 13, height: 13 }} />
+                Formateurs recommand\u00e9s par l&apos;IA
+              </div>
+              {recommendedExperts.length === 0 ? (
+                <p style={{ fontSize: 12, color: "#8399a9" }}>Aucun formateur trouv\u00e9 correspondant aux crit\u00e8res.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {recommendedExperts.map((expert, idx) => (
+                    <ExpertCard
+                      key={expert.id}
+                      expert={expert}
+                      rank={idx + 1}
+                      isRecommended
+                      isSelected={selectedTrainerIds.has(expert.id)}
+                      onToggle={() => toggleTrainer(expert.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Other experts */}
+            {otherExperts.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#5a6f80", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Users style={{ width: 13, height: 13 }} />
+                  Autres formateurs disponibles
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {otherExperts.map(expert => (
+                    <ExpertCard
+                      key={expert.id}
+                      expert={expert}
+                      isRecommended={false}
+                      isSelected={selectedTrainerIds.has(expert.id)}
+                      onToggle={() => toggleTrainer(expert.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Selection summary & actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: "1px solid #e8ecf1" }}>
+              <button onClick={() => setStep("form")} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                <ChevronLeft style={{ width: 14, height: 14 }} /> Modifier les crit\u00e8res
+              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 12, color: "#5a6f80" }}>
+                  {selectedTrainerIds.size} formateur{selectedTrainerIds.size > 1 ? "s" : ""} s\u00e9lectionn\u00e9{selectedTrainerIds.size > 1 ? "s" : ""}
+                </span>
+                <button
+                  onClick={handleGenerate}
+                  disabled={selectedTrainerIds.size === 0}
+                  style={{
+                    height: 40, borderRadius: 8, border: "none", padding: "0 24px",
+                    background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                    color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    opacity: selectedTrainerIds.size === 0 ? 0.5 : 1,
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <CalendarPlus style={{ width: 14, height: 14 }} /> G\u00e9n\u00e9rer le planning
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Loading */}
         {step === "loading" && (
           <div style={{ padding: "60px 24px", textAlign: "center" }}>
             <Loader2 style={{ width: 40, height: 40, color: "#1a6b9c", margin: "0 auto 20px", animation: "spin 1s linear infinite" }} />
@@ -410,21 +556,21 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
               {LOADING_MESSAGES[loadingMsg]}
             </p>
             <p style={{ fontSize: 12, color: "#8399a9" }}>
-              Cela peut prendre quelques secondes...
+              Analyse des agendas de {selectedTrainerIds.size} formateur{selectedTrainerIds.size > 1 ? "s" : ""}...
             </p>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
 
-        {/* Step 3: Results */}
+        {/* Step 4: Results */}
         {step === "results" && result && (
           <div style={{ padding: 24 }} className="space-y-5">
             {!result.success ? (
               <div style={{ padding: 20, textAlign: "center", color: "#e74c3c" }}>
                 <AlertTriangle style={{ width: 32, height: 32, margin: "0 auto 12px" }} />
-                <p style={{ fontSize: 15, fontWeight: 600 }}>{result.error || "Erreur lors de la génération"}</p>
-                <button onClick={() => setStep("form")} style={{ marginTop: 16, height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>
-                  Retour au formulaire
+                <p style={{ fontSize: 15, fontWeight: 600 }}>{result.error || "Erreur lors de la g\u00e9n\u00e9ration"}</p>
+                <button onClick={() => setStep("experts")} style={{ marginTop: 16, height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>
+                  Retour \u00e0 la s\u00e9lection
                 </button>
               </div>
             ) : (
@@ -433,28 +579,40 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 <div style={{ padding: 16, borderRadius: 10, background: "linear-gradient(135deg, #e8f5e9 0%, #f0f7fb 100%)", border: "1px solid #c8e6c9" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <CheckCircle style={{ width: 18, height: 18, color: "#2e7d32" }} />
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32" }}>Expert recommandé</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32" }}>Expert principal</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#1a2a3a" }}>
-                    {result.selectedTrainer.name} — Score : {result.selectedTrainer.score}/3 — Coût : {fmtE(result.selectedTrainer.totalHT)}
+                    {result.selectedTrainer.name} — Score : {result.selectedTrainer.score}/3 — Co\u00fbt : {fmtE(result.selectedTrainer.totalHT)}
                   </div>
                   <div style={{ fontSize: 12, color: "#5a6f80", marginTop: 4 }}>
-                    Disponibilité : {result.selectedTrainer.availabilityPct}% ({result.selectedTrainer.coveredSessions}/{result.selectedTrainer.totalSessions} sessions)
-                    {result.selectedTrainer.hasExpertise && " · Expertise ✓"}
-                    {result.selectedTrainer.sameRegion && " · Même région ✓"}
-                    {result.selectedTrainer.budgetOk && " · Budget OK ✓"}
+                    Disponibilit\u00e9 : {result.selectedTrainer.availabilityPct}% ({result.selectedTrainer.coveredSessions}/{result.selectedTrainer.totalSessions} sessions)
+                    {result.selectedTrainer.hasExpertise && " \u00b7 Expertise \u2713"}
+                    {result.selectedTrainer.sameRegion && " \u00b7 M\u00eame r\u00e9gion \u2713"}
+                    {result.selectedTrainer.budgetOk && " \u00b7 Budget OK \u2713"}
                   </div>
                 </div>
+
+                {/* Alternative trainers used */}
+                {result.alternativeTrainers.length > 0 && result.alternativeTrainers.some(t => t.coveredSessions > 0) && (
+                  <div style={{ padding: 12, borderRadius: 8, background: "#f0f7fb", border: "1px solid #bdd7ee" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", marginBottom: 4 }}>Formateurs compl\u00e9mentaires</div>
+                    {result.alternativeTrainers.filter(t => t.coveredSessions > 0).map((t, i) => (
+                      <div key={i} style={{ fontSize: 12, color: "#5a6f80" }}>
+                        {t.name} — {t.coveredSessions} session{t.coveredSessions > 1 ? "s" : ""}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Existing expert alert */}
                 {result.existingExpertName && result.existingExpertName !== result.selectedTrainer.firstName && (
                   <div style={{ padding: 14, borderRadius: 10, background: "#fff3e0", border: "1px solid #ffb74d" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <AlertTriangle style={{ width: 16, height: 16, color: "#e65100" }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#e65100" }}>Expert d&eacute;j&agrave; assign&eacute; : {result.existingExpertName}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#e65100" }}>Expert d\u00e9j\u00e0 assign\u00e9 : {result.existingExpertName}</span>
                     </div>
                     <p style={{ fontSize: 12, color: "#5a6f80", margin: "0 0 10px" }}>
-                      Ce client travaille d&eacute;j&agrave; avec <strong>{result.existingExpertName}</strong>. Le planificateur recommande <strong>{result.selectedTrainer.firstName}</strong> selon les crit&egrave;res.
+                      Ce client travaille d\u00e9j\u00e0 avec <strong>{result.existingExpertName}</strong>. Le planificateur a g\u00e9n\u00e9r\u00e9 avec <strong>{result.selectedTrainer.firstName}</strong> selon votre s\u00e9lection.
                     </p>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
@@ -472,7 +630,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         style={{ height: 30, borderRadius: 6, border: "1px solid #dce8f0", background: "white", color: "#5a6f80", fontSize: 11, fontWeight: 600, padding: "0 14px", cursor: "pointer" }}
                         disabled
                       >
-                        Garder {result.selectedTrainer.firstName} (recommand&eacute;)
+                        Garder {result.selectedTrainer.firstName} (s\u00e9lectionn\u00e9)
                       </button>
                     </div>
                   </div>
@@ -481,7 +639,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 {result.existingExpertName && result.existingExpertName === result.selectedTrainer.firstName && (
                   <div style={{ padding: 12, borderRadius: 8, background: "#e8f5e9", borderLeft: "4px solid #27ae60" }}>
                     <span style={{ fontSize: 12, color: "#2e7d32", fontWeight: 600 }}>
-                      L&apos;expert d&eacute;j&agrave; assign&eacute; ({result.existingExpertName}) correspond &agrave; l&apos;expert recommand&eacute;.
+                      L&apos;expert d\u00e9j\u00e0 assign\u00e9 ({result.existingExpertName}) correspond \u00e0 l&apos;expert s\u00e9lectionn\u00e9.
                     </span>
                   </div>
                 )}
@@ -491,7 +649,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                   <div style={{ padding: 12, borderRadius: 8, background: "#fff8e1", borderLeft: "4px solid #f59e0b" }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#e65100", marginBottom: 4 }}>Points d&apos;attention</div>
                     {result.warnings.map((w, i) => (
-                      <div key={i} style={{ fontSize: 11, color: "#e65100", marginBottom: 2 }}>• {w}</div>
+                      <div key={i} style={{ fontSize: 11, color: "#e65100", marginBottom: 2 }}>{"\u2022"} {w}</div>
                     ))}
                   </div>
                 )}
@@ -508,7 +666,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
                 {/* Sessions table */}
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
-                  Planning proposé ({result.proposedSessions.length} sessions)
+                  Planning propos\u00e9 ({result.proposedSessions.length} sessions)
                 </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -530,7 +688,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
                         <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
                         <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Heure</th>
-                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Durée</th>
+                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Dur\u00e9e</th>
                         <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
                         <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Lieu</th>
                         <th style={{ padding: "8px 6px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Note</th>
@@ -550,7 +708,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                               background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
                               color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
                             }}>
-                              {s.session_type === "vt" ? "VT" : "Journée"}
+                              {s.session_type === "vt" ? "VT" : "Journ\u00e9e"}
                             </span>
                           </td>
                           <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.session_time}</td>
@@ -568,7 +726,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                                 cursor: "pointer", opacity: (!planId || !onCreateSession) ? 0.4 : 1,
                               }}
                             >
-                              Créer
+                              Cr\u00e9er
                             </button>
                           </td>
                         </tr>
@@ -579,11 +737,11 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
                 {/* Actions */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
-                  <button onClick={() => setStep("form")} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
-                    Modifier les critères
+                  <button onClick={() => setStep("experts")} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                    <ChevronLeft style={{ width: 14, height: 14 }} /> Changer les formateurs
                   </button>
                   <p style={{ fontSize: 11, color: "#8399a9", margin: 0 }}>
-                    Cliquez sur &quot;Créer&quot; pour ouvrir le formulaire de chaque session pré-rempli.
+                    Cliquez sur &quot;Cr\u00e9er&quot; pour ouvrir le formulaire de chaque session pr\u00e9-rempli.
                   </p>
                 </div>
               </>
@@ -591,6 +749,93 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ────────── Expert Card Component ────────── */
+
+function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle }: {
+  expert: ExpertData;
+  rank?: number;
+  isRecommended: boolean;
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
+  const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " \u20ac";
+
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        padding: "12px 16px",
+        borderRadius: 10,
+        border: isSelected
+          ? (isRecommended ? "2px solid #2e7d32" : "2px solid #1a6b9c")
+          : "1px solid #dce8f0",
+        background: isSelected
+          ? (isRecommended ? "#f1f8f1" : "#f0f7fb")
+          : "white",
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggle}
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: 16, height: 16, accentColor: isRecommended ? "#2e7d32" : "#1a6b9c" }}
+          />
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {isRecommended && rank && (
+                <span style={{
+                  fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4,
+                  background: rank === 1 ? "#2e7d32" : "#4caf50", color: "white",
+                }}>
+                  #{rank}
+                </span>
+              )}
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a" }}>{expert.name}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
+                background: expert.score >= 2 ? "#e8f5e9" : expert.score === 1 ? "#fff8e1" : "#fce4ec",
+                color: expert.score >= 2 ? "#2e7d32" : expert.score === 1 ? "#e65100" : "#c62828",
+              }}>
+                Score : {expert.score}/3
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "#5a6f80", marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {expert.hasExpertise && <span style={{ color: "#2e7d32" }}>Expertise {"\u2713"}</span>}
+              {expert.sameRegion && <span style={{ color: "#2e7d32" }}>M\u00eame r\u00e9gion {"\u2713"}</span>}
+              {expert.budgetOk && <span style={{ color: "#2e7d32" }}>Budget OK {"\u2713"}</span>}
+              {expert.city && <span>{expert.city} ({expert.region})</span>}
+              {!expert.hasCalendar && <span style={{ color: "#e65100" }}>Pas de calendrier li\u00e9</span>}
+            </div>
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>{fmtE(expert.totalHT)}</div>
+          <div style={{ fontSize: 10, color: "#8399a9" }}>TJM : {fmtE(expert.tjm)}</div>
+          {expert.marge > 0 && (
+            <div style={{ fontSize: 10, color: "#2e7d32", fontWeight: 600 }}>Marge : {fmtE(expert.marge)}</div>
+          )}
+          {expert.marge < 0 && (
+            <div style={{ fontSize: 10, color: "#e74c3c", fontWeight: 600 }}>D\u00e9passement : {fmtE(Math.abs(expert.marge))}</div>
+          )}
+        </div>
+      </div>
+      {isRecommended && (
+        <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #e8ecf1", display: "flex", gap: 16, fontSize: 10, color: "#8399a9" }}>
+          <span>Co\u00fbt TJM : {fmtE(expert.costTjm)}</span>
+          <span>Pr\u00e9pa : {fmtE(expert.prepa)}</span>
+          <span>D\u00e9placement : {fmtE(expert.deplacement)}</span>
+          <span>Expertises : {expert.expertises.length > 0 ? expert.expertises.join(", ") : "N/A"}</span>
+        </div>
+      )}
     </div>
   );
 }

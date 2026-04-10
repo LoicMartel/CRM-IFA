@@ -67,12 +67,19 @@ export async function POST(request: Request) {
       .ilike("email", email)
       .maybeSingle();
 
+    const resolvedSourceId = source === "embed-form"
+      ? "59ab5fc4-e4f6-43c4-b327-61a90001ae16"   // Meta ads - tunnel commercial
+      : source === "embed-form-book"
+      ? "15e8fa54-6540-43e5-902a-3231e1522e44"    // Meta ads - tunnel book
+      : null;
+
     if (existingContact) {
       // Update existing contact
       await supabase.from("contacts").update({
         phone: phone || undefined,
         company_id: companyId || undefined,
         lifecycle_stage: "lead_marketing",
+        ...(resolvedSourceId ? { source_id: resolvedSourceId } : {}),
       }).eq("id", existingContact.id);
       contactId = existingContact.id;
     } else {
@@ -87,8 +94,8 @@ export async function POST(request: Request) {
           contact_type: clientType === "entreprise" ? "outbound" : "inbound",
           lifecycle_stage: "lead_marketing",
           lead_status: "lead",
-          source_id: source === "embed-form" || source === "embed-form-book" ? "3e404a7f-c1b5-4d71-8dcd-2fa54aba0585" : null,
-          notes: `Source: ${source || "Landing Page"}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
+          source_id: resolvedSourceId,
+          notes: `Source: ${source === "embed-form" ? "Meta ads - tunnel commercial" : source === "embed-form-book" ? "Meta ads - tunnel book" : source || "Landing Page"}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
         })
         .select("id")
         .single();
@@ -104,7 +111,7 @@ export async function POST(request: Request) {
       `✉️ ${email}`,
       phone ? `📞 ${phone}` : "",
       website ? `🌐 ${website}` : "",
-      `📣 Source : Landing Page (Publicité)`,
+      `📣 Source : ${source === "embed-form" ? "Meta ads - tunnel commercial" : source === "embed-form-book" ? "Meta ads - tunnel book" : "Landing Page (Publicité)"}`,
       "",
       `Le contact a été créé automatiquement dans le CRM avec le statut "Lead Marketing".`,
       "",
