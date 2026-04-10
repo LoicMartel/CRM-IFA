@@ -199,7 +199,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
   return (
     <>
       {/* KPIs */}
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-6">
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total dépenses</div>
@@ -227,6 +227,13 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
             <div style={{ fontSize: 20, fontWeight: 800, color: "#e65100" }}>{totalRdvDone > 0 ? fmt(costPerRdv) : "—"}</div>
           </div>
           <Target style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Panier moyen</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#6a1b9a" }}>{totalRdvDone > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</div>
+          </div>
+          <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -263,12 +270,14 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               montant: e.amount,
               rdv_faits: e.rdv_done || 0,
               ca_genere: e.revenue || 0,
+              panier_moyen: e.rdv_done > 0 ? Math.round(Number(e.revenue) / e.rdv_done) : 0,
               description: e.description ?? "",
             })),
             [
               { key: "periode", label: "Période" }, { key: "prestataire", label: "Prestataire" },
               { key: "montant", label: "Montant" }, { key: "rdv_faits", label: "RDV faits" },
-              { key: "ca_genere", label: "CA généré" }, { key: "description", label: "Description" },
+              { key: "ca_genere", label: "CA généré" }, { key: "panier_moyen", label: "Panier moyen" },
+              { key: "description", label: "Description" },
             ],
             "depenses-marketing", f
           )} />
@@ -289,6 +298,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               <TableHead style={{ textAlign: "right" }}>Montant</TableHead>
               <TableHead style={{ textAlign: "right" }}>RDV faits</TableHead>
               <TableHead style={{ textAlign: "right" }}>CA généré</TableHead>
+              <TableHead style={{ textAlign: "right" }}>Panier moyen</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Documents</TableHead>
               <TableHead style={{ width: 70 }}></TableHead>
@@ -315,6 +325,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                     <TableCell style={{ textAlign: "right", fontWeight: 700 }}>{fmt(Number(e.amount))}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{e.rdv_done || 0}</TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{fmt(Number(e.revenue) || 0)}</TableCell>
+                    <TableCell style={{ textAlign: "right" }}>{e.rdv_done > 0 ? fmt(Number(e.revenue) / e.rdv_done) : "—"}</TableCell>
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
                     <TableCell>
                       {(e.marketing_expense_documents ?? []).length > 0 ? (
@@ -349,6 +360,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#e74c3c" }}>{fmt(totalAmount)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#1a6b9c" }}>{totalRdvDone}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalRdvDone > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</td>
                 <td colSpan={2}></td>
               </tr>
             </tfoot>
