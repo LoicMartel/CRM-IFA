@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
-  User, Mail, Phone, Building2, Edit, ArrowLeft, Trash2,
+  User, Mail, MailPlus, Phone, Building2, Edit, ArrowLeft, Trash2,
   GraduationCap, Calendar, BookOpen, ClipboardList, Activity, PlusCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -185,6 +185,22 @@ export function LearnerDetailView({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const activityVoice = useVoiceDictation(() => activityForm.description, (t) => setActivityForm((f) => ({ ...f, description: t })));
 
+  // Email state
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [senderInfo, setSenderInfo] = useState<{ first_name: string; last_name: string; email: string; phone: string | null; email_signature: string | null } | null>(null);
+  const emailBodyVoice = useVoiceDictation(() => emailForm.body, (t) => setEmailForm((f) => ({ ...f, body: t })));
+
+  // Load sender info
+  useState(() => {
+    if (!currentMemberId) return;
+    const supabase = createClient();
+    supabase.from("team_members").select("first_name, last_name, email, phone, email_signature").eq("id", currentMemberId).single().then(({ data }) => {
+      if (data) setSenderInfo(data as any);
+    });
+  });
+
   async function handleSave() {
     setSaving(true);
     const supabase = createClient();
@@ -307,9 +323,16 @@ export function LearnerDetailView({
         <Button variant="ghost" onClick={() => router.push("/learners")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Retour aux apprenants
         </Button>
-        <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "tâche", title: "", description: "", due_date: "", task_deadline: "" }); setActivityOpen(true); }}>
-          <PlusCircle className="h-4 w-4 mr-1" /> Activité
-        </Button>
+        <div className="flex gap-2">
+          {learner.email && (
+            <Button variant="outline" size="sm" onClick={() => { setEmailForm({ subject: "", body: "" }); setEmailOpen(true); }}>
+              <MailPlus className="h-4 w-4 mr-1" /> Envoyer email
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "tâche", title: "", description: "", due_date: "", task_deadline: "" }); setActivityOpen(true); }}>
+            <PlusCircle className="h-4 w-4 mr-1" /> Activité
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1028,6 +1051,106 @@ export function LearnerDetailView({
       )}
 
       {openPlanId && <PlanPopup planId={openPlanId} onClose={() => setOpenPlanId(null)} />}
+
+      {/* Email popup */}
+      {emailOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEmailOpen(false); }}>
+          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <MailPlus className="h-4 w-4" style={{ color: "white" }} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: "white" }}>Nouvel email</span>
+              </div>
+              <button onClick={() => setEmailOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.7)", padding: 4, fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, overflowY: "auto", flex: 1 }} className="space-y-3">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
+                <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>De :</span>
+                <span style={{ fontWeight: 600, color: "#1a2a3a" }}>
+                  {senderInfo ? `${senderInfo.first_name} ${senderInfo.last_name} <${senderInfo.email}>` : "Chargement..."}
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
+                <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>À :</span>
+                <span style={{ fontWeight: 600, color: "#1a2a3a" }}>
+                  {learner.first_name} {learner.last_name} &lt;{learner.email}&gt;
+                </span>
+              </div>
+              <input
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                placeholder="Objet"
+                style={{ width: "100%", height: 40, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a", outline: "none" }}
+              />
+              <textarea
+                value={emailForm.body}
+                onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
+                placeholder="Écrivez votre message..."
+                style={{ width: "100%", minHeight: 200, borderRadius: 8, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", lineHeight: 1.6, resize: "vertical", outline: "none" }}
+              />
+              <VoiceButton isRecording={emailBodyVoice.isRecording} isFormatting={emailBodyVoice.isFormatting} onClick={emailBodyVoice.toggleRecording} tone={emailBodyVoice.tone} onToneChange={emailBodyVoice.setTone} />
+              {senderInfo && (
+                <div style={{ padding: 12, background: "#f8fbfd", borderRadius: 8, overflow: "auto" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "#8399a9", textTransform: "uppercase", marginBottom: 8 }}>Signature</div>
+                  {senderInfo.email_signature ? (
+                    <div dangerouslySetInnerHTML={{ __html: senderInfo.email_signature }} style={{ transform: "scale(0.7)", transformOrigin: "top left" }} />
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#5a6f80" }}>
+                      <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
+                      La Closing Académie ®<br />
+                      {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
+                      ✉️ {senderInfo.email}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
+              <button onClick={() => setEmailOpen(false)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  if (!emailForm.subject.trim() || !emailForm.body.trim() || !learner.email) return;
+                  setSendingEmail(true);
+                  try {
+                    const res = await fetch("/api/email/send", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        to: learner.email,
+                        subject: emailForm.subject,
+                        body: emailForm.body,
+                        memberId: currentMemberId,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setEmailOpen(false);
+                      setEmailForm({ subject: "", body: "" });
+                    } else {
+                      alert(data.error || "Erreur lors de l'envoi");
+                    }
+                  } catch {
+                    alert("Erreur réseau");
+                  }
+                  setSendingEmail(false);
+                }}
+                disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
+                style={{
+                  height: 36, borderRadius: 8, border: "none", padding: "0 24px",
+                  background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                  color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  opacity: sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() ? 0.5 : 1,
+                }}
+              >
+                {sendingEmail ? "Envoi..." : "Envoyer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
