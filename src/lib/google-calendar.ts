@@ -230,3 +230,66 @@ export async function createCalendarEvent({
     return { success: false, error: err.message };
   }
 }
+
+export async function updateCalendarEvent({
+  calendarId,
+  eventId,
+  summary,
+  description,
+  location,
+  startDateTime,
+  endDateTime,
+  timeZone = "Europe/Paris",
+}: {
+  calendarId: string;
+  eventId: string;
+  summary: string;
+  description: string;
+  location: string;
+  startDateTime: string;
+  endDateTime: string;
+  timeZone?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const auth = getAuth();
+  if (!auth) return { success: false, error: "Google Calendar not configured" };
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+
+    await calendar.events.update({
+      calendarId,
+      eventId,
+      requestBody: {
+        summary,
+        description,
+        location,
+        start: { dateTime: startDateTime, timeZone },
+        end: { dateTime: endDateTime, timeZone },
+        reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 15 }] },
+      },
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deleteCalendarEvent({
+  calendarId,
+  eventId,
+}: {
+  calendarId: string;
+  eventId: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const auth = getAuth();
+  if (!auth) return { success: false, error: "Google Calendar not configured" };
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+    await calendar.events.delete({ calendarId, eventId });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}

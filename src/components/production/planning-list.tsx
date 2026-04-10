@@ -508,6 +508,18 @@ export function PlanningList({
           sessionForm.learner_ids.map(lid => ({ training_session_id: editingSessionId!, learner_id: lid }))
         );
       }
+      // Sync: update Google Calendar + notify expert & learners
+      try {
+        const notifyRes = await fetch("/api/gcal/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: editingSessionId, isUpdate: true }),
+        });
+        const notifyData = await notifyRes.json();
+        if (notifyData.success) {
+          setSyncPopup({ sessionId: editingSessionId, syncData: { title: notifyData.title, results: notifyData.results } });
+        }
+      } catch (e) { /* silently fail */ }
     } else {
       // Insert new session
       const { data: newSession } = await supabase.from("training_sessions").insert({

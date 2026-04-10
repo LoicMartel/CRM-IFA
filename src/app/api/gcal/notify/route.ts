@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createCalendarEvent } from "@/lib/google-calendar";
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId } = body;
+    const { sessionId, isUpdate } = body;
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
@@ -113,19 +113,35 @@ export async function POST(req: NextRequest) {
           session.notes ? `\n📝 Notes : ${session.notes}` : "",
         ].filter(Boolean).join("\n");
 
-        const gcalResult = await createCalendarEvent({
-          calendarId,
-          summary: title,
-          description,
-          location,
-          startDateTime: startDT,
-          endDateTime: endDT,
-        });
+        const existingEventId = isUpdate ? (session as any).gcal_event_id : null;
 
-        if (gcalResult.success && gcalResult.eventId) {
-          await supabase.from("training_sessions").update({ gcal_event_id: gcalResult.eventId }).eq("id", sessionId);
+        if (existingEventId) {
+          // Update existing Google Calendar event
+          const gcalResult = await updateCalendarEvent({
+            calendarId,
+            eventId: existingEventId,
+            summary: title,
+            description,
+            location,
+            startDateTime: startDT,
+            endDateTime: endDT,
+          });
+          results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "updated" : gcalResult.error });
+        } else {
+          // Create new Google Calendar event
+          const gcalResult = await createCalendarEvent({
+            calendarId,
+            summary: title,
+            description,
+            location,
+            startDateTime: startDT,
+            endDateTime: endDT,
+          });
+          if (gcalResult.success && gcalResult.eventId) {
+            await supabase.from("training_sessions").update({ gcal_event_id: gcalResult.eventId }).eq("id", sessionId);
+          }
+          results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "created" : gcalResult.error });
         }
-        results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "created" : gcalResult.error });
       }
 
       // 2. Slack DM (for everyone with a Slack user ID)
@@ -133,7 +149,7 @@ export async function POST(req: NextRequest) {
         const slackMsg = [
           `Bonjour ${trainer.first_name},`,
           "",
-          `📅 *Nouvelle session planifiée*`,
+          `📅 *${isUpdate ? "Session mise à jour" : "Nouvelle session planifiée"}*`,
           "",
           `*${title}*`,
           `🏢 ${companyName}`,
@@ -185,7 +201,7 @@ export async function POST(req: NextRequest) {
         const emailBody = [
           `Bonjour ${trainer.first_name},`,
           "",
-          "Une session de formation vient d'être planifiée pour toi :",
+          isUpdate ? "Une session de formation a été mise à jour :" : "Une session de formation vient d'être planifiée pour toi :",
           "",
           `📋 ${typeLabel} ${sessionIndex}/${totalSessions}`,
           `🏢 Entreprise : ${companyName}`,
@@ -203,7 +219,7 @@ export async function POST(req: NextRequest) {
 
         const emailResult = await sendSessionEmail({
           to: trainer.email,
-          subject: `Nouvelle session planifiée — ${title}`,
+          subject: `${isUpdate ? "Session mise à jour" : "Nouvelle session planifiée"} — ${title}`,
           body: emailBody,
           attachments: [{ filename: "invitation.ics", content: icsContentExt }],
         });
@@ -241,7 +257,7 @@ export async function POST(req: NextRequest) {
         const emailBody = [
           `Bonjour ${(learner as any).first_name},`,
           "",
-          "Votre prochaine session de formation est planifiée :",
+          isUpdate ? "Votre session de formation a été mise à jour :" : "Votre prochaine session de formation est planifiée :",
           "",
           `📋 ${title}`,
           `📆 ${session.session_date} à ${sessionTime} (${durationHours}h)`,
@@ -256,7 +272,7 @@ export async function POST(req: NextRequest) {
 
         const emailResult = await sendSessionEmail({
           to: (learner as any).email,
-          subject: `Invitation : ${title} — ${session.session_date}`,
+          subject: `${isUpdate ? "Mise à jour" : "Invitation"} : ${title} — ${session.session_date}`,
           body: emailBody,
           attachments: [{ filename: "invitation.ics", content: icsContent }],
         });
