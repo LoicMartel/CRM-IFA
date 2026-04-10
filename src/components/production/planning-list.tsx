@@ -219,7 +219,9 @@ export function PlanningList({
   }
 
   const emptyForm = {
+    plan_type: "intra" as "intra" | "inter",
     company_id: "", deal_id: "",
+    inter_companies: [] as { company_id: string; deal_id: string }[],
     program_id: "", training_type_id: "", format: "individuel", mode: "distanciel",
     vt_planned: "", days_planned: "", hourly_rate: "",
     budget: "", start_date: "", end_date: "", notes: "",
@@ -262,8 +264,10 @@ export function PlanningList({
     const dealId = deals.length === 1 ? deals[0].id : "";
     const budget = dealId ? String(Number(deals.find(d => d.id === dealId)?.amount) || 0) : "";
     setForm({
+      plan_type: "intra",
       company_id: companyId,
       deal_id: dealId,
+      inter_companies: [],
       program_id: "",
       training_type_id: "",
       format: plan.format,
@@ -408,13 +412,25 @@ export function PlanningList({
     });
   }
 
-  function openEditPlan(plan: ServicePlanRow) {
+  async function openEditPlan(plan: ServicePlanRow) {
     setEditingPlanId(plan.id);
     const existingLearnerIds = (plan.service_plan_learners ?? []).map(spl => spl.learner_id);
     setSelectedLearnerIds(existingLearnerIds);
+    const planType = ((plan as any).plan_type as string) || "intra";
+
+    // Load inter companies if inter
+    let interCompanies: { company_id: string; deal_id: string }[] = [];
+    if (planType === "inter") {
+      const supabase = createClient();
+      const { data: spc } = await supabase.from("service_plan_companies").select("company_id, deal_id").eq("service_plan_id", plan.id);
+      interCompanies = (spc ?? []).map((r: any) => ({ company_id: r.company_id, deal_id: r.deal_id ?? "" }));
+    }
+
     setForm({
+      plan_type: planType as "intra" | "inter",
       company_id: plan.company_id,
       deal_id: plan.deal_id ?? "",
+      inter_companies: interCompanies,
       program_id: plan.program_id ?? "",
       training_type_id: plan.training_type_id ?? "",
       format: plan.format ?? "individuel",
@@ -434,12 +450,22 @@ export function PlanningList({
     setSaving(true);
     const supabase = createClient();
     const pc = getPrimaryContact(form.company_id);
+    // For inter-entreprise, use the first company as primary
+    const primaryCompanyId = form.plan_type === "inter" && form.inter_companies.length > 0
+      ? form.inter_companies[0].company_id
+      : form.company_id;
+    const primaryDealId = form.plan_type === "inter" && form.inter_companies.length > 0
+      ? form.inter_companies[0].deal_id
+      : form.deal_id;
+    const primaryPc = getPrimaryContact(primaryCompanyId);
+
     const payload = {
-      company_id: form.company_id,
-      deal_id: form.deal_id || null,
-      manager_name: pc ? `${pc.first_name} ${pc.last_name}` : null,
-      manager_phone: pc?.phone || null,
-      manager_email: pc?.email || null,
+      plan_type: form.plan_type,
+      company_id: primaryCompanyId,
+      deal_id: primaryDealId || null,
+      manager_name: (form.plan_type === "intra" ? pc : primaryPc) ? `${(form.plan_type === "intra" ? pc : primaryPc)!.first_name} ${(form.plan_type === "intra" ? pc : primaryPc)!.last_name}` : null,
+      manager_phone: (form.plan_type === "intra" ? pc : primaryPc)?.phone || null,
+      manager_email: (form.plan_type === "intra" ? pc : primaryPc)?.email || null,
       program_id: form.program_id || null,
       training_type_id: form.training_type_id || null,
       format: form.format || "individuel",
@@ -459,6 +485,20 @@ export function PlanningList({
     } else {
       const { data: newPlan } = await supabase.from("service_plans").insert(payload).select("id").single();
       planId = newPlan?.id ?? null;
+    }
+
+    // Sync inter-entreprise companies
+    if (planId && form.plan_type === "inter") {
+      await supabase.from("service_plan_companies").delete().eq("service_plan_id", planId);
+      if (form.inter_companies.length > 0) {
+        await supabase.from("service_plan_companies").insert(
+          form.inter_companies.filter(ic => ic.company_id).map(ic => ({
+            service_plan_id: planId!,
+            company_id: ic.company_id,
+            deal_id: ic.deal_id || null,
+          }))
+        );
+      }
     }
 
     // Sync learner assignments
@@ -1423,26 +1463,123 @@ export function PlanningList({
             </SheetTitle>
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4 pb-4">
-            {/* Client */}
+            {/* Plan type: inter / intra */}
             <div className="space-y-2">
-              <Label>Client *</Label>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                value={form.company_id}
-                onChange={(e) => {
-                  const cid = e.target.value;
-                  const deals = getAvailableDeals(cid);
-                  if (deals.length === 1) {
-                    setForm({ ...form, company_id: cid, deal_id: deals[0].id, budget: String(Number(deals[0].amount) || 0) });
-                  } else {
-                    setForm({ ...form, company_id: cid, deal_id: "", budget: "" });
-                  }
-                }}
-              >
-                <option value="">Sélectionner un client</option>
-                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <Label>Type de plan</Label>
+              <div style={{ display: "flex", gap: 8 }}>
+                {([["intra", "Intra-entreprise"], ["inter", "Inter-entreprise"]] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setForm({ ...form, plan_type: val, company_id: "", deal_id: "", inter_companies: [], budget: "" })}
+                    style={{
+                      flex: 1, padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                      border: form.plan_type === val ? "2px solid #1a6b9c" : "1px solid #dce8f0",
+                      background: form.plan_type === val ? "#e8f0fe" : "white",
+                      color: form.plan_type === val ? "#1a6b9c" : "#5a6f80",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Client — intra: single select */}
+            {form.plan_type === "intra" && (
+              <div className="space-y-2">
+                <Label>Client *</Label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={form.company_id}
+                  onChange={(e) => {
+                    const cid = e.target.value;
+                    const deals = getAvailableDeals(cid);
+                    if (deals.length === 1) {
+                      setForm({ ...form, company_id: cid, deal_id: deals[0].id, budget: String(Number(deals[0].amount) || 0) });
+                    } else {
+                      setForm({ ...form, company_id: cid, deal_id: "", budget: "" });
+                    }
+                  }}
+                >
+                  <option value="">Sélectionner un client</option>
+                  {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* Clients — inter: multiple clients with deals */}
+            {form.plan_type === "inter" && (
+              <div className="space-y-2">
+                <Label>Clients *</Label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {form.inter_companies.map((ic, idx) => {
+                    const icDeals = getAvailableDeals(ic.company_id);
+                    return (
+                      <div key={idx} style={{ display: "flex", gap: 8, alignItems: "flex-start", background: "#f8fbfd", borderRadius: 8, padding: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <select
+                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                            value={ic.company_id}
+                            onChange={(e) => {
+                              const updated = [...form.inter_companies];
+                              const cid = e.target.value;
+                              const deals = getAvailableDeals(cid);
+                              updated[idx] = { company_id: cid, deal_id: deals.length === 1 ? deals[0].id : "" };
+                              const totalBudget = updated.reduce((sum, c) => {
+                                const d = wonDeals.find(dd => dd.id === c.deal_id);
+                                return sum + (Number(d?.amount) || 0);
+                              }, 0);
+                              setForm({ ...form, inter_companies: updated, budget: totalBudget > 0 ? String(totalBudget) : form.budget });
+                            }}
+                          >
+                            <option value="">Sélectionner un client</option>
+                            {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                          {ic.company_id && icDeals.length > 0 && (
+                            <select
+                              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm mt-1"
+                              value={ic.deal_id}
+                              onChange={(e) => {
+                                const updated = [...form.inter_companies];
+                                updated[idx] = { ...updated[idx], deal_id: e.target.value };
+                                const totalBudget = updated.reduce((sum, c) => {
+                                  const d = wonDeals.find(dd => dd.id === c.deal_id);
+                                  return sum + (Number(d?.amount) || 0);
+                                }, 0);
+                                setForm({ ...form, inter_companies: updated, budget: totalBudget > 0 ? String(totalBudget) : form.budget });
+                              }}
+                            >
+                              <option value="">Deal associé</option>
+                              {icDeals.map(d => (
+                                <option key={d.id} value={d.id}>{d.name || "Deal"} — {fmt(Number(d.amount) || 0)}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = form.inter_companies.filter((_, i) => i !== idx);
+                            setForm({ ...form, inter_companies: updated });
+                          }}
+                          style={{ height: 36, width: 36, borderRadius: 6, border: "1px solid #fce4ec", background: "#fff5f5", color: "#e74c3c", fontSize: 16, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, inter_companies: [...form.inter_companies, { company_id: "", deal_id: "" }] })}
+                    style={{ height: 36, borderRadius: 8, border: "1px dashed #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    + Ajouter un client
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Formation details */}
             <div style={{ background: "#f8fbfd", borderRadius: 8, padding: 14 }}>
