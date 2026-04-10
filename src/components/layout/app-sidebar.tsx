@@ -58,7 +58,7 @@ const productionItemsList = [
 
 const marketingItems = [
   { title: "Leads", href: "/marketing/leads", icon: UserPlus },
-  { title: "Suivi Prestataires", href: "/marketing/suivi-prestataires", icon: Megaphone },
+  { title: "Suivi Tunnels", href: "/marketing/suivi-prestataires", icon: Megaphone },
   { title: "Campagnes", href: "/marketing/campagnes", icon: Mail },
   { title: "Dépenses Marketing", href: "/marketing/depenses", icon: Wallet },
   { title: "Rapports Marketing", href: "/marketing/rapports", icon: Target },
