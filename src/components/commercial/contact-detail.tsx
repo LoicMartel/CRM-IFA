@@ -124,6 +124,7 @@ const dealStageColors: Record<string, { bg: string; text: string; label: string 
 
 const meetingTypeColors: Record<string, { bg: string; text: string }> = {
   R0: { bg: "#e3f2fd", text: "#1565c0" },
+  "R0+R1": { bg: "#e8f5e9", text: "#2e7d32" },
   R1: { bg: "#fff3e0", text: "#e65100" },
   R2: { bg: "#f3e5f5", text: "#6a1b9a" },
   R3: { bg: "#fce4ec", text: "#c62828" },
@@ -168,6 +169,27 @@ function getCallResultBadge(description: string | null) {
     if (description.includes(b.match)) return b;
   }
   return null;
+}
+
+function TruncatedText({ text, lines = 2, style }: { text: string; lines?: number; style?: React.CSSProperties }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <p
+      onClick={() => setExpanded(!expanded)}
+      style={{
+        ...style,
+        cursor: "pointer",
+        ...(expanded ? {} : {
+          display: "-webkit-box",
+          WebkitLineClamp: lines,
+          WebkitBoxOrient: "vertical" as const,
+          overflow: "hidden",
+        }),
+      }}
+    >
+      {text}
+    </p>
+  );
 }
 
 interface SourceRef { id: string; name: string; }
@@ -500,7 +522,7 @@ export function ContactDetail({
       const updateData: Record<string, string> = { lead_status: "booked" };
       // Lead marketing → prospect uniquement si R1 ou supérieur est booked
       if (contact.lifecycle_stage === "lead_marketing") {
-        const hasR1Plus = mtgs.some(m => m.status === "booked" && ["R1", "R2", "R3", "Signed"].includes(m.meeting_type));
+        const hasR1Plus = mtgs.some(m => m.status === "booked" && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(m.meeting_type));
         if (hasR1Plus) updateData.lifecycle_stage = "prospect";
       }
       await supabase.from("contacts").update(updateData).eq("id", contact.id);
@@ -602,7 +624,7 @@ export function ContactDetail({
       if (rdvForm.status === "booked") {
         const updateData: Record<string, string> = { lead_status: "booked" };
         // Lead marketing → prospect uniquement si R1 ou supérieur
-        if (contact.lifecycle_stage === "lead_marketing" && ["R1", "R2", "R3", "Signed"].includes(rdvForm.meeting_type)) {
+        if (contact.lifecycle_stage === "lead_marketing" && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(rdvForm.meeting_type)) {
           updateData.lifecycle_stage = "prospect";
         }
         await supabase.from("contacts").update(updateData).eq("id", contact.id);
@@ -763,12 +785,18 @@ export function ContactDetail({
 
   // Build meeting progression
   const hasSomeSigned = meetings.some(m => m.status === "done" && m.outcome && m.outcome.includes("Signed") && !m.outcome.includes("Not signed")) || contact.lead_status === "signed";
-  const meetingTypes = isInbound ? ["R1", "R2", "R3", "Signed"] : ["R0", "R1", "R2", "R3", "Signed"];
+  const meetingTypes = ["R0", "R1", "R2", "R3", "Signed"];
   const meetingProgression = meetingTypes.map((type) => {
     if (type === "Signed") {
       return { type, done: hasSomeSigned, date: null };
     }
-    const m = meetings.find((mt) => mt.meeting_type === type && mt.status === "done");
+    // R0+R1 counts as both R0 done and R1 done
+    const m = meetings.find((mt) => {
+      if (mt.status !== "done") return false;
+      if (mt.meeting_type === type) return true;
+      if (mt.meeting_type === "R0+R1" && (type === "R0" || type === "R1")) return true;
+      return false;
+    });
     return { type, done: !!m, date: m?.scheduled_at ?? null };
   });
 
@@ -1109,7 +1137,7 @@ export function ContactDetail({
                             <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{formatDateTime(lastDone.scheduled_at)}</span>
                           </div>
                           {lastDone.outcome && <p style={{ fontSize: 12, color: "#0d4f7a", marginTop: 4, fontWeight: 500 }}>Résultat : {lastDone.outcome}</p>}
-                          {lastDone.notes && <p style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>{lastDone.notes}</p>}
+                          {lastDone.notes && <TruncatedText text={lastDone.notes} style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }} />}
                         </div>
                       );
                     })()}
@@ -1381,7 +1409,7 @@ export function ContactDetail({
                             ) : (
                               <p className="text-sm font-medium">{a.title}</p>
                             )}
-                            {a.description && a.type !== "email" && <p className="text-sm text-muted-foreground mt-1">{a.description}</p>}
+                            {a.description && a.type !== "email" && <TruncatedText text={a.description} style={{ fontSize: 14, color: "#64748b", marginTop: 4 }} />}
                             {a.description && a.type === "email" && (
                               <p className="text-sm text-muted-foreground mt-1" style={{ cursor: "pointer" }} onClick={() => setEmailPreview({ title: a.title, description: a.description ?? "" })}>
                                 {a.description.replace(/__EMAIL_HTML__[\s\S]*?__END_HTML__\n\n/, "").slice(0, 80)}...
@@ -1475,7 +1503,7 @@ export function ContactDetail({
                                 : <>{formatDateTime(m.scheduled_at)} — {m.duration_minutes || 60} min</>
                               }
                             </div>
-                            {m.notes && <p style={{ fontSize: 12, color: "#8399a9", marginTop: 4 }}>{m.notes}</p>}
+                            {m.notes && <TruncatedText text={m.notes} style={{ fontSize: 12, color: "#8399a9", marginTop: 4 }} />}
                             {m.outcome && <p style={{ fontSize: 12, color: "#0d4f7a", marginTop: 4, fontWeight: 500 }}>Résultat : {m.outcome}</p>}
                             {m.status === "booked" && m.next_step !== "completed" && (
                               <button
@@ -1964,21 +1992,11 @@ export function ContactDetail({
                 value={rdvForm.meeting_type}
                 onChange={(e) => setRdvForm({ ...rdvForm, meeting_type: e.target.value })}
               >
-                {isInbound ? (
-                  <>
-                    <option value="R1">R1</option>
-                    <option value="R2">R2</option>
-                    <option value="R3">R3</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="R0">R0 — Qualification</option>
-                    <option value="R1">R0 + R1 — Qualification + Découverte</option>
-                    <option value="R1">R1 — Découverte</option>
-                    <option value="R2">R2 — Solution</option>
-                    <option value="R3">R3 — Négociation</option>
-                  </>
-                )}
+                <option value="R0">R0 — Qualification</option>
+                <option value="R0+R1">R0 + R1 — Qualification + Découverte</option>
+                <option value="R1">R1 — Découverte</option>
+                <option value="R2">R2 — Solution</option>
+                <option value="R3">R3 — Négociation</option>
               </select>
             </div>
             <div className="space-y-2">
