@@ -361,8 +361,8 @@ export function ProviderTrackingView({
               { key: "leads", label: "Leads" }, { key: "tx_conversion", label: "Tx Conversion" },
               { key: "cpl", label: "CPL" }, { key: "r0_pris", label: "R0 Pris" },
               { key: "r0_faits", label: "R0 Faits" }, { key: "r1_pris", label: "R1 Pris" },
-              { key: "r1_faits", label: "R1 Faits" }, { key: "rdv_inbound_pris", label: "RDV Inbound Pris" },
-              { key: "rdv_inbound_faits", label: "RDV Inbound Faits" }, { key: "ventes", label: "Ventes" },
+              { key: "r1_faits", label: "R1 Faits" }, { key: "rdv_inbound_pris", label: "Total RDV pris" },
+              { key: "rdv_inbound_faits", label: "Total RDV faits" }, { key: "ventes", label: "Ventes" },
               { key: "ca", label: "CA" }, { key: "roas", label: "ROAS" },
               { key: "marge", label: "Marge" }, { key: "commentaire", label: "Commentaire" },
             ],
@@ -391,8 +391,8 @@ export function ProviderTrackingView({
               <TableHead style={{ textAlign: "right" }}>R0 Faits</TableHead>
               <TableHead style={{ textAlign: "right" }}>R1 Pris</TableHead>
               <TableHead style={{ textAlign: "right" }}>R1 Faits</TableHead>
-              <TableHead style={{ textAlign: "right" }}>RDV Inb. Pris</TableHead>
-              <TableHead style={{ textAlign: "right" }}>RDV Inb. Faits</TableHead>
+              <TableHead style={{ textAlign: "right" }}>Total RDV pris</TableHead>
+              <TableHead style={{ textAlign: "right" }}>Total RDV faits</TableHead>
               <TableHead style={{ textAlign: "right" }}>CPRDV Pris</TableHead>
               <TableHead style={{ textAlign: "right" }}>CPRDV Fait</TableHead>
               <TableHead style={{ textAlign: "right" }}>Tx Prise RDV</TableHead>
@@ -576,11 +576,11 @@ export function ProviderTrackingView({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>RDV pris inbound</Label>
+                <Label>Total RDV pris</Label>
                 <Input type="number" value={form.rdv_booked_inbound} onChange={(e) => setForm({ ...form, rdv_booked_inbound: e.target.value })} placeholder="0" />
               </div>
               <div className="space-y-2">
-                <Label>RDV faits inbound</Label>
+                <Label>Total RDV faits</Label>
                 <Input type="number" value={form.rdv_done_inbound} onChange={(e) => setForm({ ...form, rdv_done_inbound: e.target.value })} placeholder="0" />
               </div>
             </div>
