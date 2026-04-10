@@ -68,8 +68,8 @@ function BookFinancementTypContent() {
         <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", maxWidth: 700, margin: "0 auto" }}>
           {[
             "La logique des financements publics",
-            "Un premier dispositif cl\u00e9 (PDC OPCO)",
-            "Comment int\u00e9grer ce levier dans votre approche commerciale",
+            "Un premier dispositif clé (PDC OPCO)",
+            "Comment intégrer ce levier dans votre approche commerciale",
           ].map((item, i) => (
             <div key={i} style={{
               flex: "1 1 180px", maxWidth: 220, padding: "24px 16px", borderRadius: 12,
@@ -97,9 +97,9 @@ function BookFinancementTypContent() {
         <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap", maxWidth: 800, margin: "0 auto 28px" }}>
           {[
             "Tous les dispositifs (OPCO, FAF, CPF, France Travail...)",
-            "Une m\u00e9thode claire pour identifier le bon financement",
-            "Les cl\u00e9s pour monter et s\u00e9curiser vos dossiers",
-            "Une strat\u00e9gie commerciale fond\u00e9e sur les financements",
+            "Une méthode claire pour identifier le bon financement",
+            "Les clés pour monter et sécuriser vos dossiers",
+            "Une stratégie commerciale fondée sur les financements",
           ].map((item, i) => (
             <div key={i} style={{
               flex: "1 1 170px", maxWidth: 200, padding: "24px 14px", borderRadius: 12,
