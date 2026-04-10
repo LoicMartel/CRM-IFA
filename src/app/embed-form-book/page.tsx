@@ -30,11 +30,13 @@ export default function EmbedFormBookPage() {
         body: JSON.stringify({ ...form, source: "embed-form-book" }),
       });
       if (!res.ok) throw new Error("Erreur");
+      const data = await res.json();
       setSuccess(true);
       if (window.top !== window.self) {
         window.top?.postMessage({ type: "lca-form-success", clientType: form.clientType }, "*");
       }
-      window.top!.location.href = "https://www.closing-academie.com/book-financement-2026-typ";
+      const cid = data.contactId || "";
+      window.top!.location.href = `https://www.closing-academie.com/book-financement-2026-typ${cid ? `?cid=${cid}` : ""}`;
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {

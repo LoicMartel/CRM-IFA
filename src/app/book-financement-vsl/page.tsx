@@ -1,6 +1,22 @@
 "use client";
 
-export default function BookFinancementTyp() {
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
+function BookFinancementTypContent() {
+  const searchParams = useSearchParams();
+  const cid = searchParams.get("cid");
+
+  function handleDownloadClick() {
+    if (cid) {
+      fetch("/api/book-download/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId: cid }),
+      }).catch(() => {});
+    }
+  }
+
   return (
     <div style={{ minHeight: "100vh", fontFamily: "'Montserrat', sans-serif" }}>
 
@@ -32,6 +48,7 @@ export default function BookFinancementTyp() {
         <a
           href="/book-financement-download.pdf"
           download
+          onClick={handleDownloadClick}
           style={{
             display: "inline-block", padding: "12px 28px", borderRadius: 6,
             border: "2px solid white", color: "white", fontSize: 14, fontWeight: 600,
@@ -123,5 +140,13 @@ export default function BookFinancementTyp() {
         <span>Mentions l&eacute;gales</span>
       </footer>
     </div>
+  );
+}
+
+export default function BookFinancementTyp() {
+  return (
+    <Suspense>
+      <BookFinancementTypContent />
+    </Suspense>
   );
 }

@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
   const publicPrefixes = [
     "/login", "/auth", "/reset-password",
     "/booking", "/landing-page", "/landing-book-financement", "/book-financement-vsl", "/vsl", "/confirmation-reservation", "/confirmation-decouverte", "/confirmation-achat-book-financement", "/embed-form",
-    "/api/booking", "/api/leads", "/api/meetings/notify", "/api/webhooks", "/api/voice",
+    "/api/booking", "/api/leads", "/api/meetings/notify", "/api/webhooks", "/api/voice", "/api/book-download",
   ];
   const isPublic = publicPrefixes.some((p) => request.nextUrl.pathname.startsWith(p));
 
