@@ -347,7 +347,9 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                 <td style={{ padding: "8px 16px" }}>TOTAL</td>
                 <td></td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#e74c3c" }}>{fmt(totalAmount)}</td>
-                <td colSpan={3}></td>
+                <td style={{ textAlign: "right", padding: "8px 16px", color: "#1a6b9c" }}>{totalRdvDone}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           )}
