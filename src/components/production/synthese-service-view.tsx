@@ -275,15 +275,22 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
       const plannedPresCount = tPlanned.filter((s: R) => s.session_type === "journee").length;
       const plannedPresH = plannedPresCount * 8;
 
+      // Facturable planifié : sessions planifiées billable × hourly_rate
+      const plannedFacturable = tPlanned.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
+        const hours = Number(s.duration_hours) || 0;
+        const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
+        return sum + hours * rate;
+      }, 0);
+
       const visioH = doneVisioH + plannedVisioH;
       const presH = donePresH + plannedPresH;
-      return { trainer: t, totalH: visioH + presH, presH, visioH };
+      return { trainer: t, totalH: visioH + presH, presH, visioH, plannedFacturable };
     });
   }
 
   const cmdRange = getDateRange(cmdPeriod, cmdIdx);
   const cmdData = computeCmdData(cmdRange.start, cmdRange.end);
-  const cmdTotals = cmdData.reduce((acc, r) => ({ totalH: acc.totalH + r.totalH, presH: acc.presH + r.presH, visioH: acc.visioH + r.visioH }), { totalH: 0, presH: 0, visioH: 0 });
+  const cmdTotals = cmdData.reduce((acc, r) => ({ totalH: acc.totalH + r.totalH, presH: acc.presH + r.presH, visioH: acc.visioH + r.visioH, plannedFacturable: acc.plannedFacturable + r.plannedFacturable }), { totalH: 0, presH: 0, visioH: 0, plannedFacturable: 0 });
 
   // ========== VISIO VS PRESENTIEL CHART — from deliverySessions ==========
   const visioPresentielData = activeTrainers.map(t => {
@@ -504,10 +511,11 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <th style={{ ...thStyleLeft, width: "30%" }}>CONSULTANT EXPERT</th>
+                  <th style={{ ...thStyleLeft, width: "25%" }}>CONSULTANT EXPERT</th>
                   <th style={thStyle}>TOTAL PLANIFIÉ</th>
                   <th style={thStyle}>PRÉSENTIEL</th>
                   <th style={thStyle}>VISIO</th>
+                  <th style={thStyle}>FACTURABLE</th>
                 </tr>
               </thead>
               <tbody>
@@ -517,6 +525,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
                     <td style={tdStyle}>{fmtJ(r.totalH)}</td>
                     <td style={tdStyle}>{fmtJ(r.presH)}</td>
                     <td style={tdStyle}>{fmtJ(r.visioH)}</td>
+                    <td style={tdStyle}>{fmt(r.plannedFacturable)}</td>
                   </tr>
                 ))}
                 <tr>
@@ -524,6 +533,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
                   <td style={totalTdStyle}>{fmtJ(cmdTotals.totalH)}</td>
                   <td style={totalTdStyle}>{fmtJ(cmdTotals.presH)}</td>
                   <td style={totalTdStyle}>{fmtJ(cmdTotals.visioH)}</td>
+                  <td style={totalTdStyle}>{fmt(cmdTotals.plannedFacturable)}</td>
                 </tr>
               </tbody>
             </table>
