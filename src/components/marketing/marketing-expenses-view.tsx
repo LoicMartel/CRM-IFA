@@ -34,6 +34,8 @@ interface Expense {
   period_end: string;
   provider_name: string;
   amount: number;
+  rdv_done: number;
+  revenue: number;
   description: string | null;
   created_at: string;
   marketing_expense_documents?: ExpenseDoc[];
@@ -81,6 +83,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
     period: new Date().toISOString().slice(0, 7),
     provider_name: "",
     amount: "",
+    rdv_done: "",
+    revenue: "",
     description: "",
   });
   const descVoice = useVoiceDictation(() => form.description, (t) => setForm((f) => ({ ...f, description: t })));
@@ -106,7 +110,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ period: new Date().toISOString().slice(0, 7), provider_name: "", amount: "", description: "" });
+    setForm({ period: new Date().toISOString().slice(0, 7), provider_name: "", amount: "", rdv_done: "", revenue: "", description: "" });
     setOpen(true);
   }
 
@@ -116,6 +120,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
       period: e.period_start.slice(0, 7),
       provider_name: e.provider_name,
       amount: String(e.amount),
+      rdv_done: String(e.rdv_done || 0),
+      revenue: String(e.revenue || 0),
       description: e.description ?? "",
     });
     setEditDocs(e.marketing_expense_documents ?? []);
@@ -169,6 +175,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
       period_end: monthEnd(form.period),
       provider_name: form.provider_name,
       amount: parseFloat(form.amount) || 0,
+      rdv_done: parseInt(form.rdv_done) || 0,
+      revenue: parseFloat(form.revenue) || 0,
       description: form.description || null,
       created_by: currentMemberId || null,
     };
@@ -233,11 +241,14 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               periode: fmtMonth(e.period_start),
               prestataire: e.provider_name,
               montant: e.amount,
+              rdv_faits: e.rdv_done || 0,
+              ca_genere: e.revenue || 0,
               description: e.description ?? "",
             })),
             [
               { key: "periode", label: "Période" }, { key: "prestataire", label: "Prestataire" },
-              { key: "montant", label: "Montant" }, { key: "description", label: "Description" },
+              { key: "montant", label: "Montant" }, { key: "rdv_faits", label: "RDV faits" },
+              { key: "ca_genere", label: "CA généré" }, { key: "description", label: "Description" },
             ],
             "depenses-marketing", f
           )} />
@@ -256,6 +267,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               <TableHead>Période</TableHead>
               <TableHead>Prestataire</TableHead>
               <TableHead style={{ textAlign: "right" }}>Montant</TableHead>
+              <TableHead style={{ textAlign: "right" }}>RDV faits</TableHead>
+              <TableHead style={{ textAlign: "right" }}>CA généré</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Documents</TableHead>
               <TableHead style={{ width: 70 }}></TableHead>
@@ -280,6 +293,8 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                       </span>
                     </TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 700 }}>{fmt(Number(e.amount))}</TableCell>
+                    <TableCell style={{ textAlign: "right" }}>{e.rdv_done || 0}</TableCell>
+                    <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{fmt(Number(e.revenue) || 0)}</TableCell>
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
                     <TableCell>
                       {(e.marketing_expense_documents ?? []).length > 0 ? (
@@ -356,6 +371,16 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
             <div className="space-y-2">
               <Label>Montant (EUR) *</Label>
               <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>RDV faits</Label>
+                <Input type="number" value={form.rdv_done} onChange={(e) => setForm({ ...form, rdv_done: e.target.value })} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>CA généré (EUR)</Label>
+                <Input type="number" step="0.01" value={form.revenue} onChange={(e) => setForm({ ...form, revenue: e.target.value })} placeholder="0" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Description</Label>
