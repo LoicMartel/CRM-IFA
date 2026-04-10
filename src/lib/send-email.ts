@@ -19,7 +19,7 @@ export async function sendSessionEmail({
   to: string;
   subject: string;
   body: string;
-  attachments?: { filename: string; content: string; contentType?: string }[];
+  attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
 }): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   if (!resend) return { success: false, error: "Resend not configured" };
@@ -56,7 +56,9 @@ export async function sendSessionEmail({
     if (attachments && attachments.length > 0) {
       emailPayload.attachments = attachments.map((a) => ({
         filename: a.filename,
-        content: Buffer.from(a.content).toString("base64"),
+        content: Buffer.isBuffer(a.content)
+          ? a.content.toString("base64")
+          : Buffer.from(a.content, "utf-8").toString("base64"),
         content_type: a.contentType || (a.filename.endsWith(".ics") ? "text/calendar" : a.filename.endsWith(".pdf") ? "application/pdf" : "application/octet-stream"),
       }));
     }

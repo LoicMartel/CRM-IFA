@@ -138,7 +138,7 @@ export async function POST(request: Request) {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
         const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);
         const pdfBuffer = await pdfRes.arrayBuffer();
-        const pdfContent = Buffer.from(pdfBuffer).toString("binary");
+        const pdfContent = Buffer.from(pdfBuffer);
 
         await sendSessionEmail({
           to: email,
