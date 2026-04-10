@@ -90,7 +90,7 @@ export function MarketingReportsView({
   });
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [filterProviderId, setFilterProviderId] = useState<string>("");
+  const [filterProviderName, setFilterProviderName] = useState<string>("");
 
   // Filter data
   function inPeriod(dateStr: string) {
@@ -99,9 +99,18 @@ export function MarketingReportsView({
     return true;
   }
 
-  const selectedProviderName = filterProviderId ? providers.find(p => p.id === filterProviderId)?.name ?? "" : "";
-  const filteredStats = weeklyStats.filter((s) => inPeriod(s.period_start) && (!filterProviderId || s.provider_id === filterProviderId));
-  const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!selectedProviderName || e.provider_name === selectedProviderName));
+  // Build unified list of all provider names from both sources
+  const tunnelNames = providers.map(p => p.name);
+  const expenseProviderNames = Array.from(new Set(expenses.map(e => e.provider_name))).sort();
+  const allProviderNames = Array.from(new Set([...tunnelNames, ...expenseProviderNames])).sort();
+
+  const filteredStats = weeklyStats.filter((s) => {
+    if (!inPeriod(s.period_start)) return false;
+    if (!filterProviderName) return true;
+    const provName = s.marketing_providers?.name ?? "";
+    return provName === filterProviderName;
+  });
+  const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!filterProviderName || e.provider_name === filterProviderName));
   const filteredLeads = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
 
   // === GLOBAL KPIs ===
@@ -178,11 +187,11 @@ export function MarketingReportsView({
         )}
         <select
           className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-          value={filterProviderId}
-          onChange={(e) => setFilterProviderId(e.target.value)}
+          value={filterProviderName}
+          onChange={(e) => setFilterProviderName(e.target.value)}
         >
           <option value="">Tous les prestataires</option>
-          {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {allProviderNames.map((name) => <option key={name} value={name}>{name}</option>)}
         </select>
       </div>
 
