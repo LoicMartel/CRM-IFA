@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createCalendarEvent } from "@/lib/google-calendar";
+import { createCalendarEvent, updateCalendarEvent } from "@/lib/google-calendar";
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,19 +64,44 @@ export async function POST(req: NextRequest) {
       task.description ? `\n📝 ${task.description}` : "",
     ].filter(Boolean).join("\n");
 
-    const gcalResult = await createCalendarEvent({
-      calendarId,
-      summary: title,
-      description,
-      location: "",
-      startDateTime: startDT,
-      endDateTime: endDT,
-    });
+    const existingEventId = task.gcal_event_id as string | null;
 
-    return NextResponse.json({
-      success: true,
-      result: gcalResult.success ? "Ajouté au calendrier" : gcalResult.error,
-    });
+    if (existingEventId) {
+      // Update existing Google Calendar event
+      const gcalResult = await updateCalendarEvent({
+        calendarId,
+        eventId: existingEventId,
+        summary: title,
+        description,
+        location: "",
+        startDateTime: startDT,
+        endDateTime: endDT,
+      });
+      return NextResponse.json({
+        success: true,
+        result: gcalResult.success ? "Mis à jour sur le calendrier" : gcalResult.error,
+      });
+    } else {
+      // Create new Google Calendar event
+      const gcalResult = await createCalendarEvent({
+        calendarId,
+        summary: title,
+        description,
+        location: "",
+        startDateTime: startDT,
+        endDateTime: endDT,
+      });
+
+      // Save the event ID for future updates
+      if (gcalResult.success && gcalResult.eventId) {
+        await supabase.from("activities").update({ gcal_event_id: gcalResult.eventId }).eq("id", taskId);
+      }
+
+      return NextResponse.json({
+        success: true,
+        result: gcalResult.success ? "Ajouté au calendrier" : gcalResult.error,
+      });
+    }
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

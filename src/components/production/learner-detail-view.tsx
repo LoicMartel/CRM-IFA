@@ -251,6 +251,16 @@ export function LearnerDetailView({
 
     if (editingActivityId) {
       await supabase.from("activities").update(payload).eq("id", editingActivityId);
+      // Sync task to Google Calendar on update
+      if (activityForm.type === "tâche" && activityForm.due_date) {
+        try {
+          await fetch("/api/tasks/sync-gcal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ taskId: editingActivityId }),
+          });
+        } catch {}
+      }
     } else {
       const { data: newActivity } = await supabase.from("activities").insert(payload).select("id").single();
 
