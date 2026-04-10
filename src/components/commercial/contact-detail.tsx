@@ -184,7 +184,16 @@ export function ContactDetail({
   const router = useRouter();
   const searchParams = useSearchParams();
   const cameFromLeads = searchParams.get("from") === "leads";
-  const backUrl = cameFromLeads ? "/marketing/leads" : "/contacts";
+  const leadsBackParams = new URLSearchParams();
+  if (cameFromLeads) {
+    const source = searchParams.get("source");
+    const q = searchParams.get("q");
+    if (source) leadsBackParams.set("source", source);
+    if (q) leadsBackParams.set("q", q);
+  }
+  const backUrl = cameFromLeads
+    ? `/marketing/leads${leadsBackParams.toString() ? `?${leadsBackParams.toString()}` : ""}`
+    : "/contacts";
   const backLabel = cameFromLeads ? "Retour aux leads" : "Retour aux contacts";
   const currentMemberId = useCurrentMember();
   const isInbound = (contact as any).contact_type === "inbound";

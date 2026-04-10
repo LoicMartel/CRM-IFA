@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -33,8 +33,9 @@ type SortKey = "created_at" | "last_name" | "first_name" | "source" | "email" | 
 
 export function LeadsTable({ leads }: { leads: Lead[] }) {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [filterSource, setFilterSource] = useState("");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
   const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -147,7 +148,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <TableRow
                   key={l.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/contacts/${l.id}?from=leads`)}
+                  onClick={() => {
+                    const params = new URLSearchParams({ from: "leads" });
+                    if (filterSource) params.set("source", filterSource);
+                    if (search) params.set("q", search);
+                    router.push(`/contacts/${l.id}?${params.toString()}`);
+                  }}
                 >
                   <TableCell style={{ fontSize: 11, color: "#5a6f80" }}>
                     {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
