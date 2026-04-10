@@ -90,6 +90,7 @@ export function MarketingReportsView({
   });
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [filterProviderId, setFilterProviderId] = useState<string>("");
 
   // Filter data
   function inPeriod(dateStr: string) {
@@ -98,8 +99,9 @@ export function MarketingReportsView({
     return true;
   }
 
-  const filteredStats = weeklyStats.filter((s) => inPeriod(s.period_start));
-  const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start));
+  const selectedProviderName = filterProviderId ? providers.find(p => p.id === filterProviderId)?.name ?? "" : "";
+  const filteredStats = weeklyStats.filter((s) => inPeriod(s.period_start) && (!filterProviderId || s.provider_id === filterProviderId));
+  const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!selectedProviderName || e.provider_name === selectedProviderName));
   const filteredLeads = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
 
   // === GLOBAL KPIs ===
@@ -153,7 +155,7 @@ export function MarketingReportsView({
 
   return (
     <>
-      {/* Period filter */}
+      {/* Period & provider filters */}
       <div className="flex gap-3 items-center flex-wrap">
         <select
           className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
@@ -174,6 +176,14 @@ export function MarketingReportsView({
             <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-36 h-9 text-xs" />
           </div>
         )}
+        <select
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+          value={filterProviderId}
+          onChange={(e) => setFilterProviderId(e.target.value)}
+        >
+          <option value="">Tous les prestataires</option>
+          {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
       </div>
 
       {/* Global KPIs */}
