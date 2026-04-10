@@ -10,17 +10,16 @@ const supabase = createClient(
 );
 
 // Fallback signature if member has no custom one
-function defaultSignature(member: { first_name: string; last_name: string; email: string; phone: string | null }) {
+function defaultSignature() {
   return `
     <table style="width:100%"><tr><td height="20"></td></tr><tr><td style="border-top:2px solid #df7e0d"></td></tr><tr><td height="20"></td></tr></table>
     <table style="font-family:Arial,sans-serif;font-size:13px;color:#1a2a3a"><tr>
       <td style="vertical-align:top;padding-right:16px;border-right:2px solid #df7e0d">
-        <strong style="font-size:14px">${member.first_name} ${member.last_name}</strong><br>
+        <strong style="font-size:14px">L'équipe La Closing Académie</strong><br>
         <span style="color:#5a6f80">La Closing Académie ®</span>
       </td>
       <td style="vertical-align:top;padding-left:16px;font-size:12px">
-        ${member.phone ? `📞 ${member.phone}<br>` : ""}
-        ✉️ ${member.email}<br>
+        ✉️ contact@closing-academie.com<br>
         🔗 www.closing-academie.com
       </td>
     </tr></table>`;
@@ -53,10 +52,10 @@ export async function POST(req: NextRequest) {
       .replace(/\n/g, "<br>")
       .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 
-    const signature = member.email_signature || defaultSignature(member);
+    const signature = member.email_signature || defaultSignature();
 
     const { data: emailData, error } = await resend.emails.send({
-      from: `${member.first_name} ${member.last_name} <${senderEmail}>`,
+      from: `L'équipe La Closing Académie <contact@closing-academie.com>`,
       to: [to],
       subject,
       html: `

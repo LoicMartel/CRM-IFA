@@ -155,13 +155,10 @@ export async function POST(req: NextRequest) {
       "",
       "Belle journée,",
       "",
-      "Loïc ⚡",
+      "L'équipe La Closing Académie",
       "",
-      "Loïc MARTEL",
-      "Consultant Expert Stratégie Commerciale",
       "La Closing Académie ®",
-      "📞 06 65 95 49 92",
-      "✉️ loic@closing-academie.com",
+      "✉️ contact@closing-academie.com",
       "🔗 www.closing-academie.com",
     ].filter(Boolean).join("\n");
 

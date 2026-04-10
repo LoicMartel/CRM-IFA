@@ -40,13 +40,11 @@ export async function sendSessionEmail({
           <table style="width: 100%;">
             <tr>
               <td style="vertical-align: top; padding-right: 20px; border-right: 2px solid #FF6B35;">
-                <strong style="font-size: 16px;">Loïc MARTEL</strong><br>
-                <span style="color: #5a6f80;">Consultant Expert Stratégie Commerciale</span><br>
+                <strong style="font-size: 16px;">L'équipe La Closing Académie</strong><br>
                 <span style="color: #5a6f80;">La Closing Académie ®</span>
               </td>
               <td style="vertical-align: top; padding-left: 20px;">
-                📞 06 65 95 49 92<br>
-                ✉️ loic@closing-academie.com<br>
+                ✉️ contact@closing-academie.com<br>
                 🔗 www.closing-academie.com
               </td>
             </tr>
