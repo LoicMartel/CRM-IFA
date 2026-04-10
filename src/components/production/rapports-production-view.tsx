@@ -204,7 +204,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
             <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{fmt(totals.facturable)}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Reste à prévoir</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Reste à planifier</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: totalRemaining > 0 ? "#e74c3c" : "#27ae60" }}>{fmt(totalRemaining)}</div>
             <div style={{ fontSize: 11, color: "#8399a9" }}>{totals.hoursPlanned.toFixed(0)}h planifiées</div>
           </div>
@@ -226,7 +226,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                     <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Avancement</TableHead>
                     <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Facturable</TableHead>
                     <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Engagé</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Reste à prévoir</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Reste à planifier</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
