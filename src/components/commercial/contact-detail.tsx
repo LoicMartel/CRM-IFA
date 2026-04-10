@@ -154,6 +154,22 @@ const activityTypeColors: Record<string, { bg: string; text: string }> = {
   relance: { bg: "#fff8e1", text: "#f57c00" },
 };
 
+const callResultBadges: { match: string; label: string; bg: string; text: string }[] = [
+  { match: "Contacté → Booké", label: "Booké", bg: "#e8f5e9", text: "#2e7d32" },
+  { match: "Contacté → Non booké", label: "Non booké", bg: "#fff3e0", text: "#e65100" },
+  { match: "Contacté", label: "Contacté", bg: "#e3f2fd", text: "#1565c0" },
+  { match: "Message vocal laissé", label: "Message vocal", bg: "#fff8e1", text: "#f57c00" },
+  { match: "Pas de réponse", label: "Pas de réponse", bg: "#fce4ec", text: "#c62828" },
+];
+
+function getCallResultBadge(description: string | null) {
+  if (!description) return null;
+  for (const b of callResultBadges) {
+    if (description.includes(b.match)) return b;
+  }
+  return null;
+}
+
 interface SourceRef { id: string; name: string; }
 
 interface CompanyDealData extends DealData {
@@ -1151,6 +1167,14 @@ export function ContactDetail({
                               <span style={{ background: atc.bg, color: atc.text, padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
                                 {activityTypeLabels[a.type] ?? a.type}
                               </span>
+                              {a.type === "appel" && (() => {
+                                const crb = getCallResultBadge(a.description);
+                                return crb ? (
+                                  <span style={{ background: crb.bg, color: crb.text, padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
+                                    {crb.label}
+                                  </span>
+                                ) : null;
+                              })()}
                               <span style={{ fontSize: 12, color: "#1a2a3a" }}>{a.title}</span>
                             </div>
                           );
@@ -1314,6 +1338,14 @@ export function ContactDetail({
                               >
                                 {activityTypeLabels[a.type] ?? a.type}
                               </span>
+                              {a.type === "appel" && (() => {
+                                const crb = getCallResultBadge(a.description);
+                                return crb ? (
+                                  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: crb.bg, color: crb.text }}>
+                                    {crb.label}
+                                  </span>
+                                ) : null;
+                              })()}
                               {a.is_completed && (
                                 <span
                                   className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
