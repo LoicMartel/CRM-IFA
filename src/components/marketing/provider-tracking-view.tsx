@@ -437,8 +437,8 @@ export function ProviderTrackingView({
                     <TableCell style={{ textAlign: "right" }}>{s.r1_done}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{s.rdv_booked_inbound}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{s.rdv_done_inbound}</TableCell>
-                    <TableCell style={{ textAlign: "right" }}>{m.totalRdvBooked > 0 ? fmt(m.cprdvBooked) : "—"}</TableCell>
-                    <TableCell style={{ textAlign: "right" }}>{m.totalRdvDone > 0 ? fmt(m.cprdvDone) : "—"}</TableCell>
+                    <TableCell style={{ textAlign: "right" }}>{m.totalRdvBooked > 0 ? fmt(m.cprdvBooked) : fmt(Number(s.expenses))}</TableCell>
+                    <TableCell style={{ textAlign: "right" }}>{m.totalRdvDone > 0 ? fmt(m.cprdvDone) : fmt(Number(s.expenses))}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{fmtPct(m.txPriseRdv)}</TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{s.sales}</TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{fmt(Number(s.revenue))}</TableCell>
