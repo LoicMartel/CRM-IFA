@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Pencil, Trash2, DollarSign, Users, Upload, Download, FileText, X } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Users, Upload, Download, FileText, X, TrendingUp, Target, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -105,6 +105,10 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
 
   // KPIs
   const totalAmount = filtered.reduce((a, e) => a + Number(e.amount), 0);
+  const totalRevenue = filtered.reduce((a, e) => a + Number(e.revenue || 0), 0);
+  const totalRdvDone = filtered.reduce((a, e) => a + (e.rdv_done || 0), 0);
+  const costPerRdv = totalRdvDone > 0 ? totalAmount / totalRdvDone : 0;
+  const roi = totalAmount > 0 ? totalRevenue / totalAmount : 0;
   const byProvider: Record<string, number> = {};
   filtered.forEach((e) => { byProvider[e.provider_name] = (byProvider[e.provider_name] ?? 0) + Number(e.amount); });
 
@@ -203,18 +207,34 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
           </div>
           <DollarSign style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
-        {Object.entries(byProvider).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name, amount]) => {
-          const pc = PROVIDER_COLORS[name] ?? { bg: "#f0f0f0", text: "#666" };
-          return (
-            <div key={name} className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>{name}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: pc.text }}>{fmt(amount)}</div>
-              </div>
-              <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
-            </div>
-          );
-        })}
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>CA généré</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#27ae60" }}>{fmt(totalRevenue)}</div>
+          </div>
+          <TrendingUp style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV faits</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalRdvDone}</div>
+          </div>
+          <Calendar style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Coût par RDV</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#e65100" }}>{totalRdvDone > 0 ? fmt(costPerRdv) : "—"}</div>
+          </div>
+          <Target style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>ROI</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: roi >= 1 ? "#27ae60" : "#e74c3c" }}>{totalAmount > 0 ? `x${roi.toFixed(1)}` : "—"}</div>
+          </div>
+          <DollarSign style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
       </div>
 
       {/* Filters + Actions */}
