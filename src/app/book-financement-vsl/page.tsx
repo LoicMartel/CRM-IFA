@@ -36,7 +36,7 @@ function BookFinancementTypContent() {
         </div>
 
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 14, lineHeight: 1.3 }}>
-          Merci de votre int&eacute;r&ecirc;t
+          Regardez d&egrave;s maintenant votre bo&icirc;te mail 😉
         </h1>
         <p style={{
           fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)",
