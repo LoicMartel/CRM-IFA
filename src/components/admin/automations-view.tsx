@@ -401,12 +401,12 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Edit Workflow ───────────────────────────────────────────── */}
       <Sheet open={!!editWorkflow} onOpenChange={(o) => !o && setEditWorkflow(null)}>
-        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Modifier l&apos;automatisation</SheetTitle>
             <SheetDescription>Modifiez les proprietes de cette automatisation.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-4 py-4 px-1">
+          <div className="space-y-4 p-6">
             <Field label="Nom" value={wfForm.name} onChange={(v) => setWfForm((f) => ({ ...f, name: v }))} />
             <Field label="Slug" value={wfForm.slug} disabled hint="Identifiant unique (utilise dans le code)" />
             <div>
@@ -428,12 +428,12 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Edit Step ──────────────────────────────────────────────── */}
       <Sheet open={!!editStep} onOpenChange={(o) => !o && setEditStep(null)}>
-        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Modifier l&apos;etape</SheetTitle>
             <SheetDescription>Modifiez les proprietes de cette etape.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-4 py-4 px-1">
+          <div className="space-y-4 p-6">
             <Field label="Nom" value={stepForm.name} onChange={(v) => setStepForm((f) => ({ ...f, name: v }))} />
             <Field label="Slug" value={stepForm.slug} disabled />
             <div>
@@ -460,12 +460,12 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Create Workflow ────────────────────────────────────────── */}
       <Sheet open={createWorkflow} onOpenChange={(o) => !o && setCreateWorkflow(false)}>
-        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Nouvelle automatisation</SheetTitle>
             <SheetDescription>Creez une nouvelle automatisation.</SheetDescription>
           </SheetHeader>
-          <div className="space-y-4 py-4 px-1">
+          <div className="space-y-4 p-6">
             <Field label="Nom *" value={wfForm.name} onChange={(v) => setWfForm((f) => ({ ...f, name: v, slug: slugify(v) }))} placeholder="Ex: Notification nouveau lead" />
             <div>
               <label className="text-sm font-medium">Categorie *</label>
@@ -485,12 +485,12 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Add Step (n8n-style action picker) ─────────────────────── */}
       <Sheet open={!!addStep} onOpenChange={(o) => { if (!o) { setAddStep(null); setSelectedAction(""); } }}>
-        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
+        <SheetContent side="right" className="max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Ajouter une etape</SheetTitle>
             <SheetDescription>Choisissez le type d&apos;action a ajouter.</SheetDescription>
           </SheetHeader>
-          <div className="py-4 px-1">
+          <div className="p-6">
             {!selectedAction ? (
               /* Action picker grid */
               <div className="grid grid-cols-2 gap-3">
