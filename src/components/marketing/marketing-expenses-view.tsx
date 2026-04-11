@@ -39,6 +39,19 @@ interface Expense {
   description: string | null;
   created_at: string;
   marketing_expense_documents?: ExpenseDoc[];
+  _auto?: boolean; // true = ligne auto depuis suivi tunnels
+}
+
+interface TunnelStat {
+  id: string;
+  provider_id: string;
+  period_start: string;
+  expenses: number;
+  r0_done: number;
+  r1_done: number;
+  rdv_done_inbound: number;
+  revenue: number;
+  marketing_providers: { name: string } | null;
 }
 
 function fmt(n: number) {
@@ -73,7 +86,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
   "Oliver List": { bg: "#f1f8e9", text: "#558b2f" },
 };
 
-export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
+export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses: Expense[]; tunnelStats?: TunnelStat[] }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
   const [open, setOpen] = useState(false);
@@ -91,13 +104,45 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [editDocs, setEditDocs] = useState<ExpenseDoc[]>([]);
 
+  // Aggregate tunnel stats (Tunnel VSL + Tunnel Book) by month → virtual "Pub" expense lines
+  const tunnelByMonth: Record<string, { amount: number; rdv_done: number; revenue: number }> = {};
+  tunnelStats.forEach((s) => {
+    const provName = s.marketing_providers?.name ?? "";
+    if (provName !== "Tunnel VSL" && provName !== "Tunnel Book") return;
+    const monthKey = s.period_start.slice(0, 7); // "2026-03"
+    if (!tunnelByMonth[monthKey]) tunnelByMonth[monthKey] = { amount: 0, rdv_done: 0, revenue: 0 };
+    tunnelByMonth[monthKey].amount += Number(s.expenses) || 0;
+    tunnelByMonth[monthKey].rdv_done += (s.r0_done || 0) + (s.r1_done || 0) + (s.rdv_done_inbound || 0);
+    tunnelByMonth[monthKey].revenue += Number(s.revenue) || 0;
+  });
+
+  // Check which months already have a manual "Pub" entry to avoid duplicates
+  const manualPubMonths = new Set(expenses.filter((e) => e.provider_name === "Pub").map((e) => e.period_start.slice(0, 7)));
+
+  const autoLines: Expense[] = Object.entries(tunnelByMonth)
+    .filter(([month]) => !manualPubMonths.has(month))
+    .map(([month, data]) => ({
+      id: `auto-pub-${month}`,
+      period_start: `${month}-01`,
+      period_end: monthEnd(month),
+      provider_name: "Pub",
+      amount: Math.round(data.amount),
+      rdv_done: data.rdv_done,
+      revenue: Math.round(data.revenue),
+      description: "Automatique depuis suivi tunnels (VSL + Book)",
+      created_at: "",
+      _auto: true,
+    }));
+
+  const allExpenses = [...expenses, ...autoLines].sort((a, b) => b.period_start.localeCompare(a.period_start));
+
   // Filters
   const [filterProvider, setFilterProvider] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
 
-  const providerNames = Array.from(new Set(expenses.map((e) => e.provider_name))).sort();
+  const providerNames = Array.from(new Set(allExpenses.map((e) => e.provider_name))).sort();
 
-  const filtered = expenses.filter((e) => {
+  const filtered = allExpenses.filter((e) => {
     if (filterProvider && e.provider_name !== filterProvider) return false;
     if (filterMonth && !e.period_start.startsWith(filterMonth)) return false;
     return true;
@@ -230,7 +275,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Panier moyen / RDV</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Gain / RDV</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#6a1b9a" }}>{totalRdvDone > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</div>
           </div>
           <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
@@ -276,7 +321,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
             [
               { key: "periode", label: "Période" }, { key: "prestataire", label: "Prestataire" },
               { key: "montant", label: "Montant" }, { key: "rdv_faits", label: "RDV faits" },
-              { key: "ca_genere", label: "CA généré" }, { key: "panier_moyen", label: "Panier moyen / RDV" },
+              { key: "ca_genere", label: "CA généré" }, { key: "panier_moyen", label: "Gain / RDV" },
               { key: "description", label: "Description" },
             ],
             "depenses-marketing", f
@@ -298,7 +343,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               <TableHead style={{ textAlign: "right" }}>Montant</TableHead>
               <TableHead style={{ textAlign: "right" }}>RDV faits</TableHead>
               <TableHead style={{ textAlign: "right" }}>CA généré</TableHead>
-              <TableHead style={{ textAlign: "right" }}>Panier moyen / RDV</TableHead>
+              <TableHead style={{ textAlign: "right" }}>Gain / RDV</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Documents</TableHead>
               <TableHead style={{ width: 70 }}></TableHead>
@@ -314,13 +359,15 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
             ) : (
               filtered.map((e) => {
                 const pc = PROVIDER_COLORS[e.provider_name] ?? { bg: "#f0f0f0", text: "#666" };
+                const isAuto = !!(e as any)._auto;
                 return (
-                  <TableRow key={e.id}>
+                  <TableRow key={e.id} style={isAuto ? { background: "#f8fafb" } : undefined}>
                     <TableCell style={{ fontWeight: 600, textTransform: "capitalize" }}>{fmtMonth(e.period_start)}</TableCell>
                     <TableCell>
                       <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: pc.bg, color: pc.text }}>
                         {e.provider_name}
                       </span>
+                      {isAuto && <span style={{ fontSize: 9, color: "#8399a9", marginLeft: 6, fontStyle: "italic" }}>auto</span>}
                     </TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 700 }}>{fmt(Number(e.amount))}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{e.rdv_done || 0}</TableCell>
@@ -328,7 +375,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                     <TableCell style={{ textAlign: "right" }}>{e.rdv_done > 0 ? fmt(Number(e.revenue) / e.rdv_done) : "—"}</TableCell>
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
                     <TableCell>
-                      {(e.marketing_expense_documents ?? []).length > 0 ? (
+                      {!isAuto && (e.marketing_expense_documents ?? []).length > 0 ? (
                         <span style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c" }}>
                           <FileText className="h-3.5 w-3.5 inline mr-1" />
                           {(e.marketing_expense_documents ?? []).length}
@@ -338,14 +385,18 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={() => openEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(e.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                      {!isAuto ? (
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button onClick={() => openEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => handleDelete(e.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 10, color: "#8399a9" }}>Suivi tunnels</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

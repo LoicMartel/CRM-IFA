@@ -5,16 +5,22 @@ import { createClient } from "@/lib/supabase/server";
 export default async function DepensesPage() {
   const supabase = await createClient();
 
-  const { data: expenses } = await supabase
-    .from("marketing_expenses")
-    .select("*, marketing_expense_documents(*)")
-    .order("period_start", { ascending: false });
+  const [{ data: expenses }, { data: weeklyStats }] = await Promise.all([
+    supabase
+      .from("marketing_expenses")
+      .select("*, marketing_expense_documents(*)")
+      .order("period_start", { ascending: false }),
+    supabase
+      .from("marketing_weekly_stats")
+      .select("*, marketing_providers(name)")
+      .order("period_start", { ascending: false }),
+  ]);
 
   return (
     <>
       <Header title="Dépenses Marketing" />
       <div className="p-6 space-y-6">
-        <MarketingExpensesView expenses={expenses ?? []} />
+        <MarketingExpensesView expenses={expenses ?? []} tunnelStats={weeklyStats ?? []} />
       </div>
     </>
   );
