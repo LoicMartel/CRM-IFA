@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import {
   Building2,
+  Calculator,
   Calendar,
   CalendarCheck,
   CalendarDays,
@@ -45,6 +46,7 @@ const commercialItems = [
   { title: "Opportunités", href: "/opportunities", icon: TrendingUp },
   { title: "Commandes (PDCO)", href: "/orders", icon: CreditCard },
   { title: "Rapports Commerciaux", href: "/leads", icon: Target },
+  { title: "Ressources", href: "/ressources-commercial", icon: Calculator },
 ];
 
 const productionItemsList = [
