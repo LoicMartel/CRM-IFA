@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Plus, Pencil, Trash2, Presentation, FileText } from "lucide-react";
+import { Calculator, Plus, Pencil, Trash2, Presentation, FileText, FolderOpen } from "lucide-react";
 import { CotationModal } from "./cotation-modal";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -147,6 +147,34 @@ export function RessourcesCommercialesView({ deals, companies, quotations }: Pro
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Usecases</div>
             <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Cas clients et témoignages</div>
+          </div>
+        </a>
+
+        {/* ADV */}
+        <a
+          href="https://drive.google.com/drive/folders/1hkXPHhw3wiABff8Dlz_PqSv_h8NXP00k"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
+            border: "1px solid #dce8f0", background: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 16,
+            transition: "all 0.15s ease", width: 320, textDecoration: "none",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#8e44ad"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(142,68,173,0.12)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "linear-gradient(135deg, #6c3483 0%, #8e44ad 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <FolderOpen style={{ width: 24, height: 24, color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>ADV</div>
+            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Administration des ventes</div>
           </div>
         </a>
       </div>
