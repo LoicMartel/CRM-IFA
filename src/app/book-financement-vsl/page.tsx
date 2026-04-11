@@ -113,7 +113,37 @@ function BookFinancementTypContent() {
         </div>
       </section>
 
-      {/* spacer between sections */}
+      {/* ===== PROMO FINANCES FINDER ===== */}
+      <section style={{ background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 100%)", padding: "60px 24px", textAlign: "center" }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "#2e7ab5", marginBottom: 6 }}>Notre outil en ligne</p>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1a2a3a", marginBottom: 10, lineHeight: 1.3 }}>
+          D&eacute;couvrez Finances Finder
+        </h2>
+        <p style={{ fontSize: 14, color: "#5a6f80", lineHeight: 1.7, maxWidth: 560, margin: "0 auto 28px" }}>
+          Identifiez automatiquement les financements disponibles pour vos apprenants.
+          En quelques clics, trouvez les dispositifs adapt&eacute;s (CPF, OPCO, France Travail, R&eacute;gion...)
+          et maximisez les prises en charge pour vos clients.
+        </p>
+
+        <div style={{ maxWidth: 700, margin: "0 auto 28px", borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}>
+          <img
+            src="/finances-finder-preview.png"
+            alt="Finances Finder — potentiel de financement et dispositifs applicables"
+            style={{ width: "100%", display: "block" }}
+          />
+        </div>
+
+        <a
+          href="/booking-pauline"
+          style={{
+            display: "inline-block", padding: "14px 28px", borderRadius: 8,
+            background: "#2e7ab5", color: "white", fontSize: 14, fontWeight: 700,
+            textDecoration: "none", transition: "all 0.2s",
+          }}
+        >
+          Essayer Finances Finder
+        </a>
+      </section>
 
       {/* ===== FOOTER ===== */}
       <footer style={{
