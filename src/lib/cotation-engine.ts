@@ -1,6 +1,13 @@
+export interface CotationRow {
+  id: string;
+  title: string;
+  type: "presentiel" | "vt";
+  months: Record<string, number>;
+}
+
 export interface CotationParams {
   nbLearners: number;
-  months: Record<string, { presentiel: number; vt: number }>;
+  rows: CotationRow[];
   nbRiseUp: number;
   tjmLca: number;
   baseCoeff: number;
@@ -43,10 +50,19 @@ export const MONTH_LABELS: Record<string, string> = {
   juil: "Juil", aout: "Août", sept: "Sept", oct: "Oct", nov: "Nov", dec: "Déc",
 };
 
-export function emptyMonths(): Record<string, { presentiel: number; vt: number }> {
-  const m: Record<string, { presentiel: number; vt: number }> = {};
-  for (const k of MONTH_KEYS) m[k] = { presentiel: 0, vt: 0 };
+export function emptyRowMonths(): Record<string, number> {
+  const m: Record<string, number> = {};
+  for (const k of MONTH_KEYS) m[k] = 0;
   return m;
+}
+
+export function createRow(type: "presentiel" | "vt" = "vt", title = ""): CotationRow {
+  return { id: crypto.randomUUID(), title, type, months: emptyRowMonths() };
+}
+
+/** Sum all monthly values of a single row */
+export function rowTotal(row: CotationRow): number {
+  return Object.values(row.months).reduce((s, v) => s + (v || 0), 0);
 }
 
 // VT day-equivalent uses 7h/day (each VT = 1/7 of a day, matching the spreadsheet formula =1/7)
@@ -54,20 +70,23 @@ const VT_DAY_DENOMINATOR = 7;
 
 export function computeCotation(params: CotationParams): CotationResults {
   const {
-    nbLearners, months, nbRiseUp, tjmLca, baseCoeff, travelCoeff, prepCoeff,
+    nbLearners, rows, nbRiseUp, tjmLca, baseCoeff, travelCoeff, prepCoeff,
     costPerDayPresentiel, riseUpCostPerLicense, vtDurationHours, presentielHoursPerDay,
     costFournituresPerLearner,
   } = params;
 
-  const totalPresentielDays = Object.values(months).reduce((s, m) => s + (m.presentiel || 0), 0);
-  const totalVtSessions = Object.values(months).reduce((s, m) => s + (m.vt || 0), 0);
+  const totalPresentielDays = rows
+    .filter(r => r.type === "presentiel")
+    .reduce((s, r) => s + Object.values(r.months).reduce((a, v) => a + (v || 0), 0), 0);
+  const totalVtSessions = rows
+    .filter(r => r.type === "vt")
+    .reduce((s, r) => s + Object.values(r.months).reduce((a, v) => a + (v || 0), 0), 0);
 
   const presentielHours = totalPresentielDays * presentielHoursPerDay;
   const vtHours = totalVtSessions * vtDurationHours;
   const formationHours = presentielHours + vtHours;
 
-  // VT day-equivalent: each VT session = vtDurationHours / 7 of a day
-  const vtDaysEquivalent = (vtHours / VT_DAY_DENOMINATOR);
+  const vtDaysEquivalent = vtHours / VT_DAY_DENOMINATOR;
   const totalDaysEquivalent = totalPresentielDays + vtDaysEquivalent;
 
   const prepHours = formationHours * prepCoeff;
@@ -75,16 +94,12 @@ export function computeCotation(params: CotationParams): CotationResults {
   const interventionHours = formationHours + prepHours;
   const mobilisationHours = interventionHours + travelHours;
 
-  // LCA costs (pédagogie)
   const costPresentielLca = tjmLca * baseCoeff * totalPresentielDays;
   const costVtLca = tjmLca * baseCoeff * vtDaysEquivalent;
   const costPrep = tjmLca * prepCoeff * totalDaysEquivalent;
   const costTravel = tjmLca * travelCoeff * totalPresentielDays;
 
-  // Client costs (frais + fournitures)
-  // Frais présentiel = coût/jour × nb jours (NOT per learner)
   const costPresentielClient = totalPresentielDays * costPerDayPresentiel;
-  // Fournitures = coût/apprenant × nb apprenants
   const costFournitures = nbLearners * costFournituresPerLearner;
   const costRiseUp = nbRiseUp * riseUpCostPerLicense;
 
@@ -94,7 +109,6 @@ export function computeCotation(params: CotationParams): CotationResults {
   const hourlyRatePerLearner = formationHours > 0 && nbLearners > 0
     ? totalHt / (formationHours * nbLearners) : 0;
 
-  // Taux mobilisation LCA hors THR = pédagogie LCA (excl. frais client & fournitures) / heures mobilisation
   const totalLcaPedagogie = costPresentielLca + costVtLca + costPrep + costTravel + costRiseUp;
   const hourlyRateMobilisationLca = mobilisationHours > 0 ? totalLcaPedagogie / mobilisationHours : 0;
   const hourlyRateMobilisationLcaPerLearner = mobilisationHours > 0 && nbLearners > 0
