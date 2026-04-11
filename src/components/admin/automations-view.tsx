@@ -504,7 +504,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Edit Workflow ───────────────────────────────────────────── */}
       <Sheet open={!!editWorkflow} onOpenChange={(o) => !o && setEditWorkflow(null)}>
-        <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
+        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Modifier l&apos;automatisation</SheetTitle>
             <SheetDescription>Modifiez les propriétés de cette automatisation.</SheetDescription>
@@ -578,7 +578,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Edit Step ──────────────────────────────────────────────── */}
       <Sheet open={!!editStep} onOpenChange={(o) => !o && setEditStep(null)}>
-        <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
+        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Modifier l&apos;étape</SheetTitle>
             <SheetDescription>Modifiez les propriétés et la configuration de cette étape.</SheetDescription>
@@ -653,7 +653,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Create Workflow ────────────────────────────────────────── */}
       <Sheet open={createWorkflow} onOpenChange={(o) => !o && setCreateWorkflow(false)}>
-        <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
+        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Nouvelle automatisation</SheetTitle>
             <SheetDescription>Créez une nouvelle automatisation avec ses propriétés.</SheetDescription>
@@ -728,7 +728,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
 
       {/* ─── Sheet: Add Step ───────────────────────────────────────────────── */}
       <Sheet open={!!addStep} onOpenChange={(o) => !o && setAddStep(null)}>
-        <SheetContent side="right" className="sm:max-w-lg overflow-y-auto">
+        <SheetContent side="right" className="max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Ajouter une étape</SheetTitle>
             <SheetDescription>Ajoutez une nouvelle étape à cette automatisation.</SheetDescription>
