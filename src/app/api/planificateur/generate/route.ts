@@ -315,8 +315,9 @@ export async function POST(req: NextRequest) {
 
       const sessionMeta = sessionList[requestedSessionIndex];
       const preferredSlots = buildPreferredSlots(vtTimeSlot);
+      // VT never before 9h (business rule)
       const allDaySlots: string[] = [];
-      for (let h = 8; h <= 17; h++) {
+      for (let h = 9; h <= 17; h++) {
         for (const m of ["00", "30"]) allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
       }
 
@@ -483,8 +484,9 @@ export async function POST(req: NextRequest) {
     }
 
     const preferredSlots = buildPreferredSlots(vtTimeSlot);
+    // VT never before 9h (business rule)
     const allDaySlots: string[] = [];
-    for (let h = 8; h <= 17; h++) {
+    for (let h = 9; h <= 17; h++) {
       for (const m of ["00", "30"]) allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
     }
 
