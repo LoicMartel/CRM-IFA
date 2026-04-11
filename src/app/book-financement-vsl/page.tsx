@@ -38,14 +38,7 @@ function BookFinancementTypContent() {
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 14, lineHeight: 1.3 }}>
           Regardez d&egrave;s maintenant votre bo&icirc;te mail 😉
         </h1>
-        <p style={{
-          fontSize: 14, lineHeight: 1.7, color: "rgba(255,255,255,0.85)",
-          maxWidth: 600, margin: "0 auto 32px", fontWeight: 400,
-        }}>
-          Vous allez recevoir votre book Financements gratuit par email dans quelques instants.
-        </p>
-
-        <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginBottom: 6 }}>Pour aller plus loin</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginTop: 32, marginBottom: 6 }}>Pour aller plus loin</p>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: "white", marginBottom: 28 }}>
           La version compl&egrave;te vous donne acc&egrave;s &agrave; :
         </h2>
