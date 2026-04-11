@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Plus, Pencil, Trash2, Presentation, FileText, FolderOpen } from "lucide-react";
+import { Calculator, Plus, Pencil, Trash2, Presentation, FileText, FolderOpen, BookOpen } from "lucide-react";
 import { CotationModal } from "./cotation-modal";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -175,6 +175,34 @@ export function RessourcesCommercialesView({ deals, companies, quotations }: Pro
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>ADV</div>
             <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Administration des ventes</div>
+          </div>
+        </a>
+
+        {/* Catalogue */}
+        <a
+          href="https://drive.google.com/drive/folders/1gDgobw5tzawH1HlOmQVXsAF6qaECkUC7"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
+            border: "1px solid #dce8f0", background: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 16,
+            transition: "all 0.15s ease", width: 320, textDecoration: "none",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#2980b9"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(41,128,185,0.12)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "linear-gradient(135deg, #1a5276 0%, #2980b9 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <BookOpen style={{ width: 24, height: 24, color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Catalogue</div>
+            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Catalogue de formations</div>
           </div>
         </a>
       </div>
