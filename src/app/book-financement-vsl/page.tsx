@@ -72,11 +72,14 @@ function BookFinancementTypContent() {
           ))}
         </div>
 
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", marginBottom: 14, fontWeight: 600 }}>
+          Acc&eacute;dez d&egrave;s aujourd&apos;hui au book complet en pr&eacute;-vente pour <span style={{ color: "white", fontSize: 18, fontWeight: 800 }}>39&nbsp;&euro;</span> <span style={{ textDecoration: "line-through", opacity: 0.7 }}>49&nbsp;&euro;</span>
+        </p>
         <a
           href="https://buy.stripe.com/bJedR8dso89x6vd2MqfYY07"
           style={{
-            display: "inline-block", padding: "12px 28px", borderRadius: 6,
-            background: "white", color: "#2e7ab5", fontSize: 14, fontWeight: 600,
+            display: "inline-block", padding: "14px 32px", borderRadius: 6,
+            background: "white", color: "#2e7ab5", fontSize: 15, fontWeight: 700,
             textDecoration: "none", transition: "all 0.2s",
           }}
         >
