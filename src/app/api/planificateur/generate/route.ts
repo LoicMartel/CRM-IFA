@@ -334,45 +334,48 @@ export async function POST(req: NextRequest) {
       );
 
       // Find 2-3 proposals across trainers and dates
+      // Two-pass approach: first try ONLY preferred slots, then fallback to any slot
       const proposals: Proposal[] = [];
       const usedSlots = new Set<string>(); // "date|time|trainer" to avoid duplicates
+      const fallbackSlots = allDaySlots.filter(s => !preferredSlots.includes(s));
 
+      function tryFindVTProposal(date: string, trainer: TrainerData, slots: string[]): boolean {
+        const combinedBusy = [...trainer.busyEvents, ...bookedAsBusy];
+        for (const slot of slots) {
+          const key = `${date}|${slot}|${trainer.id}`;
+          if (usedSlots.has(key)) continue;
+          if (!isConflicting(date, slot, sessionMeta!.duration_hours, combinedBusy)) {
+            const tooSimilar = proposals.some(p =>
+              p.session_date === date && p.trainer_id === trainer.id &&
+              Math.abs(timeToMinutes(p.session_time) - timeToMinutes(slot)) < 60
+            );
+            if (tooSimilar) continue;
+
+            usedSlots.add(key);
+            proposals.push({
+              session_date: date,
+              session_time: slot,
+              duration_hours: sessionMeta!.duration_hours,
+              trainer_name: trainer.firstName,
+              trainer_id: trainer.id,
+              warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
+            });
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // Pass 1: preferred slots only (respect client's time preference)
       for (const date of candidateDates) {
         if (proposals.length >= 3) break;
-
         for (const trainer of trainersWithBusy) {
           if (proposals.length >= 3) break;
 
-          const combinedBusy = [...trainer.busyEvents, ...bookedAsBusy];
-
           if (sessionMeta.session_type === "vt") {
-            // Try preferred slots first, then all slots
-            const slotsToTry = [...preferredSlots, ...allDaySlots.filter(s => !preferredSlots.includes(s))];
-            for (const slot of slotsToTry) {
-              const key = `${date}|${slot}|${trainer.id}`;
-              if (usedSlots.has(key)) continue;
-              if (!isConflicting(date, slot, sessionMeta.duration_hours, combinedBusy)) {
-                // Don't propose a slot too similar to an existing proposal (same date + same trainer, within 30min)
-                const tooSimilar = proposals.some(p =>
-                  p.session_date === date && p.trainer_id === trainer.id &&
-                  Math.abs(timeToMinutes(p.session_time) - timeToMinutes(slot)) < 60
-                );
-                if (tooSimilar) continue;
-
-                usedSlots.add(key);
-                proposals.push({
-                  session_date: date,
-                  session_time: slot,
-                  duration_hours: sessionMeta.duration_hours,
-                  trainer_name: trainer.firstName,
-                  trainer_id: trainer.id,
-                  warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
-                });
-                break; // One proposal per trainer per date
-              }
-            }
+            tryFindVTProposal(date, trainer, preferredSlots);
           } else {
-            // Journee: full day 09:00-17:00
+            const combinedBusy = [...trainer.busyEvents, ...bookedAsBusy];
             if (!isConflicting(date, "09:00", 8, combinedBusy)) {
               const key = `${date}|09:00|${trainer.id}`;
               if (!usedSlots.has(key)) {
@@ -386,6 +389,19 @@ export async function POST(req: NextRequest) {
                   warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
                 });
               }
+            }
+          }
+        }
+      }
+
+      // Pass 2: fallback to any available slot if we still need more proposals
+      if (proposals.length < 2) {
+        for (const date of candidateDates) {
+          if (proposals.length >= 3) break;
+          for (const trainer of trainersWithBusy) {
+            if (proposals.length >= 3) break;
+            if (sessionMeta.session_type === "vt") {
+              tryFindVTProposal(date, trainer, fallbackSlots);
             }
           }
         }
