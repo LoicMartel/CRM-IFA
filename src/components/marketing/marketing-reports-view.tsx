@@ -60,6 +60,15 @@ function getSourceName(l: Lead): string {
   return l.lead_sources.name;
 }
 
+// Tunnel VSL et Tunnel Book = "Pub" dans les depenses
+const PROVIDER_ALIASES: Record<string, string> = {
+  "Tunnel VSL": "Pub",
+  "Tunnel Book": "Pub",
+};
+function normalizeProvider(name: string): string {
+  return PROVIDER_ALIASES[name] ?? name;
+}
+
 function getMonthKey(dateStr: string): string {
   return dateStr.slice(0, 7);
 }
@@ -100,15 +109,15 @@ export function MarketingReportsView({
     return true;
   }
 
-  // Build unified list of all provider names from both sources
-  const tunnelNames = providers.map(p => p.name);
+  // Build unified list of all provider names (tunnel names normalized to expense names)
+  const tunnelNames = providers.map(p => normalizeProvider(p.name));
   const expenseProviderNames = Array.from(new Set(expenses.map(e => e.provider_name))).sort();
   const allProviderNames = Array.from(new Set([...tunnelNames, ...expenseProviderNames])).sort();
 
   const filteredStats = weeklyStats.filter((s) => {
     if (!inPeriod(s.period_start)) return false;
     if (!filterProviderName) return true;
-    const provName = s.marketing_providers?.name ?? "";
+    const provName = normalizeProvider(s.marketing_providers?.name ?? "");
     return provName === filterProviderName;
   });
   const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!filterProviderName || e.provider_name === filterProviderName));
@@ -145,7 +154,7 @@ export function MarketingReportsView({
   // === PERFORMANCE PAR PRESTATAIRE ===
   const statsByProvider: Record<string, { expenses: number; leads: number; sales: number; revenue: number }> = {};
   filteredStats.forEach((s) => {
-    const name = s.marketing_providers?.name ?? "Inconnu";
+    const name = normalizeProvider(s.marketing_providers?.name ?? "Inconnu");
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].expenses += Number(s.expenses);
     statsByProvider[name].leads += s.leads;
