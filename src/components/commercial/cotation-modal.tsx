@@ -399,7 +399,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                   <AdvancedField label="Coeff. base" value={form.baseCoeff} onChange={v => setForm({ ...form, baseCoeff: v })} step={0.05} />
                   <AdvancedField label="Coeff. déplacement" value={form.travelCoeff} onChange={v => setForm({ ...form, travelCoeff: v })} step={0.05} />
                   <AdvancedField label="Coeff. préparation" value={form.prepCoeff} onChange={v => setForm({ ...form, prepCoeff: v })} step={0.05} />
-                  <AdvancedField label="Coût/jour présentiel (€)" value={form.costPerDayPresentiel} onChange={v => setForm({ ...form, costPerDayPresentiel: v })} />
+                  <AdvancedField label="THR (€)" value={form.costPerDayPresentiel} onChange={v => setForm({ ...form, costPerDayPresentiel: v })} />
                   <AdvancedField label="Coût Rise Up/licence (€)" value={form.riseUpCostPerLicense} onChange={v => setForm({ ...form, riseUpCostPerLicense: v })} />
                   <AdvancedField label="Fournitures/apprenant (€)" value={form.costFournituresPerLearner} onChange={v => setForm({ ...form, costFournituresPerLearner: v })} />
                   <AdvancedField label="Durée VT (heures)" value={form.vtDurationHours} onChange={v => setForm({ ...form, vtDurationHours: v })} step={0.5} />
