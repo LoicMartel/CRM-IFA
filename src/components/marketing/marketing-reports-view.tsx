@@ -175,16 +175,17 @@ export function MarketingReportsView({
 
   // === PERFORMANCE PAR PRESTATAIRE ===
   const statsByProvider: Record<string, { expenses: number; leads: number; sales: number; revenue: number }> = {};
+  // Leads par prestataire depuis marketing_weekly_stats
   filteredStats.forEach((s) => {
     const name = normalizeProvider(s.marketing_providers?.name ?? "Inconnu");
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
-    statsByProvider[name].expenses += Number(s.expenses);
     statsByProvider[name].leads += s.leads;
   });
-  // Revenue par prestataire depuis marketing_expenses (source de verite)
+  // Dépenses et revenue par prestataire depuis marketing_expenses (source de vérité)
   filteredExpenses.forEach((e) => {
     const name = e.provider_name;
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
+    statsByProvider[name].expenses += Number(e.amount);
     statsByProvider[name].revenue += Number(e.revenue);
   });
   // Ventes par prestataire depuis deals closed_won
