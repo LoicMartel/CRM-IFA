@@ -230,7 +230,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Panier moyen</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Panier moyen / RDV</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#6a1b9a" }}>{totalRdvDone > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</div>
           </div>
           <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
@@ -276,7 +276,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
             [
               { key: "periode", label: "Période" }, { key: "prestataire", label: "Prestataire" },
               { key: "montant", label: "Montant" }, { key: "rdv_faits", label: "RDV faits" },
-              { key: "ca_genere", label: "CA généré" }, { key: "panier_moyen", label: "Panier moyen" },
+              { key: "ca_genere", label: "CA généré" }, { key: "panier_moyen", label: "Panier moyen / RDV" },
               { key: "description", label: "Description" },
             ],
             "depenses-marketing", f
@@ -298,7 +298,7 @@ export function MarketingExpensesView({ expenses }: { expenses: Expense[] }) {
               <TableHead style={{ textAlign: "right" }}>Montant</TableHead>
               <TableHead style={{ textAlign: "right" }}>RDV faits</TableHead>
               <TableHead style={{ textAlign: "right" }}>CA généré</TableHead>
-              <TableHead style={{ textAlign: "right" }}>Panier moyen</TableHead>
+              <TableHead style={{ textAlign: "right" }}>Panier moyen / RDV</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Documents</TableHead>
               <TableHead style={{ width: 70 }}></TableHead>
