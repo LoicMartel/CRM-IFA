@@ -357,7 +357,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                 <ResultRow label="VT LCA" value={fmtE(results.costVtLca)} />
                 <ResultRow label="Préparation" value={fmtE(results.costPrep)} />
                 <ResultRow label="Déplacement" value={fmtE(results.costTravel)} />
-                <ResultRow label={`Frais présentiel (${results.totalPresentielDays}j × ${fmtE(form.costPerDayPresentiel)}/j)`} value={fmtE(results.costPresentielClient)} />
+                <ResultRow label={`THR (${results.totalPresentielDays}j × ${fmtE(form.costPerDayPresentiel)}/j)`} value={fmtE(results.costPresentielClient)} />
                 {results.costFournitures > 0 && (
                   <ResultRow label={`Fournitures (${form.nbLearners} × ${fmtE(form.costFournituresPerLearner)})`} value={fmtE(results.costFournitures)} />
                 )}
@@ -577,7 +577,7 @@ function generatePrintHtml(
     <div class="result-row"><span>VT LCA</span><span>${fE(results.costVtLca)}</span></div>
     <div class="result-row"><span>Préparation</span><span>${fE(results.costPrep)}</span></div>
     <div class="result-row"><span>Déplacement</span><span>${fE(results.costTravel)}</span></div>
-    <div class="result-row"><span>Frais présentiel</span><span>${fE(results.costPresentielClient)}</span></div>
+    <div class="result-row"><span>THR</span><span>${fE(results.costPresentielClient)}</span></div>
     ${results.costFournitures > 0 ? `<div class="result-row"><span>Fournitures</span><span>${fE(results.costFournitures)}</span></div>` : ""}
     ${form.nbRiseUp > 0 ? `<div class="result-row"><span>Rise Up</span><span>${fE(results.costRiseUp)}</span></div>` : ""}
     <div class="total-row"><span>Total HT</span><span class="total-value">${fE(results.totalHt)}</span></div>
