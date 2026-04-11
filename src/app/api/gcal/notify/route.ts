@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
+import { loadWorkflow, isStepActive } from "@/lib/automations";
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,6 +79,11 @@ export async function POST(req: NextRequest) {
     const slackToken = process.env.SLACK_BOT_TOKEN;
     const results: { trainer: string; slack?: string; gcal?: string; email?: string }[] = [];
 
+    const wf = await loadWorkflow("session-notification");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ success: true, title, results: [{ trainer: "skip", gcal: "workflow disabled" }] });
+    }
+
     for (const trainer of (trainerMembers ?? [])) {
       const zoomLink = trainer.zoom_link ?? "";
       const sessionLoc = (session as any).session_location ?? "";
@@ -91,7 +97,7 @@ export async function POST(req: NextRequest) {
       const timeDisplay = `${session.session_date} à ${sessionTime}`;
 
       // 1. Google Calendar (for everyone with a calendar configured)
-      if (calendarId) {
+      if (calendarId && isStepActive(wf, "google-calendar-trainers").active) {
         const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
         const [startH, startM] = sessionTime.split(":").map(Number);
         const startDT = `${session.session_date}T${sessionTime}:00`;
@@ -146,7 +152,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Slack DM (for everyone with a Slack user ID)
-      if (trainer.slack_user_id && slackToken) {
+      if (trainer.slack_user_id && slackToken && isStepActive(wf, "slack-dm-trainers").active) {
         const slackMsg = [
           `Bonjour ${trainer.first_name},`,
           "",
@@ -176,7 +182,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 3. Email for "Externe" trainers with .ics
-      if (isExterne && trainer.email) {
+      if (isExterne && trainer.email && isStepActive(wf, "email-externe-ics").active) {
         const icsStartExt = `${session.session_date}T${sessionTime}:00`;
         const [extH, extM] = sessionTime.split(":").map(Number);
         const extTotalMin = extH * 60 + extM + durationHours * 60;
@@ -230,7 +236,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Send .ics invitation emails to learners
     const learnersWithEmail = learners.filter((l: any) => l.email);
-    if (learnersWithEmail.length > 0) {
+    if (learnersWithEmail.length > 0 && isStepActive(wf, "email-learners-ics").active) {
       const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
       const icsStartDT = `${session.session_date}T${sessionTime}:00`;
       const [sH, sM] = sessionTime.split(":").map(Number);
