@@ -119,6 +119,16 @@ function BookingNaznineContent() {
   };
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 640px) {
+        .booking-card { flex-direction: column !important; }
+        .booking-card > div { flex: 1 1 100% !important; min-width: 0 !important; border-right: none !important; border-bottom: 1px solid #e8ecf1; }
+        .booking-card > div:last-child { border-bottom: none; }
+        .booking-form-grid { grid-template-columns: 1fr !important; }
+        .booking-step-connector { width: 40px !important; }
+      }
+    `}</style>
     <div style={{
       minHeight: "100vh",
       background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
@@ -138,7 +148,7 @@ function BookingNaznineContent() {
           </div>
           <span style={{ fontSize: 10, fontWeight: 700, color: step >= 1 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>Choisir l&apos;heure</span>
         </div>
-        <div style={{ width: 80, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />
+        <div className="booking-step-connector" style={{ width: 80, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
           <div style={{
             width: 28, height: 28, borderRadius: "50%",
@@ -190,7 +200,7 @@ function BookingNaznineContent() {
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
           maxWidth: 900, width: "100%", overflow: "hidden",
           display: "flex", flexWrap: "wrap",
-        }}>
+        }} className="booking-card">
           {/* Left: Calendar */}
           <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
@@ -362,7 +372,7 @@ function BookingNaznineContent() {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="booking-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label style={labelStyle}>Prénom *</label>
                 <input style={inputStyle} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
@@ -468,6 +478,7 @@ function BookingNaznineContent() {
         © {new Date().getFullYear()} La Closing Académie® — Tous droits réservés
       </p>
     </div>
+    </>
   );
 }
 

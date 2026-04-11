@@ -119,6 +119,15 @@ function BookingContent() {
   };
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 640px) {
+        .booking-card { flex-direction: column !important; }
+        .booking-card > div { flex: 1 1 100% !important; min-width: 0 !important; border-right: none !important; border-bottom: 1px solid #e8ecf1; }
+        .booking-card > div:last-child { border-bottom: none; }
+        .booking-form-grid { grid-template-columns: 1fr !important; }
+      }
+    `}</style>
     <div style={{
       background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
       display: "flex", flexDirection: "column", alignItems: "center",
@@ -155,7 +164,7 @@ function BookingContent() {
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
           maxWidth: 680, width: "100%", overflow: "hidden", margin: "0 auto",
           display: "flex", flexWrap: "wrap",
-        }}>
+        }} className="booking-card">
           {/* Left: Calendar */}
           <div style={{ flex: "1 1 280px", padding: "16px 12px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
@@ -327,7 +336,7 @@ function BookingContent() {
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="booking-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label style={labelStyle}>Prénom *</label>
                 <input style={inputStyle} value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
@@ -433,6 +442,7 @@ function BookingContent() {
         © {new Date().getFullYear()} La Closing Académie® — Tous droits réservés
       </p>
     </div>
+    </>
   );
 }
 

@@ -4,6 +4,12 @@ import { CheckCircle } from "lucide-react";
 
 export default function ConfirmationReservation() {
   return (
+    <>
+    <style>{`
+      @media (max-width: 640px) {
+        .confirm-h1 { font-size: 24px !important; }
+      }
+    `}</style>
     <div style={{ minHeight: "100vh", fontFamily: "'Inter', Arial, sans-serif" }}>
 
       {/* ===== HERO HEADER ===== */}
@@ -37,7 +43,7 @@ export default function ConfirmationReservation() {
           <CheckCircle style={{ width: 40, height: 40, color: "#4caf50" }} />
         </div>
 
-        <h1 style={{
+        <h1 className="confirm-h1" style={{
           fontSize: 32, fontWeight: 700, marginBottom: 18,
           lineHeight: 1.3,
         }}>
@@ -157,5 +163,6 @@ export default function ConfirmationReservation() {
         <span>Mentions légales</span>
       </footer>
     </div>
+    </>
   );
 }
