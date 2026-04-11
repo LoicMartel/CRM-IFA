@@ -30,6 +30,7 @@ interface Expense {
   period_start: string;
   provider_name: string;
   amount: number;
+  revenue: number;
 }
 
 interface Lead {
@@ -119,7 +120,7 @@ export function MarketingReportsView({
   const totalInvestment = totalAdSpend + totalProviderCosts;
   const totalLeads = filteredStats.reduce((a, s) => a + s.leads, 0);
   const totalSales = filteredStats.reduce((a, s) => a + s.sales, 0);
-  const totalRevenue = filteredStats.reduce((a, s) => a + Number(s.revenue), 0);
+  const totalRevenue = filteredExpenses.reduce((a, e) => a + Number(e.revenue), 0);
   const globalCpl = totalLeads > 0 ? totalInvestment / totalLeads : 0;
   const globalRoas = totalInvestment > 0 ? totalRevenue / totalInvestment : 0;
 
@@ -149,7 +150,12 @@ export function MarketingReportsView({
     statsByProvider[name].expenses += Number(s.expenses);
     statsByProvider[name].leads += s.leads;
     statsByProvider[name].sales += s.sales;
-    statsByProvider[name].revenue += Number(s.revenue);
+  });
+  // Revenue par prestataire depuis marketing_expenses (source de verite)
+  filteredExpenses.forEach((e) => {
+    const name = e.provider_name;
+    if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
+    statsByProvider[name].revenue += Number(e.revenue);
   });
 
   // === DÉPENSES PAR PRESTATAIRE (coûts) ===
