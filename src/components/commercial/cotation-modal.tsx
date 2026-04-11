@@ -184,7 +184,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
               Informations client
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px 100px 1fr", gap: 12, alignItems: "end" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px 100px", gap: 12, alignItems: "end" }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Entreprise</label>
                 <input
@@ -226,29 +226,6 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                   className={inputCls}
                   style={{ textAlign: "center", fontWeight: 700, fontSize: 15 }}
                 />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Deal associé</label>
-                <select
-                  value={form.dealId}
-                  onChange={(e) => {
-                    const did = e.target.value;
-                    const deal = deals.find(d => d.id === did);
-                    setForm({
-                      ...form,
-                      dealId: did,
-                      companyName: deal?.companies?.name || form.companyName,
-                    });
-                  }}
-                  className={inputCls}
-                >
-                  <option value="">Aucun</option>
-                  {deals.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} {d.companies?.name ? `(${d.companies.name})` : ""}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
