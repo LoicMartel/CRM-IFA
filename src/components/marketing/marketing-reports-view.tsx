@@ -148,9 +148,7 @@ export function MarketingReportsView({
   });
 
   // === GLOBAL KPIs ===
-  const totalAdSpend = filteredStats.reduce((a, s) => a + Number(s.expenses), 0);
-  const totalProviderCosts = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
-  const totalInvestment = totalAdSpend + totalProviderCosts;
+  const totalInvestment = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
   const totalLeads = filteredStats.reduce((a, s) => a + s.leads, 0);
   const totalSales = filteredWonDeals.length;
   const totalRevenue = filteredExpenses.reduce((a, e) => a + Number(e.revenue), 0);
@@ -390,7 +388,7 @@ export function MarketingReportsView({
               ))}
               <div style={{ borderTop: "1px solid #dce8f0", paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                 <span style={{ fontWeight: 700 }}>Total</span>
-                <span style={{ fontWeight: 800, color: "#e74c3c" }}>{fmt(totalProviderCosts)}</span>
+                <span style={{ fontWeight: 800, color: "#e74c3c" }}>{fmt(totalInvestment)}</span>
               </div>
             </div>
           )}
