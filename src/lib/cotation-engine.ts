@@ -97,8 +97,7 @@ export function computeCotation(params: CotationParams): CotationResults {
   const costPresentielLca = tjmLca * baseCoeff * totalPresentielDays;
   const costVtLca = tjmLca * baseCoeff * vtDaysEquivalent;
   const costPrep = tjmLca * prepCoeff * totalDaysEquivalent;
-  // Travel coefficient applies to ALL day-equivalents (pricing model: all-included TJM)
-  const costTravel = tjmLca * travelCoeff * totalDaysEquivalent;
+  const costTravel = tjmLca * travelCoeff * totalPresentielDays;
 
   const costPresentielClient = totalPresentielDays * costPerDayPresentiel;
   const costFournitures = nbLearners * costFournituresPerLearner;
