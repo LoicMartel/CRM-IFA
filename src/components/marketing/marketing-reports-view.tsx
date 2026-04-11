@@ -33,6 +33,16 @@ interface Expense {
   revenue: number;
 }
 
+interface WonDeal {
+  id: string;
+  stage: string;
+  amount: number | null;
+  close_date: string | null;
+  source_id: string | null;
+  created_at: string;
+  lead_sources: { name: string } | { name: string }[] | null;
+}
+
 interface Lead {
   id: string;
   created_at: string;
@@ -87,11 +97,13 @@ export function MarketingReportsView({
   expenses,
   leads,
   providers,
+  wonDeals,
 }: {
   weeklyStats: WeeklyStat[];
   expenses: Expense[];
   leads: Lead[];
   providers: Provider[];
+  wonDeals: WonDeal[];
 }) {
   const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
   const [filterMonth, setFilterMonth] = useState(() => {
@@ -122,13 +134,25 @@ export function MarketingReportsView({
   });
   const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!filterProviderName || e.provider_name === filterProviderName));
   const filteredLeads = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
+  function getDealSourceName(d: WonDeal): string {
+    if (!d.lead_sources) return "";
+    if (Array.isArray(d.lead_sources)) return d.lead_sources[0]?.name ?? "";
+    return d.lead_sources.name;
+  }
+  const filteredWonDeals = wonDeals.filter((d) => {
+    const dateStr = d.close_date ?? d.created_at.split("T")[0];
+    if (!inPeriod(dateStr)) return false;
+    if (!filterProviderName) return true;
+    const src = normalizeProvider(getDealSourceName(d));
+    return src === filterProviderName;
+  });
 
   // === GLOBAL KPIs ===
   const totalAdSpend = filteredStats.reduce((a, s) => a + Number(s.expenses), 0);
   const totalProviderCosts = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
   const totalInvestment = totalAdSpend + totalProviderCosts;
   const totalLeads = filteredStats.reduce((a, s) => a + s.leads, 0);
-  const totalSales = filteredStats.reduce((a, s) => a + s.sales, 0);
+  const totalSales = filteredWonDeals.length;
   const totalRevenue = filteredExpenses.reduce((a, e) => a + Number(e.revenue), 0);
   const globalCpl = totalLeads > 0 ? totalInvestment / totalLeads : 0;
   const globalRoas = totalInvestment > 0 ? totalRevenue / totalInvestment : 0;
@@ -158,13 +182,18 @@ export function MarketingReportsView({
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].expenses += Number(s.expenses);
     statsByProvider[name].leads += s.leads;
-    statsByProvider[name].sales += s.sales;
   });
   // Revenue par prestataire depuis marketing_expenses (source de verite)
   filteredExpenses.forEach((e) => {
     const name = e.provider_name;
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].revenue += Number(e.revenue);
+  });
+  // Ventes par prestataire depuis deals closed_won
+  filteredWonDeals.forEach((d) => {
+    const name = normalizeProvider(getDealSourceName(d) || "Autre");
+    if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
+    statsByProvider[name].sales += 1;
   });
 
   // === DÉPENSES PAR PRESTATAIRE (coûts) ===

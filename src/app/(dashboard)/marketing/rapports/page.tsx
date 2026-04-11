@@ -10,11 +10,13 @@ export default async function RapportsMarketingPage() {
     { data: expenses },
     { data: contacts },
     { data: providers },
+    { data: wonDeals },
   ] = await Promise.all([
     supabase.from("marketing_weekly_stats").select("*, marketing_providers(name)").order("period_start", { ascending: false }),
     supabase.from("marketing_expenses").select("*").order("period_start", { ascending: false }),
     supabase.from("contacts").select("id, lead_status, source_id, created_at, lead_sources!contacts_source_id_fkey(name)").order("created_at", { ascending: false }),
     supabase.from("marketing_providers").select("*").order("name"),
+    supabase.from("deals").select("id, stage, amount, close_date, source_id, created_at, lead_sources(name)").eq("stage", "closed_won"),
   ]);
 
   return (
@@ -26,6 +28,7 @@ export default async function RapportsMarketingPage() {
           expenses={expenses ?? []}
           leads={contacts ?? []}
           providers={providers ?? []}
+          wonDeals={wonDeals ?? []}
         />
       </div>
     </>
