@@ -15,6 +15,11 @@ export default async function RessourcesCommercialesPage() {
     .select("id, name")
     .order("name");
 
+  const { data: contacts } = await supabase
+    .from("contacts")
+    .select("id, first_name, last_name, company_id")
+    .order("last_name");
+
   const { data: quotations } = await supabase
     .from("quotations")
     .select("*")
@@ -27,6 +32,7 @@ export default async function RessourcesCommercialesPage() {
         <RessourcesCommercialesView
           deals={(deals ?? []) as any}
           companies={(companies ?? []) as any}
+          contacts={(contacts ?? []) as any}
           quotations={(quotations ?? []) as any}
         />
       </div>

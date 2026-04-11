@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
 
     const data = {
       deal_id: body.deal_id || null,
+      company_id: body.company_id || null,
       company_name: body.company_name || null,
+      contact_id: body.contact_id || null,
       contact_name: body.contact_name || null,
       nb_learners: body.nb_learners,
       months: body.months,

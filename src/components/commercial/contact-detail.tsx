@@ -208,6 +208,7 @@ export function ContactDetail({
   teamMembers,
   sources = [],
   learnerSessions = [],
+  quotations = [],
 }: {
   contact: ContactData;
   deals: DealData[];
@@ -218,6 +219,7 @@ export function ContactDetail({
   teamMembers: TeamMemberRef[];
   sources?: SourceRef[];
   learnerSessions?: Record<string, unknown>[];
+  quotations?: Record<string, any>[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1058,6 +1060,11 @@ export function ContactDetail({
               <TabsTrigger value="meetings">
                 <Calendar className="h-4 w-4 mr-1" /> RDV ({meetings.length})
               </TabsTrigger>
+              {quotations.length > 0 && (
+                <TabsTrigger value="quotations">
+                  Cotations ({quotations.length})
+                </TabsTrigger>
+              )}
               {learnerSessions.length > 0 && (
                 <TabsTrigger value="sessions">
                   <GraduationCap className="h-4 w-4 mr-1" /> Sessions ({learnerSessions.length})
@@ -1521,6 +1528,42 @@ export function ContactDetail({
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Cotations */}
+            {quotations.length > 0 && (
+              <TabsContent value="quotations" className="mt-4">
+                <div style={{ borderRadius: 12, border: "1px solid #e8ecf1", overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#f8fbfd" }}>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Entreprise</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Présentiel</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotations.map((q) => (
+                        <tr key={q.id} style={{ borderTop: "1px solid #e8ecf1" }}>
+                          <td style={{ padding: "10px 14px", color: "#5a6f80" }}>
+                            {new Date(q.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          </td>
+                          <td style={{ padding: "10px 14px" }}>{q.company_name || "—"}</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{q.nb_learners}</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{q.total_presentiel_days ?? 0}j</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{q.total_vt_sessions ?? 0}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#27ae60" }}>
+                            {q.total_ht != null ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(q.total_ht)) + " €" : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+            )}
 
             {/* Sessions de formation */}
             {learnerSessions.length > 0 && (

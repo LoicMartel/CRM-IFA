@@ -16,6 +16,13 @@ interface Company {
   name: string;
 }
 
+interface Contact {
+  id: string;
+  first_name: string;
+  last_name: string;
+  company_id: string | null;
+}
+
 interface EditQuotation {
   id: string;
   company_name: string | null;
@@ -40,6 +47,7 @@ interface Props {
   onClose: () => void;
   deals: Deal[];
   companies: Company[];
+  contacts: Contact[];
   editQuotation?: EditQuotation | null;
   onSaved?: () => void;
 }
@@ -75,7 +83,7 @@ function loadRows(data: any): CotationRow[] {
   return [createRow("vt")];
 }
 
-export function CotationModal({ open, onClose, deals, companies, editQuotation, onSaved }: Props) {
+export function CotationModal({ open, onClose, deals, companies, contacts, editQuotation, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -87,7 +95,9 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
 
   function initForm(eq?: EditQuotation | null) {
     return {
+      companyId: "" as string,
       companyName: eq?.company_name ?? "",
+      contactId: "" as string,
       contactName: eq?.contact_name ?? "",
       nbLearners: eq?.nb_learners ?? 1,
       nbRiseUp: eq?.nb_rise_up ?? 0,
@@ -150,7 +160,9 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
     try {
       const body = {
         id: editQuotation?.id,
+        company_id: form.companyId || null,
         company_name: form.companyName,
+        contact_id: form.contactId || null,
         contact_name: form.contactName,
         nb_learners: form.nbLearners,
         nb_rise_up: form.nbRiseUp,
@@ -228,12 +240,36 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px 100px", gap: 12, alignItems: "end" }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Entreprise</label>
-                <input value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} list="cotation-companies" className={inputCls} placeholder="Nom de l'entreprise" />
-                <datalist id="cotation-companies">{companies.map(c => <option key={c.id} value={c.name} />)}</datalist>
+                <select
+                  value={form.companyId}
+                  onChange={(e) => {
+                    const cid = e.target.value;
+                    const company = companies.find(c => c.id === cid);
+                    setForm({ ...form, companyId: cid, companyName: company?.name ?? "", contactId: "", contactName: "" });
+                  }}
+                  className={inputCls}
+                >
+                  <option value="">Sélectionner une entreprise</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Contact</label>
-                <input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} className={inputCls} placeholder="Nom du contact" />
+                <select
+                  value={form.contactId}
+                  onChange={(e) => {
+                    const cid = e.target.value;
+                    const contact = contacts.find(c => c.id === cid);
+                    setForm({ ...form, contactId: cid, contactName: contact ? `${contact.first_name} ${contact.last_name}` : "" });
+                  }}
+                  className={inputCls}
+                >
+                  <option value="">Sélectionner un contact</option>
+                  {(form.companyId
+                    ? contacts.filter(c => c.company_id === form.companyId)
+                    : contacts
+                  ).map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
+                </select>
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Apprenants</label>

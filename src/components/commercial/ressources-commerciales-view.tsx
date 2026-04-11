@@ -41,13 +41,21 @@ interface Quotation {
   created_at: string;
 }
 
+interface Contact {
+  id: string;
+  first_name: string;
+  last_name: string;
+  company_id: string | null;
+}
+
 interface Props {
   deals: Deal[];
   companies: Company[];
+  contacts: Contact[];
   quotations: Quotation[];
 }
 
-export function RessourcesCommercialesView({ deals, companies, quotations }: Props) {
+export function RessourcesCommercialesView({ deals, companies, contacts, quotations }: Props) {
   const [cotationOpen, setCotationOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
   const router = useRouter();
@@ -272,6 +280,7 @@ export function RessourcesCommercialesView({ deals, companies, quotations }: Pro
         onClose={() => { setCotationOpen(false); setEditingQuotation(null); }}
         deals={deals}
         companies={companies}
+        contacts={contacts}
         editQuotation={editingQuotation}
         onSaved={() => router.refresh()}
       />

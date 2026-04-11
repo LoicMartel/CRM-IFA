@@ -41,6 +41,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     { data: companies },
     { data: teamMembers },
     { data: sources },
+    { data: quotations },
   ] = await Promise.all([
     supabase
       .from("deals")
@@ -77,6 +78,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       .from("lead_sources")
       .select("id, name")
       .order("name"),
+    supabase
+      .from("quotations")
+      .select("*")
+      .eq("contact_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   return (
@@ -92,6 +98,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         teamMembers={teamMembers ?? []}
         sources={sources ?? []}
         learnerSessions={learnerSessions}
+        quotations={quotations ?? []}
       />
     </>
   );

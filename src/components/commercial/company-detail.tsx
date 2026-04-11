@@ -106,12 +106,13 @@ interface Props {
   companyTypes: R[];
   teamMembers: R[];
   servicePlans: R[];
+  quotations: R[];
 }
 
 /* ---- Component ---- */
 
 export function CompanyDetail({
-  company, contacts, deals, activities, meetings, orders, billingEntries, sessions, learners, companyTypes, teamMembers, servicePlans,
+  company, contacts, deals, activities, meetings, orders, billingEntries, sessions, learners, companyTypes, teamMembers, servicePlans, quotations,
 }: Props) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -387,6 +388,7 @@ export function CompanyDetail({
               <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
               <TabsTrigger value="contacts">Contacts ({contacts.length})</TabsTrigger>
               <TabsTrigger value="deals">Deals ({deals.length})</TabsTrigger>
+              {quotations.length > 0 && <TabsTrigger value="quotations">Cotations ({quotations.length})</TabsTrigger>}
               <TabsTrigger value="meetings">RDV ({meetings.length})</TabsTrigger>
               <TabsTrigger value="invoices">Factures ({billingEntries.length})</TabsTrigger>
               <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
@@ -617,6 +619,42 @@ export function CompanyDetail({
                 </div>
               </div>
             </TabsContent>
+
+            {/* --- Cotations --- */}
+            {quotations.length > 0 && (
+              <TabsContent value="quotations" className="mt-4">
+                <div style={{ borderRadius: 12, border: "1px solid #e8ecf1", overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "#f8fbfd" }}>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Contact</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Présentiel</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotations.map((q: any) => (
+                        <tr key={q.id} style={{ borderTop: "1px solid #e8ecf1" }}>
+                          <td style={{ padding: "10px 14px", color: "#5a6f80" }}>
+                            {new Date(q.created_at as string).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                          </td>
+                          <td style={{ padding: "10px 14px" }}>{String(q.contact_name || "—")}</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{String(q.nb_learners)}</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{String(q.total_presentiel_days ?? 0)}j</td>
+                          <td style={{ padding: "10px 8px", textAlign: "center" }}>{String(q.total_vt_sessions ?? 0)}</td>
+                          <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#27ae60" }}>
+                            {q.total_ht != null ? new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(q.total_ht)) + " €" : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+            )}
 
             {/* --- Meetings / RDV --- */}
             <TabsContent value="meetings" className="mt-4">
