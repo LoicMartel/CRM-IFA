@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { loadWorkflow, isStepActive } from "@/lib/automations";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,11 @@ export async function POST(req: NextRequest) {
 
     if (event !== "invitee.created") {
       return NextResponse.json({ ok: true, skipped: true });
+    }
+
+    const wf = await loadWorkflow("calendly-webhook");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ skipped: true, reason: "workflow disabled" });
     }
 
     // Extract invitee info
@@ -47,6 +53,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Find existing contact by email
+    if (!isStepActive(wf, "create-update-contact").active) {
+      return NextResponse.json({ ok: true, skipped: "contact step disabled" });
+    }
     const { data: contact } = await supabase
       .from("contacts")
       .select("id, company_id")
@@ -93,6 +102,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create R0 qualification meeting
+    if (!isStepActive(wf, "create-meeting").active) {
+      return NextResponse.json({ ok: true, contact_id: contactId, meeting: "step disabled" });
+    }
     await supabase.from("meetings").insert({
       meeting_type: "R0",
       status: "booked",

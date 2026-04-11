@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { loadWorkflow } from "@/lib/automations";
 
 export async function GET() {
   try {
@@ -9,6 +10,11 @@ export async function GET() {
 
     if (!slackToken) {
       return NextResponse.json({ error: "SLACK_BOT_TOKEN not configured" }, { status: 500 });
+    }
+
+    const wf = await loadWorkflow("task-reminders");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ success: true, message: "workflow disabled", count: 0 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);

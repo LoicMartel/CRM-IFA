@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { loadWorkflow, isStepActive } from "@/lib/automations";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -72,12 +73,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
 
+    const wf = await loadWorkflow("webflow-form");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ skipped: true, reason: "workflow disabled" });
+    }
+
     // Check if contact already exists
     const { data: existing } = await supabase
       .from("contacts")
       .select("id")
       .eq("email", email.toLowerCase().trim())
       .maybeSingle();
+
+    if (!isStepActive(wf, "create-update-contact").active) {
+      return NextResponse.json({ ok: true, skipped: "contact step disabled" });
+    }
 
     if (existing) {
       // Contact exists, update lifecycle_stage if still a basic lead
@@ -108,7 +118,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Try to match or create a company from the URL
-    if (companyUrl) {
+    if (companyUrl && isStepActive(wf, "match-company").active) {
       const domain = companyUrl.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
       if (domain) {
         // Check if company exists with this website

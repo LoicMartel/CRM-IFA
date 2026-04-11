@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { loadWorkflow } from "@/lib/automations";
 
 /**
  * Syncs a training_session to the delivery `sessions` table.
@@ -10,6 +11,11 @@ export async function POST(req: NextRequest) {
   const { trainingSessionId } = await req.json();
   if (!trainingSessionId) {
     return NextResponse.json({ error: "Missing trainingSessionId" }, { status: 400 });
+  }
+
+  const wf = await loadWorkflow("session-completed");
+  if (wf && !wf.is_active) {
+    return NextResponse.json({ skipped: true, reason: "workflow disabled" });
   }
 
   const supabase = await createClient();

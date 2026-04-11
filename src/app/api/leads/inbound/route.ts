@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendSessionEmail } from "@/lib/send-email";
+import { loadWorkflow, isStepActive } from "@/lib/automations";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,9 +28,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: CORS_HEADERS });
     }
 
+    const wf = await loadWorkflow("landing-page-lead");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ skipped: true, reason: "workflow disabled" }, { headers: CORS_HEADERS });
+    }
+
     // 1. Find or create company from website URL
     let companyId: string | null = null;
-    if (website) {
+    if (website && isStepActive(wf, "create-update-company").active) {
       const { data: existingCompany } = await supabase
         .from("companies")
         .select("id")
@@ -118,22 +124,26 @@ export async function POST(request: Request) {
       `👉 https://crm-lca.vercel.app/contacts/${contactId}`,
     ].filter(Boolean).join("\n");
 
-    // Send to both Pauline and Rafi in parallel
-    await Promise.all([
-      sendSessionEmail({
+    // Send to Pauline and Rafi (each individually toggleable)
+    const emailPromises: Promise<any>[] = [];
+    if (isStepActive(wf, "notify-pauline").active) {
+      emailPromises.push(sendSessionEmail({
         to: "pauline-ext@closing-academie.com",
         subject: notifSubject,
         body: notifBody,
-      }),
-      sendSessionEmail({
+      }));
+    }
+    if (isStepActive(wf, "notify-rafi").active) {
+      emailPromises.push(sendSessionEmail({
         to: "rafi@closing-academie.com",
         subject: notifSubject,
         body: notifBody,
-      }),
-    ]);
+      }));
+    }
+    if (emailPromises.length > 0) await Promise.all(emailPromises);
 
     // 4. Send thank-you email with book PDF for book-related sources
-    if ((source === "landing-book-financement" || source === "embed-form-book") && email) {
+    if ((source === "landing-book-financement" || source === "embed-form-book") && email && isStepActive(wf, "send-book-pdf").active) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
         const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);

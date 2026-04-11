@@ -4,6 +4,7 @@ import { createCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { toParisDateTime } from "@/lib/timezone";
+import { loadWorkflow, isStepActive } from "@/lib/automations";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -80,6 +81,11 @@ export async function POST(req: NextRequest) {
     const slackToken = process.env.SLACK_BOT_TOKEN;
     const results: { action: string; status: string }[] = [];
 
+    const wf = await loadWorkflow("meeting-notification");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ success: true, title, results: [{ action: "skip", status: "workflow disabled" }] });
+    }
+
     if (!assignedMember) {
       return NextResponse.json({ success: true, title, results: [{ action: "skip", status: "No assigned member" }] });
     }
@@ -93,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Google Calendar (for everyone with a calendar configured)
     const commercialCalId = assignedMember.google_calendar_id_commercial || assignedMember.google_calendar_id;
-    if (commercialCalId) {
+    if (commercialCalId && isStepActive(wf, "google-calendar").active) {
       try {
         const startDT = `${dateStr}T${timeStr}:00`;
         const [startH, startM] = timeStr.split(":").map(Number);
@@ -132,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Slack DM (for everyone with a Slack user ID)
-    if (assignedMember.slack_user_id && slackToken) {
+    if (assignedMember.slack_user_id && slackToken && isStepActive(wf, "slack-dm").active) {
       const slackMsg = [
         `Bonjour ${assignedMember.first_name},`,
         "",
@@ -165,7 +171,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Email (Externe only) with .ics
-    if (isExterne && assignedMember.email) {
+    if (isExterne && assignedMember.email && isStepActive(wf, "email-externe-ics").active) {
       try {
         const icsStartExt = `${dateStr}T${timeStr}:00`;
         const [eH, eM] = timeStr.split(":").map(Number);
@@ -225,7 +231,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Send .ics invitation to prospect
-    if (contactEmail) {
+    if (contactEmail && isStepActive(wf, "email-prospect-ics").active) {
       try {
         const icsStart = `${dateStr}T${timeStr}:00`;
         const [iH, iM] = timeStr.split(":").map(Number);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { loadWorkflow } from "@/lib/automations";
 
 // This API route is called after a training session is created
 // It prepares the data needed for Google Calendar sync
@@ -12,6 +13,11 @@ export async function POST(req: NextRequest) {
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+    }
+
+    const wf = await loadWorkflow("session-created");
+    if (wf && !wf.is_active) {
+      return NextResponse.json({ skipped: true, reason: "workflow disabled" });
     }
 
     const supabase = await createClient();

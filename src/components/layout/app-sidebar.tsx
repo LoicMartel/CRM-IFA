@@ -22,6 +22,7 @@ import {
   UserPlus,
   Users,
   Wallet,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -72,6 +73,7 @@ const financeItems = [
 
 const adminItems = [
   { title: "Équipe", href: "/team", icon: Users },
+  { title: "Automatisations", href: "/automatisations", icon: Zap },
 ];
 
 function NavSection({
