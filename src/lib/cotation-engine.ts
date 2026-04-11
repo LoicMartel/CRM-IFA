@@ -10,6 +10,7 @@ export interface CotationParams {
   riseUpCostPerLicense: number;
   vtDurationHours: number;
   presentielHoursPerDay: number;
+  costFournituresPerLearner: number;
 }
 
 export interface CotationResults {
@@ -27,6 +28,7 @@ export interface CotationResults {
   costPrep: number;
   costTravel: number;
   costPresentielClient: number;
+  costFournitures: number;
   costRiseUp: number;
   totalHt: number;
   hourlyRateFormation: number;
@@ -45,10 +47,14 @@ export function emptyMonths(): Record<string, { presentiel: number; vt: number }
   return m;
 }
 
+// VT day-equivalent uses 7h/day (each VT = 1/7 of a day, matching the spreadsheet formula =1/7)
+const VT_DAY_DENOMINATOR = 7;
+
 export function computeCotation(params: CotationParams): CotationResults {
   const {
     nbLearners, months, nbRiseUp, tjmLca, baseCoeff, travelCoeff, prepCoeff,
     costPerDayPresentiel, riseUpCostPerLicense, vtDurationHours, presentielHoursPerDay,
+    costFournituresPerLearner,
   } = params;
 
   const totalPresentielDays = Object.values(months).reduce((s, m) => s + (m.presentiel || 0), 0);
@@ -58,20 +64,29 @@ export function computeCotation(params: CotationParams): CotationResults {
   const vtHours = totalVtSessions * vtDurationHours;
   const formationHours = presentielHours + vtHours;
 
-  const totalDaysEquivalent = totalPresentielDays + (vtHours / (presentielHoursPerDay || 8));
+  // VT day-equivalent: each VT session = vtDurationHours / 7 of a day
+  const vtDaysEquivalent = (vtHours / VT_DAY_DENOMINATOR);
+  const totalDaysEquivalent = totalPresentielDays + vtDaysEquivalent;
+
   const prepHours = formationHours * prepCoeff;
   const travelHours = presentielHours * travelCoeff;
   const interventionHours = formationHours + prepHours;
   const mobilisationHours = interventionHours + travelHours;
 
+  // LCA costs (pédagogie)
   const costPresentielLca = tjmLca * baseCoeff * totalPresentielDays;
-  const costVtLca = tjmLca * baseCoeff * (vtHours / (presentielHoursPerDay || 8));
+  const costVtLca = tjmLca * baseCoeff * vtDaysEquivalent;
   const costPrep = tjmLca * prepCoeff * totalDaysEquivalent;
   const costTravel = tjmLca * travelCoeff * totalPresentielDays;
-  const costPresentielClient = nbLearners * totalPresentielDays * costPerDayPresentiel;
+
+  // Client costs (frais + fournitures)
+  // Frais présentiel = coût/jour × nb jours (NOT per learner)
+  const costPresentielClient = totalPresentielDays * costPerDayPresentiel;
+  // Fournitures = coût/apprenant × nb apprenants
+  const costFournitures = nbLearners * costFournituresPerLearner;
   const costRiseUp = nbRiseUp * riseUpCostPerLicense;
 
-  const totalHt = costPresentielLca + costVtLca + costPrep + costTravel + costPresentielClient + costRiseUp;
+  const totalHt = costPresentielLca + costVtLca + costPrep + costTravel + costPresentielClient + costFournitures + costRiseUp;
 
   const hourlyRateFormation = formationHours > 0 ? totalHt / formationHours : 0;
   const hourlyRatePerLearner = formationHours > 0 && nbLearners > 0
@@ -82,7 +97,7 @@ export function computeCotation(params: CotationParams): CotationResults {
     presentielHours, vtHours, formationHours, prepHours, travelHours,
     interventionHours, mobilisationHours,
     costPresentielLca, costVtLca, costPrep, costTravel,
-    costPresentielClient, costRiseUp,
+    costPresentielClient, costFournitures, costRiseUp,
     totalHt, hourlyRateFormation, hourlyRatePerLearner,
   };
 }

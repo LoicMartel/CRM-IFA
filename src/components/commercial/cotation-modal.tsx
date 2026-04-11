@@ -74,6 +74,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
       riseUpCostPerLicense: eq?.rise_up_cost_per_license ?? 690,
       vtDurationHours: eq?.vt_duration_hours ?? 1,
       presentielHoursPerDay: eq?.presentiel_hours_per_day ?? 8,
+      costFournituresPerLearner: 50,
       notes: eq?.notes ?? "",
     };
   }
@@ -91,6 +92,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
     riseUpCostPerLicense: form.riseUpCostPerLicense,
     vtDurationHours: form.vtDurationHours,
     presentielHoursPerDay: form.presentielHoursPerDay,
+    costFournituresPerLearner: form.costFournituresPerLearner,
   });
 
   function setMonth(key: string, field: "presentiel" | "vt", value: number) {
@@ -355,7 +357,10 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                 <ResultRow label="VT LCA" value={fmtE(results.costVtLca)} />
                 <ResultRow label="Préparation" value={fmtE(results.costPrep)} />
                 <ResultRow label="Déplacement" value={fmtE(results.costTravel)} />
-                <ResultRow label={`Présentiel client (${form.nbLearners} × ${fmtE(form.costPerDayPresentiel)}/j)`} value={fmtE(results.costPresentielClient)} />
+                <ResultRow label={`Frais présentiel (${results.totalPresentielDays}j × ${fmtE(form.costPerDayPresentiel)}/j)`} value={fmtE(results.costPresentielClient)} />
+                {results.costFournitures > 0 && (
+                  <ResultRow label={`Fournitures (${form.nbLearners} × ${fmtE(form.costFournituresPerLearner)})`} value={fmtE(results.costFournitures)} />
+                )}
                 {form.nbRiseUp > 0 && (
                   <ResultRow label={`Rise Up (${form.nbRiseUp} × ${fmtE(form.riseUpCostPerLicense)})`} value={fmtE(results.costRiseUp)} />
                 )}
@@ -393,6 +398,7 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                   <AdvancedField label="Coeff. préparation" value={form.prepCoeff} onChange={v => setForm({ ...form, prepCoeff: v })} step={0.05} />
                   <AdvancedField label="Coût/jour présentiel (€)" value={form.costPerDayPresentiel} onChange={v => setForm({ ...form, costPerDayPresentiel: v })} />
                   <AdvancedField label="Coût Rise Up/licence (€)" value={form.riseUpCostPerLicense} onChange={v => setForm({ ...form, riseUpCostPerLicense: v })} />
+                  <AdvancedField label="Fournitures/apprenant (€)" value={form.costFournituresPerLearner} onChange={v => setForm({ ...form, costFournituresPerLearner: v })} />
                   <AdvancedField label="Durée VT (heures)" value={form.vtDurationHours} onChange={v => setForm({ ...form, vtDurationHours: v })} step={0.5} />
                   <AdvancedField label="Heures/jour présentiel" value={form.presentielHoursPerDay} onChange={v => setForm({ ...form, presentielHoursPerDay: v })} />
                 </div>
@@ -568,7 +574,8 @@ function generatePrintHtml(
     <div class="result-row"><span>VT LCA</span><span>${fE(results.costVtLca)}</span></div>
     <div class="result-row"><span>Préparation</span><span>${fE(results.costPrep)}</span></div>
     <div class="result-row"><span>Déplacement</span><span>${fE(results.costTravel)}</span></div>
-    <div class="result-row"><span>Présentiel client</span><span>${fE(results.costPresentielClient)}</span></div>
+    <div class="result-row"><span>Frais présentiel</span><span>${fE(results.costPresentielClient)}</span></div>
+    ${results.costFournitures > 0 ? `<div class="result-row"><span>Fournitures</span><span>${fE(results.costFournitures)}</span></div>` : ""}
     ${form.nbRiseUp > 0 ? `<div class="result-row"><span>Rise Up</span><span>${fE(results.costRiseUp)}</span></div>` : ""}
     <div class="total-row"><span>Total HT</span><span class="total-value">${fE(results.totalHt)}</span></div>
     <div class="result-row"><span>Taux horaire formation</span><span>${fE(results.hourlyRateFormation)}</span></div>
