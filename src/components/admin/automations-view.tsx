@@ -81,6 +81,36 @@ const CATEGORY_ORDER = [
 
 const CATEGORY_OPTIONS = CATEGORY_ORDER.map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
 
+// Declencheurs predefinis
+const TRIGGER_TEMPLATES = [
+  { group: "Prise de RDV", items: [
+    { value: "Un prospect prend RDV via une booking page", label: "Un prospect prend RDV (booking page)" },
+    { value: "Un prospect prend RDV via Calendly", label: "Un prospect prend RDV (Calendly)" },
+    { value: "Un RDV commercial est cree manuellement", label: "Un RDV est cree manuellement" },
+    { value: "Un meeting passe en statut 'booked'", label: "Un RDV passe en statut 'booked'" },
+  ]},
+  { group: "Sessions de formation", items: [
+    { value: "Une session de formation est planifiee", label: "Une session est planifiee" },
+    { value: "Une session passe en statut 'done' ou 'no_show'", label: "Une session est terminee (done/no_show)" },
+    { value: "Une session est annulee", label: "Une session est annulee" },
+    { value: "Le statut d'une session change", label: "Le statut d'une session change" },
+  ]},
+  { group: "Leads & Tunnel", items: [
+    { value: "Un prospect remplit un formulaire sur une landing page", label: "Formulaire landing page / tunnel" },
+    { value: "Un formulaire est soumis sur le site Webflow", label: "Formulaire site Webflow" },
+    { value: "Un nouveau lead arrive dans le CRM", label: "Nouveau lead dans le CRM" },
+  ]},
+  { group: "Temporel", items: [
+    { value: "Tous les jours a une heure fixe", label: "Tous les jours (CRON quotidien)" },
+    { value: "Toutes les semaines", label: "Toutes les semaines" },
+    { value: "X jours avant une date", label: "X jours avant une date" },
+    { value: "X jours apres une date", label: "X jours apres une date" },
+  ]},
+  { group: "Autre", items: [
+    { value: "custom", label: "Declencheur personnalise..." },
+  ]},
+];
+
 // Node styles par type
 const NODE_STYLES: Record<string, { bg: string; border: string; text: string; icon: typeof Database }> = {
   data: { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-700", icon: Database },
@@ -415,7 +445,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
                 {CATEGORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            <Field label="Declencheur" value={wfForm.trigger_description} onChange={(v) => setWfForm((f) => ({ ...f, trigger_description: v }))} placeholder="Ex: Un prospect prend RDV" />
+            <TriggerPicker value={wfForm.trigger_description} onChange={(v) => setWfForm((f) => ({ ...f, trigger_description: v }))} />
             <Field label="Description" value={wfForm.description} onChange={(v) => setWfForm((f) => ({ ...f, description: v }))} multiline />
             <Field label="Route API" value={wfForm.api_route} onChange={(v) => setWfForm((f) => ({ ...f, api_route: v }))} placeholder="/api/..." mono />
           </div>
@@ -473,7 +503,7 @@ export function AutomationsView({ workflows: initialWorkflows }: { workflows: Au
                 {CATEGORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
-            <Field label="Declencheur *" value={wfForm.trigger_description} onChange={(v) => setWfForm((f) => ({ ...f, trigger_description: v }))} placeholder="Ex: Un prospect remplit un formulaire" />
+            <TriggerPicker value={wfForm.trigger_description} onChange={(v) => setWfForm((f) => ({ ...f, trigger_description: v }))} required />
             <Field label="Description" value={wfForm.description} onChange={(v) => setWfForm((f) => ({ ...f, description: v }))} multiline />
           </div>
           <SheetFooter>
@@ -551,6 +581,51 @@ function Field({ label, value, onChange, placeholder, disabled, hint, multiline,
         <input className={cls} value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder} disabled={disabled} />
       )}
       {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+// ─── Trigger Picker ──────────────────────────────────────────────────────────
+
+function TriggerPicker({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
+  const isCustom = value !== "" && !TRIGGER_TEMPLATES.flatMap((g) => g.items).some((i) => i.value === value);
+  const [showCustom, setShowCustom] = useState(isCustom);
+
+  function handleSelect(v: string) {
+    if (v === "custom") {
+      setShowCustom(true);
+      onChange("");
+    } else {
+      setShowCustom(false);
+      onChange(v);
+    }
+  }
+
+  return (
+    <div>
+      <label className="text-sm font-medium">Declencheur{required ? " *" : ""}</label>
+      <select
+        className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+        value={showCustom ? "custom" : value}
+        onChange={(e) => handleSelect(e.target.value)}
+      >
+        <option value="">-- Choisir un declencheur --</option>
+        {TRIGGER_TEMPLATES.map((group) => (
+          <optgroup key={group.group} label={group.group}>
+            {group.items.map((item) => (
+              <option key={item.value} value={item.value}>{item.label}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      {showCustom && (
+        <input
+          className="mt-2 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Decrivez votre declencheur personnalise..."
+        />
+      )}
     </div>
   );
 }
