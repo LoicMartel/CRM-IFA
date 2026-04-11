@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Calculator, Save, FileDown, ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
 import { computeCotation, CotationRow, CotationResults, MONTH_KEYS, MONTH_LABELS, createRow, rowTotal } from "@/lib/cotation-engine";
 
@@ -296,19 +296,16 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                         </td>
                         {MONTH_KEYS.map(k => (
                           <td key={k} style={{ padding: "3px 1px", textAlign: "center" }}>
-                            <input
-                              type="text" inputMode="decimal"
-                              value={row.months[k] || ""}
-                              onChange={(e) => updateRowMonth(row.id, k, parseDecimal(e.target.value))}
-                              placeholder="0"
+                            <DecimalInput
+                              value={row.months[k] || 0}
+                              onChange={(v) => updateRowMonth(row.id, k, v)}
                               style={{
                                 width: 44, height: 32, borderRadius: 6, border: "1px solid #dce8f0",
-                                textAlign: "center", fontSize: 13, fontWeight: 700,
+                                textAlign: "center" as const, fontSize: 13, fontWeight: 700,
                                 background: (row.months[k] || 0) > 0 ? bgActive : "white",
                                 color: (row.months[k] || 0) > 0 ? color : "#8399a9",
                                 outline: "none",
                               }}
-                              onFocus={(e) => e.target.select()}
                             />
                           </td>
                         ))}
@@ -436,6 +433,49 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
+  );
+}
+
+/** Input that supports comma decimals, displays with comma, and steps by 0.5 with arrows */
+function DecimalInput({ value, onChange, style }: { value: number; onChange: (v: number) => void; style?: React.CSSProperties }) {
+  const [text, setText] = useState(value ? String(value).replace(".", ",") : "");
+  const [focused, setFocused] = useState(false);
+
+  // Sync from parent when not focused
+  useEffect(() => {
+    if (!focused) {
+      setText(value ? String(value).replace(".", ",") : "");
+    }
+  }, [value, focused]);
+
+  function commit(raw: string) {
+    const parsed = parseFloat(raw.replace(",", ".")) || 0;
+    onChange(Math.max(0, parsed));
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={focused ? text : (value ? String(value).replace(".", ",") : "")}
+      placeholder="0"
+      style={style}
+      onChange={(e) => {
+        // Allow digits, comma, dot
+        const v = e.target.value.replace(/[^0-9.,]/g, "");
+        setText(v);
+        // Live update if valid number
+        const n = parseFloat(v.replace(",", "."));
+        if (!isNaN(n)) onChange(Math.max(0, n));
+      }}
+      onFocus={(e) => { setFocused(true); e.target.select(); }}
+      onBlur={() => { setFocused(false); commit(text); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); }
+        if (e.key === "ArrowUp") { e.preventDefault(); onChange(Math.max(0, Math.round((value + 0.5) * 10) / 10)); }
+        if (e.key === "ArrowDown") { e.preventDefault(); onChange(Math.max(0, Math.round((value - 0.5) * 10) / 10)); }
+      }}
+    />
   );
 }
 
