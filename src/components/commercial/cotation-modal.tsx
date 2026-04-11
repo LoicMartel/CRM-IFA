@@ -436,45 +436,21 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
   );
 }
 
-/** Input that supports comma decimals, displays with comma, and steps by 0.5 with arrows */
+/** Number input with native spinners stepping by 0.5, supports comma entry */
 function DecimalInput({ value, onChange, style }: { value: number; onChange: (v: number) => void; style?: React.CSSProperties }) {
-  const [text, setText] = useState(value ? String(value).replace(".", ",") : "");
-  const [focused, setFocused] = useState(false);
-
-  // Sync from parent when not focused
-  useEffect(() => {
-    if (!focused) {
-      setText(value ? String(value).replace(".", ",") : "");
-    }
-  }, [value, focused]);
-
-  function commit(raw: string) {
-    const parsed = parseFloat(raw.replace(",", ".")) || 0;
-    onChange(Math.max(0, parsed));
-  }
-
   return (
     <input
-      type="text"
-      inputMode="decimal"
-      value={focused ? text : (value ? String(value).replace(".", ",") : "")}
+      type="number"
+      min={0}
+      step={0.5}
+      value={value || ""}
       placeholder="0"
       style={style}
       onChange={(e) => {
-        // Allow digits, comma, dot
-        const v = e.target.value.replace(/[^0-9.,]/g, "");
-        setText(v);
-        // Live update if valid number
-        const n = parseFloat(v.replace(",", "."));
-        if (!isNaN(n)) onChange(Math.max(0, n));
+        const v = parseFloat(e.target.value.replace(",", ".")) || 0;
+        onChange(Math.max(0, v));
       }}
-      onFocus={(e) => { setFocused(true); e.target.select(); }}
-      onBlur={() => { setFocused(false); commit(text); }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); }
-        if (e.key === "ArrowUp") { e.preventDefault(); onChange(Math.max(0, Math.round((value + 0.5) * 10) / 10)); }
-        if (e.key === "ArrowDown") { e.preventDefault(); onChange(Math.max(0, Math.round((value - 0.5) * 10) / 10)); }
-      }}
+      onFocus={(e) => e.target.select()}
     />
   );
 }
