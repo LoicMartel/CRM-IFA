@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Pencil, Trash2, DollarSign, Users, Upload, Download, FileText, X, TrendingUp, Target, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, DollarSign, Users, Upload, Download, FileText, X, TrendingUp, Target, Calendar, Zap } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -241,6 +241,31 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
     router.refresh();
   }
 
+  async function handleConsolidatePub() {
+    if (autoLines.length === 0) {
+      alert("Aucun mois a consolider. Toutes les donnees tunnel sont deja enregistrees en depenses.");
+      return;
+    }
+    const monthLabels = autoLines.map((l) => fmtMonth(l.period_start)).join(", ");
+    if (!confirm(`Enregistrer les depenses Pub pour : ${monthLabels} ?`)) return;
+    setSaving(true);
+    const supabase = createClient();
+    for (const line of autoLines) {
+      await supabase.from("marketing_expenses").insert({
+        period_start: line.period_start,
+        period_end: line.period_end,
+        provider_name: "Pub",
+        amount: line.amount,
+        rdv_done: line.rdv_done,
+        revenue: line.revenue,
+        description: "Consolide depuis suivi tunnels (VSL + Book)",
+        created_by: currentMemberId || null,
+      });
+    }
+    setSaving(false);
+    router.refresh();
+  }
+
   return (
     <>
       {/* KPIs */}
@@ -326,6 +351,12 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
             ],
             "depenses-marketing", f
           )} />
+          {autoLines.length > 0 && (
+            <Button variant="outline" onClick={handleConsolidatePub} disabled={saving}>
+              <Zap className="h-4 w-4 mr-2" />
+              Ajout dépenses Pub auto
+            </Button>
+          )}
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle dépense
