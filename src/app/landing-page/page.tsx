@@ -427,11 +427,11 @@ export default function LandingPage() {
       <footer className="bg-white border-t border-gray-100">
         <div className="mx-auto max-w-[960px] px-6 py-6 text-center text-[12px] text-[#999]">
           <div className="mb-2 flex flex-wrap justify-center gap-4">
-            <a href="#" className="transition hover:text-[#555]">Conditions générales de vente</a>
+            <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Conditions générales de vente</a>
             <span>|</span>
-            <a href="#" className="transition hover:text-[#555]">Politique de confidentialité</a>
+            <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Politique de confidentialité</a>
             <span>|</span>
-            <a href="#" className="transition hover:text-[#555]">Mentions légales</a>
+            <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Mentions légales</a>
           </div>
         </div>
       </footer>

@@ -158,9 +158,9 @@ export default function ConfirmationReservation() {
         fontSize: 11, color: "#8399a9",
         display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <span>Conditions générales de vente</span>
-        <span>Politique de confidentialité</span>
-        <span>Mentions légales</span>
+        <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions générales de vente</a>
+        <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialité</a>
+        <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions légales</a>
       </footer>
     </div>
     </>

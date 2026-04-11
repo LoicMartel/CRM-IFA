@@ -164,9 +164,9 @@ export default function ConfirmationDecouverte() {
         fontSize: 11, color: "#8399a9",
         display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <span>Conditions g&eacute;n&eacute;rales de vente</span>
-        <span>Politique de confidentialit&eacute;</span>
-        <span>Mentions l&eacute;gales</span>
+        <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions g&eacute;n&eacute;rales de vente</a>
+        <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialit&eacute;</a>
+        <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions l&eacute;gales</a>
       </footer>
     </div>
     </>
