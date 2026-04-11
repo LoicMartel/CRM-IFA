@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Plus, Pencil, Trash2 } from "lucide-react";
+import { Calculator, Plus, Pencil, Trash2, Presentation, FileText } from "lucide-react";
 import { CotationModal } from "./cotation-modal";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -93,6 +93,62 @@ export function RessourcesCommercialesView({ deals, companies, quotations }: Pro
             <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Chiffrer un accompagnement client</div>
           </div>
         </div>
+
+        {/* Sales Deck */}
+        <a
+          href="https://drive.google.com/drive/folders/1xRTBaNRlP7ZLQOtGkMxRd-tvVCwM611y"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
+            border: "1px solid #dce8f0", background: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 16,
+            transition: "all 0.15s ease", width: 320, textDecoration: "none",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FF6B35"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,107,53,0.12)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "linear-gradient(135deg, #e65100 0%, #FF6B35 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Presentation style={{ width: 24, height: 24, color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Sales Deck</div>
+            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Supports de présentation</div>
+          </div>
+        </a>
+
+        {/* Usecases */}
+        <a
+          href="https://drive.google.com/drive/folders/1GaDw6mswk39rjLTVhEDlqe8gJxf2VNSI"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
+            border: "1px solid #dce8f0", background: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            display: "flex", alignItems: "center", gap: 16,
+            transition: "all 0.15s ease", width: 320, textDecoration: "none",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#27ae60"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(39,174,96,0.12)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "linear-gradient(135deg, #1e8449 0%, #27ae60 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <FileText style={{ width: 24, height: 24, color: "white" }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Usecases</div>
+            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Cas clients et témoignages</div>
+          </div>
+        </a>
       </div>
 
       {/* Saved quotations list */}
