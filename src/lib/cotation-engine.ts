@@ -33,6 +33,8 @@ export interface CotationResults {
   totalHt: number;
   hourlyRateFormation: number;
   hourlyRatePerLearner: number;
+  hourlyRateMobilisationLca: number;
+  hourlyRateMobilisationLcaPerLearner: number;
 }
 
 export const MONTH_KEYS = ["janv", "fevr", "mars", "avr", "mai", "juin", "juil", "aout", "sept", "oct", "nov", "dec"] as const;
@@ -92,6 +94,12 @@ export function computeCotation(params: CotationParams): CotationResults {
   const hourlyRatePerLearner = formationHours > 0 && nbLearners > 0
     ? totalHt / (formationHours * nbLearners) : 0;
 
+  // Taux mobilisation LCA hors THR = pédagogie LCA (excl. frais client & fournitures) / heures mobilisation
+  const totalLcaPedagogie = costPresentielLca + costVtLca + costPrep + costTravel + costRiseUp;
+  const hourlyRateMobilisationLca = mobilisationHours > 0 ? totalLcaPedagogie / mobilisationHours : 0;
+  const hourlyRateMobilisationLcaPerLearner = mobilisationHours > 0 && nbLearners > 0
+    ? totalLcaPedagogie / (mobilisationHours * nbLearners) : 0;
+
   return {
     totalPresentielDays, totalVtSessions,
     presentielHours, vtHours, formationHours, prepHours, travelHours,
@@ -99,5 +107,6 @@ export function computeCotation(params: CotationParams): CotationResults {
     costPresentielLca, costVtLca, costPrep, costTravel,
     costPresentielClient, costFournitures, costRiseUp,
     totalHt, hourlyRateFormation, hourlyRatePerLearner,
+    hourlyRateMobilisationLca, hourlyRateMobilisationLcaPerLearner,
   };
 }

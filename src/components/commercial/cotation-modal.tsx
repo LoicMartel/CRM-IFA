@@ -372,6 +372,9 @@ export function CotationModal({ open, onClose, deals, companies, editQuotation, 
                 <div style={{ borderTop: "1px solid #e8ecf1", margin: "4px 0" }} />
                 <ResultRow label="Taux horaire formation" value={fmtE(results.hourlyRateFormation)} />
                 <ResultRow label="Taux horaire / apprenant" value={fmtE(results.hourlyRatePerLearner)} />
+                <div style={{ borderTop: "1px solid #e8ecf1", margin: "4px 0" }} />
+                <ResultRow label="Taux mobilisation LCA hors THR" value={fmtE(results.hourlyRateMobilisationLca)} bold />
+                <ResultRow label="Taux mobilisation LCA / apprenant" value={fmtE(results.hourlyRateMobilisationLcaPerLearner)} />
               </div>
             </div>
           </div>
@@ -578,8 +581,8 @@ function generatePrintHtml(
     ${results.costFournitures > 0 ? `<div class="result-row"><span>Fournitures</span><span>${fE(results.costFournitures)}</span></div>` : ""}
     ${form.nbRiseUp > 0 ? `<div class="result-row"><span>Rise Up</span><span>${fE(results.costRiseUp)}</span></div>` : ""}
     <div class="total-row"><span>Total HT</span><span class="total-value">${fE(results.totalHt)}</span></div>
-    <div class="result-row"><span>Taux horaire formation</span><span>${fE(results.hourlyRateFormation)}</span></div>
-    <div class="result-row"><span>Taux horaire / apprenant</span><span>${fE(results.hourlyRatePerLearner)}</span></div>
+    <div class="result-row bold"><span>Taux mobilisation LCA hors THR</span><span>${fE(results.hourlyRateMobilisationLca)}</span></div>
+    <div class="result-row"><span>Taux mobilisation LCA / apprenant</span><span>${fE(results.hourlyRateMobilisationLcaPerLearner)}</span></div>
   </div>
 </div>
 
