@@ -106,13 +106,13 @@ export async function getCalendarEventsAllPages({
   timeMin: string;
   timeMax: string;
   timeZone?: string;
-}): Promise<{ events: { start: string; end: string }[]; error?: string }> {
+}): Promise<{ events: { start: string; end: string; summary?: string }[]; error?: string }> {
   const auth = getAuth();
   if (!auth) return { events: [], error: "Google Calendar not configured" };
 
   try {
     const calendar = google.calendar({ version: "v3", auth });
-    const events: { start: string; end: string }[] = [];
+    const events: { start: string; end: string; summary?: string }[] = [];
     let pageToken: string | undefined;
 
     do {
@@ -129,13 +129,14 @@ export async function getCalendarEventsAllPages({
 
       for (const e of res.data.items ?? []) {
         if (e.start?.dateTime && e.end?.dateTime) {
-          events.push({ start: e.start.dateTime, end: e.end.dateTime });
+          events.push({ start: e.start.dateTime, end: e.end.dateTime, summary: e.summary ?? undefined });
         } else if (e.start?.date) {
           const startDate = e.start.date;
           const endDate = e.end?.date ?? e.start.date;
           events.push({
             start: `${startDate}T00:00:00+00:00`,
             end: `${endDate}T23:59:59+00:00`,
+            summary: e.summary ?? undefined,
           });
         }
       }

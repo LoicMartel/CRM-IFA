@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle, Users, Star, ChevronLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle, Users, Star, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
+import { DayTimeline } from "./day-timeline";
 
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
@@ -18,31 +19,6 @@ const CITY_REGION: Record<string, string> = {
   Grenoble: "Auvergne-Rhône-Alpes", Angers: "Pays de la Loire",
   Toulon: "Provence-Alpes-Côte d'Azur", Brest: "Bretagne",
 };
-
-interface ProposedSession {
-  session_type: "vt" | "journee";
-  session_date: string;
-  session_time: string;
-  duration_hours: number;
-  trainer_name: string;
-  session_location: string | null;
-  warning?: string;
-}
-
-interface PlanificateurResult {
-  success: boolean;
-  proposedSessions: ProposedSession[];
-  selectedTrainer: {
-    name: string; firstName: string; score: number; hasExpertise: boolean;
-    sameRegion: boolean; budgetOk: boolean; tjm: number; totalHT: number;
-    availabilityPct: number; coveredSessions: number; totalSessions: number;
-  };
-  alternativeTrainers: { name: string; coveredSessions: number; totalSessions: number }[];
-  warnings: string[];
-  aiRecommendation?: string;
-  existingExpertName?: string | null;
-  error?: string;
-}
 
 interface ExpertData {
   id: string;
@@ -79,6 +55,45 @@ interface PlanOption {
   learnerIds: string[];
 }
 
+interface SessionMeta {
+  index: number;
+  total: number;
+  session_type: "vt" | "journee";
+  duration_hours: number;
+  session_location: string | null;
+}
+
+interface Proposal {
+  session_date: string;
+  session_time: string;
+  duration_hours: number;
+  trainer_name: string;
+  trainer_id: string;
+  warning?: string;
+}
+
+interface TrainerCalendar {
+  trainerName: string;
+  trainerId: string;
+  events: { start: string; end: string; summary?: string }[];
+}
+
+interface ConfirmedSession {
+  sessionId: string;
+  index: number;
+  session_type: "vt" | "journee";
+  session_date: string;
+  session_time: string;
+  duration_hours: number;
+  trainer_name: string;
+}
+
+interface AllSessionSummary {
+  index: number;
+  session_type: "vt" | "journee";
+  duration_hours: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -88,32 +103,37 @@ interface Props {
     city?: string; budget?: number; journeeLocation?: string;
   };
   learnerIds?: string[];
-  onCreateSession?: (session: ProposedSession, planId: string) => void;
+  onSessionsCreated?: () => void;
   plans?: PlanOption[];
 }
 
-const LOADING_MESSAGES = [
-  "Scan des agendas Google Calendar...",
-  "Vérification des disponibilités...",
-  "Génération du planning optimal...",
-  "Optimisation IA en cours...",
-];
-
-export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefill, learnerIds: initialLearnerIds = [], onCreateSession, plans = [] }: Props) {
+export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefill, learnerIds: initialLearnerIds = [], onSessionsCreated, plans = [] }: Props) {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(initialPlanId ?? null);
   const planId = selectedPlanId || initialPlanId;
   const selectedPlan = plans.find(p => p.id === planId);
   const learnerIds = selectedPlan?.learnerIds ?? initialLearnerIds;
-  const [step, setStep] = useState<"form" | "experts" | "loading" | "results">("form");
-  const [loadingMsg, setLoadingMsg] = useState(0);
-  const [result, setResult] = useState<PlanificateurResult | null>(null);
-  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [step, setStep] = useState<"form" | "experts" | "scheduling">("form");
 
   // Expert selection state
   const [expertLoading, setExpertLoading] = useState(false);
   const [recommendedExperts, setRecommendedExperts] = useState<ExpertData[]>([]);
   const [otherExperts, setOtherExperts] = useState<ExpertData[]>([]);
   const [selectedTrainerIds, setSelectedTrainerIds] = useState<Set<string>>(new Set());
+  const [existingExpertInfo, setExistingExpertInfo] = useState<{ name: string; id: string } | null>(null);
+  const [hasJournees, setHasJournees] = useState(false);
+  const [dismissedExpertAlert, setDismissedExpertAlert] = useState(false);
+
+  // Scheduling state
+  const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
+  const [sessionMeta, setSessionMeta] = useState<SessionMeta | null>(null);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [trainerCalendars, setTrainerCalendars] = useState<TrainerCalendar[]>([]);
+  const [confirmedSessions, setConfirmedSessions] = useState<ConfirmedSession[]>([]);
+  const [selectedProposalIndex, setSelectedProposalIndex] = useState<number | null>(null);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+  const [savingSession, setSavingSession] = useState(false);
+  const [allSessions, setAllSessions] = useState<AllSessionSummary[]>([]);
+  const [schedulingDone, setSchedulingDone] = useState(false);
 
   const [form, setForm] = useState({
     clientAvailableDays: [] as string[],
@@ -141,14 +161,6 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
     }));
   }
 
-  function toggleSession(idx: number) {
-    setSelectedIndices(prev => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx); else next.add(idx);
-      return next;
-    });
-  }
-
   function toggleTrainer(id: string) {
     setSelectedTrainerIds(prev => {
       const next = new Set(prev);
@@ -169,31 +181,47 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           city: form.city,
           budget: form.budget,
           daysCount: form.daysCount,
+          planId,
         }),
       });
       const data = await res.json();
       if (data.success) {
         setRecommendedExperts(data.recommended);
         setOtherExperts(data.others);
-        // Pre-select the 2 recommended experts
+        setExistingExpertInfo(data.existingExpertInfo || null);
+        setHasJournees(data.hasJournees ?? (parseInt(form.daysCount) > 0));
+        setDismissedExpertAlert(false);
         const preSelected = new Set<string>(data.recommended.map((e: ExpertData) => e.id));
+        // If existing expert found, pre-select them
+        if (data.existingExpertInfo) {
+          preSelected.add(data.existingExpertInfo.id);
+        }
         setSelectedTrainerIds(preSelected);
         setStep("experts");
       }
     } catch {
-      // fallback: go directly to generate without expert selection
+      // fallback
     } finally {
       setExpertLoading(false);
     }
   }
 
-  // Step 2 → Step 3/4: Generate planning with selected trainers
-  async function handleGenerate() {
-    setStep("loading");
-    setLoadingMsg(0);
-    const interval = setInterval(() => {
-      setLoadingMsg(prev => (prev + 1) % LOADING_MESSAGES.length);
-    }, 1500);
+  // Step 2 → Step 3: Start scheduling
+  async function handleStartScheduling() {
+    setStep("scheduling");
+    setCurrentSessionIndex(0);
+    setConfirmedSessions([]);
+    setSchedulingDone(false);
+    await fetchProposals(0);
+  }
+
+  // Fetch proposals for a given session index
+  async function fetchProposals(sessionIdx: number) {
+    setLoadingProposals(true);
+    setSelectedProposalIndex(null);
+    setProposals([]);
+    setTrainerCalendars([]);
+    setSessionMeta(null);
 
     try {
       const res = await fetch("/api/planificateur/generate", {
@@ -215,25 +243,153 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           startDate: form.startDate,
           endDate: form.endDate,
           selectedTrainerIds: Array.from(selectedTrainerIds),
+          sessionIndex: sessionIdx,
+          alreadyBooked: confirmedSessions.map(s => ({
+            session_date: s.session_date,
+            session_time: s.session_time,
+            duration_hours: s.duration_hours,
+            session_type: s.session_type,
+            trainer_name: s.trainer_name,
+          })),
         }),
       });
-      const data: PlanificateurResult = await res.json();
-      setResult(data);
+      const data = await res.json();
       if (data.success) {
-        setSelectedIndices(new Set(data.proposedSessions.map((_, i) => i)));
+        if (data.done) {
+          setSchedulingDone(true);
+        } else {
+          setSessionMeta(data.sessionMeta);
+          setProposals(data.proposals);
+          setTrainerCalendars(data.trainerCalendars);
+          if (data.allSessions) setAllSessions(data.allSessions);
+        }
       }
-      setStep("results");
     } catch {
-      setResult({ success: false, error: "Erreur réseau", proposedSessions: [], selectedTrainer: {} as any, alternativeTrainers: [], warnings: [] });
-      setStep("results");
+      // network error
     } finally {
-      clearInterval(interval);
+      setLoadingProposals(false);
     }
   }
 
-  function handleOpenSession(session: ProposedSession) {
-    if (!planId || !onCreateSession) return;
-    onCreateSession(session, planId);
+  // Validate selected proposal → save session
+  async function handleConfirmSession() {
+    if (selectedProposalIndex === null || !sessionMeta) return;
+    const proposal = proposals[selectedProposalIndex];
+    if (!proposal || !planId) return;
+
+    setSavingSession(true);
+    try {
+      const res = await fetch("/api/planificateur/save-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_plan_id: planId,
+          session_type: sessionMeta.session_type,
+          session_date: proposal.session_date,
+          session_time: proposal.session_time,
+          duration_hours: sessionMeta.duration_hours,
+          session_location: sessionMeta.session_location,
+          trainer_name: proposal.trainer_name,
+          learner_ids: learnerIds,
+          is_billable: true,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const confirmed: ConfirmedSession = {
+          sessionId: data.sessionId,
+          index: currentSessionIndex,
+          session_type: sessionMeta.session_type,
+          session_date: proposal.session_date,
+          session_time: proposal.session_time,
+          duration_hours: sessionMeta.duration_hours,
+          trainer_name: proposal.trainer_name,
+        };
+        const newConfirmed = [...confirmedSessions, confirmed];
+        setConfirmedSessions(newConfirmed);
+
+        // Move to next session
+        const nextIndex = currentSessionIndex + 1;
+        setCurrentSessionIndex(nextIndex);
+        // Need to pass updated confirmed list for the next fetch
+        await fetchProposalsWithConfirmed(nextIndex, newConfirmed);
+      }
+    } catch {
+      // error handling
+    } finally {
+      setSavingSession(false);
+    }
+  }
+
+  // Fetch proposals with explicit confirmed list (needed because state update is async)
+  async function fetchProposalsWithConfirmed(sessionIdx: number, confirmed: ConfirmedSession[]) {
+    setLoadingProposals(true);
+    setSelectedProposalIndex(null);
+    setProposals([]);
+    setTrainerCalendars([]);
+    setSessionMeta(null);
+
+    try {
+      const res = await fetch("/api/planificateur/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          expertise: form.expertise,
+          city: form.city,
+          budget: form.budget,
+          clientAvailableDays: form.clientAvailableDays,
+          vtRhythm: form.vtRhythm,
+          vtTimeSlot: `${form.vtTimeFrom}-${form.vtTimeTo}`,
+          vtDuration: form.vtDuration,
+          vtCount: form.vtCount,
+          journeeRhythm: form.journeeRhythm,
+          journeeLocation: form.journeeLocation,
+          daysCount: form.daysCount,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          selectedTrainerIds: Array.from(selectedTrainerIds),
+          sessionIndex: sessionIdx,
+          alreadyBooked: confirmed.map(s => ({
+            session_date: s.session_date,
+            session_time: s.session_time,
+            duration_hours: s.duration_hours,
+            session_type: s.session_type,
+            trainer_name: s.trainer_name,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.done) {
+          setSchedulingDone(true);
+        } else {
+          setSessionMeta(data.sessionMeta);
+          setProposals(data.proposals);
+          setTrainerCalendars(data.trainerCalendars);
+          if (data.allSessions) setAllSessions(data.allSessions);
+        }
+      }
+    } catch {
+      // network error
+    } finally {
+      setLoadingProposals(false);
+    }
+  }
+
+  // Skip current session
+  async function handleSkipSession() {
+    const nextIndex = currentSessionIndex + 1;
+    setCurrentSessionIndex(nextIndex);
+    await fetchProposalsWithConfirmed(nextIndex, confirmedSessions);
+  }
+
+  // Close with confirmation if sessions remain
+  function handleClose() {
+    if (confirmedSessions.length > 0) {
+      onSessionsCreated?.();
+    }
+    onClose();
   }
 
   if (!open) return null;
@@ -244,30 +400,31 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
     catch { return d; }
   };
   const formationRegion = CITY_REGION[form.city] ?? "";
-  const allExperts = [...recommendedExperts, ...otherExperts];
+  const totalSessions = sessionMeta?.total ?? allSessions.length;
 
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 900, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
+      <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: step === "scheduling" ? 1100 : 900, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto", transition: "max-width 0.3s ease" }}>
         {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
             <CalendarPlus style={{ width: 18, height: 18, color: "#1a6b9c" }} />
             Planificateur intelligent
             {step === "experts" && <span style={{ fontSize: 12, fontWeight: 500, color: "#8399a9" }}> — Sélection des formateurs</span>}
+            {step === "scheduling" && <span style={{ fontSize: 12, fontWeight: 500, color: "#8399a9" }}> — Planification des sessions</span>}
           </h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>
+          <button onClick={handleClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 20 }}>
             <X style={{ width: 20, height: 20 }} />
           </button>
         </div>
 
-        {/* Step 1: Form */}
+        {/* ═══════════ Step 1: Form ═══════════ */}
         {step === "form" && (
           <div style={{ padding: 24 }} className="space-y-5">
-            {/* Plan selector (when opened from global button) */}
+            {/* Plan selector */}
             {plans.length > 0 && !initialPlanId && (
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
@@ -450,7 +607,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* Generate button */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 }}>
-              <button onClick={onClose} style={{ height: 40, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>
+              <button onClick={handleClose} style={{ height: 40, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>
                 Annuler
               </button>
               <button
@@ -472,9 +629,42 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           </div>
         )}
 
-        {/* Step 2: Expert Selection */}
+        {/* ═══════════ Step 2: Expert Selection ═══════════ */}
         {step === "experts" && (
           <div style={{ padding: 24 }} className="space-y-5">
+            {/* Existing expert alert */}
+            {existingExpertInfo && !dismissedExpertAlert && (
+              <div style={{ padding: 14, borderRadius: 10, background: "#fff3e0", border: "1px solid #ffb74d" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <AlertTriangle style={{ width: 16, height: 16, color: "#e65100" }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#e65100" }}>
+                    Expert déjà assigné : {existingExpertInfo.name}
+                  </span>
+                </div>
+                <p style={{ fontSize: 12, color: "#5a6f80", margin: "0 0 10px" }}>
+                  Ce client ou ses apprenants travaillent déjà avec <strong>{existingExpertInfo.name}</strong>.
+                </p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => {
+                      // Auto-select only this expert
+                      setSelectedTrainerIds(new Set([existingExpertInfo!.id]));
+                      setDismissedExpertAlert(true);
+                    }}
+                    style={{ height: 30, borderRadius: 6, border: "2px solid #e65100", background: "white", color: "#e65100", fontSize: 11, fontWeight: 700, padding: "0 14px", cursor: "pointer" }}
+                  >
+                    Garder {existingExpertInfo.name}
+                  </button>
+                  <button
+                    onClick={() => setDismissedExpertAlert(true)}
+                    style={{ height: 30, borderRadius: 6, border: "1px solid #dce8f0", background: "white", color: "#5a6f80", fontSize: 11, fontWeight: 600, padding: "0 14px", cursor: "pointer" }}
+                  >
+                    Choisir un autre expert
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Recommended experts */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#2e7d32", borderBottom: "1px solid #c8e6c9", paddingBottom: 4, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
@@ -493,6 +683,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                       isRecommended
                       isSelected={selectedTrainerIds.has(expert.id)}
                       onToggle={() => toggleTrainer(expert.id)}
+                      showRegion={hasJournees}
                     />
                   ))}
                 </div>
@@ -514,6 +705,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                       isRecommended={false}
                       isSelected={selectedTrainerIds.has(expert.id)}
                       onToggle={() => toggleTrainer(expert.id)}
+                      showRegion={hasJournees}
                     />
                   ))}
                 </div>
@@ -530,7 +722,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                   {selectedTrainerIds.size} formateur{selectedTrainerIds.size > 1 ? "s" : ""} sélectionné{selectedTrainerIds.size > 1 ? "s" : ""}
                 </span>
                 <button
-                  onClick={handleGenerate}
+                  onClick={handleStartScheduling}
                   disabled={selectedTrainerIds.size === 0}
                   style={{
                     height: 40, borderRadius: 8, border: "none", padding: "0 24px",
@@ -540,7 +732,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                   }}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <CalendarPlus style={{ width: 14, height: 14 }} /> Générer le planning
+                    <CalendarPlus style={{ width: 14, height: 14 }} /> Planifier les sessions
                   </span>
                 </button>
               </div>
@@ -548,203 +740,299 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           </div>
         )}
 
-        {/* Step 3: Loading */}
-        {step === "loading" && (
-          <div style={{ padding: "60px 24px", textAlign: "center" }}>
-            <Loader2 style={{ width: 40, height: 40, color: "#1a6b9c", margin: "0 auto 20px", animation: "spin 1s linear infinite" }} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: "#1a2a3a", marginBottom: 8 }}>
-              {LOADING_MESSAGES[loadingMsg]}
-            </p>
-            <p style={{ fontSize: 12, color: "#8399a9" }}>
-              Analyse des agendas de {selectedTrainerIds.size} formateur{selectedTrainerIds.size > 1 ? "s" : ""}...
-            </p>
+        {/* ═══════════ Step 3: Session-by-Session Scheduling ═══════════ */}
+        {step === "scheduling" && (
+          <div style={{ padding: 24 }}>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
 
-        {/* Step 4: Results */}
-        {step === "results" && result && (
-          <div style={{ padding: 24 }} className="space-y-5">
-            {!result.success ? (
-              <div style={{ padding: 20, textAlign: "center", color: "#e74c3c" }}>
-                <AlertTriangle style={{ width: 32, height: 32, margin: "0 auto 12px" }} />
-                <p style={{ fontSize: 15, fontWeight: 600 }}>{result.error || "Erreur lors de la génération"}</p>
-                <button onClick={() => setStep("experts")} style={{ marginTop: 16, height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>
-                  Retour à la sélection
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Trainer recommendation */}
-                <div style={{ padding: 16, borderRadius: 10, background: "linear-gradient(135deg, #e8f5e9 0%, #f0f7fb 100%)", border: "1px solid #c8e6c9" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <CheckCircle style={{ width: 18, height: 18, color: "#2e7d32" }} />
-                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#2e7d32" }}>Expert principal</span>
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1a2a3a" }}>
-                    {result.selectedTrainer.name} — Score : {result.selectedTrainer.score}/3 — Coût : {fmtE(result.selectedTrainer.totalHT)}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#5a6f80", marginTop: 4 }}>
-                    Disponibilité : {result.selectedTrainer.availabilityPct}% ({result.selectedTrainer.coveredSessions}/{result.selectedTrainer.totalSessions} sessions)
-                    {result.selectedTrainer.hasExpertise && " · Expertise ✓"}
-                    {result.selectedTrainer.sameRegion && " · Même région ✓"}
-                    {result.selectedTrainer.budgetOk && " · Budget OK ✓"}
-                  </div>
+            {/* Completion screen */}
+            {schedulingDone && (
+              <div className="space-y-5">
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <CheckCircle style={{ width: 48, height: 48, color: "#2e7d32", margin: "0 auto 16px" }} />
+                  <h4 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", margin: "0 0 8px" }}>
+                    Planification terminée
+                  </h4>
+                  <p style={{ fontSize: 13, color: "#5a6f80" }}>
+                    {confirmedSessions.length} session{confirmedSessions.length > 1 ? "s" : ""} planifiée{confirmedSessions.length > 1 ? "s" : ""} avec succès.
+                  </p>
                 </div>
 
-                {/* Alternative trainers used */}
-                {result.alternativeTrainers.length > 0 && result.alternativeTrainers.some(t => t.coveredSessions > 0) && (
-                  <div style={{ padding: 12, borderRadius: 8, background: "#f0f7fb", border: "1px solid #bdd7ee" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", marginBottom: 4 }}>Formateurs complémentaires</div>
-                    {result.alternativeTrainers.filter(t => t.coveredSessions > 0).map((t, i) => (
-                      <div key={i} style={{ fontSize: 12, color: "#5a6f80" }}>
-                        {t.name} — {t.coveredSessions} session{t.coveredSessions > 1 ? "s" : ""}
-                      </div>
-                    ))}
+                {/* Summary table */}
+                {confirmedSessions.length > 0 && (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ background: "#f8fbfd" }}>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>#</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Heure</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Durée</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {confirmedSessions.map((s, i) => (
+                          <tr key={i} style={{ borderTop: "1px solid #e8ecf1" }}>
+                            <td style={{ padding: "8px 10px", color: "#8399a9" }}>{i + 1}</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 600 }}>{fmtDate(s.session_date)}</td>
+                            <td style={{ padding: "8px 6px", textAlign: "center" }}>
+                              <span style={{
+                                fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
+                                background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
+                                color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                              }}>
+                                {s.session_type === "vt" ? "VT" : "Journée"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.session_time}</td>
+                            <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.duration_hours}h</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.trainer_name}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
-                {/* Existing expert alert */}
-                {result.existingExpertName && result.existingExpertName !== result.selectedTrainer.firstName && (
-                  <div style={{ padding: 14, borderRadius: 10, background: "#fff3e0", border: "1px solid #ffb74d" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <AlertTriangle style={{ width: 16, height: 16, color: "#e65100" }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#e65100" }}>Expert déjà assigné : {result.existingExpertName}</span>
-                    </div>
-                    <p style={{ fontSize: 12, color: "#5a6f80", margin: "0 0 10px" }}>
-                      Ce client travaille déjà avec <strong>{result.existingExpertName}</strong>. Le planificateur a généré avec <strong>{result.selectedTrainer.firstName}</strong> selon votre sélection.
-                    </p>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        onClick={() => {
-                          if (!result) return;
-                          const updated = { ...result, proposedSessions: result.proposedSessions.map(s => ({ ...s, trainer_name: result.existingExpertName!, warning: undefined })) };
-                          setResult(updated);
-                        }}
-                        style={{ height: 30, borderRadius: 6, border: "2px solid #e65100", background: "white", color: "#e65100", fontSize: 11, fontWeight: 700, padding: "0 14px", cursor: "pointer" }}
-                      >
-                        Garder {result.existingExpertName}
-                      </button>
-                      <button
-                        onClick={() => {}}
-                        style={{ height: 30, borderRadius: 6, border: "1px solid #dce8f0", background: "white", color: "#5a6f80", fontSize: 11, fontWeight: 600, padding: "0 14px", cursor: "pointer" }}
-                        disabled
-                      >
-                        Garder {result.selectedTrainer.firstName} (sélectionné)
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div style={{ display: "flex", justifyContent: "center", paddingTop: 8 }}>
+                  <button
+                    onClick={handleClose}
+                    style={{
+                      height: 40, borderRadius: 8, border: "none", padding: "0 24px",
+                      background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                      color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >
+                    Fermer
+                  </button>
+                </div>
+              </div>
+            )}
 
-                {result.existingExpertName && result.existingExpertName === result.selectedTrainer.firstName && (
-                  <div style={{ padding: 12, borderRadius: 8, background: "#e8f5e9", borderLeft: "4px solid #27ae60" }}>
-                    <span style={{ fontSize: 12, color: "#2e7d32", fontWeight: 600 }}>
-                      L&apos;expert déjà assigné ({result.existingExpertName}) correspond à l&apos;expert sélectionné.
+            {/* Active scheduling */}
+            {!schedulingDone && (
+              <div className="space-y-5">
+                {/* Progress bar */}
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a" }}>
+                        Session {currentSessionIndex + 1}/{totalSessions}
+                      </span>
+                      {sessionMeta && (
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
+                          background: sessionMeta.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
+                          color: sessionMeta.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                        }}>
+                          {sessionMeta.session_type === "vt" ? `VT (${sessionMeta.duration_hours}h)` : "Journée (8h)"}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 11, color: "#8399a9" }}>
+                      {confirmedSessions.length} validée{confirmedSessions.length > 1 ? "s" : ""}
                     </span>
                   </div>
-                )}
-
-                {/* Warnings */}
-                {result.warnings.length > 0 && (
-                  <div style={{ padding: 12, borderRadius: 8, background: "#fff8e1", borderLeft: "4px solid #f59e0b" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#e65100", marginBottom: 4 }}>Points d&apos;attention</div>
-                    {result.warnings.map((w, i) => (
-                      <div key={i} style={{ fontSize: 11, color: "#e65100", marginBottom: 2 }}>{"•"} {w}</div>
-                    ))}
+                  <div style={{ height: 6, background: "#e8ecf1", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 3,
+                      background: "linear-gradient(90deg, #1a6b9c, #2e7d32)",
+                      width: totalSessions > 0 ? `${(confirmedSessions.length / totalSessions) * 100}%` : "0%",
+                      transition: "width 0.3s ease",
+                    }} />
                   </div>
-                )}
-
-                {/* AI Recommendation */}
-                {result.aiRecommendation && (
-                  <div style={{ padding: 14, borderRadius: 10, background: "#f0f7fb", border: "1px solid #bdd7ee" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#1a6b9c", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                      Recommandation IA
+                  {/* Session mini-dots */}
+                  {allSessions.length > 0 && allSessions.length <= 20 && (
+                    <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                      {allSessions.map((s, i) => {
+                        const isConfirmed = confirmedSessions.some(c => c.index === i);
+                        const isCurrent = i === currentSessionIndex && !schedulingDone;
+                        return (
+                          <div key={i} style={{
+                            width: 24, height: 24, borderRadius: 6, display: "flex",
+                            alignItems: "center", justifyContent: "center",
+                            fontSize: 9, fontWeight: 700,
+                            background: isConfirmed ? "#e8f5e9" : isCurrent ? "#e8f0fe" : "#f5f5f5",
+                            border: isCurrent ? "2px solid #1a6b9c" : isConfirmed ? "1px solid #c8e6c9" : "1px solid #e8ecf1",
+                            color: isConfirmed ? "#2e7d32" : isCurrent ? "#1a6b9c" : "#8399a9",
+                          }}>
+                            {isConfirmed ? "✓" : s.session_type === "vt" ? "V" : "J"}
+                          </div>
+                        );
+                      })}
                     </div>
-                    <p style={{ fontSize: 13, color: "#1a2a3a", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" }}>{result.aiRecommendation}</p>
+                  )}
+                </div>
+
+                {/* Loading state */}
+                {loadingProposals && (
+                  <div style={{ padding: "40px 24px", textAlign: "center" }}>
+                    <Loader2 style={{ width: 32, height: 32, color: "#1a6b9c", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>Recherche des créneaux disponibles...</p>
                   </div>
                 )}
 
-                {/* Sessions table */}
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
-                  Planning proposé ({result.proposedSessions.length} sessions)
-                </div>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                    <thead>
-                      <tr style={{ background: "#f8fbfd" }}>
-                        <th style={{ padding: "8px 6px", textAlign: "center", width: 30 }}>
-                          <input
-                            type="checkbox"
-                            checked={selectedIndices.size === result.proposedSessions.length}
-                            onChange={() => {
-                              if (selectedIndices.size === result.proposedSessions.length) {
-                                setSelectedIndices(new Set());
-                              } else {
-                                setSelectedIndices(new Set(result.proposedSessions.map((_, i) => i)));
+                {/* Proposals + Calendar */}
+                {!loadingProposals && proposals.length > 0 && sessionMeta && (
+                  <div style={{ display: "flex", gap: 20 }}>
+                    {/* Calendar view */}
+                    <div style={{ flex: "1 1 55%", minWidth: 0 }}>
+                      {/* Show timeline for each unique proposal date */}
+                      {[...new Set(proposals.map(p => p.session_date))].map(date => (
+                        <div key={date} style={{ marginBottom: 16 }}>
+                          <DayTimeline
+                            date={date}
+                            trainers={trainerCalendars.map(tc => ({
+                              name: tc.trainerName,
+                              events: tc.events,
+                            }))}
+                            proposals={proposals.map((p, idx) => ({
+                              time: p.session_time,
+                              duration: p.duration_hours,
+                              trainerName: p.trainer_name,
+                              isSelected: selectedProposalIndex === idx,
+                            })).filter(p => {
+                              const proposalForDate = proposals.find(pr => pr.session_date === date && pr.session_time === p.time && pr.trainer_name === p.trainerName);
+                              return !!proposalForDate;
+                            })}
+                            onSelectProposal={(localIdx) => {
+                              // Map local index back to global proposal index
+                              const dateProposals = proposals
+                                .map((p, idx) => ({ ...p, globalIdx: idx }))
+                                .filter(p => p.session_date === date);
+                              if (dateProposals[localIdx]) {
+                                setSelectedProposalIndex(dateProposals[localIdx].globalIdx);
                               }
                             }}
                           />
-                        </th>
-                        <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
-                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Heure</th>
-                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Durée</th>
-                        <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
-                        <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Lieu</th>
-                        <th style={{ padding: "8px 6px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Note</th>
-                        <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {result.proposedSessions.map((s, i) => (
-                        <tr key={i} style={{ borderTop: "1px solid #e8ecf1", background: s.warning ? "#fff8e1" : "white" }}>
-                          <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                            <input type="checkbox" checked={selectedIndices.has(i)} onChange={() => toggleSession(i)} />
-                          </td>
-                          <td style={{ padding: "8px 10px", fontWeight: 600 }}>{fmtDate(s.session_date)}</td>
-                          <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                            <span style={{
-                              fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
-                              background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
-                              color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
-                            }}>
-                              {s.session_type === "vt" ? "VT" : "Journée"}
-                            </span>
-                          </td>
-                          <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.session_time}</td>
-                          <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.duration_hours}h</td>
-                          <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.trainer_name}</td>
-                          <td style={{ padding: "8px 10px", color: "#5a6f80", fontSize: 11 }}>{s.session_location || "Visio"}</td>
-                          <td style={{ padding: "8px 6px", fontSize: 10, color: "#e65100" }}>{s.warning || ""}</td>
-                          <td style={{ padding: "8px 6px", textAlign: "center" }}>
-                            <button
-                              onClick={() => handleOpenSession(s)}
-                              disabled={!planId || !onCreateSession}
-                              style={{
-                                height: 26, borderRadius: 6, border: "none", padding: "0 10px",
-                                background: "#1a6b9c", color: "white", fontSize: 10, fontWeight: 700,
-                                cursor: "pointer", opacity: (!planId || !onCreateSession) ? 0.4 : 1,
-                              }}
-                            >
-                              Créer
-                            </button>
-                          </td>
-                        </tr>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
 
-                {/* Actions */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
-                  <button onClick={() => setStep("experts")} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                    <ChevronLeft style={{ width: 14, height: 14 }} /> Changer les formateurs
-                  </button>
-                  <p style={{ fontSize: 11, color: "#8399a9", margin: 0 }}>
-                    Cliquez sur &quot;Créer&quot; pour ouvrir le formulaire de chaque session pré-rempli.
-                  </p>
-                </div>
-              </>
+                    {/* Proposal cards */}
+                    <div style={{ flex: "1 1 45%", minWidth: 280 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 12 }}>
+                        Créneaux proposés
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {proposals.map((p, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedProposalIndex(idx)}
+                            style={{
+                              padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                              border: selectedProposalIndex === idx ? "2px solid #2e7d32" : "1px solid #dce8f0",
+                              background: selectedProposalIndex === idx ? "#f1f8f1" : "white",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", textTransform: "capitalize" }}>
+                                  {fmtDate(p.session_date)}
+                                </div>
+                                <div style={{ fontSize: 13, color: "#5a6f80", marginTop: 2 }}>
+                                  {p.session_time} — {p.duration_hours}h
+                                </div>
+                              </div>
+                              <div style={{ textAlign: "right" }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c" }}>
+                                  {p.trainer_name}
+                                </div>
+                                {p.warning && (
+                                  <div style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>
+                                    {p.warning}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {selectedProposalIndex === idx && (
+                              <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #e8ecf1", display: "flex", alignItems: "center", gap: 6 }}>
+                                <CheckCircle style={{ width: 14, height: 14, color: "#2e7d32" }} />
+                                <span style={{ fontSize: 11, fontWeight: 600, color: "#2e7d32" }}>Sélectionné</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No proposals */}
+                {!loadingProposals && proposals.length === 0 && !schedulingDone && sessionMeta && (
+                  <div style={{ padding: 20, textAlign: "center", color: "#e65100" }}>
+                    <AlertTriangle style={{ width: 32, height: 32, margin: "0 auto 12px" }} />
+                    <p style={{ fontSize: 14, fontWeight: 600 }}>Aucun créneau disponible pour cette session.</p>
+                    <p style={{ fontSize: 12, color: "#5a6f80", marginTop: 4 }}>
+                      Essayez de modifier les critères ou la période de formation.
+                    </p>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                {!loadingProposals && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: "1px solid #e8ecf1" }}>
+                    <button
+                      onClick={() => {
+                        if (confirmedSessions.length === 0) {
+                          setStep("experts");
+                        }
+                      }}
+                      disabled={confirmedSessions.length > 0}
+                      style={{
+                        height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80",
+                        fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none",
+                        cursor: confirmedSessions.length > 0 ? "not-allowed" : "pointer",
+                        opacity: confirmedSessions.length > 0 ? 0.4 : 1,
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}
+                    >
+                      <ChevronLeft style={{ width: 14, height: 14 }} /> Changer les formateurs
+                    </button>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      {sessionMeta && (
+                        <button
+                          onClick={handleSkipSession}
+                          style={{
+                            height: 40, borderRadius: 8, border: "1px solid #dce8f0",
+                            background: "white", color: "#5a6f80", fontSize: 13, fontWeight: 600,
+                            padding: "0 18px", cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 6,
+                          }}
+                        >
+                          <SkipForward style={{ width: 14, height: 14 }} /> Passer
+                        </button>
+                      )}
+                      <button
+                        onClick={handleConfirmSession}
+                        disabled={selectedProposalIndex === null || savingSession}
+                        style={{
+                          height: 40, borderRadius: 8, border: "none", padding: "0 24px",
+                          background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                          color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                          opacity: (selectedProposalIndex === null || savingSession) ? 0.5 : 1,
+                          display: "flex", alignItems: "center", gap: 6,
+                        }}
+                      >
+                        {savingSession ? (
+                          <>
+                            <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} />
+                            Enregistrement...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle style={{ width: 14, height: 14 }} />
+                            {currentSessionIndex + 1 >= totalSessions ? "Valider et terminer" : "Valider et suivante"}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -755,12 +1043,13 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
 /* ────────── Expert Card Component ────────── */
 
-function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle }: {
+function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle, showRegion = true }: {
   expert: ExpertData;
   rank?: number;
   isRecommended: boolean;
   isSelected: boolean;
   onToggle: () => void;
+  showRegion?: boolean;
 }) {
   const fmtE = (n: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 
@@ -805,12 +1094,12 @@ function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle }: {
                 background: expert.score >= 2 ? "#e8f5e9" : expert.score === 1 ? "#fff8e1" : "#fce4ec",
                 color: expert.score >= 2 ? "#2e7d32" : expert.score === 1 ? "#e65100" : "#c62828",
               }}>
-                Score : {expert.score}/3
+                Score : {expert.score}/{showRegion ? 3 : 2}
               </span>
             </div>
             <div style={{ fontSize: 11, color: "#5a6f80", marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
               {expert.hasExpertise && <span style={{ color: "#2e7d32" }}>Expertise {"✓"}</span>}
-              {expert.sameRegion && <span style={{ color: "#2e7d32" }}>Même région {"✓"}</span>}
+              {showRegion && expert.sameRegion && <span style={{ color: "#2e7d32" }}>Même région {"✓"}</span>}
               {expert.budgetOk && <span style={{ color: "#2e7d32" }}>Budget OK {"✓"}</span>}
               {expert.city && <span>{expert.city} ({expert.region})</span>}
               {!expert.hasCalendar && <span style={{ color: "#e65100" }}>Pas de calendrier lié</span>}

@@ -23,7 +23,7 @@ const CITY_REGION: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { expertise, city, budget, daysCount } = await req.json();
+    const { expertise, city, budget, daysCount, planId } = await req.json();
 
     const { data: teamMembers } = await supabase
       .from("team_members")
@@ -36,17 +36,19 @@ export async function POST(req: NextRequest) {
 
     const formationRegion = CITY_REGION[city] ?? "";
     const nbDays = parseFloat(daysCount) || 0;
+    const hasJournees = nbDays > 0;
     const budgetHT = parseFloat(budget) || 0;
 
     const scored = experts.map((m: any) => {
       const exps = (m.expertises as string[]) ?? [];
       const hasExpertise = expertise ? exps.includes(expertise) : false;
       const expertRegion = (m.region as string) || "";
-      const sameRegion = !!(formationRegion && expertRegion && expertRegion === formationRegion);
+      // Region only matters if there are in-person sessions (journees)
+      const sameRegion = hasJournees && !!(formationRegion && expertRegion && expertRegion === formationRegion);
       const tjm = Number(m.tjm) || 0;
       const costTjm = tjm * nbDays;
       const prepa = tjm * 0.5;
-      const deplacement = sameRegion ? 0 : tjm * 0.5;
+      const deplacement = (hasJournees && !sameRegion) ? tjm * 0.5 : 0;
       const totalHT = costTjm + prepa + deplacement;
       const budgetOk = budgetHT > 0 ? totalHT <= budgetHT : true;
       const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
@@ -74,15 +76,59 @@ export async function POST(req: NextRequest) {
       };
     }).sort((a, b) => b.score - a.score || a.totalHT - b.totalHT);
 
-    // Top 2 recommandés
+    // Top 2 recommended
     const recommended = scored.slice(0, 2);
     const others = scored.slice(2);
+
+    // Detect existing expert for this plan (from sessions history or learner expert_id)
+    let existingExpertInfo: { name: string; id: string } | null = null;
+    if (planId) {
+      // Check existing sessions for an already assigned trainer
+      const { data: existingSessions } = await supabase
+        .from("training_sessions")
+        .select("trainers")
+        .eq("service_plan_id", planId)
+        .neq("status", "cancelled");
+      const existingTrainers = (existingSessions ?? []).flatMap((s: any) => s.trainers ?? []);
+      if (existingTrainers.length > 0) {
+        const freq: Record<string, number> = {};
+        for (const t of existingTrainers) freq[t] = (freq[t] || 0) + 1;
+        const topTrainerName = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+        // Find matching team member
+        const match = (teamMembers ?? []).find((m: any) => m.first_name === topTrainerName);
+        if (match) existingExpertInfo = { name: topTrainerName, id: match.id };
+      }
+
+      // Also check learners' expert_id if no session-based match
+      if (!existingExpertInfo) {
+        const { data: planLearners } = await supabase
+          .from("service_plan_learners")
+          .select("learner_id, learners(expert_id)")
+          .eq("service_plan_id", planId);
+        const expertIds = (planLearners ?? [])
+          .map((spl: any) => spl.learners?.expert_id)
+          .filter(Boolean);
+        if (expertIds.length > 0) {
+          const freq: Record<string, number> = {};
+          for (const eid of expertIds) freq[eid] = (freq[eid] || 0) + 1;
+          const topExpertId = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+          const { data: expertMember } = await supabase
+            .from("team_members")
+            .select("first_name")
+            .eq("id", topExpertId)
+            .single();
+          if (expertMember) existingExpertInfo = { name: expertMember.first_name, id: topExpertId };
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
       recommended,
       others,
       formationRegion,
+      hasJournees,
+      existingExpertInfo,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

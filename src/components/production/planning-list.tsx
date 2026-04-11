@@ -2173,21 +2173,8 @@ export function PlanningList({
           format: p.format ?? "individuel",
           learnerIds: (p.service_plan_learners ?? []).map((spl: any) => spl.learner_id),
         }))}
-        onCreateSession={(session, pid) => {
-          setSessionPlanId(pid);
-          setEditingSessionId(null);
-          setSessionForm({
-            session_type: session.session_type,
-            session_date: session.session_date,
-            session_time: session.session_time,
-            duration_hours: String(session.duration_hours),
-            session_location: session.session_location || "",
-            trainers: [session.trainer_name],
-            is_billable: true,
-            notes: "",
-            learner_ids: planificateurLearnerIds,
-            custom_title: "",
-          });
+        onSessionsCreated={() => {
+          router.refresh();
         }}
       />
 

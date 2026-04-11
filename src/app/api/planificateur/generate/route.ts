@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import Anthropic from "@anthropic-ai/sdk";
 import { getCalendarEventsAllPages } from "@/lib/google-calendar";
 
 export const maxDuration = 30;
@@ -27,17 +26,24 @@ const CITY_REGION: Record<string, string> = {
 
 const DAY_NAMES = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
-interface ProposedSession {
+interface SessionMeta {
+  index: number;
   session_type: "vt" | "journee";
+  duration_hours: number;
+  session_location: string | null;
+}
+
+interface Proposal {
   session_date: string;
   session_time: string;
   duration_hours: number;
   trainer_name: string;
-  session_location: string | null;
+  trainer_id: string;
   warning?: string;
 }
 
 interface TrainerData {
+  id: string;
   firstName: string;
   name: string;
   score: number;
@@ -47,7 +53,7 @@ interface TrainerData {
   tjm: number;
   totalHT: number;
   marge: number;
-  busyEvents: { start: string; end: string }[];
+  busyEvents: { start: string; end: string; summary?: string }[];
   hasCalendar: boolean;
 }
 
@@ -61,33 +67,6 @@ function parseRhythm(rhythm: string): { intervalDays: number } {
     case "1x/2 mois": return { intervalDays: 60 };
     default: return { intervalDays: 7 };
   }
-}
-
-function generateCandidateDates(
-  startDate: string, endDate: string, rhythm: string,
-  availableDays: string[], count: number
-): string[] {
-  const { intervalDays } = parseRhythm(rhythm);
-  const dates: string[] = [];
-  const start = new Date(startDate + "T00:00:00");
-  const end = new Date(endDate + "T23:59:59");
-  const cursor = new Date(start);
-
-  while (cursor <= end && dates.length < count) {
-    const dayName = DAY_NAMES[cursor.getDay()];
-    if (availableDays.length === 0 || availableDays.includes(dayName)) {
-      const dateStr = cursor.toISOString().split("T")[0];
-      dates.push(dateStr);
-      cursor.setDate(cursor.getDate() + intervalDays);
-      // Skip to next available day if we landed on an unavailable day
-      while (availableDays.length > 0 && !availableDays.includes(DAY_NAMES[cursor.getDay()]) && cursor <= end) {
-        cursor.setDate(cursor.getDate() + 1);
-      }
-    } else {
-      cursor.setDate(cursor.getDate() + 1);
-    }
-  }
-  return dates;
 }
 
 function isConflicting(
@@ -105,6 +84,104 @@ function isConflicting(
   });
 }
 
+/** Build the ordered list of all sessions to plan (VT first, then journees) */
+function buildSessionList(params: {
+  vtCount: number; vtDuration: number; daysCount: number;
+  journeeLocation: string;
+}): SessionMeta[] {
+  const sessions: SessionMeta[] = [];
+  for (let i = 0; i < params.vtCount; i++) {
+    sessions.push({
+      index: sessions.length,
+      session_type: "vt",
+      duration_hours: params.vtDuration,
+      session_location: null,
+    });
+  }
+  for (let i = 0; i < params.daysCount; i++) {
+    sessions.push({
+      index: sessions.length,
+      session_type: "journee",
+      duration_hours: 8,
+      session_location: params.journeeLocation || null,
+    });
+  }
+  return sessions;
+}
+
+/** Build preferred time slots from a time range string */
+function buildPreferredSlots(timeSlotStr: string): string[] {
+  if (!timeSlotStr) return ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
+  if (timeSlotStr.includes("-")) {
+    const [startStr, endStr] = timeSlotStr.split("-").map((s: string) => s.trim());
+    const [sH, sM] = startStr.split(":").map(Number);
+    const [eH, eM] = endStr.split(":").map(Number);
+    const startMin = sH * 60 + sM;
+    const endMin = eH * 60 + eM;
+    const slots: string[] = [];
+    for (let t = startMin; t < endMin; t += 30) {
+      slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`);
+    }
+    return slots.length > 0 ? slots : [startStr];
+  }
+  if (timeSlotStr.includes(",")) return timeSlotStr.split(",").map((s: string) => s.trim()).filter(Boolean);
+  return [timeSlotStr];
+}
+
+/**
+ * Generate target dates for a session at a given index, respecting rhythm and client availability.
+ * Returns candidate dates in the expected time window for this session index.
+ */
+function generateTargetDates(
+  sessionIndex: number, sessionType: "vt" | "journee",
+  startDate: string, endDate: string,
+  vtRhythm: string, journeeRhythm: string,
+  clientAvailableDays: string[],
+  vtCount: number,
+  alreadyBooked: { session_date: string; session_type: string }[]
+): string[] {
+  const rhythm = sessionType === "vt" ? vtRhythm : journeeRhythm;
+  const { intervalDays } = parseRhythm(rhythm);
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T23:59:59");
+
+  // Calculate the session's position within its type
+  const typeIndex = sessionType === "vt"
+    ? sessionIndex
+    : sessionIndex - vtCount;
+
+  // Target start = start + typeIndex * intervalDays (approximate window)
+  const windowStart = new Date(start);
+  windowStart.setDate(windowStart.getDate() + typeIndex * intervalDays);
+
+  // If window start is before the range start, clamp it
+  if (windowStart < start) windowStart.setTime(start.getTime());
+
+  const bookedDates = new Set(alreadyBooked.map(s => s.session_date));
+
+  // Collect candidate dates in a window of intervalDays (or 7 days minimum)
+  const windowSize = Math.max(intervalDays, 7);
+  const candidates: string[] = [];
+
+  for (let d = 0; d < windowSize * 2 && candidates.length < 10; d++) {
+    const cur = new Date(windowStart);
+    cur.setDate(cur.getDate() + d);
+    if (cur > end) break;
+    const dayName = DAY_NAMES[cur.getDay()];
+    if (clientAvailableDays.length > 0 && !clientAvailableDays.includes(dayName)) continue;
+    const dateStr = cur.toISOString().split("T")[0];
+    if (bookedDates.has(dateStr)) continue;
+
+    // Don't put journee on a day that already has a VT booked, and vice-versa
+    const conflictType = alreadyBooked.find(s => s.session_date === dateStr);
+    if (conflictType && conflictType.session_type !== sessionType) continue;
+
+    candidates.push(dateStr);
+  }
+
+  return candidates;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -114,54 +191,22 @@ export async function POST(req: NextRequest) {
       journeeRhythm, journeeLocation,
       startDate, endDate, vtCount, daysCount,
       selectedTrainerIds,
+      // New: single-session mode
+      sessionIndex: requestedSessionIndex,
+      alreadyBooked: alreadyBookedInput,
     } = body;
 
-    // Fetch plan format and check for already assigned expert
+    const isSingleSessionMode = typeof requestedSessionIndex === "number";
+    const alreadyBooked: { session_date: string; session_time: string; duration_hours: number; session_type: string; trainer_name: string }[] = alreadyBookedInput ?? [];
+
+    // Fetch plan format
     let planFormat = "individuel";
-    let existingExpertName: string | null = null;
     if (planId) {
       const { data: plan } = await supabase.from("service_plans").select("format").eq("id", planId).single();
       if (plan?.format) planFormat = plan.format;
-
-      // Check existing sessions for an already assigned trainer
-      const { data: existingSessions } = await supabase
-        .from("training_sessions")
-        .select("trainers")
-        .eq("service_plan_id", planId)
-        .neq("status", "cancelled");
-      const existingTrainers = (existingSessions ?? []).flatMap((s: any) => s.trainers ?? []);
-      if (existingTrainers.length > 0) {
-        // Most frequent trainer
-        const freq: Record<string, number> = {};
-        for (const t of existingTrainers) freq[t] = (freq[t] || 0) + 1;
-        existingExpertName = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
-      }
-
-      // Also check learners' expert_id
-      if (!existingExpertName) {
-        const { data: planLearners } = await supabase
-          .from("service_plan_learners")
-          .select("learner_id, learners(expert_id)")
-          .eq("service_plan_id", planId);
-        const expertIds = (planLearners ?? [])
-          .map((spl: any) => spl.learners?.expert_id)
-          .filter(Boolean);
-        if (expertIds.length > 0) {
-          // Get the most common expert_id
-          const freq: Record<string, number> = {};
-          for (const eid of expertIds) freq[eid] = (freq[eid] || 0) + 1;
-          const topExpertId = Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
-          const { data: expertMember } = await supabase
-            .from("team_members")
-            .select("first_name")
-            .eq("id", topExpertId)
-            .single();
-          if (expertMember) existingExpertName = expertMember.first_name;
-        }
-      }
     }
 
-    // Step A: Fetch experts — use selectedTrainerIds if provided, otherwise score and pick top 3
+    // Fetch and score experts
     const { data: teamMembers } = await supabase
       .from("team_members")
       .select("id, first_name, last_name, roles, expertises, city, region, tjm, days_per_week, preferred_days, mobility, google_calendar_id, google_calendar_id_presentiel")
@@ -173,17 +218,18 @@ export async function POST(req: NextRequest) {
 
     const formationRegion = CITY_REGION[city] ?? "";
     const nbDays = parseFloat(daysCount) || 0;
+    const hasJournees = nbDays > 0;
     const budgetHT = parseFloat(budget) || 0;
 
     const scored = experts.map((m: any) => {
       const exps = (m.expertises as string[]) ?? [];
       const hasExpertise = expertise ? exps.includes(expertise) : false;
       const expertRegion = (m.region as string) || "";
-      const sameRegion = !!(formationRegion && expertRegion && expertRegion === formationRegion);
+      const sameRegion = hasJournees && !!(formationRegion && expertRegion && expertRegion === formationRegion);
       const tjm = Number(m.tjm) || 0;
       const costTjm = tjm * nbDays;
       const prepa = tjm * 0.5;
-      const deplacement = sameRegion ? 0 : tjm * 0.5;
+      const deplacement = (hasJournees && !sameRegion) ? tjm * 0.5 : 0;
       const totalHT = costTjm + prepa + deplacement;
       const budgetOk = budgetHT > 0 ? totalHT <= budgetHT : true;
       const score = (hasExpertise ? 1 : 0) + (sameRegion ? 1 : 0) + (budgetOk ? 1 : 0);
@@ -199,7 +245,7 @@ export async function POST(req: NextRequest) {
       };
     }).sort((a: any, b: any) => b.score - a.score || a.totalHT - b.totalHT);
 
-    // If user selected specific trainers, use those in the given order; otherwise fallback to top 3
+    // Select trainers
     const selectedIds = (selectedTrainerIds as string[] | undefined) ?? [];
     let topCandidates;
     if (selectedIds.length > 0) {
@@ -214,14 +260,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Aucun expert trouvé correspondant aux critères" });
     }
 
-    // Step B: Scan calendars in parallel
+    // Scan calendars
     const timeMin = new Date(`${startDate}T00:00:00`).toISOString();
     const timeMax = new Date(`${endDate}T23:59:59`).toISOString();
 
     const trainersWithBusy: TrainerData[] = await Promise.all(
       topCandidates.map(async (candidate: any) => {
         const calIds = [candidate.googleCalendarId, candidate.googleCalendarIdPresentiel].filter(Boolean) as string[];
-        const allEvents: { start: string; end: string }[] = [];
+        const allEvents: { start: string; end: string; summary?: string }[] = [];
 
         for (const calId of calIds) {
           const { events } = await getCalendarEventsAllPages({ calendarId: calId, timeMin, timeMax });
@@ -229,6 +275,7 @@ export async function POST(req: NextRequest) {
         }
 
         return {
+          id: candidate.id,
           firstName: candidate.firstName,
           name: candidate.name,
           score: candidate.score,
@@ -244,13 +291,157 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    // Step C: Generate schedule with flexible date finding
-    const proposedSessions: ProposedSession[] = [];
-    const warnings: string[] = [];
-    const bookedDates = new Set<string>(); // Track dates already used
-    const bookedWeeks = new Map<string, "vt" | "journee">(); // Track weeks with journée (for collectif format)
+    // Build the full session list
+    const vtTotal = parseInt(vtCount) || 0;
+    const vtDur = parseFloat(vtDuration) || 1;
+    const jourTotal = parseInt(daysCount) || 0;
+    const sessionList = buildSessionList({
+      vtCount: vtTotal, vtDuration: vtDur,
+      daysCount: jourTotal, journeeLocation: journeeLocation || "",
+    });
 
-    // Helper: get ISO week key "2026-W19"
+    // ─── SINGLE SESSION MODE ───
+    if (isSingleSessionMode) {
+      if (requestedSessionIndex >= sessionList.length) {
+        return NextResponse.json({
+          success: true,
+          sessionMeta: null,
+          proposals: [],
+          trainerCalendars: [],
+          done: true,
+          totalSessions: sessionList.length,
+        });
+      }
+
+      const sessionMeta = sessionList[requestedSessionIndex];
+      const preferredSlots = buildPreferredSlots(vtTimeSlot);
+      const allDaySlots: string[] = [];
+      for (let h = 8; h <= 17; h++) {
+        for (const m of ["00", "30"]) allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
+      }
+
+      // Add already-booked sessions as "busy" for conflict checking
+      const bookedAsBusy = alreadyBooked.map(s => ({
+        start: `${s.session_date}T${s.session_time}:00+02:00`,
+        end: new Date(new Date(`${s.session_date}T${s.session_time}:00+02:00`).getTime() + s.duration_hours * 3600000).toISOString(),
+      }));
+
+      // Get candidate dates for this session
+      const candidateDates = generateTargetDates(
+        requestedSessionIndex, sessionMeta.session_type,
+        startDate, endDate, vtRhythm, journeeRhythm || "1x/mois",
+        clientAvailableDays, vtTotal, alreadyBooked
+      );
+
+      // Find 2-3 proposals across trainers and dates
+      const proposals: Proposal[] = [];
+      const usedSlots = new Set<string>(); // "date|time|trainer" to avoid duplicates
+
+      for (const date of candidateDates) {
+        if (proposals.length >= 3) break;
+
+        for (const trainer of trainersWithBusy) {
+          if (proposals.length >= 3) break;
+
+          const combinedBusy = [...trainer.busyEvents, ...bookedAsBusy];
+
+          if (sessionMeta.session_type === "vt") {
+            // Try preferred slots first, then all slots
+            const slotsToTry = [...preferredSlots, ...allDaySlots.filter(s => !preferredSlots.includes(s))];
+            for (const slot of slotsToTry) {
+              const key = `${date}|${slot}|${trainer.id}`;
+              if (usedSlots.has(key)) continue;
+              if (!isConflicting(date, slot, sessionMeta.duration_hours, combinedBusy)) {
+                // Don't propose a slot too similar to an existing proposal (same date + same trainer, within 30min)
+                const tooSimilar = proposals.some(p =>
+                  p.session_date === date && p.trainer_id === trainer.id &&
+                  Math.abs(timeToMinutes(p.session_time) - timeToMinutes(slot)) < 60
+                );
+                if (tooSimilar) continue;
+
+                usedSlots.add(key);
+                proposals.push({
+                  session_date: date,
+                  session_time: slot,
+                  duration_hours: sessionMeta.duration_hours,
+                  trainer_name: trainer.firstName,
+                  trainer_id: trainer.id,
+                  warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
+                });
+                break; // One proposal per trainer per date
+              }
+            }
+          } else {
+            // Journee: full day 09:00-17:00
+            if (!isConflicting(date, "09:00", 8, combinedBusy)) {
+              const key = `${date}|09:00|${trainer.id}`;
+              if (!usedSlots.has(key)) {
+                usedSlots.add(key);
+                proposals.push({
+                  session_date: date,
+                  session_time: "09:00",
+                  duration_hours: 8,
+                  trainer_name: trainer.firstName,
+                  trainer_id: trainer.id,
+                  warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Return trainer calendar events for the relevant date window
+      const proposalDates = proposals.map(p => p.session_date);
+      const allRelevantDates = [...new Set([...candidateDates.slice(0, 5), ...proposalDates])];
+      const minDate = allRelevantDates.length > 0 ? allRelevantDates.sort()[0] : startDate;
+      const maxDate = allRelevantDates.length > 0 ? allRelevantDates.sort().reverse()[0] : endDate;
+
+      // Extend window by 1 day on each side for context
+      const windowMin = new Date(minDate + "T00:00:00");
+      windowMin.setDate(windowMin.getDate() - 1);
+      const windowMax = new Date(maxDate + "T23:59:59");
+      windowMax.setDate(windowMax.getDate() + 1);
+
+      const trainerCalendars = trainersWithBusy.map(t => ({
+        trainerName: t.firstName,
+        trainerId: t.id,
+        events: t.busyEvents
+          .filter(e => {
+            const eDate = new Date(e.start);
+            return eDate >= windowMin && eDate <= windowMax;
+          })
+          .map(e => ({ start: e.start, end: e.end, summary: e.summary })),
+      }));
+
+      return NextResponse.json({
+        success: true,
+        sessionMeta: {
+          index: requestedSessionIndex,
+          total: sessionList.length,
+          session_type: sessionMeta.session_type,
+          duration_hours: sessionMeta.duration_hours,
+          session_location: sessionMeta.session_location,
+        },
+        proposals,
+        trainerCalendars,
+        done: false,
+        totalSessions: sessionList.length,
+        // Also return the full session list summary for progress display
+        allSessions: sessionList.map(s => ({
+          index: s.index,
+          session_type: s.session_type,
+          duration_hours: s.duration_hours,
+        })),
+      });
+    }
+
+    // ─── LEGACY BATCH MODE (kept for backward compatibility) ───
+    const proposedSessions: { session_type: "vt" | "journee"; session_date: string; session_time: string; duration_hours: number; trainer_name: string; session_location: string | null; warning?: string }[] = [];
+    const warnings: string[] = [];
+    const bookedDates = new Set<string>();
+    const bookedWeeks = new Map<string, "vt" | "journee">();
+
     function getWeekKey(dateStr: string): string {
       const d = new Date(dateStr + "T00:00:00");
       const jan1 = new Date(d.getFullYear(), 0, 1);
@@ -259,15 +450,12 @@ export async function POST(req: NextRequest) {
       return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
     }
 
-    // Check if a VT can be placed this week considering the format
-    // collectif: no VT the same week as a journée (same group of people)
-    // individuel or mixte: VT can coexist with journée (different people)
     function canPlaceVTInWeek(dateStr: string): boolean {
       if (planFormat === "collectif") {
         const wk = getWeekKey(dateStr);
         return bookedWeeks.get(wk) !== "journee";
       }
-      return true; // individuel or mixte: always OK
+      return true;
     }
 
     function canPlaceJourneeInWeek(dateStr: string): boolean {
@@ -278,32 +466,12 @@ export async function POST(req: NextRequest) {
       return true;
     }
 
-    // Build preferred time slots
-    function buildPreferredSlots(timeSlotStr: string): string[] {
-      if (!timeSlotStr) return ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30", "16:00"];
-      if (timeSlotStr.includes("-")) {
-        const [startStr, endStr] = timeSlotStr.split("-").map((s: string) => s.trim());
-        const [sH, sM] = startStr.split(":").map(Number);
-        const [eH, eM] = endStr.split(":").map(Number);
-        const startMin = sH * 60 + sM;
-        const endMin = eH * 60 + eM;
-        const slots: string[] = [];
-        for (let t = startMin; t < endMin; t += 30) {
-          slots.push(`${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`);
-        }
-        return slots.length > 0 ? slots : [startStr];
-      }
-      if (timeSlotStr.includes(",")) return timeSlotStr.split(",").map((s: string) => s.trim()).filter(Boolean);
-      return [timeSlotStr];
-    }
-
     const preferredSlots = buildPreferredSlots(vtTimeSlot);
     const allDaySlots: string[] = [];
     for (let h = 8; h <= 17; h++) {
       for (const m of ["00", "30"]) allDaySlots.push(`${String(h).padStart(2, "0")}:${m}`);
     }
 
-    // Helper: get all available days in a week window starting from a given date
     function getAvailableDaysInWindow(windowStart: Date, windowDays: number, availDays: string[]): string[] {
       const dates: string[] = [];
       const end = new Date(endDate + "T23:59:59");
@@ -319,7 +487,6 @@ export async function POST(req: NextRequest) {
       return dates;
     }
 
-    // Try to find a slot for a session on a specific date with a trainer
     function tryAssignVT(date: string, duration: number, trainer: TrainerData): string | null {
       for (const slot of preferredSlots) {
         if (!isConflicting(date, slot, duration, trainer.busyEvents)) return slot;
@@ -334,23 +501,18 @@ export async function POST(req: NextRequest) {
       return !isConflicting(date, "09:00", 8, trainer.busyEvents);
     }
 
-    // Flexible session finder: tries the target date first, then nearby days in the same window
     function findSlotFlexible(
       windowStart: Date, windowDays: number, sessionType: "vt" | "journee",
       duration: number, availDays: string[]
-    ): ProposedSession | null {
+    ): { session_type: "vt" | "journee"; session_date: string; session_time: string; duration_hours: number; trainer_name: string; session_location: string | null; warning?: string } | null {
       const candidateDays = getAvailableDaysInWindow(windowStart, windowDays, availDays);
 
-      // For each trainer (priority order), try each candidate day
       for (const trainer of trainersWithBusy) {
         for (const date of candidateDays) {
-          // Never put two different session types on the same day
           const hasJournee = proposedSessions.some(s => s.session_date === date && s.session_type === "journee");
           const hasVT = proposedSessions.some(s => s.session_date === date && s.session_type === "vt");
           if (sessionType === "journee" && hasVT) continue;
           if (sessionType === "vt" && hasJournee) continue;
-
-          // Collectif format: no VT same week as journée (same group of people)
           if (sessionType === "vt" && !canPlaceVTInWeek(date)) continue;
           if (sessionType === "journee" && !canPlaceJourneeInWeek(date)) continue;
 
@@ -388,9 +550,6 @@ export async function POST(req: NextRequest) {
     const rangeStart = new Date(startDate + "T00:00:00");
     const rangeEnd = new Date(endDate + "T23:59:59");
 
-    // Generate VT sessions with flexible dates
-    const vtTotal = parseInt(vtCount) || 0;
-    const vtDur = parseFloat(vtDuration) || 1;
     if (vtTotal > 0) {
       const cursor = new Date(rangeStart);
       let placed = 0;
@@ -406,8 +565,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Generate journée sessions with flexible dates
-    const jourTotal = parseInt(daysCount) || 0;
     if (jourTotal > 0) {
       const cursor = new Date(rangeStart);
       let placed = 0;
@@ -423,57 +580,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Sort all sessions by date
     proposedSessions.sort((a, b) => a.session_date.localeCompare(b.session_date));
 
-    // Add warnings for trainers without calendars
     for (const t of trainersWithBusy) {
       if (!t.hasCalendar) {
         warnings.push(`${t.name} : pas de Google Calendar lié — disponibilité non vérifiable`);
       }
     }
 
-    // Step D: AI optimization — Claude reviews the planning and suggests improvements
-    let aiRecommendation = "";
-    try {
-      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-      const planSummary = proposedSessions.map(s =>
-        `${s.session_date} | ${s.session_type === "vt" ? "VT" : "Journée"} | ${s.session_time} | ${s.duration_hours}h | ${s.trainer_name}${s.warning ? " ⚠️ " + s.warning : ""}`
-      ).join("\n");
-
-      const trainersInfo = trainersWithBusy.map(t =>
-        `${t.name} (score: ${t.score}/3, TJM: ${t.tjm}€, expertise: ${t.hasExpertise ? "oui" : "non"}, même région: ${t.sameRegion ? "oui" : "non"}, calendrier: ${t.hasCalendar ? "lié" : "non lié"})`
-      ).join("\n");
-
-      const response = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 500,
-        system: `Tu es un assistant de planification de formations. Tu analyses un planning généré automatiquement et donnes une recommandation concise en français (3-5 phrases max). Identifie les points forts et les points d'attention (répartition, charge formateur, continuité pédagogique).`,
-        messages: [{
-          role: "user",
-          content: `Voici le planning généré pour un client :
-Format : ${planFormat} (${planFormat === "collectif" ? "pas de VT la même semaine qu'une journée car même groupe" : planFormat === "individuel" ? "VT individuelles peuvent coexister avec journées groupe" : "mixte"})
-Jours dispo client : ${clientAvailableDays.join(", ") || "tous"}
-Rythme VT : ${vtRhythm} | Rythme Journées : ${journeeRhythm || "N/A"}
-Période : ${startDate} → ${endDate}
-
-Experts candidats :
-${trainersInfo}
-
-Planning proposé :
-${planSummary}
-
-${warnings.length > 0 ? "Alertes : " + warnings.join(", ") : ""}
-
-Analyse ce planning et donne une recommandation courte.`,
-        }],
-      });
-      aiRecommendation = response.content[0].type === "text" ? response.content[0].text : "";
-    } catch {
-      // AI optimization is optional, continue without it
-    }
-
-    // Compute availability percentage for primary trainer
     const primaryTrainer = trainersWithBusy[0];
     const primaryAssigned = proposedSessions.filter(s => s.trainer_name === primaryTrainer.firstName && !s.warning).length;
 
@@ -495,10 +609,13 @@ Analyse ce planning et donne une recommandation courte.`,
         totalSessions: proposedSessions.length,
       })),
       warnings,
-      aiRecommendation,
-      existingExpertName,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
+}
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
 }
