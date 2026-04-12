@@ -177,6 +177,14 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     agendaNotesVoice.stopRecording();
   }
 
+  // Session progression: count done/total per service_plan_id + session_type
+  function getSessionProgress(servicePlanId: string, sessionType: string): { done: number; total: number } | null {
+    const planSessions = sessions.filter(s => s.service_plan_id === servicePlanId && s.session_type === sessionType && s.status !== "cancelled");
+    if (planSessions.length <= 1) return null;
+    const done = planSessions.filter(s => (statusOverrides[s.id] ?? s.status) === "done").length;
+    return { done, total: planSessions.length };
+  }
+
   function renderSessionCard(s: AgendaSession) {
     const plan = s.service_plans;
     const company = plan?.companies?.name ?? "—";
@@ -185,6 +193,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     const currentStatus = statusOverrides[s.id] ?? s.status;
     const sc = statusLabels[currentStatus];
     const isVT = s.session_type === "vt";
+    const progress = getSessionProgress(s.service_plan_id, s.session_type);
 
     return (
       <div
@@ -199,7 +208,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
           {isVT ? <Video className="h-3 w-3" style={{ color: "#1a6b9c" }} /> : <Building2 className="h-3 w-3" style={{ color: "#FF6B35" }} />}
-          <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 11 }}>{s.session_time ? String(s.session_time).slice(0, 5) + " · " : ""}{isVT ? "VT" : "Journée"} — {Number(s.duration_hours) || 0}h</span>
+          <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 11 }}>{s.session_time ? String(s.session_time).slice(0, 5) + " · " : ""}{isVT ? (progress ? `VT ${progress.done}/${progress.total}` : "VT") : (progress ? `Journée ${progress.done}/${progress.total}` : "Journée")} — {Number(s.duration_hours) || 0}h</span>
           <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
             <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
               style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", height: 20, width: 20, borderRadius: 4, border: "none", cursor: "pointer", background: "transparent", fontSize: 11, padding: 0 }}
