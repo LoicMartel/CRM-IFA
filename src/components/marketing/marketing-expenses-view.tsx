@@ -54,6 +54,32 @@ interface TunnelStat {
   marketing_providers: { name: string } | null;
 }
 
+interface WonDeal {
+  id: string;
+  amount: number | null;
+  close_date: string | null;
+  created_at: string;
+  source_id: string | null;
+  lead_sources: { name: string } | { name: string }[] | null;
+}
+
+function getDealSourceName(d: WonDeal): string {
+  if (!d.lead_sources) return "";
+  if (Array.isArray(d.lead_sources)) return d.lead_sources[0]?.name ?? "";
+  return d.lead_sources.name;
+}
+
+function sourceToProvider(sourceName: string): string {
+  if (!sourceName) return "";
+  const lower = sourceName.toLowerCase();
+  if (lower.includes("tunnel")) return "Pub";
+  const providers = ["Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"];
+  for (const p of providers) {
+    if (lower.includes(p.toLowerCase())) return p;
+  }
+  return sourceName;
+}
+
 function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " \u20ac";
 }
@@ -86,7 +112,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
   "Oliver List": { bg: "#f1f8e9", text: "#558b2f" },
 };
 
-export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses: Expense[]; tunnelStats?: TunnelStat[] }) {
+export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [] }: { expenses: Expense[]; tunnelStats?: TunnelStat[]; wonDeals?: WonDeal[] }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
   const [open, setOpen] = useState(false);
@@ -97,23 +123,38 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
     provider_name: "",
     amount: "",
     rdv_done: "",
-    revenue: "",
     description: "",
   });
+
+  // Compute revenue from won deals by provider+month
+  const dealRevenueByProviderMonth: Record<string, number> = {};
+  wonDeals.forEach((d) => {
+    const sourceName = getDealSourceName(d);
+    const provider = sourceToProvider(sourceName);
+    if (!provider) return;
+    const dateStr = d.close_date ?? d.created_at.split("T")[0];
+    const monthKey = dateStr.slice(0, 7);
+    const key = `${provider}::${monthKey}`;
+    dealRevenueByProviderMonth[key] = (dealRevenueByProviderMonth[key] ?? 0) + (Number(d.amount) || 0);
+  });
+
+  function getComputedRevenue(providerName: string, periodStart: string): number {
+    const monthKey = periodStart.slice(0, 7);
+    return dealRevenueByProviderMonth[`${providerName}::${monthKey}`] ?? 0;
+  }
   const descVoice = useVoiceDictation(() => form.description, (t) => setForm((f) => ({ ...f, description: t })));
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [editDocs, setEditDocs] = useState<ExpenseDoc[]>([]);
 
   // Aggregate tunnel stats (Tunnel VSL + Tunnel Book) by month → virtual "Pub" expense lines
-  const tunnelByMonth: Record<string, { amount: number; rdv_done: number; revenue: number }> = {};
+  const tunnelByMonth: Record<string, { amount: number; rdv_done: number }> = {};
   tunnelStats.forEach((s) => {
     const provName = s.marketing_providers?.name ?? "";
     if (provName !== "Tunnel VSL" && provName !== "Tunnel Book") return;
     const monthKey = s.period_start.slice(0, 7); // "2026-03"
-    if (!tunnelByMonth[monthKey]) tunnelByMonth[monthKey] = { amount: 0, rdv_done: 0, revenue: 0 };
+    if (!tunnelByMonth[monthKey]) tunnelByMonth[monthKey] = { amount: 0, rdv_done: 0 };
     tunnelByMonth[monthKey].amount += Number(s.expenses) || 0;
     tunnelByMonth[monthKey].rdv_done += (s.r0_done || 0) + (s.r1_done || 0) + (s.rdv_done_inbound || 0);
-    tunnelByMonth[monthKey].revenue += Number(s.revenue) || 0;
   });
 
   // Check which months already have a manual "Pub" entry to avoid duplicates
@@ -128,7 +169,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
       provider_name: "Pub",
       amount: Math.round(data.amount),
       rdv_done: data.rdv_done,
-      revenue: Math.round(data.revenue),
+      revenue: 0, // CA calculé automatiquement depuis les deals
       description: "Automatique depuis suivi tunnels (VSL + Book)",
       created_at: "",
       _auto: true,
@@ -148,9 +189,9 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
     return true;
   });
 
-  // KPIs
+  // KPIs — revenue from won deals, not stored values
   const totalAmount = filtered.reduce((a, e) => a + Number(e.amount), 0);
-  const totalRevenue = filtered.reduce((a, e) => a + Number(e.revenue || 0), 0);
+  const totalRevenue = filtered.reduce((a, e) => a + getComputedRevenue(e.provider_name, e.period_start), 0);
   const totalRdvDone = filtered.reduce((a, e) => a + (e.rdv_done || 0), 0);
   const costPerRdv = totalRdvDone > 0 ? totalAmount / totalRdvDone : 0;
   const roi = totalAmount > 0 ? totalRevenue / totalAmount : 0;
@@ -159,7 +200,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
 
   function openCreate() {
     setEditingId(null);
-    setForm({ period: new Date().toISOString().slice(0, 7), provider_name: "", amount: "", rdv_done: "", revenue: "", description: "" });
+    setForm({ period: new Date().toISOString().slice(0, 7), provider_name: "", amount: "", rdv_done: "", description: "" });
     setOpen(true);
   }
 
@@ -170,7 +211,6 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
       provider_name: e.provider_name,
       amount: String(e.amount),
       rdv_done: String(e.rdv_done || 0),
-      revenue: String(e.revenue || 0),
       description: e.description ?? "",
     });
     setEditDocs(e.marketing_expense_documents ?? []);
@@ -225,7 +265,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
       provider_name: form.provider_name,
       amount: parseFloat(form.amount) || 0,
       rdv_done: parseInt(form.rdv_done) || 0,
-      revenue: parseFloat(form.revenue) || 0,
+      revenue: 0,
       description: form.description || null,
       created_by: currentMemberId || null,
     };
@@ -257,7 +297,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
         provider_name: "Pub",
         amount: line.amount,
         rdv_done: line.rdv_done,
-        revenue: line.revenue,
+        revenue: 0,
         description: "Consolide depuis suivi tunnels (VSL + Book)",
         created_by: currentMemberId || null,
       });
@@ -334,15 +374,18 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
         </div>
         <div className="flex gap-2">
           <ExportButton onExport={(f: ExportFormat) => exportData(
-            filtered.map((e) => ({
-              periode: fmtMonth(e.period_start),
-              prestataire: e.provider_name,
-              montant: e.amount,
-              rdv_faits: e.rdv_done || 0,
-              ca_genere: e.revenue || 0,
-              panier_moyen: e.rdv_done > 0 ? Math.round(Number(e.revenue) / e.rdv_done) : 0,
-              description: e.description ?? "",
-            })),
+            filtered.map((e) => {
+              const rev = getComputedRevenue(e.provider_name, e.period_start);
+              return {
+                periode: fmtMonth(e.period_start),
+                prestataire: e.provider_name,
+                montant: e.amount,
+                rdv_faits: e.rdv_done || 0,
+                ca_genere: rev,
+                panier_moyen: e.rdv_done > 0 ? Math.round(rev / e.rdv_done) : 0,
+                description: e.description ?? "",
+              };
+            }),
             [
               { key: "periode", label: "Période" }, { key: "prestataire", label: "Prestataire" },
               { key: "montant", label: "Montant" }, { key: "rdv_faits", label: "RDV faits" },
@@ -391,6 +434,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
               filtered.map((e) => {
                 const pc = PROVIDER_COLORS[e.provider_name] ?? { bg: "#f0f0f0", text: "#666" };
                 const isAuto = !!(e as any)._auto;
+                const computedRev = getComputedRevenue(e.provider_name, e.period_start);
                 return (
                   <TableRow key={e.id} style={isAuto ? { background: "#f8fafb" } : undefined}>
                     <TableCell style={{ fontWeight: 600, textTransform: "capitalize" }}>{fmtMonth(e.period_start)}</TableCell>
@@ -402,8 +446,8 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
                     </TableCell>
                     <TableCell style={{ textAlign: "right", fontWeight: 700 }}>{fmt(Number(e.amount))}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{e.rdv_done || 0}</TableCell>
-                    <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{fmt(Number(e.revenue) || 0)}</TableCell>
-                    <TableCell style={{ textAlign: "right" }}>{e.rdv_done > 0 ? fmt(Number(e.revenue) / e.rdv_done) : "—"}</TableCell>
+                    <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#27ae60" }}>{fmt(computedRev)}</TableCell>
+                    <TableCell style={{ textAlign: "right" }}>{e.rdv_done > 0 ? fmt(computedRev / e.rdv_done) : "—"}</TableCell>
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
                     <TableCell>
                       {!isAuto && (e.marketing_expense_documents ?? []).length > 0 ? (
@@ -442,7 +486,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#e74c3c" }}>{fmt(totalAmount)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#1a6b9c" }}>{totalRdvDone}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalRdvDone > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalRdvDone > 0 && totalRevenue > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</td>
                 <td colSpan={2}></td>
               </tr>
             </tfoot>
@@ -488,16 +532,18 @@ export function MarketingExpensesView({ expenses, tunnelStats = [] }: { expenses
               <Label>Montant (EUR) *</Label>
               <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>RDV faits</Label>
-                <Input type="number" value={form.rdv_done} onChange={(e) => setForm({ ...form, rdv_done: e.target.value })} placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label>CA généré (EUR)</Label>
-                <Input type="number" step="0.01" value={form.revenue} onChange={(e) => setForm({ ...form, revenue: e.target.value })} placeholder="0" />
-              </div>
+            <div className="space-y-2">
+              <Label>RDV faits</Label>
+              <Input type="number" value={form.rdv_done} onChange={(e) => setForm({ ...form, rdv_done: e.target.value })} placeholder="0" />
             </div>
+            {form.provider_name && form.period && (
+              <div className="space-y-2">
+                <Label>CA généré (auto — deals gagnés)</Label>
+                <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, fontWeight: 700, color: "#27ae60", fontSize: 15 }}>
+                  {fmt(getComputedRevenue(form.provider_name, form.period + "-01"))}
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Description</Label>
               <textarea
