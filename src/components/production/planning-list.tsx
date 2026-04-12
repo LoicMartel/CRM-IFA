@@ -83,6 +83,7 @@ interface ServicePlanRow {
   budget_remaining: number | null;
   start_date: string | null;
   end_date: string | null;
+  plan_name: string | null;
   notes: string | null;
   companies: { name: string; address?: string; city?: string } | null;
   training_programs: { name: string } | null;
@@ -222,6 +223,7 @@ export function PlanningList({
     plan_type: "intra" as "intra" | "inter",
     company_id: "", deal_id: "", deal_ids: [] as string[],
     inter_companies: [] as { company_id: string; deal_id: string }[],
+    plan_name: "",
     program_id: "", training_type_id: "", format: "individuel", mode: "distanciel",
     vt_planned: "", days_planned: "", hourly_rate: "",
     budget: "", start_date: "", end_date: "", notes: "",
@@ -269,6 +271,7 @@ export function PlanningList({
       deal_id: dealId,
       deal_ids: dealId ? [dealId] : [],
       inter_companies: [],
+      plan_name: "",
       program_id: "",
       training_type_id: "",
       format: plan.format,
@@ -433,6 +436,7 @@ export function PlanningList({
       deal_id: plan.deal_id ?? "",
       deal_ids: (plan as any).deal_ids ?? (plan.deal_id ? [plan.deal_id] : []),
       inter_companies: interCompanies,
+      plan_name: (plan as any).plan_name ?? "",
       program_id: plan.program_id ?? "",
       training_type_id: plan.training_type_id ?? "",
       format: plan.format ?? "individuel",
@@ -469,6 +473,7 @@ export function PlanningList({
       manager_name: (form.plan_type === "intra" ? pc : primaryPc) ? `${(form.plan_type === "intra" ? pc : primaryPc)!.first_name} ${(form.plan_type === "intra" ? pc : primaryPc)!.last_name}` : null,
       manager_phone: (form.plan_type === "intra" ? pc : primaryPc)?.phone || null,
       manager_email: (form.plan_type === "intra" ? pc : primaryPc)?.email || null,
+      plan_name: form.plan_name || null,
       program_id: form.program_id || null,
       training_type_id: form.training_type_id || null,
       format: form.format || "individuel",
@@ -906,6 +911,9 @@ export function PlanningList({
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   {isExpanded ? <ChevronDown className="h-5 w-5" style={{ color: "#8399a9" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "#8399a9" }} />}
                   <span style={{ fontWeight: 700, fontSize: 15, color: "#1a2a3a" }}>{plan.companies?.name ?? "—"}</span>
+                  {(plan as any).plan_name && (
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginLeft: 4 }}>— {(plan as any).plan_name}</span>
+                  )}
                   {plan.training_programs?.name && (
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#e8f0fe", color: "#0d4f7a" }}>{plan.training_programs.name}</span>
                   )}
@@ -1591,6 +1599,14 @@ export function PlanningList({
             <div style={{ background: "#f8fbfd", borderRadius: 8, padding: 14 }}>
               <div style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 13, marginBottom: 10 }}>Détails de la formation</div>
               <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Nom du plan</Label>
+                  <Input
+                    value={form.plan_name}
+                    onChange={(e) => setForm({ ...form, plan_name: e.target.value })}
+                    placeholder="Ex: Renew 2026, Formation initiale..."
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Parcours</Label>
                   <select
