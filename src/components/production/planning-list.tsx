@@ -68,6 +68,7 @@ interface ServicePlanRow {
   id: string;
   company_id: string;
   deal_id: string | null;
+  deal_ids: string[] | null;
   manager_name: string | null;
   manager_phone: string | null;
   manager_email: string | null;
@@ -212,15 +213,14 @@ export function PlanningList({
     return allLearners.filter(l => l.company_id === companyId) as Array<{ id: string; first_name: string; last_name: string; status: string }>;
   }
 
-  // Get won deals for a company that are NOT already linked to a plan (except the plan being edited)
-  function getAvailableDeals(companyId: string, currentPlanId?: string | null) {
-    const usedDealIds = new Set(servicePlans.filter(p => p.deal_id && p.id !== currentPlanId).map(p => p.deal_id));
-    return wonDeals.filter(d => d.company_id === companyId && !usedDealIds.has(d.id));
+  // Get won deals for a company
+  function getAvailableDeals(companyId: string, _currentPlanId?: string | null) {
+    return wonDeals.filter(d => d.company_id === companyId);
   }
 
   const emptyForm = {
     plan_type: "intra" as "intra" | "inter",
-    company_id: "", deal_id: "",
+    company_id: "", deal_id: "", deal_ids: [] as string[],
     inter_companies: [] as { company_id: string; deal_id: string }[],
     program_id: "", training_type_id: "", format: "individuel", mode: "distanciel",
     vt_planned: "", days_planned: "", hourly_rate: "",
@@ -267,6 +267,7 @@ export function PlanningList({
       plan_type: "intra",
       company_id: companyId,
       deal_id: dealId,
+      deal_ids: dealId ? [dealId] : [],
       inter_companies: [],
       program_id: "",
       training_type_id: "",
@@ -430,6 +431,7 @@ export function PlanningList({
       plan_type: planType as "intra" | "inter",
       company_id: plan.company_id,
       deal_id: plan.deal_id ?? "",
+      deal_ids: (plan as any).deal_ids ?? (plan.deal_id ? [plan.deal_id] : []),
       inter_companies: interCompanies,
       program_id: plan.program_id ?? "",
       training_type_id: plan.training_type_id ?? "",
@@ -456,13 +458,14 @@ export function PlanningList({
       : form.company_id;
     const primaryDealId = form.plan_type === "inter" && form.inter_companies.length > 0
       ? form.inter_companies[0].deal_id
-      : form.deal_id;
+      : (form.deal_ids.length > 0 ? form.deal_ids[0] : form.deal_id);
     const primaryPc = getPrimaryContact(primaryCompanyId);
 
     const payload = {
       plan_type: form.plan_type,
       company_id: primaryCompanyId,
       deal_id: primaryDealId || null,
+      deal_ids: form.deal_ids.length > 0 ? form.deal_ids : (form.deal_id ? [form.deal_id] : []),
       manager_name: (form.plan_type === "intra" ? pc : primaryPc) ? `${(form.plan_type === "intra" ? pc : primaryPc)!.first_name} ${(form.plan_type === "intra" ? pc : primaryPc)!.last_name}` : null,
       manager_phone: (form.plan_type === "intra" ? pc : primaryPc)?.phone || null,
       manager_email: (form.plan_type === "intra" ? pc : primaryPc)?.email || null,
@@ -1020,9 +1023,12 @@ export function PlanningList({
                       <div style={{ fontWeight: 700, color: "#8399a9", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Budget</div>
                       <div style={{ fontWeight: 800, color: "#27ae60", fontSize: 16 }}>{plan.budget != null ? fmt(Number(plan.budget)) : "—"}</div>
                       {(() => {
-                        const deal = plan.deal_id ? wonDeals.find(d => d.id === plan.deal_id) : null;
-                        return deal ? (
-                          <div style={{ marginTop: 4, fontSize: 12, color: "#5a6f80" }}>Deal : {deal.name || "—"}</div>
+                        const ids = (plan as any).deal_ids?.length > 0 ? (plan as any).deal_ids : (plan.deal_id ? [plan.deal_id] : []);
+                        const linkedDeals = ids.map((id: string) => wonDeals.find(d => d.id === id)).filter(Boolean);
+                        return linkedDeals.length > 0 ? (
+                          <div style={{ marginTop: 4, fontSize: 12, color: "#5a6f80" }}>
+                            {linkedDeals.length === 1 ? `Deal : ${linkedDeals[0].name || "—"}` : linkedDeals.map((d: any) => d.name || "Deal").join(" + ")}
+                          </div>
                         ) : null;
                       })()}
                       {hourlyRate > 0 && (
@@ -1471,7 +1477,7 @@ export function PlanningList({
                   <button
                     key={val}
                     type="button"
-                    onClick={() => setForm({ ...form, plan_type: val, company_id: "", deal_id: "", inter_companies: [], budget: "" })}
+                    onClick={() => setForm({ ...form, plan_type: val, company_id: "", deal_id: "", deal_ids: [], inter_companies: [], budget: "" })}
                     style={{
                       flex: 1, padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
                       border: form.plan_type === val ? "2px solid #1a6b9c" : "1px solid #dce8f0",
@@ -1496,9 +1502,9 @@ export function PlanningList({
                     const cid = e.target.value;
                     const deals = getAvailableDeals(cid);
                     if (deals.length === 1) {
-                      setForm({ ...form, company_id: cid, deal_id: deals[0].id, budget: String(Number(deals[0].amount) || 0) });
+                      setForm({ ...form, company_id: cid, deal_id: deals[0].id, deal_ids: [deals[0].id], budget: String(Number(deals[0].amount) || 0) });
                     } else {
-                      setForm({ ...form, company_id: cid, deal_id: "", budget: "" });
+                      setForm({ ...form, company_id: cid, deal_id: "", deal_ids: [], budget: "" });
                     }
                   }}
                 >
@@ -1717,41 +1723,52 @@ export function PlanningList({
               );
             })()}
 
-            {/* Deal gagné → Budget */}
+            {/* Deals associés → Budget */}
             {form.company_id && (() => {
               const deals = getAvailableDeals(form.company_id, editingPlanId);
-              // If editing and current deal is already linked, include it
-              const currentDeal = editingPlanId ? wonDeals.find(d => d.id === form.deal_id) : null;
-              const allOptions = currentDeal && !deals.find(d => d.id === currentDeal.id) ? [currentDeal, ...deals] : deals;
+              // If editing, also include deals already linked that might not be in the available list
+              const existingDealIds = form.deal_ids.filter(id => !deals.find(d => d.id === id));
+              const extraDeals = existingDealIds.map(id => wonDeals.find(d => d.id === id)).filter(Boolean) as typeof wonDeals;
+              const allOptions = [...deals, ...extraDeals];
 
               return (
                 <div style={{ background: "#f0f7fb", borderRadius: 8, padding: 14 }}>
-                  <div style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 13, marginBottom: 8 }}>Deal associé</div>
+                  <div style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 13, marginBottom: 8 }}>Deals associés</div>
                   {allOptions.length > 0 ? (
                     <>
-                      <select
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                        value={form.deal_id}
-                        onChange={(e) => {
-                          const did = e.target.value;
-                          const deal = wonDeals.find(d => d.id === did);
-                          setForm({ ...form, deal_id: did, budget: deal ? String(Number(deal.amount) || 0) : "" });
-                        }}
-                      >
-                        <option value="">Sélectionner un deal</option>
-                        {allOptions.map(d => (
-                          <option key={d.id} value={d.id}>{d.name || "Deal sans nom"} — {fmt(Number(d.amount) || 0)}</option>
-                        ))}
-                      </select>
-                      {form.deal_id && (
-                        <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 12, color: "#5a6f80" }}>Budget prévu</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {allOptions.map(d => {
+                          const checked = form.deal_ids.includes(d.id);
+                          return (
+                            <label key={d.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 0" }}>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  const newIds = checked ? form.deal_ids.filter(id => id !== d.id) : [...form.deal_ids, d.id];
+                                  const totalBudget = newIds.reduce((sum, id) => {
+                                    const deal = wonDeals.find(dd => dd.id === id);
+                                    return sum + (Number(deal?.amount) || 0);
+                                  }, 0);
+                                  setForm({ ...form, deal_ids: newIds, deal_id: newIds[0] || "", budget: totalBudget > 0 ? String(totalBudget) : form.budget });
+                                }}
+                                style={{ width: 16, height: 16, accentColor: "#1a6b9c" }}
+                              />
+                              <span style={{ fontSize: 13, color: "#1a2a3a" }}>{d.name || "Deal sans nom"}</span>
+                              <span style={{ fontSize: 12, color: "#27ae60", fontWeight: 700, marginLeft: "auto" }}>{fmt(Number(d.amount) || 0)}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {form.deal_ids.length > 0 && (
+                        <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid #dce8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 12, color: "#5a6f80" }}>Budget total ({form.deal_ids.length} deal{form.deal_ids.length > 1 ? "s" : ""})</span>
                           <span style={{ fontWeight: 800, color: "#27ae60", fontSize: 16 }}>{form.budget ? fmt(Number(form.budget)) : "—"}</span>
                         </div>
                       )}
                     </>
                   ) : (
-                    <div style={{ fontSize: 13, color: "#e65100" }}>Aucun deal gagné disponible pour cette entreprise</div>
+                    <div style={{ fontSize: 13, color: "#e65100" }}>Aucun deal disponible pour cette entreprise</div>
                   )}
                 </div>
               );
