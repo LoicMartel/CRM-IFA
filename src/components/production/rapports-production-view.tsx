@@ -124,17 +124,16 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
       planSessions.forEach((s: R) => {
         const hours = Number(s.duration_hours) || 0;
-        const isBillable = s.is_billable !== false;
         c.sessionsTotal++;
         c.hoursTotal += hours;
         if (s.status === "done" || s.status === "no_show") {
           c.sessionsDone++;
           c.hoursDone += hours;
-          if (isBillable) c.consumedAmount += hours * hourlyRate;
+          c.consumedAmount += hours * hourlyRate;
         } else {
           c.sessionsPlanned++;
           c.hoursPlanned += hours;
-          if (isBillable) c.plannedAmount += hours * hourlyRate;
+          c.plannedAmount += hours * hourlyRate;
         }
       });
 
@@ -164,6 +163,28 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       .filter(c => c.sessionsPlanned > 0 || c.sessionsTotal === 0)
       .sort((a, b) => b.totalBudget - a.totalBudget);
 
+    // Compute remaining per plan for accurate totals
+    let totalRemainingAmount = 0;
+    activeCompanies.forEach(c => {
+      c.plans.forEach((plan: R) => {
+        const hourlyRate = Number(plan.hourly_rate) || 0;
+        const vtTotal = Number(plan.vt_planned) || 0;
+        const daysTotal = Number(plan.days_planned) || 0;
+        const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
+        const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
+        const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
+        const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
+        const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
+        const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
+        const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
+        const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
+        const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
+        const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
+        const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
+        totalRemainingAmount += (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
+      });
+    });
+
     const totals = {
       budget: activeCompanies.reduce((s, c) => s + c.totalBudget, 0),
       consumed: activeCompanies.reduce((s, c) => s + c.consumedAmount, 0),
@@ -172,7 +193,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       hoursDone: activeCompanies.reduce((s, c) => s + c.hoursDone, 0),
       hoursPlanned: activeCompanies.reduce((s, c) => s + c.hoursPlanned, 0),
     };
-    const totalRemaining = totals.budget - totals.consumed - totals.planned;
+    const totalRemaining = totalRemainingAmount;
 
     // Chart data
     const chartData = activeCompanies.map(c => ({
@@ -237,20 +258,37 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                     const planRows = c.plans.map((plan: R) => {
                       const planBudget = Number(plan.budget) || 0;
                       const hourlyRate = Number(plan.hourly_rate) || 0;
+                      const vtTotal = Number(plan.vt_planned) || 0;
+                      const daysTotal = Number(plan.days_planned) || 0;
                       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
                       const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
                       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
-                      const consumed = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+
+                      // Consumed = ALL done sessions (fact + NF)
+                      const consumed = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const facturable = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
-                      const engaged = plannedSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+                      // Engaged = ALL planned sessions
+                      const engaged = plannedSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const pct = planBudget > 0 ? Math.round((consumed / planBudget) * 100) : 0;
-                      const remaining = Math.max(0, planBudget - consumed - engaged);
+
+                      // Remaining = based on VT/Journée sessions left to schedule
+                      const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
+                      const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
+                      const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
+                      const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
+                      const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
+                      const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
+                      // Estimate remaining amount: avg VT duration × remaining VT + 8h × remaining Journée
+                      const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
+                      const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
+                      const remaining = (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
+                      const remainingLabel = [vtRemaining > 0 ? `${vtRemaining} VT` : "", daysRemaining > 0 ? `${daysRemaining} J` : ""].filter(Boolean).join(" + ");
 
                       const programName = (plan.training_programs as { name: string } | null)?.name ?? "Plan de formation";
                       const dealName = (plan.deals as { name: string } | null)?.name;
                       const label = dealName ? `${programName} — ${dealName}` : programName;
 
-                      return { planId: plan.id as string, label, planBudget, consumed, engaged, remaining, pct, facturable, hasPlanned: plannedSessions.length > 0 || planSessions.length === 0 };
+                      return { planId: plan.id as string, label, planBudget, consumed, engaged, remaining, remainingLabel, pct, facturable, hasPlanned: plannedSessions.length > 0 || planSessions.length === 0 };
                     }).filter((p: any) => p.hasPlanned);
 
                     if (planRows.length === 0) return null;
@@ -281,7 +319,10 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                         </TableCell>
                         <TableCell style={{ textAlign: "right", fontSize: 13, color: "#FF6B35", fontWeight: 600 }}>{fmt(p.facturable)}</TableCell>
                         <TableCell style={{ textAlign: "right", fontSize: 13, color: "#1a6b9c" }}>{fmt(p.engaged)}</TableCell>
-                        <TableCell style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: p.remaining > 0 ? "#e74c3c" : "#27ae60" }}>{fmt(p.remaining)}</TableCell>
+                        <TableCell style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: p.remaining > 0 ? "#e74c3c" : "#27ae60" }}>{fmt(p.remaining)}</div>
+                          {p.remainingLabel && <div style={{ fontSize: 10, color: "#8399a9" }}>{p.remainingLabel}</div>}
+                        </TableCell>
                       </TableRow>
                     ));
                   })}
