@@ -301,6 +301,9 @@ export function HomeView({
       status: sessionForm.status,
       notes: sessionForm.notes || null,
     }).eq("id", selectedSession.id as string);
+    // Sync delivery + learner statuses
+    fetch("/api/learners/sync-status").catch(() => {});
+    try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: selectedSession.id as string }) }); } catch {}
     setSavingSession(false);
     setSelectedSession(null);
     stopRecording();

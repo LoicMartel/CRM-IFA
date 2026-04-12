@@ -162,8 +162,9 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         } catch {}
       }
 
-      // Sync learner statuses (fire and forget)
+      // Sync learner statuses and delivery (fire and forget)
       fetch("/api/learners/sync-status").catch(() => {});
+      try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: selectedSession.id }) }); } catch {}
 
       setStatusOverrides(prev => ({ ...prev, [selectedSession.id]: sessionStatus }));
     } catch {}
