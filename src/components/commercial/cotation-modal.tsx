@@ -205,25 +205,57 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
   }
 
   async function handleSendEmail() {
-    // Find contact email
     const contact = contacts.find(c => `${c.first_name} ${c.last_name}` === form.contactName || c.id === form.contactId);
     if (!contact) {
       alert("Veuillez sélectionner un contact pour envoyer l'email.");
       return;
     }
-    // Get contact email from DB
     setSendingEmail(true);
     try {
+      // Generate PDF client-side from the cotation HTML
+      const html2pdf = (await import("html2pdf.js")).default;
+      const container = document.createElement("div");
+      container.innerHTML = generatePrintHtml(form, results);
+      // Extract just the body content
+      const bodyMatch = container.innerHTML.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      const bodyDiv = document.createElement("div");
+      bodyDiv.innerHTML = bodyMatch ? bodyMatch[1] : container.innerHTML;
+      bodyDiv.style.width = "800px";
+      document.body.appendChild(bodyDiv);
+
+      const pdfBlob: Blob = await html2pdf()
+        .set({
+          margin: [10, 10, 10, 10],
+          filename: "cotation.pdf",
+          image: { type: "jpeg", quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+        })
+        .from(bodyDiv)
+        .outputPdf("blob");
+
+      document.body.removeChild(bodyDiv);
+
+      // Convert blob to base64
+      const reader = new FileReader();
+      const pdfBase64: string = await new Promise((resolve) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]); // strip data:...;base64,
+        };
+        reader.readAsDataURL(pdfBlob);
+      });
+
       const res = await fetch("/api/cotation/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: "", // will be resolved server-side from contactId
+          to: "",
           contactFirstName: contact.first_name,
           companyName: form.companyName,
           memberId: currentMemberId,
           contactId: contact.id,
-          pdfHtml: generatePrintHtml(form, results),
+          pdfBase64,
         }),
       });
       const data = await res.json();
@@ -232,7 +264,8 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
       } else {
         alert("Erreur : " + (data.error || "Échec de l'envoi"));
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Erreur lors de l'envoi de l'email.");
     }
     setSendingEmail(false);

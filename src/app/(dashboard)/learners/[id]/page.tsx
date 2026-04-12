@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { LearnerDetailView } from "@/components/production/learner-detail-view";
+import { LmsProgressBar } from "@/components/learners/lms-progress-bar";
 
 export default async function LearnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,6 +69,9 @@ export default async function LearnerDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       <Header title={`${learner.first_name} ${learner.last_name}`} />
+      <div style={{ padding: "0 24px", marginBottom: 16 }}>
+        <LmsProgressBar learnerId={id} />
+      </div>
       <LearnerDetailView
         learner={learner}
         sessions={sessions}

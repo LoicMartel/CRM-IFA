@@ -27,9 +27,9 @@ function defaultSignature(member: { first_name: string; last_name: string; email
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, contactFirstName, companyName, memberId, contactId, pdfHtml } = await req.json();
+    const { to, contactFirstName, companyName, memberId, contactId, pdfBase64 } = await req.json();
 
-    if (!memberId || !pdfHtml) {
+    if (!memberId || !pdfBase64) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -73,9 +73,6 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // Convert the cotation HTML to a PDF-like attachment (HTML file for now)
-    const pdfBuffer = Buffer.from(pdfHtml, "utf-8");
-
     const { data: emailData, error } = await resend.emails.send({
       from: `${member.first_name} ${member.last_name} <${senderEmail}>`,
       to: [recipientEmail],
@@ -83,9 +80,9 @@ export async function POST(req: NextRequest) {
       html: bodyHtml,
       attachments: [
         {
-          filename: `Cotation_${(companyName || "client").replace(/[^a-zA-Z0-9]/g, "_")}.html`,
-          content: pdfBuffer.toString("base64"),
-          contentType: "text/html",
+          filename: `Cotation_${(companyName || "client").replace(/[^a-zA-Z0-9]/g, "_")}.pdf`,
+          content: pdfBase64,
+          contentType: "application/pdf",
         },
       ],
     });
