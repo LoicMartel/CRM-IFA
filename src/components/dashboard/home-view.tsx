@@ -125,7 +125,7 @@ function getDailyPhrase(phrases: string[]): string {
 
 export function HomeView({
   memberFirstName, currentMemberId, salesTargets, wonDeals, todayMeetings, todaySessions, todayTasks,
-  upcomingMeetings, upcomingSessions, overdueTasks, allVtSessions = [],
+  upcomingMeetings, upcomingSessions, overdueTasks, allProgressSessions = [],
 }: {
   memberFirstName?: string;
   currentMemberId?: string | null;
@@ -137,7 +137,7 @@ export function HomeView({
   upcomingMeetings: R[];
   upcomingSessions: R[];
   overdueTasks: R[];
-  allVtSessions?: { id: string; service_plan_id: string; status: string; session_date: string }[];
+  allProgressSessions?: { id: string; service_plan_id: string; session_type: string; status: string; session_date: string }[];
 }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -162,10 +162,10 @@ export function HomeView({
   const [taskForm, setTaskForm] = useState({ title: "", description: "", due_date: "", task_deadline: "" });
   const [savingTask, setSavingTask] = useState(false);
 
-  // ===== VT progression (e.g. "VT 2/12") =====
-  function getVtProgress(servicePlanId: string | undefined): { done: number; total: number } | null {
-    if (!servicePlanId || allVtSessions.length === 0) return null;
-    const planSessions = allVtSessions.filter(s => s.service_plan_id === servicePlanId);
+  // ===== Session progression (e.g. "VT 2/12", "Journée 3/5") =====
+  function getSessionProgress(servicePlanId: string | undefined, sessionType: string): { done: number; total: number } | null {
+    if (!servicePlanId || allProgressSessions.length === 0) return null;
+    const planSessions = allProgressSessions.filter(s => s.service_plan_id === servicePlanId && s.session_type === sessionType);
     if (planSessions.length <= 1) return null;
     const done = planSessions.filter(s => s.status === "done").length;
     return { done, total: planSessions.length };
@@ -532,7 +532,7 @@ export function HomeView({
                     <div key={s.id as string} onClick={() => openSession(s)} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1a6b9c"}`, cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: isJournee ? "#e65100" : "#1a6b9c" }}>
-                          {time ? `${time} · ` : ""}{isJournee ? "Journée" : (() => { const vtp = getVtProgress((s as any).service_plan_id); return vtp ? `VT ${vtp.done}/${vtp.total}` : "VT"; })()}
+                          {time ? `${time} · ` : ""}{(() => { const p = getSessionProgress((s as any).service_plan_id, s.session_type as string); const label = isJournee ? "Journée" : "VT"; return p ? `${label} ${p.done}/${p.total}` : label; })()}
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
                           <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
@@ -679,7 +679,7 @@ export function HomeView({
                   return (
                     <div key={s.id as string} onClick={() => router.push("/planning")} style={{ padding: "8px 12px", borderRadius: 8, background: "#f8fbfd", borderLeft: `3px solid ${isJournee ? "#e65100" : "#27ae60"}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>{isJournee ? "Journée" : (() => { const vtp = getVtProgress((s as any).service_plan_id); return vtp ? `VT ${vtp.done}/${vtp.total}` : "VT"; })()} — {plan?.companies?.name ?? "—"}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>{(() => { const p = getSessionProgress((s as any).service_plan_id, s.session_type as string); const label = isJournee ? "Journée" : "VT"; return p ? `${label} ${p.done}/${p.total}` : label; })()} — {plan?.companies?.name ?? "—"}</span>
                       </div>
                       <span style={{ fontSize: 11, color: "#8399a9" }}>{dateLabel}</span>
                     </div>

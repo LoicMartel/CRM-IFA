@@ -119,11 +119,10 @@ export default async function HomePage() {
     overdueTasks = ot ?? [];
   }
 
-  // Fetch all VT sessions (minimal) for progression display (VT 2/12)
-  const { data: allVtSessions } = await supabase
+  // Fetch all sessions (minimal) for progression display (VT 2/12, Journée 3/5)
+  const { data: allProgressSessions } = await supabase
     .from("training_sessions")
-    .select("id, service_plan_id, status, session_date")
-    .eq("session_type", "vt")
+    .select("id, service_plan_id, session_type, status, session_date")
     .neq("status", "cancelled")
     .order("session_date", { ascending: true });
 
@@ -140,7 +139,7 @@ export default async function HomePage() {
         upcomingMeetings={upcomingMeetings}
         upcomingSessions={upcomingSessions}
         overdueTasks={overdueTasks}
-        allVtSessions={allVtSessions ?? []}
+        allProgressSessions={allProgressSessions ?? []}
       />
     </div>
   );
