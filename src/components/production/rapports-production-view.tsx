@@ -209,13 +209,27 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
     };
     const totalRemaining = totalRemainingAmount;
 
-    // Chart data
-    const chartData = activeCompanies.map(c => ({
-      name: c.companyName.length > 15 ? c.companyName.slice(0, 14) + "…" : c.companyName,
-      Consommé: c.consumedAmount,
-      Engagé: c.plannedAmount,
-      Reste: Math.max(0, c.totalBudget - c.consumedAmount - c.plannedAmount),
-    }));
+    // Chart data — same logic as table rows: per-plan billable only, summed by company
+    const chartData = activeCompanies.map(c => {
+      let consumed = 0, engaged = 0, remaining = 0;
+      c.plans.forEach((plan: R) => {
+        const hr = Number(plan.hourly_rate) || 0;
+        const ps = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
+        const done = ps.filter((s: R) => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
+        const planned = ps.filter((s: R) => s.status === "planned" && s.is_billable !== false);
+        const hasPlanned = ps.filter((s: R) => s.status === "planned").length > 0 || ps.length === 0;
+        if (!hasPlanned) return;
+        consumed += done.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hr, 0);
+        engaged += planned.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hr, 0);
+        remaining += computePlanRemaining(plan).remaining;
+      });
+      return {
+        name: c.companyName.length > 15 ? c.companyName.slice(0, 14) + "…" : c.companyName,
+        Consommé: consumed,
+        Engagé: engaged,
+        Reste: remaining,
+      };
+    }).filter(c => c.Consommé > 0 || c.Engagé > 0 || c.Reste > 0);
 
     return (
       <>
