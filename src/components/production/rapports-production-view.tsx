@@ -124,16 +124,17 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
       planSessions.forEach((s: R) => {
         const hours = Number(s.duration_hours) || 0;
+        const isBillable = s.is_billable !== false;
         c.sessionsTotal++;
         c.hoursTotal += hours;
         if (s.status === "done" || s.status === "no_show") {
           c.sessionsDone++;
           c.hoursDone += hours;
-          c.consumedAmount += hours * hourlyRate;
+          if (isBillable) c.consumedAmount += hours * hourlyRate;
         } else {
           c.sessionsPlanned++;
           c.hoursPlanned += hours;
-          c.plannedAmount += hours * hourlyRate;
+          if (isBillable) c.plannedAmount += hours * hourlyRate;
         }
       });
 
@@ -164,22 +165,26 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       .sort((a, b) => b.totalBudget - a.totalBudget);
 
     // Pre-compute remaining per plan (shared between KPI cards and table)
+    // Matches Planification page: remaining = budget - consumed(billable) - engaged(billable)
     function computePlanRemaining(plan: R) {
       const hourlyRate = Number(plan.hourly_rate) || 0;
+      const planBudget = Number(plan.budget) || 0;
       const vtTotal = Number(plan.vt_planned) || 0;
       const daysTotal = Number(plan.days_planned) || 0;
       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
       const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
+      // Billable only for budget calculation (same as Planification)
+      const consumed = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+      const engaged = plannedSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+      const remaining = Math.max(0, planBudget - consumed - engaged);
+      // VT/J remaining counts (all sessions, not just billable)
       const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
       const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
       const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
       const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
       const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
       const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
-      const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
-      const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
-      const remaining = (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
       const remainingLabel = [vtRemaining > 0 ? `${vtRemaining} VT` : "", daysRemaining > 0 ? `${daysRemaining} J` : ""].filter(Boolean).join(" + ");
       const hasPlanned = plannedSessions.length > 0 || planSessions.length === 0;
       return { remaining, remainingLabel, hasPlanned };
@@ -187,8 +192,6 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
 
     // Sum remaining only for plans that appear in the table (hasPlanned filter)
     let totalRemainingAmount = 0;
-    let totalRemainingVt = 0;
-    let totalRemainingDays = 0;
     activeCompanies.forEach(c => {
       c.plans.forEach((plan: R) => {
         const { remaining, hasPlanned } = computePlanRemaining(plan);
@@ -272,9 +275,12 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                       const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
                       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
 
-                      const consumed = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
-                      const facturable = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
-                      const engaged = plannedSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+                      // Match Planification page: consumed & engaged = billable sessions only
+                      const billableDone = doneSessions.filter((s: R) => s.is_billable !== false);
+                      const billablePlanned = plannedSessions.filter((s: R) => s.is_billable !== false);
+                      const consumed = billableDone.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+                      const facturable = consumed;
+                      const engaged = billablePlanned.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const pct = planBudget > 0 ? Math.round((consumed / planBudget) * 100) : 0;
 
                       const { remaining, remainingLabel, hasPlanned } = computePlanRemaining(plan);
