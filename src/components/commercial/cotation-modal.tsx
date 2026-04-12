@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Calculator, Save, FileDown, ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { X, Calculator, Save, FileDown, Mail, ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
 import { computeCotation, CotationRow, CotationResults, MONTH_KEYS, MONTH_LABELS, createRow, rowTotal } from "@/lib/cotation-engine";
+import { useCurrentMember } from "@/lib/use-current-member";
 
 interface Deal {
   id: string;
@@ -85,7 +86,9 @@ function loadRows(data: any): CotationRow[] {
 
 export function CotationModal({ open, onClose, deals, companies, contacts, editQuotation, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const currentMemberId = useCurrentMember();
 
   const [form, setForm] = useState(() => initForm(editQuotation));
 
@@ -199,6 +202,40 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
     w.document.write(generatePrintHtml(form, results));
     w.document.close();
     setTimeout(() => w.print(), 300);
+  }
+
+  async function handleSendEmail() {
+    // Find contact email
+    const contact = contacts.find(c => `${c.first_name} ${c.last_name}` === form.contactName || c.id === form.contactId);
+    if (!contact) {
+      alert("Veuillez sélectionner un contact pour envoyer l'email.");
+      return;
+    }
+    // Get contact email from DB
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/cotation/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: "", // will be resolved server-side from contactId
+          contactFirstName: contact.first_name,
+          companyName: form.companyName,
+          memberId: currentMemberId,
+          contactId: contact.id,
+          pdfHtml: generatePrintHtml(form, results),
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert("Cotation envoyée par email !");
+      } else {
+        alert("Erreur : " + (data.error || "Échec de l'envoi"));
+      }
+    } catch {
+      alert("Erreur lors de l'envoi de l'email.");
+    }
+    setSendingEmail(false);
   }
 
   if (!open) return null;
@@ -459,6 +496,10 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
             <button onClick={onClose} style={{ height: 40, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>Annuler</button>
             <button onClick={handleExportPdf} disabled={results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "1px solid #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: results.totalHt === 0 ? 0.4 : 1 }}>
               <FileDown style={{ width: 14, height: 14 }} /> Exporter PDF
+            </button>
+            <button onClick={handleSendEmail} disabled={sendingEmail || results.totalHt === 0 || !form.contactName} style={{ height: 40, borderRadius: 8, border: "1px solid #27ae60", background: "white", color: "#27ae60", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (sendingEmail || results.totalHt === 0 || !form.contactName) ? 0.4 : 1 }}>
+              {sendingEmail ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Mail style={{ width: 14, height: 14 }} />}
+              {sendingEmail ? "Envoi..." : "Envoyer par email"}
             </button>
             <button onClick={handleSave} disabled={saving || results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "none", padding: "0 24px", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (saving || results.totalHt === 0) ? 0.5 : 1 }}>
               {saving ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Save style={{ width: 14, height: 14 }} />}

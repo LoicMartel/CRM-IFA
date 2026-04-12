@@ -1,0 +1,118 @@
+import { NextRequest, NextResponse } from "next/server";
+import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+function defaultSignature(member: { first_name: string; last_name: string; email: string; phone: string | null }) {
+  return `
+    <table style="width:100%"><tr><td height="20"></td></tr><tr><td style="border-top:2px solid #df7e0d"></td></tr><tr><td height="20"></td></tr></table>
+    <table style="font-family:Arial,sans-serif;font-size:13px;color:#1a2a3a"><tr>
+      <td style="vertical-align:top;padding-right:16px;border-right:2px solid #df7e0d">
+        <strong style="font-size:14px">${member.first_name} ${member.last_name}</strong><br>
+        <span style="color:#5a6f80">La Closing Académie ®</span>
+      </td>
+      <td style="vertical-align:top;padding-left:16px;font-size:12px">
+        ${member.phone ? `📞 ${member.phone}<br>` : ""}
+        ✉️ ${member.email}<br>
+        🔗 www.closing-academie.com
+      </td>
+    </tr></table>`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { to, contactFirstName, companyName, memberId, contactId, pdfHtml } = await req.json();
+
+    if (!memberId || !pdfHtml) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
+
+    // Resolve recipient email from contactId if not provided
+    let recipientEmail = to;
+    if (!recipientEmail && contactId) {
+      const { data: contact } = await supabase.from("contacts").select("email").eq("id", contactId).single();
+      recipientEmail = contact?.email;
+    }
+    if (!recipientEmail) {
+      return NextResponse.json({ error: "Aucun email trouvé pour ce contact" }, { status: 400 });
+    }
+
+    const { data: member } = await supabase
+      .from("team_members")
+      .select("first_name, last_name, email, phone, email_signature")
+      .eq("id", memberId)
+      .single();
+
+    if (!member || !member.email) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    }
+
+    const senderEmail = member.email.includes("@closing-academie.com")
+      ? member.email
+      : `${member.first_name.toLowerCase()}@closing-academie.com`;
+
+    const subject = `Proposition de formation — La Closing Académie® — ${companyName || ""}`.trim();
+
+    const greeting = contactFirstName ? `Bonjour ${contactFirstName},` : "Bonjour,";
+
+    const bodyHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; color: #1a2a3a; line-height: 1.8;">
+        <p>${greeting}</p>
+        <p>Suite à notre échange, veuillez trouver ci-joint notre proposition de formation personnalisée${companyName ? ` pour <strong>${companyName}</strong>` : ""}.</p>
+        <p>Cette cotation détaille l'ensemble du programme envisagé : le planning prévisionnel, le volume horaire et le budget associé.</p>
+        <p>Je reste à votre entière disposition pour en discuter et adapter cette proposition selon vos besoins.</p>
+        <p>Bien cordialement,</p>
+        <br>
+        ${member.email_signature || defaultSignature(member)}
+      </div>
+    `;
+
+    // Convert the cotation HTML to a PDF-like attachment (HTML file for now)
+    const pdfBuffer = Buffer.from(pdfHtml, "utf-8");
+
+    const { data: emailData, error } = await resend.emails.send({
+      from: `${member.first_name} ${member.last_name} <${senderEmail}>`,
+      to: [recipientEmail],
+      subject,
+      html: bodyHtml,
+      attachments: [
+        {
+          filename: `Cotation_${(companyName || "client").replace(/[^a-zA-Z0-9]/g, "_")}.html`,
+          content: pdfBuffer.toString("base64"),
+          contentType: "text/html",
+        },
+      ],
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Log as activity
+    if (contactId) {
+      await supabase.from("activities").insert({
+        type: "email",
+        title: `Email : ${subject}`,
+        description: `__EMAIL_HTML__${bodyHtml}__END_HTML__\n\nDestinataire : ${recipientEmail}\nObjet : ${subject}\n\nCotation envoyée par email.`,
+        contact_id: contactId,
+        team_member_id: memberId,
+        created_at: new Date().toISOString(),
+      });
+
+      await supabase.from("contacts").update({
+        last_contacted_at: new Date().toISOString(),
+      }).eq("id", contactId);
+    }
+
+    return NextResponse.json({ ok: true, emailId: emailData?.id });
+  } catch (err: any) {
+    console.error("Cotation email error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
