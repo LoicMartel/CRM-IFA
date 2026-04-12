@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
-import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download } from "lucide-react";
+import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
+import { CotationModal } from "./cotation-modal";
 
 interface Deal {
   id: string;
@@ -109,6 +110,8 @@ export function DealsBoard({
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [cotationOpen, setCotationOpen] = useState(false);
+  const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
   const [filterMonth, setFilterMonth] = useState(() => {
@@ -827,6 +830,17 @@ export function DealsBoard({
                   <Button
                     variant="outline"
                     onClick={() => {
+                      setCotationDealId(selectedDeal.id);
+                      setSelectedDeal(null);
+                      setCotationOpen(true);
+                    }}
+                    style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
+                  >
+                    <Calculator className="h-4 w-4 mr-2" /> Cotation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
                       if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ce deal ?")) {
                         handleDeleteDeal(selectedDeal.id);
                         setSelectedDeal(null);
@@ -842,6 +856,17 @@ export function DealsBoard({
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Cotation Modal */}
+      <CotationModal
+        open={cotationOpen}
+        onClose={() => { setCotationOpen(false); setCotationDealId(null); }}
+        deals={deals.map(d => ({ id: d.id, name: d.name, amount: d.amount, companies: d.companies }))}
+        companies={companies.map(c => ({ id: c.id, name: c.name ?? "" }))}
+        contacts={contacts.map(c => ({ id: c.id, first_name: c.first_name ?? "", last_name: c.last_name ?? "", company_id: c.company_id ?? null }))}
+        editQuotation={cotationDealId ? { id: "", company_name: deals.find(d => d.id === cotationDealId)?.companies?.name ?? "", contact_name: "", nb_learners: 1, nb_rise_up: 0, deal_id: cotationDealId, months: null, tjm_lca: 2200, base_coeff: 1, travel_coeff: 0.25, prep_coeff: 0.25, cost_per_day_presentiel: 350, rise_up_cost_per_license: 690, vt_duration_hours: 1, presentiel_hours_per_day: 8, notes: null } : null}
+        onSaved={() => router.refresh()}
+      />
     </>
   );
 }

@@ -27,7 +27,7 @@ function defaultSignature(member: { first_name: string; last_name: string; email
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, contactFirstName, companyName, memberId, contactId, pdfBase64 } = await req.json();
+    const { to, contactFirstName, companyName, memberId, contactId, dealId, pdfBase64 } = await req.json();
 
     if (!memberId || !pdfBase64) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -105,6 +105,26 @@ export async function POST(req: NextRequest) {
       await supabase.from("contacts").update({
         last_contacted_at: new Date().toISOString(),
       }).eq("id", contactId);
+    }
+
+    // Save PDF as document in the deal
+    if (dealId && pdfBase64) {
+      try {
+        const pdfBuffer = Buffer.from(pdfBase64, "base64");
+        const filename = `Cotation_${(companyName || "client").replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.pdf`;
+        const storagePath = `${dealId}/${filename}`;
+        await supabase.storage.from("deal-documents").upload(storagePath, pdfBuffer, { contentType: "application/pdf" });
+        await supabase.from("deal_documents").insert({
+          deal_id: dealId,
+          name: filename,
+          file_path: storagePath,
+          file_size: pdfBuffer.length,
+          file_type: "application/pdf",
+          document_type: "devis",
+        });
+      } catch (docErr) {
+        console.error("Error saving PDF to deal:", docErr);
+      }
     }
 
     return NextResponse.json({ ok: true, emailId: emailData?.id });

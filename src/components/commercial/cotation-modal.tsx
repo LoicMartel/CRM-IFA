@@ -102,6 +102,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
       companyName: eq?.company_name ?? "",
       contactId: "" as string,
       contactName: eq?.contact_name ?? "",
+      dealId: eq?.deal_id ?? "" as string,
       nbLearners: eq?.nb_learners ?? 1,
       nbRiseUp: eq?.nb_rise_up ?? 0,
       rows: loadRows(eq?.months),
@@ -167,6 +168,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
         company_name: form.companyName,
         contact_id: form.contactId || null,
         contact_name: form.contactName,
+        deal_id: form.dealId || null,
         nb_learners: form.nbLearners,
         nb_rise_up: form.nbRiseUp,
         months: { rows: form.rows },
@@ -255,12 +257,13 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
           companyName: form.companyName,
           memberId: currentMemberId,
           contactId: contact.id,
+          dealId: form.dealId || null,
           pdfBase64,
         }),
       });
       const data = await res.json();
       if (data.ok) {
-        alert("Cotation envoyée par email !");
+        alert("Cotation envoyée par email !" + (form.dealId ? " PDF sauvegardé dans le deal." : ""));
       } else {
         alert("Erreur : " + (data.error || "Échec de l'envoi"));
       }
@@ -307,7 +310,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
               Informations client
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 100px 100px", gap: 12, alignItems: "end" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Entreprise</label>
                 <select
@@ -315,7 +318,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                   onChange={(e) => {
                     const cid = e.target.value;
                     const company = companies.find(c => c.id === cid);
-                    setForm({ ...form, companyId: cid, companyName: company?.name ?? "", contactId: "", contactName: "" });
+                    setForm({ ...form, companyId: cid, companyName: company?.name ?? "", contactId: "", contactName: "", dealId: "" });
                   }}
                   className={inputCls}
                 >
@@ -342,6 +345,51 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                 </select>
               </div>
               <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Deal associé</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <select
+                    value={form.dealId}
+                    onChange={(e) => setForm({ ...form, dealId: e.target.value })}
+                    className={inputCls}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">Aucun deal</option>
+                    {(form.companyId ? deals.filter(d => d.companies?.name === form.companyName || d.companies?.name === companies.find(c => c.id === form.companyId)?.name) : deals)
+                      .map(d => <option key={d.id} value={d.id}>{d.name || "Deal sans nom"} — {fmtE(Number(d.amount) || 0)}</option>)}
+                  </select>
+                  {form.companyId && !form.dealId && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const dealName = prompt("Nom du deal :", `${form.companyName}`);
+                        if (!dealName) return;
+                        const amount = prompt("Montant (€) :", String(results.totalHt));
+                        const { createClient } = await import("@/lib/supabase/client");
+                        const supabase = createClient();
+                        const { data: newDeal } = await supabase.from("deals").insert({
+                          name: dealName,
+                          company_id: form.companyId,
+                          contact_id: form.contactId || null,
+                          owner_id: currentMemberId,
+                          stage: "quote_to_send",
+                          amount: parseFloat(amount || "0") || 0,
+                          probability: 40,
+                        }).select("id").single();
+                        if (newDeal) {
+                          setForm({ ...form, dealId: newDeal.id });
+                          alert("Deal créé !");
+                        }
+                      }}
+                      style={{ height: 36, borderRadius: 8, border: "1px solid #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 11, fontWeight: 600, padding: "0 10px", cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      + Deal
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 100px 1fr", gap: 12, alignItems: "end", marginTop: 8 }}>
+              <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Apprenants</label>
                 <input type="number" min={1} value={form.nbLearners} onChange={(e) => setForm({ ...form, nbLearners: Math.max(1, parseInt(e.target.value) || 1) })} className={inputCls} style={{ textAlign: "center", fontWeight: 700, fontSize: 15 }} />
               </div>
@@ -349,6 +397,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                 <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Rise Up</label>
                 <input type="number" min={0} value={form.nbRiseUp} onChange={(e) => setForm({ ...form, nbRiseUp: Math.max(0, parseInt(e.target.value) || 0) })} className={inputCls} style={{ textAlign: "center", fontWeight: 700, fontSize: 15 }} />
               </div>
+              <div></div>
             </div>
           </div>
 
