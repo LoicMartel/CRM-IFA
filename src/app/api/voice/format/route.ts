@@ -12,13 +12,16 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const { rawText, existingText, tone } = await request.json();
+  const { rawText, existingText, tone, names } = await request.json();
 
   if (!rawText?.trim()) {
     return NextResponse.json({ error: "Missing rawText" }, { status: 400 });
   }
 
   const toneInstruction = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.neutral;
+  const namesContext = names && names.length > 0
+    ? `\n\nNOMS PROPRES CONNUS (stagiaires, contacts, entreprises) — corrige la reconnaissance vocale pour correspondre à ces noms si un mot prononcé y ressemble :\n${names.join(", ")}`
+    : "";
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
@@ -36,7 +39,7 @@ Tu dois le reformater en texte écrit propre :
 - Ne pas ajouter de guillemets autour du texte
 - Répondre UNIQUEMENT avec le texte reformaté, sans commentaire ni explication
 
-STYLE ET TON : ${toneInstruction}`,
+STYLE ET TON : ${toneInstruction}${namesContext}`,
     messages: [
       {
         role: "user",

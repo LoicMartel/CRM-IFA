@@ -82,7 +82,11 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
   const [selectedSession, setSelectedSession] = useState<AgendaSession | null>(null);
   const [notesText, setNotesText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
-  const agendaNotesVoice = useVoiceDictation(() => notesText, (t) => setNotesText(t));
+  // Collect all learner names from all sessions for voice recognition
+  const allLearnerNames = Array.from(new Set(
+    sessions.flatMap(s => (s.training_session_learners ?? []).map(sl => sl.learners ? `${sl.learners.first_name} ${sl.learners.last_name}` : "")).filter(Boolean)
+  ));
+  const agendaNotesVoice = useVoiceDictation(() => notesText, (t) => setNotesText(t), { names: allLearnerNames });
   const [filterTrainer, setFilterTrainer] = useState("");
 
   const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
@@ -415,7 +419,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         return (
           <div
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedSession(null); } }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedSession(null); } }}
           >
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 560, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
               {/* Header */}
@@ -546,7 +550,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
       })()}
 
       {viewLearner && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={(e) => { if (e.target === e.currentTarget) setViewLearner(null); }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center" }} onMouseDown={(e) => { if (e.target === e.currentTarget) setViewLearner(null); }}>
           <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>{viewLearner.first_name} {viewLearner.last_name}</h3>

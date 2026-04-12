@@ -119,6 +119,14 @@ export default async function HomePage() {
     overdueTasks = ot ?? [];
   }
 
+  // Fetch all VT sessions (minimal) for progression display (VT 2/12)
+  const { data: allVtSessions } = await supabase
+    .from("training_sessions")
+    .select("id, service_plan_id, status, session_date")
+    .eq("session_type", "vt")
+    .neq("status", "cancelled")
+    .order("session_date", { ascending: true });
+
   return (
     <div className="p-6">
       <HomeView
@@ -132,6 +140,7 @@ export default async function HomePage() {
         upcomingMeetings={upcomingMeetings}
         upcomingSessions={upcomingSessions}
         overdueTasks={overdueTasks}
+        allVtSessions={allVtSessions ?? []}
       />
     </div>
   );

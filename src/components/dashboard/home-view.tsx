@@ -125,7 +125,7 @@ function getDailyPhrase(phrases: string[]): string {
 
 export function HomeView({
   memberFirstName, currentMemberId, salesTargets, wonDeals, todayMeetings, todaySessions, todayTasks,
-  upcomingMeetings, upcomingSessions, overdueTasks,
+  upcomingMeetings, upcomingSessions, overdueTasks, allVtSessions = [],
 }: {
   memberFirstName?: string;
   currentMemberId?: string | null;
@@ -137,6 +137,7 @@ export function HomeView({
   upcomingMeetings: R[];
   upcomingSessions: R[];
   overdueTasks: R[];
+  allVtSessions?: { id: string; service_plan_id: string; status: string; session_date: string }[];
 }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -161,10 +162,26 @@ export function HomeView({
   const [taskForm, setTaskForm] = useState({ title: "", description: "", due_date: "", task_deadline: "" });
   const [savingTask, setSavingTask] = useState(false);
 
+  // ===== VT progression (e.g. "VT 2/12") =====
+  function getVtProgress(servicePlanId: string | undefined): { done: number; total: number } | null {
+    if (!servicePlanId || allVtSessions.length === 0) return null;
+    const planSessions = allVtSessions.filter(s => s.service_plan_id === servicePlanId);
+    if (planSessions.length <= 1) return null;
+    const done = planSessions.filter(s => s.status === "done").length;
+    return { done, total: planSessions.length };
+  }
+
+  // ===== Collect names for voice recognition =====
+  const allNames = Array.from(new Set([
+    ...todayMeetings.map((m: R) => { const c = m.contacts as { first_name: string; last_name: string } | null; return c ? `${c.first_name} ${c.last_name}` : ""; }),
+    ...todaySessions.flatMap((s: R) => ((s as any).training_session_learners ?? []).map((sl: any) => sl.learners ? `${sl.learners.first_name} ${sl.learners.last_name}` : "")),
+    ...todayMeetings.map((m: R) => { const c = m.companies as { name: string } | null; return c?.name ?? ""; }),
+  ].filter(Boolean)));
+
   // ===== Voice dictation =====
-  const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm(f => ({ ...f, notes: t })));
-  const rdvOutcomeVoice = useVoiceDictation(() => rdvForm.outcome, (t) => setRdvForm(f => ({ ...f, outcome: t })));
-  const sessionNotesVoice = useVoiceDictation(() => sessionForm.notes, (t) => setSessionForm(f => ({ ...f, notes: t })));
+  const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm(f => ({ ...f, notes: t })), { names: allNames });
+  const rdvOutcomeVoice = useVoiceDictation(() => rdvForm.outcome, (t) => setRdvForm(f => ({ ...f, outcome: t })), { names: allNames });
+  const sessionNotesVoice = useVoiceDictation(() => sessionForm.notes, (t) => setSessionForm(f => ({ ...f, notes: t })), { names: allNames });
 
   function stopRecording() {
     rdvNotesVoice.stopRecording();
@@ -201,19 +218,14 @@ export function HomeView({
     const newStatus = rdvForm.status;
 
     if (originalStatus === "booked" && (newStatus === "done" || newStatus === "no_show" || newStatus === "cancelled")) {
-      await supabase.from("meetings").insert({
+      await supabase.from("meetings").update({
         meeting_type: rdvForm.meeting_type,
         status: newStatus,
-        scheduled_at: new Date().toISOString(),
         duration_minutes: parseInt(rdvForm.duration_minutes) || 60,
         meeting_mode: rdvForm.meeting_mode,
         notes: rdvForm.notes || null,
         outcome: outcomeText || null,
-        contact_id: m.contact_id,
-        company_id: m.company_id,
-        assigned_to: m.assigned_to || currentMemberId,
-      });
-      await supabase.from("meetings").update({ next_step: "completed" }).eq("id", m.id as string);
+      }).eq("id", m.id as string);
 
       if (m.contact_id) {
         if (newStatus === "done" && rdvForm.rdv_result === "signed") {
@@ -520,7 +532,7 @@ export function HomeView({
                     <div key={s.id as string} onClick={() => openSession(s)} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1a6b9c"}`, cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: isJournee ? "#e65100" : "#1a6b9c" }}>
-                          {time ? `${time} · ` : ""}{isJournee ? "Journée" : "VT"}
+                          {time ? `${time} · ` : ""}{isJournee ? "Journée" : (() => { const vtp = getVtProgress((s as any).service_plan_id); return vtp ? `VT ${vtp.done}/${vtp.total}` : "VT"; })()}
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
                           <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
@@ -667,7 +679,7 @@ export function HomeView({
                   return (
                     <div key={s.id as string} onClick={() => router.push("/planning")} style={{ padding: "8px 12px", borderRadius: 8, background: "#f8fbfd", borderLeft: `3px solid ${isJournee ? "#e65100" : "#27ae60"}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>{isJournee ? "Journée" : "VT"} — {plan?.companies?.name ?? "—"}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>{isJournee ? "Journée" : (() => { const vtp = getVtProgress((s as any).service_plan_id); return vtp ? `VT ${vtp.done}/${vtp.total}` : "VT"; })()} — {plan?.companies?.name ?? "—"}</span>
                       </div>
                       <span style={{ fontSize: 11, color: "#8399a9" }}>{dateLabel}</span>
                     </div>
@@ -696,7 +708,7 @@ export function HomeView({
         return (
           <div
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedMeeting(null); } }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedMeeting(null); } }}
           >
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 580, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
               {/* Header */}
@@ -901,7 +913,7 @@ export function HomeView({
         return (
           <div
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onClick={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedSession(null); } }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedSession(null); } }}
           >
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 560, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
               {/* Header */}
@@ -1025,7 +1037,7 @@ export function HomeView({
       {/* ===================================================================== */}
       {selectedTask && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setSelectedTask(null); }}>
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setSelectedTask(null); }}>
           <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
             {/* Header */}
             <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

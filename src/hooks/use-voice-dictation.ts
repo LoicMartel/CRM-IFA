@@ -6,6 +6,7 @@ import type { VoiceTone } from "@/components/ui/voice-button";
 export function useVoiceDictation(
   getValue: () => string,
   setValue: (text: string) => void,
+  options?: { names?: string[] },
 ) {
   const [isRecording, setIsRecording] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -20,13 +21,16 @@ export function useVoiceDictation(
     toneRef.current = t;
   }, []);
 
+  const namesRef = useRef<string[]>(options?.names ?? []);
+  namesRef.current = options?.names ?? [];
+
   const formatWithAI = useCallback(async (rawText: string, existingText: string) => {
     setIsFormatting(true);
     try {
       const res = await fetch("/api/voice/format", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rawText, existingText, tone: toneRef.current }),
+        body: JSON.stringify({ rawText, existingText, tone: toneRef.current, names: namesRef.current.length > 0 ? namesRef.current : undefined }),
       });
       const data = await res.json();
       if (data.formatted) {
