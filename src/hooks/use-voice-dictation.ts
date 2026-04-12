@@ -44,7 +44,6 @@ export function useVoiceDictation(
     if (!SR) { alert("Reconnaissance vocale non supportée par ce navigateur."); return; }
 
     const recognition = new SR();
-    recognition.lang = "fr-FR";
     recognition.continuous = true;
     recognition.interimResults = true;
 

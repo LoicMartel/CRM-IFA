@@ -23,9 +23,11 @@ export async function POST(request: Request) {
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 1024,
-    system: `Tu es un assistant de reformatage de dictée vocale en français.
+    system: `Tu es un assistant de reformatage de dictée vocale. Tu gères le français ET l'anglais.
 Tu reçois du texte brut issu d'une reconnaissance vocale (sans ponctuation, sans majuscules, sans mise en forme).
 Tu dois le reformater en texte écrit propre :
+- Détecter automatiquement la langue (français ou anglais) et reformater dans la même langue
+- Si le texte mélange les deux langues, garder le mélange tel quel
 - Ajouter la ponctuation correcte (points, virgules, points d'exclamation, points d'interrogation)
 - Mettre les majuscules en début de phrase et sur les noms propres
 - Ajouter des retours à la ligne pour séparer les paragraphes ou idées distinctes
