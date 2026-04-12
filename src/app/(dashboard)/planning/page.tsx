@@ -41,8 +41,8 @@ export default async function PlanningPage() {
 
   const { data: wonDeals } = await supabase
     .from("deals")
-    .select("id, company_id, amount, name")
-    .eq("stage", "closed_won");
+    .select("id, company_id, amount, name, stage")
+    .in("stage", ["closed_won", "quote_sent", "quote_signed", "opco_deposit"]);
 
   const { data: teamMembersData } = await supabase
     .from("team_members")
