@@ -130,7 +130,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
         if (s.status === "done" || s.status === "no_show") {
           c.sessionsDone++;
           c.hoursDone += hours;
-          c.consumedAmount += hours * hourlyRate;
+          if (isBillable) c.consumedAmount += hours * hourlyRate;
         } else {
           c.sessionsPlanned++;
           c.hoursPlanned += hours;
@@ -240,7 +240,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
                       const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
                       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
-                      const consumed = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
+                      const consumed = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const facturable = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const engaged = plannedSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const pct = planBudget > 0 ? Math.round((consumed / planBudget) * 100) : 0;
