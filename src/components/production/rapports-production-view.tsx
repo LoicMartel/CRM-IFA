@@ -163,25 +163,36 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
       .filter(c => c.sessionsPlanned > 0 || c.sessionsTotal === 0)
       .sort((a, b) => b.totalBudget - a.totalBudget);
 
-    // Compute remaining per plan for accurate totals
+    // Pre-compute remaining per plan (shared between KPI cards and table)
+    function computePlanRemaining(plan: R) {
+      const hourlyRate = Number(plan.hourly_rate) || 0;
+      const vtTotal = Number(plan.vt_planned) || 0;
+      const daysTotal = Number(plan.days_planned) || 0;
+      const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
+      const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
+      const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
+      const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
+      const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
+      const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
+      const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
+      const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
+      const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
+      const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
+      const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
+      const remaining = (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
+      const remainingLabel = [vtRemaining > 0 ? `${vtRemaining} VT` : "", daysRemaining > 0 ? `${daysRemaining} J` : ""].filter(Boolean).join(" + ");
+      const hasPlanned = plannedSessions.length > 0 || planSessions.length === 0;
+      return { remaining, remainingLabel, hasPlanned };
+    }
+
+    // Sum remaining only for plans that appear in the table (hasPlanned filter)
     let totalRemainingAmount = 0;
+    let totalRemainingVt = 0;
+    let totalRemainingDays = 0;
     activeCompanies.forEach(c => {
       c.plans.forEach((plan: R) => {
-        const hourlyRate = Number(plan.hourly_rate) || 0;
-        const vtTotal = Number(plan.vt_planned) || 0;
-        const daysTotal = Number(plan.days_planned) || 0;
-        const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
-        const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
-        const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
-        const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
-        const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
-        const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
-        const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
-        const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
-        const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
-        const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
-        const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
-        totalRemainingAmount += (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
+        const { remaining, hasPlanned } = computePlanRemaining(plan);
+        if (hasPlanned) totalRemainingAmount += remaining;
       });
     });
 
@@ -227,7 +238,6 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Reste à planifier</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: totalRemaining > 0 ? "#e74c3c" : "#27ae60" }}>{fmt(totalRemaining)}</div>
-            <div style={{ fontSize: 11, color: "#8399a9" }}>{totals.hoursPlanned.toFixed(0)}h planifiées</div>
           </div>
         </div>
 
@@ -258,37 +268,22 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                     const planRows = c.plans.map((plan: R) => {
                       const planBudget = Number(plan.budget) || 0;
                       const hourlyRate = Number(plan.hourly_rate) || 0;
-                      const vtTotal = Number(plan.vt_planned) || 0;
-                      const daysTotal = Number(plan.days_planned) || 0;
                       const planSessions = filteredSessions.filter((s: R) => s.service_plan_id === plan.id && s.status !== "cancelled");
                       const doneSessions = planSessions.filter((s: R) => s.status === "done" || s.status === "no_show");
                       const plannedSessions = planSessions.filter((s: R) => s.status === "planned");
 
-                      // Consumed = ALL done sessions (fact + NF)
                       const consumed = doneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const facturable = doneSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
-                      // Engaged = ALL planned sessions
                       const engaged = plannedSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0) * hourlyRate, 0);
                       const pct = planBudget > 0 ? Math.round((consumed / planBudget) * 100) : 0;
 
-                      // Remaining = based on VT/Journée sessions left to schedule
-                      const vtDone = doneSessions.filter((s: R) => s.session_type === "vt").length;
-                      const vtScheduled = plannedSessions.filter((s: R) => s.session_type === "vt").length;
-                      const daysDone = doneSessions.filter((s: R) => s.session_type === "journee").length;
-                      const daysScheduled = plannedSessions.filter((s: R) => s.session_type === "journee").length;
-                      const vtRemaining = Math.max(0, vtTotal - vtDone - vtScheduled);
-                      const daysRemaining = Math.max(0, daysTotal - daysDone - daysScheduled);
-                      // Estimate remaining amount: avg VT duration × remaining VT + 8h × remaining Journée
-                      const vtDoneSessions = doneSessions.filter((s: R) => s.session_type === "vt");
-                      const avgVtHours = vtDoneSessions.length > 0 ? vtDoneSessions.reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0) / vtDoneSessions.length : 1;
-                      const remaining = (vtRemaining * avgVtHours * hourlyRate) + (daysRemaining * 8 * hourlyRate);
-                      const remainingLabel = [vtRemaining > 0 ? `${vtRemaining} VT` : "", daysRemaining > 0 ? `${daysRemaining} J` : ""].filter(Boolean).join(" + ");
+                      const { remaining, remainingLabel, hasPlanned } = computePlanRemaining(plan);
 
                       const programName = (plan.training_programs as { name: string } | null)?.name ?? "Plan de formation";
                       const dealName = (plan.deals as { name: string } | null)?.name;
                       const label = dealName ? `${programName} — ${dealName}` : programName;
 
-                      return { planId: plan.id as string, label, planBudget, consumed, engaged, remaining, remainingLabel, pct, facturable, hasPlanned: plannedSessions.length > 0 || planSessions.length === 0 };
+                      return { planId: plan.id as string, label, planBudget, consumed, engaged, remaining, remainingLabel, pct, facturable, hasPlanned };
                     }).filter((p: any) => p.hasPlanned);
 
                     if (planRows.length === 0) return null;
