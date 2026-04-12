@@ -42,11 +42,11 @@ const commercialItems = [
   { title: "Agenda Commercial", href: "/agenda-commercial", icon: CalendarCheck },
   { title: "Contacts", href: "/contacts", icon: User },
   { title: "Entreprises", href: "/companies", icon: Building2 },
+  { title: "Ressources", href: "/ressources-commercial", icon: Calculator },
   { title: "Pipeline", href: "/deals", icon: Handshake },
   { title: "Opportunités", href: "/opportunities", icon: TrendingUp },
   { title: "Commandes (PDCO)", href: "/orders", icon: CreditCard },
   { title: "Rapports Commerciaux", href: "/leads", icon: Target },
-  { title: "Ressources", href: "/ressources-commercial", icon: Calculator },
 ];
 
 const productionItemsList = [
