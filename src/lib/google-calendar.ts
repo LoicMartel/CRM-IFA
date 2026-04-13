@@ -276,6 +276,82 @@ export async function updateCalendarEvent({
   }
 }
 
+/**
+ * Upsert : tente de mettre à jour un évènement existant ; si l'évènement
+ * est introuvable sur l'agenda cible (trainer changé, évènement supprimé
+ * manuellement, agenda différent de l'origine…), crée un nouvel évènement.
+ *
+ * Retourne toujours l'ID final de l'évènement (à stocker en base) pour que
+ * les prochains updates visent le bon évènement.
+ */
+export async function upsertCalendarEvent({
+  calendarId,
+  existingEventId,
+  summary,
+  description,
+  location,
+  startDateTime,
+  endDateTime,
+  timeZone = "Europe/Paris",
+  attendees = [],
+}: {
+  calendarId: string;
+  existingEventId?: string | null;
+  summary: string;
+  description: string;
+  location: string;
+  startDateTime: string;
+  endDateTime: string;
+  timeZone?: string;
+  attendees?: { email: string; displayName?: string }[];
+}): Promise<{ success: boolean; eventId?: string; status: "created" | "updated" | "failed"; error?: string }> {
+  // 1. Tentative d'update si on a un ID existant
+  if (existingEventId) {
+    const upd = await updateCalendarEvent({
+      calendarId,
+      eventId: existingEventId,
+      summary,
+      description,
+      location,
+      startDateTime,
+      endDateTime,
+      timeZone,
+    });
+    if (upd.success) {
+      return { success: true, eventId: existingEventId, status: "updated" };
+    }
+    // Si l'erreur n'est PAS un "not found", on ne tente pas de créer.
+    const errMsg = (upd.error ?? "").toLowerCase();
+    const isMissing =
+      errMsg.includes("not found") ||
+      errMsg.includes("notfound") ||
+      errMsg.includes("404") ||
+      errMsg.includes("deleted") ||
+      errMsg.includes("resource") ||
+      errMsg.includes("gone");
+    if (!isMissing) {
+      return { success: false, status: "failed", error: upd.error };
+    }
+    // Sinon : l'évènement n'existe plus sur cet agenda → on enchaîne sur create.
+  }
+
+  // 2. Création
+  const created = await createCalendarEvent({
+    calendarId,
+    summary,
+    description,
+    location,
+    startDateTime,
+    endDateTime,
+    timeZone,
+    attendees,
+  });
+  if (created.success && created.eventId) {
+    return { success: true, eventId: created.eventId, status: "created" };
+  }
+  return { success: false, status: "failed", error: created.error };
+}
+
 export async function deleteCalendarEvent({
   calendarId,
   eventId,

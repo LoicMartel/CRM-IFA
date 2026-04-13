@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createCalendarEvent, updateCalendarEvent } from "@/lib/google-calendar";
+import { upsertCalendarEvent } from "@/lib/google-calendar";
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,42 +66,27 @@ export async function POST(req: NextRequest) {
 
     const existingEventId = task.gcal_event_id as string | null;
 
-    if (existingEventId) {
-      // Update existing Google Calendar event
-      const gcalResult = await updateCalendarEvent({
-        calendarId,
-        eventId: existingEventId,
-        summary: title,
-        description,
-        location: "",
-        startDateTime: startDT,
-        endDateTime: endDT,
-      });
-      return NextResponse.json({
-        success: true,
-        result: gcalResult.success ? "Mis à jour sur le calendrier" : gcalResult.error,
-      });
-    } else {
-      // Create new Google Calendar event
-      const gcalResult = await createCalendarEvent({
-        calendarId,
-        summary: title,
-        description,
-        location: "",
-        startDateTime: startDT,
-        endDateTime: endDT,
-      });
+    const upsert = await upsertCalendarEvent({
+      calendarId,
+      existingEventId,
+      summary: title,
+      description,
+      location: "",
+      startDateTime: startDT,
+      endDateTime: endDT,
+    });
 
-      // Save the event ID for future updates
-      if (gcalResult.success && gcalResult.eventId) {
-        await supabase.from("activities").update({ gcal_event_id: gcalResult.eventId }).eq("id", taskId);
-      }
-
-      return NextResponse.json({
-        success: true,
-        result: gcalResult.success ? "Ajouté au calendrier" : gcalResult.error,
-      });
+    // Si un nouvel évènement a été créé (initial OU fallback après update 404), persister l'ID
+    if (upsert.success && upsert.status === "created" && upsert.eventId) {
+      await supabase.from("activities").update({ gcal_event_id: upsert.eventId }).eq("id", taskId);
     }
+
+    return NextResponse.json({
+      success: true,
+      result: upsert.success
+        ? (upsert.status === "updated" ? "Mis à jour sur le calendrier" : "Ajouté au calendrier")
+        : upsert.error,
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

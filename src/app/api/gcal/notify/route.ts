@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar";
+import { upsertCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
@@ -121,34 +121,22 @@ export async function POST(req: NextRequest) {
         ].filter(Boolean).join("\n");
 
         const existingEventId = isUpdate ? (session as any).gcal_event_id : null;
+        const upsert = await upsertCalendarEvent({
+          calendarId,
+          existingEventId,
+          summary: title,
+          description,
+          location,
+          startDateTime: startDT,
+          endDateTime: endDT,
+        });
 
-        if (existingEventId) {
-          // Update existing Google Calendar event
-          const gcalResult = await updateCalendarEvent({
-            calendarId,
-            eventId: existingEventId,
-            summary: title,
-            description,
-            location,
-            startDateTime: startDT,
-            endDateTime: endDT,
-          });
-          results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "updated" : gcalResult.error });
-        } else {
-          // Create new Google Calendar event
-          const gcalResult = await createCalendarEvent({
-            calendarId,
-            summary: title,
-            description,
-            location,
-            startDateTime: startDT,
-            endDateTime: endDT,
-          });
-          if (gcalResult.success && gcalResult.eventId) {
-            await supabase.from("training_sessions").update({ gcal_event_id: gcalResult.eventId }).eq("id", sessionId);
-          }
-          results.push({ trainer: trainer.first_name, gcal: gcalResult.success ? "created" : gcalResult.error });
+        // Si un nouvel évènement a été créé (soit initial, soit fallback), persister l'ID
+        if (upsert.success && upsert.status === "created" && upsert.eventId) {
+          await supabase.from("training_sessions").update({ gcal_event_id: upsert.eventId }).eq("id", sessionId);
         }
+
+        results.push({ trainer: trainer.first_name, gcal: upsert.success ? upsert.status : upsert.error });
       }
 
       // 2. Slack DM (for everyone with a Slack user ID)

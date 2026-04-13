@@ -2135,14 +2135,18 @@ export function PlanningList({
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
                   {results.map((r: any, i: number) => (
                     <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      {r.gcal && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: r.gcal === "created" ? "#e8f5e9" : "#fce4ec", borderRadius: 8 }}>
-                          <span style={{ fontSize: 14 }}>📅</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: r.gcal === "created" ? "#2e7d32" : "#c62828" }}>
-                            Google Calendar {r.trainer} — {r.gcal === "created" ? "ajouté" : r.gcal}
-                          </span>
-                        </div>
-                      )}
+                      {r.gcal && (() => {
+                        const isSuccess = r.gcal === "created" || r.gcal === "updated";
+                        const label = r.gcal === "created" ? "ajouté" : r.gcal === "updated" ? "mis à jour" : r.gcal;
+                        return (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: isSuccess ? "#e8f5e9" : "#fce4ec", borderRadius: 8 }}>
+                            <span style={{ fontSize: 14 }}>📅</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: isSuccess ? "#2e7d32" : "#c62828" }}>
+                              Google Calendar {r.trainer} — {label}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {r.slack && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: r.slack === "sent" ? "#e8f5e9" : "#fce4ec", borderRadius: 8 }}>
                           <span style={{ fontSize: 14 }}>💬</span>
