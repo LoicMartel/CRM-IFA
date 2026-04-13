@@ -285,7 +285,7 @@ export function DealsBoard({
     router.refresh();
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<string | null> {
     setSaving(true);
     const supabase = createClient();
     const stage = form.stage as DealStage;
@@ -303,8 +303,10 @@ export function DealsBoard({
       notes: form.notes || null,
     };
     const closeDate = stage === "closed_won" ? (form.close_date || new Date().toISOString().split("T")[0]) : null;
+    let savedId: string | null = null;
     if (editingDealId) {
       await supabase.from("deals").update({ ...payload, close_date: closeDate }).eq("id", editingDealId);
+      savedId = editingDealId;
 
       const originalDeal = deals.find((d) => d.id === editingDealId);
 
@@ -319,13 +321,24 @@ export function DealsBoard({
         }
       }
     } else {
-      await supabase.from("deals").insert({ ...payload, close_date: closeDate });
+      const { data } = await supabase.from("deals").insert({ ...payload, close_date: closeDate }).select("id").single();
+      savedId = data?.id ?? null;
     }
     setSaving(false);
     setOpen(false);
     setEditingDealId(null);
     setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" });
     router.refresh();
+    return savedId;
+  }
+
+  async function handleSaveAndOpenCotation() {
+    if (!form.name.trim()) return;
+    const id = await handleSave();
+    if (id) {
+      setCotationDealId(id);
+      setCotationOpen(true);
+    }
   }
 
   // Period filter logic
@@ -596,6 +609,16 @@ export function DealsBoard({
             </div>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()} className="w-full" style={{ background: "#e8632b", color: "white" }}>
               {saving ? "Enregistrement..." : (editingDealId ? "Sauvegarder" : "Créer le deal")}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSaveAndOpenCotation}
+              disabled={saving || !form.name.trim()}
+              className="w-full"
+              style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
+            >
+              <Calculator className="h-4 w-4 mr-2" />
+              {editingDealId ? "Sauvegarder et créer une cotation" : "Créer le deal et la cotation"}
             </Button>
           </div>
         </SheetContent>
