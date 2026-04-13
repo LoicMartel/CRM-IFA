@@ -403,6 +403,13 @@ export function DealsBoard({
           <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
             <Plus className="h-4 w-4 mr-2" /> Nouveau deal
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => { setCotationDealId(null); setCotationOpen(true); }}
+            style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
+          >
+            <Calculator className="h-4 w-4 mr-2" /> Cotation
+          </Button>
         </div>
 
         {/* KPIs */}
