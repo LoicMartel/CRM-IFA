@@ -88,18 +88,34 @@ function normalizeProvider(name: string): string {
 const MARKETING_PROVIDERS = ["Pub", "Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"] as const;
 const MARKETING_PROVIDER_SET: ReadonlySet<string> = new Set(MARKETING_PROVIDERS);
 
+// Alias explicites : certaines sources de leads sont attribuées à un prestataire
+// précis (ex: LinkedIn = Skaale qui fait la prospection LinkedIn).
+const SOURCE_TO_PROVIDER_ALIAS: Record<string, string> = {
+  linkedin: "Skaale",
+  tiktok: "Agence Personnelle",
+  instagram: "Agence Personnelle",
+  facebook: "Agence Personnelle",
+  youtube: "Agence Personnelle",
+};
+
 // Mapping source de lead → prestataire marketing (identique à la page Dépenses).
 // Tolère espaces / tirets / casse différents (ex: "OliverList" ↔ "Oliver List").
 // Renvoie "" si la source ne correspond à aucun prestataire marketing.
 function sourceToProvider(sourceName: string): string {
   if (!sourceName) return "";
   const norm = sourceName.toLowerCase().replace(/[\s\-_]+/g, "");
+  // 1. Tunnels publicitaires
   if (norm.includes("tunnel") || norm.includes("metaads")) return "Pub";
+  // 2. Alias réseaux sociaux → prestataire dédié
+  for (const [key, provider] of Object.entries(SOURCE_TO_PROVIDER_ALIAS)) {
+    if (norm.includes(key)) return provider;
+  }
+  // 3. Match direct sur le nom du prestataire
   for (const p of MARKETING_PROVIDERS) {
     if (p === "Pub") continue;
     if (norm.includes(p.toLowerCase().replace(/[\s\-_]+/g, ""))) return p;
   }
-  return ""; // source non marketing (Renouvellement, Prospection, LinkedIn, etc.)
+  return ""; // source non marketing (Renouvellement, Prospection, etc.)
 }
 
 function getMonthKey(dateStr: string): string {

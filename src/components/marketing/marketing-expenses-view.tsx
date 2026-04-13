@@ -97,12 +97,28 @@ function getLeadSourceName(l: Lead): string {
   return l.lead_sources.name;
 }
 
+// Alias explicites : certaines sources de leads sont attribuées à un prestataire
+// précis (ex: LinkedIn = Skaale qui fait la prospection LinkedIn).
+const SOURCE_TO_PROVIDER_ALIAS: Record<string, string> = {
+  linkedin: "Skaale",
+  tiktok: "Agence Personnelle",
+  instagram: "Agence Personnelle",
+  facebook: "Agence Personnelle",
+  youtube: "Agence Personnelle",
+};
+
 function sourceToProvider(sourceName: string): string {
   if (!sourceName) return "";
   // Normalise : minuscules + suppression des espaces/tirets pour matcher
   // "OliverList" ↔ "Oliver List", "LK-Premium" ↔ "LK Premium", etc.
   const norm = sourceName.toLowerCase().replace(/[\s\-_]+/g, "");
+  // 1. Tunnels publicitaires
   if (norm.includes("tunnel") || norm.includes("metaads")) return "Pub";
+  // 2. Alias réseaux sociaux → prestataire dédié
+  for (const [key, provider] of Object.entries(SOURCE_TO_PROVIDER_ALIAS)) {
+    if (norm.includes(key)) return provider;
+  }
+  // 3. Match direct sur le nom du prestataire
   const providers = ["Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"];
   for (const p of providers) {
     if (norm.includes(p.toLowerCase().replace(/[\s\-_]+/g, ""))) return p;
