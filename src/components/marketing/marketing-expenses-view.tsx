@@ -61,12 +61,40 @@ interface WonDeal {
   created_at: string;
   source_id: string | null;
   lead_sources: { name: string } | { name: string }[] | null;
+  contacts?:
+    | { source_id: string | null; lead_sources: { name: string } | { name: string }[] | null }
+    | { source_id: string | null; lead_sources: { name: string } | { name: string }[] | null }[]
+    | null;
+}
+
+interface Lead {
+  id: string;
+  created_at: string;
+  source_id: string | null;
+  lead_sources: { name: string } | { name: string }[] | null;
 }
 
 function getDealSourceName(d: WonDeal): string {
-  if (!d.lead_sources) return "";
-  if (Array.isArray(d.lead_sources)) return d.lead_sources[0]?.name ?? "";
-  return d.lead_sources.name;
+  // 1. Try deal.lead_sources
+  if (d.lead_sources) {
+    const name = Array.isArray(d.lead_sources) ? d.lead_sources[0]?.name : d.lead_sources.name;
+    if (name) return name;
+  }
+  // 2. Fall back to contact.lead_sources
+  if (d.contacts) {
+    const contact = Array.isArray(d.contacts) ? d.contacts[0] : d.contacts;
+    if (contact?.lead_sources) {
+      const name = Array.isArray(contact.lead_sources) ? contact.lead_sources[0]?.name : contact.lead_sources.name;
+      if (name) return name;
+    }
+  }
+  return "";
+}
+
+function getLeadSourceName(l: Lead): string {
+  if (!l.lead_sources) return "";
+  if (Array.isArray(l.lead_sources)) return l.lead_sources[0]?.name ?? "";
+  return l.lead_sources.name;
 }
 
 function sourceToProvider(sourceName: string): string {
@@ -112,7 +140,7 @@ const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
   "Oliver List": { bg: "#f1f8e9", text: "#558b2f" },
 };
 
-export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [] }: { expenses: Expense[]; tunnelStats?: TunnelStat[]; wonDeals?: WonDeal[] }) {
+export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [], leads = [] }: { expenses: Expense[]; tunnelStats?: TunnelStat[]; wonDeals?: WonDeal[]; leads?: Lead[] }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
   const [open, setOpen] = useState(false);
@@ -141,6 +169,23 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
   function getComputedRevenue(providerName: string, periodStart: string): number {
     const monthKey = periodStart.slice(0, 7);
     return dealRevenueByProviderMonth[`${providerName}::${monthKey}`] ?? 0;
+  }
+
+  // Compute lead counts by provider+month (from marketing leads with matching source)
+  const leadCountByProviderMonth: Record<string, number> = {};
+  leads.forEach((l) => {
+    const sourceName = getLeadSourceName(l);
+    const provider = sourceToProvider(sourceName);
+    if (!provider) return;
+    const monthKey = (l.created_at ?? "").slice(0, 7);
+    if (!monthKey) return;
+    const key = `${provider}::${monthKey}`;
+    leadCountByProviderMonth[key] = (leadCountByProviderMonth[key] ?? 0) + 1;
+  });
+
+  function getComputedLeadCount(providerName: string, periodStart: string): number {
+    const monthKey = periodStart.slice(0, 7);
+    return leadCountByProviderMonth[`${providerName}::${monthKey}`] ?? 0;
   }
   const descVoice = useVoiceDictation(() => form.description, (t) => setForm((f) => ({ ...f, description: t })));
   const [uploadingDoc, setUploadingDoc] = useState(false);
@@ -536,6 +581,14 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
               <Label>RDV faits</Label>
               <Input type="number" value={form.rdv_done} onChange={(e) => setForm({ ...form, rdv_done: e.target.value })} placeholder="0" />
             </div>
+            {form.provider_name && form.period && (
+              <div className="space-y-2">
+                <Label>Leads (auto — leads créés ce mois avec cette source)</Label>
+                <div style={{ padding: "8px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontWeight: 700, color: "#1a6b9c", fontSize: 15 }}>
+                  {getComputedLeadCount(form.provider_name, form.period + "-01")}
+                </div>
+              </div>
+            )}
             {form.provider_name && form.period && (
               <div className="space-y-2">
                 <Label>CA généré (auto — deals gagnés)</Label>
