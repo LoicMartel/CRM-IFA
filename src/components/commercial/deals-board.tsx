@@ -400,16 +400,14 @@ export function DealsBoard({
             )}
             <span style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>{periodLabel}</span>
           </div>
-          <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
-            <Plus className="h-4 w-4 mr-2" /> Nouveau deal
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => { setCotationDealId(null); setCotationOpen(true); }}
-            style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
-          >
-            <Calculator className="h-4 w-4 mr-2" /> Cotation
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+              <Plus className="h-4 w-4 mr-2" /> Nouveau deal
+            </Button>
+            <Button onClick={() => { setCotationDealId(null); setCotationOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+              <Calculator className="h-4 w-4 mr-2" /> Cotation
+            </Button>
+          </div>
         </div>
 
         {/* KPIs */}
