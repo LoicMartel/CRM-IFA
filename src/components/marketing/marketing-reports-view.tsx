@@ -41,6 +41,10 @@ interface WonDeal {
   source_id: string | null;
   created_at: string;
   lead_sources: { name: string } | { name: string }[] | null;
+  contacts?:
+    | { source_id: string | null; lead_sources: { name: string } | { name: string }[] | null }
+    | { source_id: string | null; lead_sources: { name: string } | { name: string }[] | null }[]
+    | null;
 }
 
 interface Lead {
@@ -77,6 +81,19 @@ const PROVIDER_ALIASES: Record<string, string> = {
 };
 function normalizeProvider(name: string): string {
   return PROVIDER_ALIASES[name] ?? name;
+}
+
+// Mapping source de lead → prestataire marketing (identique à la page Dépenses).
+// Tolère espaces / tirets / casse différents (ex: "OliverList" ↔ "Oliver List").
+function sourceToProvider(sourceName: string): string {
+  if (!sourceName) return "";
+  const norm = sourceName.toLowerCase().replace(/[\s\-_]+/g, "");
+  if (norm.includes("tunnel") || norm.includes("metaads")) return "Pub";
+  const providers = ["Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"];
+  for (const p of providers) {
+    if (norm.includes(p.toLowerCase().replace(/[\s\-_]+/g, ""))) return p;
+  }
+  return sourceName;
 }
 
 function getMonthKey(dateStr: string): string {
@@ -135,23 +152,37 @@ export function MarketingReportsView({
   const filteredExpenses = expenses.filter((e) => inPeriod(e.period_start) && (!filterProviderName || e.provider_name === filterProviderName));
   const filteredLeads = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
   function getDealSourceName(d: WonDeal): string {
-    if (!d.lead_sources) return "";
-    if (Array.isArray(d.lead_sources)) return d.lead_sources[0]?.name ?? "";
-    return d.lead_sources.name;
+    // 1. Source du deal lui-même
+    if (d.lead_sources) {
+      const name = Array.isArray(d.lead_sources) ? d.lead_sources[0]?.name : d.lead_sources.name;
+      if (name) return name;
+    }
+    // 2. Fallback : source du contact lié
+    if (d.contacts) {
+      const contact = Array.isArray(d.contacts) ? d.contacts[0] : d.contacts;
+      if (contact?.lead_sources) {
+        const name = Array.isArray(contact.lead_sources) ? contact.lead_sources[0]?.name : contact.lead_sources.name;
+        if (name) return name;
+      }
+    }
+    return "";
+  }
+  function getDealProvider(d: WonDeal): string {
+    return sourceToProvider(getDealSourceName(d));
   }
   const filteredWonDeals = wonDeals.filter((d) => {
     const dateStr = d.close_date ?? d.created_at.split("T")[0];
     if (!inPeriod(dateStr)) return false;
     if (!filterProviderName) return true;
-    const src = normalizeProvider(getDealSourceName(d));
-    return src === filterProviderName;
+    return getDealProvider(d) === filterProviderName;
   });
 
   // === GLOBAL KPIs ===
   const totalInvestment = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
   const totalLeads = filteredStats.reduce((a, s) => a + s.leads, 0);
   const totalSales = filteredWonDeals.length;
-  const totalRevenue = filteredExpenses.reduce((a, e) => a + Number(e.revenue), 0);
+  // CA généré = somme des deals gagnés/signés, calculée auto (même logique que Dépenses Marketing)
+  const totalRevenue = filteredWonDeals.reduce((a, d) => a + (Number(d.amount) || 0), 0);
   const globalCpl = totalLeads > 0 ? totalInvestment / totalLeads : 0;
   const globalRoas = totalInvestment > 0 ? totalRevenue / totalInvestment : 0;
 
@@ -181,18 +212,18 @@ export function MarketingReportsView({
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].leads += s.leads;
   });
-  // Dépenses et revenue par prestataire depuis marketing_expenses (source de vérité)
+  // Dépenses par prestataire depuis marketing_expenses
   filteredExpenses.forEach((e) => {
     const name = e.provider_name;
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].expenses += Number(e.amount);
-    statsByProvider[name].revenue += Number(e.revenue);
   });
-  // Ventes par prestataire depuis deals closed_won
+  // Ventes ET CA par prestataire depuis les deals gagnés/signés (calcul auto)
   filteredWonDeals.forEach((d) => {
-    const name = normalizeProvider(getDealSourceName(d) || "Autre");
+    const name = getDealProvider(d) || "Autre";
     if (!statsByProvider[name]) statsByProvider[name] = { expenses: 0, leads: 0, sales: 0, revenue: 0 };
     statsByProvider[name].sales += 1;
+    statsByProvider[name].revenue += Number(d.amount) || 0;
   });
 
   // === DÉPENSES PAR PRESTATAIRE (coûts) ===
