@@ -99,11 +99,13 @@ function getLeadSourceName(l: Lead): string {
 
 function sourceToProvider(sourceName: string): string {
   if (!sourceName) return "";
-  const lower = sourceName.toLowerCase();
-  if (lower.includes("tunnel")) return "Pub";
+  // Normalise : minuscules + suppression des espaces/tirets pour matcher
+  // "OliverList" ↔ "Oliver List", "LK-Premium" ↔ "LK Premium", etc.
+  const norm = sourceName.toLowerCase().replace(/[\s\-_]+/g, "");
+  if (norm.includes("tunnel") || norm.includes("metaads")) return "Pub";
   const providers = ["Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"];
   for (const p of providers) {
-    if (lower.includes(p.toLowerCase())) return p;
+    if (norm.includes(p.toLowerCase().replace(/[\s\-_]+/g, ""))) return p;
   }
   return sourceName;
 }
