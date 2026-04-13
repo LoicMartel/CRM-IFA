@@ -566,6 +566,19 @@ export function PlanningList({
     };
 
     if (editingSessionId) {
+      // Capturer l'état avant update pour calculer le diff (experts/apprenants retirés)
+      const { data: oldSession } = await supabase
+        .from("training_sessions")
+        .select("trainers, training_session_learners(learner_id)")
+        .eq("id", editingSessionId)
+        .single();
+      const oldTrainers = ((oldSession?.trainers ?? []) as string[]);
+      const oldLearnerIds = (((oldSession?.training_session_learners ?? []) as { learner_id: string }[]).map(sl => sl.learner_id));
+      const newTrainers = sessionForm.trainers;
+      const newLearnerIds = sessionForm.learner_ids;
+      const removedTrainerNames = oldTrainers.filter(t => !newTrainers.includes(t));
+      const removedLearnerIds = oldLearnerIds.filter(l => !newLearnerIds.includes(l));
+
       // Update existing session
       await supabase.from("training_sessions").update(payload).eq("id", editingSessionId);
       // Sync learners
@@ -575,12 +588,18 @@ export function PlanningList({
           sessionForm.learner_ids.map(lid => ({ training_session_id: editingSessionId!, learner_id: lid }))
         );
       }
-      // Sync: update Google Calendar + notify expert & learners
+      // Sync: update Google Calendar + notify expert & learners (incluant retraits)
       try {
         const notifyRes = await fetch("/api/gcal/notify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: editingSessionId, isUpdate: true, customTitle: sessionForm.custom_title || undefined }),
+          body: JSON.stringify({
+            sessionId: editingSessionId,
+            isUpdate: true,
+            customTitle: sessionForm.custom_title || undefined,
+            removedTrainerNames,
+            removedLearnerIds,
+          }),
         });
         const notifyData = await notifyRes.json();
         if (notifyData.success) {
@@ -2136,8 +2155,15 @@ export function PlanningList({
                   {results.map((r: any, i: number) => (
                     <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                       {r.gcal && (() => {
-                        const isSuccess = r.gcal === "created" || r.gcal === "updated";
-                        const label = r.gcal === "created" ? "ajouté" : r.gcal === "updated" ? "mis à jour" : r.gcal;
+                        const successStates = ["created", "updated", "removed", "already_absent"];
+                        const isSuccess = successStates.includes(r.gcal);
+                        const labelMap: Record<string, string> = {
+                          created: "ajouté",
+                          updated: "mis à jour",
+                          removed: "supprimé de l'agenda",
+                          already_absent: "déjà absent de l'agenda",
+                        };
+                        const label = labelMap[r.gcal] ?? r.gcal;
                         return (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: isSuccess ? "#e8f5e9" : "#fce4ec", borderRadius: 8 }}>
                             <span style={{ fontSize: 14 }}>📅</span>

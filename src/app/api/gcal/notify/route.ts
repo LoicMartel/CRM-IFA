@@ -8,7 +8,13 @@ import { loadWorkflow, isStepActive } from "@/lib/automations";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sessionId, isUpdate, customTitle } = body;
+    const { sessionId, isUpdate, customTitle, removedTrainerNames, removedLearnerIds } = body as {
+      sessionId: string;
+      isUpdate?: boolean;
+      customTitle?: string;
+      removedTrainerNames?: string[];
+      removedLearnerIds?: string[];
+    };
 
     if (!sessionId) {
       return NextResponse.json({ error: "sessionId required" }, { status: 400 });
@@ -272,6 +278,116 @@ export async function POST(req: NextRequest) {
           attachments: [{ filename: "invitation.ics", content: icsContent }],
         });
         results.push({ trainer: `${(learner as any).first_name} ${(learner as any).last_name}`, email: emailResult.success ? "ics_sent" : emailResult.error });
+      }
+    }
+
+    // =====================================================================
+    // Notifications de RETRAIT : experts et apprenants retirés de la session
+    // =====================================================================
+    const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
+    const timeDisplay = `${session.session_date} à ${sessionTime}`;
+
+    // Experts retirés
+    if (removedTrainerNames && removedTrainerNames.length > 0) {
+      const { data: removedTrainers } = await supabase
+        .from("team_members")
+        .select("first_name, last_name, google_calendar_id, google_calendar_id_presentiel, email, slack_user_id, roles")
+        .in("first_name", removedTrainerNames);
+
+      for (const trainer of removedTrainers ?? []) {
+        const trainerRoles = (trainer.roles as string[]) ?? [];
+        const isExterne = trainerRoles.includes("Externe");
+        const calId = isJournee && trainer.google_calendar_id_presentiel
+          ? trainer.google_calendar_id_presentiel
+          : trainer.google_calendar_id;
+
+        // 1. Supprimer l'évènement sur son agenda (si on peut)
+        let gcalStatus: string | undefined;
+        if (calId && (session as any).gcal_event_id) {
+          const del = await deleteCalendarEvent({ calendarId: calId, eventId: (session as any).gcal_event_id });
+          gcalStatus = del.success ? "removed" : (del.error?.toLowerCase().includes("not found") ? "already_absent" : del.error);
+        }
+
+        // 2. Slack DM de retrait
+        let slackStatus: string | undefined;
+        if (trainer.slack_user_id && slackToken) {
+          const msg = [
+            `Bonjour ${trainer.first_name},`,
+            "",
+            `🚫 *Session retirée de ton planning*`,
+            "",
+            `La session *${title}* prévue le ${timeDisplay} t'a été retirée.`,
+            `Elle est désormais assignée à un autre expert (ou a été annulée).`,
+            calId ? `L'évènement a été supprimé de ton agenda Google.` : "",
+            "",
+            `Belle journée,`,
+          ].filter(Boolean).join("\n");
+          try {
+            const res = await fetch("https://slack.com/api/chat.postMessage", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${slackToken}` },
+              body: JSON.stringify({ channel: trainer.slack_user_id, text: msg }),
+            });
+            const data = await res.json();
+            slackStatus = data.ok ? "sent" : data.error;
+          } catch (e: any) { slackStatus = `error: ${e.message}`; }
+        }
+
+        // 3. Email (externes, ou fallback si pas de Slack)
+        let emailStatus: string | undefined;
+        if (trainer.email && (isExterne || !trainer.slack_user_id)) {
+          const emailBody = [
+            `Bonjour ${trainer.first_name},`,
+            "",
+            `La session *${title}* prévue le ${timeDisplay} vous a été retirée.`,
+            `Elle est désormais assignée à un autre expert (ou a été annulée).`,
+            calId ? `L'évènement a été supprimé de votre agenda Google.` : "",
+            "",
+            `Belle journée,`,
+          ].filter(Boolean).join("\n");
+          const emailRes = await sendSessionEmail({
+            to: trainer.email,
+            subject: `Session retirée de ton planning — ${title}`,
+            body: emailBody,
+          });
+          emailStatus = emailRes.success ? "sent" : emailRes.error;
+        }
+
+        results.push({ trainer: `${trainer.first_name} (retiré)`, gcal: gcalStatus, slack: slackStatus, email: emailStatus });
+      }
+    }
+
+    // Apprenants retirés
+    if (removedLearnerIds && removedLearnerIds.length > 0) {
+      const { data: removedLearners } = await supabase
+        .from("learners")
+        .select("id, first_name, last_name, email")
+        .in("id", removedLearnerIds);
+
+      for (const learner of removedLearners ?? []) {
+        if (!learner.email) {
+          results.push({ trainer: `${learner.first_name} ${learner.last_name} (retiré)`, email: "no_email" });
+          continue;
+        }
+        const emailBody = [
+          `Bonjour ${learner.first_name},`,
+          "",
+          `La session de formation *${title}* prévue le ${timeDisplay} a été annulée`,
+          `ou vous y avez été retiré(e).`,
+          "",
+          `Vous n'avez plus besoin d'y participer.`,
+          "",
+          `Belle journée,`,
+        ].filter(Boolean).join("\n");
+        const emailRes = await sendSessionEmail({
+          to: learner.email,
+          subject: `Session annulée — ${title}`,
+          body: emailBody,
+        });
+        results.push({
+          trainer: `${learner.first_name} ${learner.last_name} (retiré)`,
+          email: emailRes.success ? "sent" : emailRes.error,
+        });
       }
     }
 
