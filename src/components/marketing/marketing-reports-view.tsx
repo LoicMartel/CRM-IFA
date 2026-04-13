@@ -83,17 +83,23 @@ function normalizeProvider(name: string): string {
   return PROVIDER_ALIASES[name] ?? name;
 }
 
+// Liste des prestataires marketing reconnus (= options de "Nouvelle dépense").
+// Seuls les deals attribués à une de ces sources sont comptés dans le CA généré.
+const MARKETING_PROVIDERS = ["Pub", "Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"] as const;
+const MARKETING_PROVIDER_SET: ReadonlySet<string> = new Set(MARKETING_PROVIDERS);
+
 // Mapping source de lead → prestataire marketing (identique à la page Dépenses).
 // Tolère espaces / tirets / casse différents (ex: "OliverList" ↔ "Oliver List").
+// Renvoie "" si la source ne correspond à aucun prestataire marketing.
 function sourceToProvider(sourceName: string): string {
   if (!sourceName) return "";
   const norm = sourceName.toLowerCase().replace(/[\s\-_]+/g, "");
   if (norm.includes("tunnel") || norm.includes("metaads")) return "Pub";
-  const providers = ["Skaale", "Oliver List", "Agence Personnelle", "LK Premium", "Baptiste", "Pauline", "Hugo", "ASPNL"];
-  for (const p of providers) {
+  for (const p of MARKETING_PROVIDERS) {
+    if (p === "Pub") continue;
     if (norm.includes(p.toLowerCase().replace(/[\s\-_]+/g, ""))) return p;
   }
-  return sourceName;
+  return ""; // source non marketing (Renouvellement, Prospection, LinkedIn, etc.)
 }
 
 function getMonthKey(dateStr: string): string {
@@ -173,8 +179,11 @@ export function MarketingReportsView({
   const filteredWonDeals = wonDeals.filter((d) => {
     const dateStr = d.close_date ?? d.created_at.split("T")[0];
     if (!inPeriod(dateStr)) return false;
+    const provider = getDealProvider(d);
+    // Ne compter que les deals attribués à un prestataire marketing (ignore Renouvellement, Prospection, etc.)
+    if (!MARKETING_PROVIDER_SET.has(provider)) return false;
     if (!filterProviderName) return true;
-    return getDealProvider(d) === filterProviderName;
+    return provider === filterProviderName;
   });
 
   // === GLOBAL KPIs ===
