@@ -48,8 +48,8 @@ const TEAM = [
 
 const SLOT_DURATION = 15;
 const DAY_START_HOUR = 9;
-const DAY_START_MIN = 0;
-const DAY_END_HOUR = 18;
+const DAY_START_MIN = 30;
+const DAY_END_HOUR = 19;
 const DAY_END_MIN = 0;
 const TZ = "Europe/Paris";
 const BUFFER = 30 * 60 * 1000; // 30 min buffer
