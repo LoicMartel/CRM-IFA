@@ -18,7 +18,7 @@ function parseAttachments(text: string): { cleanText: string; attachments: Attac
     const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(name);
     attachments.push({ name, url, type: isImage ? "image" : "document" });
     return "";
-  }).trim();
+  });
   return { cleanText, attachments };
 }
 
