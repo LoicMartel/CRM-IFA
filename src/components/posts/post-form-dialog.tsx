@@ -184,7 +184,7 @@ export function PostFormDialog({
           background: "white",
           borderRadius: 16,
           width: "100%",
-          maxWidth: 640,
+          maxWidth: 860,
           maxHeight: "90vh",
           overflow: "auto",
           boxShadow: "0 20px 60px rgba(0,0,0,0.15)",

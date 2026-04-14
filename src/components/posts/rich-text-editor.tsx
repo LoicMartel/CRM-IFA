@@ -245,8 +245,10 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
         }
         .tiptap h2 { font-size: 20px; font-weight: 700; margin: 12px 0 6px; color: #1a2a3a; }
         .tiptap h3 { font-size: 16px; font-weight: 700; margin: 10px 0 4px; color: #1a2a3a; }
-        .tiptap ul, .tiptap ol { padding-left: 24px; margin: 6px 0; }
-        .tiptap li { margin: 2px 0; }
+        .tiptap ul { padding-left: 24px; margin: 6px 0; list-style-type: disc; }
+        .tiptap ol { padding-left: 24px; margin: 6px 0; list-style-type: decimal; }
+        .tiptap li { margin: 2px 0; display: list-item; }
+        .tiptap li p { margin: 0; display: inline; }
         .tiptap blockquote { border-left: 3px solid #1a6b9c; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
         .tiptap hr { border: none; border-top: 1px solid #dce8f0; margin: 12px 0; }
         .tiptap a { color: #1a6b9c; text-decoration: underline; }
@@ -406,8 +408,10 @@ export function RichTextContent({ html }: { html: string }) {
       <style>{`
         .tiptap-content h2 { font-size: 20px; font-weight: 700; margin: 12px 0 6px; color: #1a2a3a; }
         .tiptap-content h3 { font-size: 16px; font-weight: 700; margin: 10px 0 4px; color: #1a2a3a; }
-        .tiptap-content ul, .tiptap-content ol { padding-left: 24px; margin: 6px 0; }
-        .tiptap-content li { margin: 2px 0; }
+        .tiptap-content ul { padding-left: 24px; margin: 6px 0; list-style-type: disc; }
+        .tiptap-content ol { padding-left: 24px; margin: 6px 0; list-style-type: decimal; }
+        .tiptap-content li { margin: 2px 0; display: list-item; }
+        .tiptap-content li p { margin: 0; display: inline; }
         .tiptap-content blockquote { border-left: 3px solid #1a6b9c; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
         .tiptap-content hr { border: none; border-top: 1px solid #dce8f0; margin: 12px 0; }
         .tiptap-content a { color: #1a6b9c; text-decoration: underline; }
