@@ -17,9 +17,16 @@ const TEAM = [
     name: "Loïc MARTEL",
     photo: "/photo-loic.jpeg",
     calendarIds: [
-      "loic@closing-academie.com",
-      "b1d8e8cd626637bb6745ca2df63684a1f4ca9c6f1eef203c4cb97c7969dd8dc1@group.calendar.google.com",
-      "5bd3cd57ce9939882f7db28b02bde52d2b4df03a0d1e857915e5ee8cf0b02ae2@group.calendar.google.com",
+      "loic@closing-academie.com",                                                              // Principal
+      "5bd3cd57ce9939882f7db28b02bde52d2b4df03a0d1e857915e5ee8cf0b02ae2@group.calendar.google.com", // Admin
+      "9277b4288fcbd2196a510de4772e430281e76afe5ee51eed82138455ae568a41@group.calendar.google.com", // Déjeuner
+      "bbe2caa62aed64819928102ede03fa32096f7768c33a165a52c8306c18de59d2@group.calendar.google.com", // Fin de journée
+      "b1d8e8cd626637bb6745ca2df63684a1f4ca9c6f1eef203c4cb97c7969dd8dc1@group.calendar.google.com", // Formation
+      "3be8a67f38c6afb3e01313638c055a5e9b3bb2683feb93239922428a1351458d@group.calendar.google.com", // Point suivi
+      "015d4f05da341be08adf23f8569d36a3d776441e1a66e8fb66cb397361730782@group.calendar.google.com", // Prépa Formation
+      "cb8123ba95b1fc12828dc74674e1181aa9969740f7354d4035cb49b86b07f5a3@group.calendar.google.com", // Réunion interne
+      "fe630945e4e8caab461781f5535f21e858a810697308243c59197c3d1e1bef6c@group.calendar.google.com", // Trajets
+      "441346db26f434ea94f9ac0677b0e0d7a94cf478ccb2d1f1768b2115dad51754@group.calendar.google.com", // Personnel
     ],
   },
   {
