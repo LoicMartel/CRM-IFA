@@ -8,13 +8,11 @@ import { useCurrentMember } from "@/lib/use-current-member";
 import { RichNotes } from "@/components/ui/rich-notes";
 import {
   POST_CATEGORY_LABELS,
-  POST_ENTITY_TYPE_LABELS,
+  POST_BANNERS,
   type PostCategory,
-  type PostEntityType,
 } from "@/types/database";
 
 const CATEGORIES = Object.entries(POST_CATEGORY_LABELS) as [PostCategory, string][];
-const ENTITY_TYPES = Object.entries(POST_ENTITY_TYPE_LABELS) as [PostEntityType, string][];
 
 interface PendingFile {
   file: File;
@@ -27,10 +25,6 @@ interface PostFormDialogProps {
   onSaved: () => void;
   editPost?: any;
   projectTags: { id: string; name: string; is_active: boolean }[];
-  contacts: { id: string; first_name: string; last_name: string }[];
-  companies: { id: string; name: string }[];
-  deals: { id: string; name: string }[];
-  orders: any[];
 }
 
 export function PostFormDialog({
@@ -39,10 +33,6 @@ export function PostFormDialog({
   onSaved,
   editPost,
   projectTags,
-  contacts,
-  companies,
-  deals,
-  orders,
 }: PostFormDialogProps) {
   const router = useRouter();
   const memberId = useCurrentMember();
@@ -51,9 +41,8 @@ export function PostFormDialog({
   const [title, setTitle] = useState(editPost?.title ?? "");
   const [content, setContent] = useState(editPost?.content ?? "");
   const [category, setCategory] = useState<PostCategory>(editPost?.category ?? "annonces_generales");
-  const [entityType, setEntityType] = useState<PostEntityType | "">(editPost?.entity_type ?? "");
-  const [entityId, setEntityId] = useState(editPost?.entity_id ?? "");
   const [projectTagId, setProjectTagId] = useState(editPost?.project_tag_id ?? "");
+  const [banner, setBanner] = useState(editPost?.banner ?? "none");
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [existingAttachments, setExistingAttachments] = useState<any[]>(editPost?.post_attachments ?? []);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
@@ -131,9 +120,10 @@ export function PostFormDialog({
       title: title.trim(),
       content: content || null,
       category,
-      entity_type: entityType || null,
-      entity_id: entityType && entityId ? entityId : null,
+      entity_type: null,
+      entity_id: null,
       project_tag_id: category === "projets_en_cours" && projectTagId ? projectTagId : null,
+      banner: banner === "none" ? null : banner,
     };
 
     if (editPost) {
@@ -172,21 +162,6 @@ export function PostFormDialog({
     setSaving(false);
     onClose();
     onSaved();
-  }
-
-  // Entity options based on selected type
-  let entityOptions: { value: string; label: string }[] = [];
-  if (entityType === "contact") {
-    entityOptions = contacts.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }));
-  } else if (entityType === "company") {
-    entityOptions = companies.map((c) => ({ value: c.id, label: c.name }));
-  } else if (entityType === "deal") {
-    entityOptions = deals.map((d) => ({ value: d.id, label: d.name }));
-  } else if (entityType === "order") {
-    entityOptions = orders.map((o: any) => ({
-      value: o.id,
-      label: o.contacts ? `${o.contacts.first_name} ${o.contacts.last_name}` : o.id.slice(0, 8),
-    }));
   }
 
   const activeProjectTags = projectTags.filter((t) => t.is_active);
@@ -245,6 +220,56 @@ export function PostFormDialog({
               required
               style={inputStyle}
             />
+          </div>
+
+          {/* Banner */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Bannière</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8 }}>
+              {POST_BANNERS.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => setBanner(b.key)}
+                  style={{
+                    height: 48,
+                    borderRadius: 8,
+                    border: banner === b.key ? "3px solid #1a6b9c" : "2px solid #dce8f0",
+                    cursor: "pointer",
+                    position: "relative",
+                    overflow: "hidden",
+                    ...(b.key === "none"
+                      ? { background: "#f8fbfd" }
+                      : b.style),
+                  }}
+                >
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: b.key === "none" ? "#8399a9" : "white",
+                    textShadow: b.key === "none" ? "none" : "0 1px 3px rgba(0,0,0,0.4)",
+                  }}>
+                    {b.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {/* Preview */}
+            {banner !== "none" && (
+              <div style={{
+                marginTop: 8,
+                borderRadius: 10,
+                height: 80,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                ...POST_BANNERS.find((b) => b.key === banner)?.style,
+              }}>
+                <span style={{ color: "white", fontWeight: 700, fontSize: 16, textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+                  {title || "Titre du post"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Category */}
@@ -442,34 +467,7 @@ export function PostFormDialog({
             />
           </div>
 
-          {/* Entity link (optional) */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Lier à une entité CRM (optionnel)</label>
-            <div style={{ display: "flex", gap: 8 }}>
-              <select
-                value={entityType}
-                onChange={(e) => { setEntityType(e.target.value as PostEntityType | ""); setEntityId(""); }}
-                style={{ ...inputStyle, flex: 1 }}
-              >
-                <option value="">-- Aucun --</option>
-                {ENTITY_TYPES.map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-              {entityType && (
-                <select
-                  value={entityId}
-                  onChange={(e) => setEntityId(e.target.value)}
-                  style={{ ...inputStyle, flex: 2 }}
-                >
-                  <option value="">-- Sélectionner --</option>
-                  {entityOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
+
 
           {/* Submit */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 }}>

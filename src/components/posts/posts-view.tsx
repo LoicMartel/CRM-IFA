@@ -257,10 +257,6 @@ export function PostsView({
         onSaved={handleRefresh}
         editPost={editPost}
         projectTags={projectTags}
-        contacts={contacts}
-        companies={companies}
-        deals={deals}
-        orders={orders}
       />
     </div>
   );

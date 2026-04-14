@@ -424,10 +424,27 @@ export interface Post {
   entity_type: PostEntityType | null;
   entity_id: string | null;
   project_tag_id: string | null;
+  banner: string | null;
   pinned: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export const POST_BANNERS: { key: string; label: string; style: React.CSSProperties }[] = [
+  { key: "none", label: "Aucune", style: {} },
+  { key: "gradient_blue", label: "Bleu", style: { background: "linear-gradient(135deg, #1a6b9c 0%, #4fc3f7 100%)" } },
+  { key: "gradient_green", label: "Vert", style: { background: "linear-gradient(135deg, #2e7d32 0%, #81c784 100%)" } },
+  { key: "gradient_orange", label: "Orange", style: { background: "linear-gradient(135deg, #e65100 0%, #ffb74d 100%)" } },
+  { key: "gradient_purple", label: "Violet", style: { background: "linear-gradient(135deg, #6a1b9a 0%, #ce93d8 100%)" } },
+  { key: "gradient_red", label: "Rouge", style: { background: "linear-gradient(135deg, #c62828 0%, #ef9a9a 100%)" } },
+  { key: "gradient_teal", label: "Sarcelle", style: { background: "linear-gradient(135deg, #00695c 0%, #80cbc4 100%)" } },
+  { key: "gradient_sunset", label: "Coucher de soleil", style: { background: "linear-gradient(135deg, #ff6f00 0%, #f06292 50%, #7e57c2 100%)" } },
+  { key: "gradient_ocean", label: "Océan", style: { background: "linear-gradient(135deg, #0d47a1 0%, #00bcd4 100%)" } },
+  { key: "image_confetti", label: "Confettis", style: { background: "linear-gradient(135deg, #ffd54f 0%, #ff7043 50%, #ec407a 100%)" } },
+  { key: "image_stars", label: "Étoiles", style: { background: "linear-gradient(135deg, #1a237e 0%, #283593 50%, #5c6bc0 100%)" } },
+  { key: "image_nature", label: "Nature", style: { background: "linear-gradient(135deg, #1b5e20 0%, #4caf50 50%, #c8e6c9 100%)" } },
+  { key: "image_abstract", label: "Abstrait", style: { background: "linear-gradient(135deg, #4a148c 0%, #e040fb 50%, #18ffff 100%)" } },
+];
 
 export interface PostProjectTag {
   id: string;

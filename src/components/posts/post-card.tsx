@@ -17,7 +17,6 @@ import {
   FileText,
   Image as ImageIcon,
   Download,
-  Link as LinkIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
@@ -25,9 +24,8 @@ import { useCurrentRoles } from "@/lib/use-current-roles";
 import {
   POST_CATEGORY_LABELS,
   POST_CATEGORY_COLORS,
-  POST_ENTITY_TYPE_LABELS,
+  POST_BANNERS,
   type PostCategory,
-  type PostEntityType,
 } from "@/types/database";
 import { CommentSection } from "./comment-section";
 
@@ -106,17 +104,43 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
     (a: any) => !/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(a.file_name)
   );
 
+  const bannerDef = post.banner ? POST_BANNERS.find((b) => b.key === post.banner) : null;
+
   return (
     <div
       className="lca-card"
       style={{
-        padding: 20,
         borderRadius: 12,
         border: post.pinned ? "2px solid #1a6b9c" : "1px solid #dce8f0",
         background: "white",
         position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Banner */}
+      {bannerDef && (
+        <div style={{
+          height: 80,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0 20px",
+          ...bannerDef.style,
+        }}>
+          <h3 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "white",
+            textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            textAlign: "center",
+            margin: 0,
+          }}>
+            {post.title}
+          </h3>
+        </div>
+      )}
+
+      <div style={{ padding: 20 }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
         <div
@@ -167,23 +191,6 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
             </span>
           </div>
 
-          {/* Entity link */}
-          {post.entity_type && post.entity_id && (
-            <div style={{ marginTop: 4 }}>
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: "2px 8px",
-                  borderRadius: 4,
-                  background: "#f0f4f8",
-                  color: "#5a6f80",
-                }}
-              >
-                <LinkIcon style={{ width: 10, height: 10, display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                {POST_ENTITY_TYPE_LABELS[post.entity_type as PostEntityType]}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Actions menu */}
@@ -279,10 +286,12 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
         )}
       </div>
 
-      {/* Title */}
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a", marginBottom: 6 }}>
-        {post.title}
-      </h3>
+      {/* Title (only if no banner, otherwise shown in banner) */}
+      {!bannerDef && (
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a", marginBottom: 6 }}>
+          {post.title}
+        </h3>
+      )}
 
       {/* Content */}
       {post.content && (
@@ -404,6 +413,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       </div>
 
       {/* Comments section */}
+      {/* Comments section */}
       {showComments && (
         <CommentSection
           postId={post.id}
@@ -411,6 +421,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
           onCommentCountChange={onRefresh}
         />
       )}
+      </div>
     </div>
   );
 }
