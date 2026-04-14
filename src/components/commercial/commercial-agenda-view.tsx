@@ -97,7 +97,9 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   const weekMeetings = meetings.filter(m => {
     const d = new Date(m.scheduled_at);
-    return d >= weekStart && d <= weekEnd && m.status !== "cancelled";
+    // Exclure les annulés ET les RDV "booked" dont le suivi a été fait
+    // (next_step === "completed" = ancien RDV remplacé par un record "done")
+    return d >= weekStart && d <= weekEnd && m.status !== "cancelled" && m.next_step !== "completed";
   });
 
   function getMeetingsForDayAndMember(day: Date, memberId: string) {

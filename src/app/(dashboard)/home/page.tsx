@@ -60,12 +60,13 @@ export default async function HomePage() {
       { data: us },
       { data: ot },
     ] = await Promise.all([
-      // Today meetings assigned to me
+      // Today meetings assigned to me (exclut les RDV dont le suivi est fait)
       supabase.from("meetings").select("*, contacts!meetings_contact_id_fkey(first_name, last_name), companies:company_id(name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
         .eq("assigned_to", currentMemberId)
         .gte("scheduled_at", `${today}T00:00:00`)
         .lte("scheduled_at", `${today}T23:59:59`)
         .eq("status", "booked")
+        .neq("next_step", "completed")
         .order("scheduled_at", { ascending: true }),
 
       // Today sessions where I'm a trainer (trainers is a text[] containing first names)
@@ -85,11 +86,12 @@ export default async function HomePage() {
         .lte("due_date", `${today}T23:59:59`)
         .order("due_date", { ascending: true }),
 
-      // Upcoming meetings assigned to me
+      // Upcoming meetings assigned to me (exclut les RDV dont le suivi est fait)
       supabase.from("meetings").select("*, contacts!meetings_contact_id_fkey(first_name, last_name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
         .eq("assigned_to", currentMemberId)
         .gt("scheduled_at", `${today}T23:59:59`)
         .eq("status", "booked")
+        .neq("next_step", "completed")
         .order("scheduled_at", { ascending: true })
         .limit(5),
 
