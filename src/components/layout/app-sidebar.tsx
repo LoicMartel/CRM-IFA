@@ -22,8 +22,8 @@ import {
   User,
   UserPlus,
   Users,
+  MessageSquare,
   Wallet,
-  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -73,9 +73,12 @@ const financeItems = [
   { title: "Rapports Facturation", href: "/rapports-facturation", icon: Target },
 ];
 
+const generalItems = [
+  { title: "Fil d'Actualité", href: "/posts", icon: MessageSquare },
+];
+
 const adminItems = [
   { title: "Équipe", href: "/team", icon: Users },
-  { title: "Automatisations", href: "/automatisations", icon: Zap },
 ];
 
 function NavSection({
@@ -149,6 +152,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent style={{ paddingTop: 16 }}>
+        <NavSection label="Général" items={generalItems} pathname={pathname} />
         <NavSection label="Marketing" items={marketingItems} pathname={pathname} />
         {visibleCommercialItems.length > 0 && <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />}
         <NavSection label="Production" items={visibleProductionItems} pathname={pathname} />

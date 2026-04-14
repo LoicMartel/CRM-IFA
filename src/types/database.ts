@@ -410,3 +410,80 @@ export const COMPANY_LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
   partner: "Partenaire",
   former_customer: "Ancien client",
 };
+
+// Posts feature
+export type PostCategory = "annonces_generales" | "lead_gen" | "commercial" | "pedagogie" | "pilotage_lca" | "admin" | "projets_en_cours";
+export type PostEntityType = "contact" | "company" | "deal" | "order";
+
+export interface Post {
+  id: string;
+  author_id: string;
+  title: string;
+  content: string | null;
+  category: PostCategory;
+  entity_type: PostEntityType | null;
+  entity_id: string | null;
+  project_tag_id: string | null;
+  pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostProjectTag {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PostComment {
+  id: string;
+  post_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface PostReaction {
+  id: string;
+  post_id: string;
+  team_member_id: string;
+  emoji: string;
+  created_at: string;
+}
+
+export interface PostAttachment {
+  id: string;
+  post_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  created_at: string;
+}
+
+export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
+  annonces_generales: "Annonces Générales",
+  lead_gen: "Lead Gen",
+  commercial: "Commercial",
+  pedagogie: "Pédagogie",
+  pilotage_lca: "Pilotage LCA",
+  admin: "Admin",
+  projets_en_cours: "Projets en cours",
+};
+
+export const POST_CATEGORY_COLORS: Record<PostCategory, { bg: string; text: string }> = {
+  annonces_generales: { bg: "#e3f2fd", text: "#1565c0" },
+  lead_gen: { bg: "#fff3e0", text: "#e65100" },
+  commercial: { bg: "#e8f5e9", text: "#2e7d32" },
+  pedagogie: { bg: "#f3e5f5", text: "#6a1b9a" },
+  pilotage_lca: { bg: "#e0f2f1", text: "#00695c" },
+  admin: { bg: "#fce4ec", text: "#c62828" },
+  projets_en_cours: { bg: "#fff8e1", text: "#f57f17" },
+};
+
+export const POST_ENTITY_TYPE_LABELS: Record<PostEntityType, string> = {
+  contact: "Contact",
+  company: "Entreprise",
+  deal: "Deal",
+  order: "Commande",
+};
