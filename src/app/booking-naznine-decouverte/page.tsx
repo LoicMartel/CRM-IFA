@@ -137,29 +137,24 @@ function BookingNaznineContent() {
     }}>
       {/* Progress steps */}
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: step >= 1 ? "#FF6B35" : "#dce8f0",
-            color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700,
-          }}>
-            {step > 1 ? <CheckCircle style={{ width: 16, height: 16 }} /> : "1"}
+        {[1, 2, 3].map((s, i) => (
+          <div key={s} style={{ display: "flex", alignItems: "center" }}>
+            {i > 0 && <div className="booking-step-connector" style={{ width: 60, height: 2, background: step >= s ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%",
+                background: step >= s ? "#FF6B35" : "#dce8f0",
+                color: step >= s ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700,
+              }}>
+                {step > s ? <CheckCircle style={{ width: 16, height: 16 }} /> : s}
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: step >= s ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {s === 1 ? "Choisir l\u2019heure" : s === 2 ? "Vos informations" : "Confirmation"}
+              </span>
+            </div>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: step >= 1 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>Choisir l&apos;heure</span>
-        </div>
-        <div className="booking-step-connector" style={{ width: 80, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: "50%",
-            background: step >= 2 ? "#FF6B35" : "#dce8f0",
-            color: step >= 2 ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700,
-          }}>
-            {step > 2 ? <CheckCircle style={{ width: 16, height: 16 }} /> : "2"}
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: step >= 2 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>Vos informations</span>
-        </div>
+        ))}
       </div>
 
       {/* Logo + Photo Naznine */}

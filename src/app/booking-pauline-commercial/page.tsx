@@ -137,19 +137,19 @@ function BookingContent() {
       {/* Progress steps + Logo compact */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= 1 ? "#FF6B35" : "#dce8f0", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
-              {step > 1 ? <CheckCircle style={{ width: 14, height: 14 }} /> : "1"}
+          {[1, 2, 3].map((s, i) => (
+            <div key={s} style={{ display: "flex", alignItems: "center" }}>
+              {i > 0 && <div style={{ width: 50, height: 2, background: step >= s ? "#FF6B35" : "#dce8f0", margin: "0 6px 16px" }} />}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= s ? "#FF6B35" : "#dce8f0", color: step >= s ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                  {step > s ? <CheckCircle style={{ width: 14, height: 14 }} /> : s}
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: step >= s ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>
+                  {s === 1 ? "Heure" : s === 2 ? "Infos" : "Confirm."}
+                </span>
+              </div>
             </div>
-            <span style={{ fontSize: 9, fontWeight: 700, color: step >= 1 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>Heure</span>
-          </div>
-          <div style={{ width: 50, height: 2, background: step >= 2 ? "#FF6B35" : "#dce8f0", margin: "0 6px 16px" }} />
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-            <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= 2 ? "#FF6B35" : "#dce8f0", color: step >= 2 ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
-              {step > 2 ? <CheckCircle style={{ width: 14, height: 14 }} /> : "2"}
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, color: step >= 2 ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>Infos</span>
-          </div>
+          ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/photo-pauline.jpeg" alt="Pauline Becquerelle" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} />

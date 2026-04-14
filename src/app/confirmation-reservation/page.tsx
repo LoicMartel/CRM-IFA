@@ -1,8 +1,18 @@
 "use client";
 
 import { CheckCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function ConfirmationReservation() {
+  return <Suspense><ConfirmationReservationContent /></Suspense>;
+}
+
+function ConfirmationReservationContent() {
+  const searchParams = useSearchParams();
+  const assignedName = searchParams.get("name");
+  const assignedPhoto = searchParams.get("photo");
+
   return (
     <>
     <style>{`
@@ -56,6 +66,34 @@ export default function ConfirmationReservation() {
           Merci pour votre confiance. Vous allez bénéficier d&apos;un bilan commercial offert,
           entièrement dédié à la performance commerciale de votre entreprise.
         </p>
+
+        {assignedName && (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 14,
+            background: "rgba(255,255,255,0.15)", borderRadius: 14,
+            padding: "12px 24px", marginTop: 28,
+          }}>
+            {assignedPhoto && (
+              <img
+                src={assignedPhoto}
+                alt={assignedName}
+                style={{
+                  width: 48, height: 48, borderRadius: "50%",
+                  objectFit: "cover", objectPosition: "top",
+                  border: "2px solid rgba(255,255,255,0.6)",
+                }}
+              />
+            )}
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Votre interlocuteur
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "white" }}>
+                {assignedName}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ===== CE QUE NOUS ALLONS FAIRE ===== */}

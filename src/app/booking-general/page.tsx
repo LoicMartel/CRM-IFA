@@ -108,7 +108,7 @@ function BookingGeneralContent() {
           name: selectedSlot.assignedFirstName,
           photo: selectedSlot.assignedPhoto,
         });
-        window.location.href = `/confirmation-decouverte?${params.toString()}`;
+        window.location.href = `/confirmation-reservation?${params.toString()}`;
         return;
       } else {
         setError(data.error || "Une erreur est survenue.");
