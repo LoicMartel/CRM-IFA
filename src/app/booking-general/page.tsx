@@ -104,7 +104,12 @@ function BookingGeneralContent() {
       });
       const data = await res.json();
       if (data.success) {
-        setStep(3);
+        const params = new URLSearchParams({
+          name: selectedSlot.assignedFirstName,
+          photo: selectedSlot.assignedPhoto,
+        });
+        window.location.href = `/confirmation-decouverte?${params.toString()}`;
+        return;
       } else {
         setError(data.error || "Une erreur est survenue.");
       }
