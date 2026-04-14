@@ -3,6 +3,8 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { ContactDetail } from "@/components/commercial/contact-detail";
 
+export const metadata = { title: "Fiche Contact" };
+
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

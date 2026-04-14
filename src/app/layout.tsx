@@ -15,7 +15,10 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "CRM - La Closing Académie",
+  title: {
+    default: "CRM - La Closing Académie",
+    template: "CRM - %s",
+  },
   description: "CRM de gestion commerciale, production et pilotage financier",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };

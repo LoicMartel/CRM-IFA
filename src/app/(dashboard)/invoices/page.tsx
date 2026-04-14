@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { BillingGrid } from "@/components/finance/billing-grid";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Facturation" };
+
 export default async function InvoicesPage() {
   const supabase = await createClient();
 

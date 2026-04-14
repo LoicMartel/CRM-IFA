@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { SuiviFinancierView } from "@/components/finance/suivi-financier-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Suivi Financier" };
+
 export default async function SuiviFinancierPage() {
   const supabase = await createClient();
 

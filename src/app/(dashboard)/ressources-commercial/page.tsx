@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { RessourcesCommercialesView } from "@/components/commercial/ressources-commerciales-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Ressources" };
+
 export default async function RessourcesCommercialesPage() {
   const supabase = await createClient();
 

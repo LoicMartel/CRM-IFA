@@ -3,6 +3,8 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { CompanyDetail } from "@/components/commercial/company-detail";
 
+export const metadata = { title: "Fiche Client" };
+
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { SalesTargetsEditor } from "@/components/commercial/sales-targets-editor";
 
+export const metadata = { title: "Synthèse Sales" };
+
 function fmt(n: number | null | undefined) {
   if (!n && n !== 0) return "0 €";
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";

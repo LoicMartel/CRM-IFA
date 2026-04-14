@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { OpportunitiesView } from "@/components/commercial/opportunities-view";
 
+export const metadata = { title: "Opportunités & Pipe" };
+
 export default async function OpportunitiesPage() {
   const supabase = await createClient();
 

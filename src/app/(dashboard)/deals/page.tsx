@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { DealsBoard } from "@/components/commercial/deals-board";
 
+export const metadata = { title: "Pipeline" };
+
 export default async function DealsPage() {
   const supabase = await createClient();
 

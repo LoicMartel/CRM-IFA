@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { OrdersFromDeals } from "@/components/commercial/orders-from-deals";
 
+export const metadata = { title: "Commandes (PDCO)" };
+
 export default async function OrdersPage() {
   const supabase = await createClient();
 

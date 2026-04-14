@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { ProviderTrackingView } from "@/components/marketing/provider-tracking-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Suivi Tunnels" };
+
 export default async function SuiviPrestatairesPage() {
   const supabase = await createClient();
 

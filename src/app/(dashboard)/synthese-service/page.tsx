@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { SyntheseServiceView } from "@/components/production/synthese-service-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Synthèse Service" };
+
 export default async function SyntheseServicePage() {
   const supabase = await createClient();
 

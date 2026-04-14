@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { AgendaView } from "@/components/production/agenda-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Agenda Production" };
+
 export default async function AgendaPage() {
   const supabase = await createClient();
 

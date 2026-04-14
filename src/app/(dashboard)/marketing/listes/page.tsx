@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { ContactListsView } from "@/components/marketing/contact-lists-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Listes de contacts" };
+
 export default async function ListesPage() {
   const supabase = await createClient();
 

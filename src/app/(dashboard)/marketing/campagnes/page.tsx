@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { CampaignsListView } from "@/components/marketing/campaigns-list-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Campagnes" };
+
 export default async function CampagnesPage() {
   const supabase = await createClient();
 

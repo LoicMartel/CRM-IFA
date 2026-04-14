@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { RapportsFacturationView } from "@/components/finance/rapports-facturation-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Rapports Facturation" };
+
 export default async function RapportsFacturationPage() {
   const supabase = await createClient();
 

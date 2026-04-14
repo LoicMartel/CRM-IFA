@@ -3,6 +3,8 @@ import { CompaniesTable } from "@/components/commercial/companies-table";
 import { createClient } from "@/lib/supabase/server";
 import { Building2 } from "lucide-react";
 
+export const metadata = { title: "Entreprises" };
+
 export default async function CompaniesPage() {
   const supabase = await createClient();
 

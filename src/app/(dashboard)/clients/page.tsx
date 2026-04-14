@@ -6,6 +6,8 @@ import { ContactsTable } from "@/components/commercial/contacts-table";
 import { createClient } from "@/lib/supabase/server";
 import { Building2, Users, UserCheck } from "lucide-react";
 
+export const metadata = { title: "Clients" };
+
 export default async function ClientsPage() {
   const supabase = await createClient();
 

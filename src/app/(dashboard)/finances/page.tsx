@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { FinanceDashboard } from "@/components/finance/finance-dashboard";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Dashboard Financier" };
+
 export default async function FinancesPage() {
   const supabase = await createClient();
 

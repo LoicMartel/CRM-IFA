@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { AutomationsView } from "@/components/admin/automations-view";
 
+export const metadata = { title: "Automatisations" };
+
 export default async function AutomatisationsPage() {
   const supabase = await createClient();
 

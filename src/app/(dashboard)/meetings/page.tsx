@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { MeetingsView } from "@/components/commercial/meetings-view";
 
+export const metadata = { title: "RDV Commerciaux" };
+
 export default async function MeetingsPage() {
   const supabase = await createClient();
 

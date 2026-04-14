@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { ReportsView } from "@/components/commercial/reports-view";
 
+export const metadata = { title: "Rapports Commerciaux" };
+
 export default async function ReportsPage() {
   const supabase = await createClient();
 

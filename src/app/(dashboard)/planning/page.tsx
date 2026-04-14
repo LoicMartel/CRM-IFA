@@ -2,6 +2,7 @@ import { Header } from "@/components/layout/header";
 import { PlanningList } from "@/components/production/planning-list";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Planification" };
 
 export default async function PlanningPage() {
   const supabase = await createClient();

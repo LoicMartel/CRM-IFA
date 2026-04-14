@@ -3,6 +3,8 @@ import { CampaignDetailView } from "@/components/marketing/campaign-detail-view"
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
+export const metadata = { title: "Campagne" };
+
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();

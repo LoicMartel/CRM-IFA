@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { CommercialAgendaView } from "@/components/commercial/commercial-agenda-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Agenda Commercial" };
+
 export default async function CommercialAgendaPage() {
   const supabase = await createClient();
 

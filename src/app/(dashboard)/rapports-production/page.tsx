@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { RapportsProductionView } from "@/components/production/rapports-production-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Rapports Production" };
+
 export default async function RapportsProductionPage() {
   const supabase = await createClient();
 

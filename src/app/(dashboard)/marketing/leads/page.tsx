@@ -3,6 +3,8 @@ import { LeadsTable } from "@/components/marketing/leads-table";
 import { createClient } from "@/lib/supabase/server";
 import { UserPlus } from "lucide-react";
 
+export const metadata = { title: "Leads" };
+
 export default async function MarketingLeadsPage() {
   const supabase = await createClient();
 

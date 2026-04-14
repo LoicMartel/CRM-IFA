@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { DeliveryView } from "@/components/production/delivery-view";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Delivery" };
+
 export default async function DeliveryPage() {
   const supabase = await createClient();
 

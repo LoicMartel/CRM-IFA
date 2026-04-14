@@ -2,6 +2,8 @@ import { Header } from "@/components/layout/header";
 import { LearnersTable } from "@/components/production/learners-table";
 import { createClient } from "@/lib/supabase/server";
 
+export const metadata = { title: "Apprenants" };
+
 export default async function LearnersPage() {
   const supabase = await createClient();
 
