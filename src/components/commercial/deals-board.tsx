@@ -146,22 +146,16 @@ export function DealsBoard({
     const { data: docs } = await supabase.from("deal_documents").select("*").eq("deal_id", dealId).order("created_at", { ascending: false });
     setDocuments(docs ?? []);
 
-    // Load billing entries for the deal's company
-    const deal = deals.find((d: any) => d.id === dealId);
-    const companyId = deal?.company_id;
-    if (companyId) {
-      const { data: entries } = await supabase
-        .from("billing_entries")
-        .select("client_name, billing_months(id, amount, month, status)")
-        .eq("company_id", companyId);
-      const months = (entries ?? []).flatMap((e: any) =>
-        ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, client_name: e.client_name }))
-      );
-      months.sort((a: any, b: any) => a.month.localeCompare(b.month));
-      setDealBillingMonths(months);
-    } else {
-      setDealBillingMonths([]);
-    }
+    // Load billing entries linked à CE deal (pas toute l'entreprise)
+    const { data: entries } = await supabase
+      .from("billing_entries")
+      .select("client_name, billing_months(id, amount, month, status)")
+      .eq("deal_id", dealId);
+    const months = (entries ?? []).flatMap((e: any) =>
+      ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, client_name: e.client_name }))
+    );
+    months.sort((a: any, b: any) => a.month.localeCompare(b.month));
+    setDealBillingMonths(months);
     setLoadingDocs(false);
   }
 
