@@ -146,6 +146,12 @@ export function ReportsView({
     });
   }
 
+  function getTeamMemberName(record: R): string {
+    const tm = (record as any).team_members as { first_name: string; last_name: string } | null;
+    if (!tm) return "";
+    return `${tm.first_name} ${tm.last_name}`;
+  }
+
   function getContactNameFromRecord(record: R): string {
     const c = record.contacts as { id?: string; first_name?: string; last_name?: string } | null;
     return c ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() : "—";
@@ -162,7 +168,8 @@ export function ReportsView({
     items: { label: string; sublabel?: string; href?: string; amount?: number }[],
   ) {
     const displayValue = typeof value === "number" && value === 0 ? "0" : value;
-    if (!items || items.length === 0) return <td style={style}>{displayValue}</td>;
+    const isZero = (typeof value === "number" && value === 0) || value === "0 €";
+    if (!items || items.length === 0 || isZero) return <td style={style}>{displayValue}</td>;
     return (
       <td
         style={{ ...style, cursor: "pointer", textDecoration: "underline dotted" }}
@@ -1148,29 +1155,61 @@ export function ReportsView({
         const monthMeetings = meetings.filter(m => isInMonth(m.scheduled_at as string));
         const monthOrders = orders.filter(o => isInMonth(((o.close_date || o.created_at) as string)));
 
-        // Build per-sales-rep data
+        // Build per-sales-rep data from meeting assignees + activity performers + contact owners
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, monthMeetings, inboundContactIds);
+        // From meeting assignees (primary attribution)
+        monthMeetings.forEach((m) => {
+          if (!inboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        monthActivities.forEach((a) => {
+          if (!inboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
 
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, monthMeetings, inboundContactIds);
+          // Meetings ASSIGNED TO this rep (on inbound contacts)
+          const repMeetings = monthMeetings.filter((m) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
 
-          const repActivities = monthActivities.filter((a) => repContactIds.has(a.contact_id as string));
-          const repMeetings = monthMeetings.filter((m) => repContactIds.has(m.contact_id as string));
+          // Activities PERFORMED BY this rep (on inbound contacts)
+          const repActivities = monthActivities.filter((a) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
 
-          // All-time activities & meetings for this rep's contacts (to find first-ever dates)
-          const allRepActivities = activities.filter((a: R) => repContactIds.has(a.contact_id as string));
-          const allRepMeetings = meetings.filter((m: R) => repContactIds.has(m.contact_id as string));
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
+
+          // All-time meetings/activities for first-ever dates
+          const allRepMeetings = meetings.filter((m: R) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+          const allRepActivities = activities.filter((a: R) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
 
           // First-ever activity date per contact
           const firstActivity: Record<string, string> = {};
@@ -1448,29 +1487,61 @@ export function ReportsView({
         const weekMeetings = meetings.filter(m => isInWeek(m.scheduled_at as string));
         const weekOrders = orders.filter(o => isInWeek(((o.close_date || o.created_at) as string)));
 
-        // Build per-sales-rep data
+        // Build per-sales-rep data from meeting assignees + activity performers + contact owners
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, weekMeetings, inboundContactIds);
+        // From meeting assignees (primary attribution)
+        weekMeetings.forEach((m) => {
+          if (!inboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        weekActivities.forEach((a) => {
+          if (!inboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
 
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, weekMeetings, inboundContactIds);
+          // Meetings ASSIGNED TO this rep (on inbound contacts)
+          const repMeetings = weekMeetings.filter((m) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
 
-          const repActivities = weekActivities.filter((a) => repContactIds.has(a.contact_id as string));
-          const repMeetings = weekMeetings.filter((m) => repContactIds.has(m.contact_id as string));
+          // Activities PERFORMED BY this rep (on inbound contacts)
+          const repActivities = weekActivities.filter((a) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
 
-          // All-time activities & meetings for this rep's contacts (to find first-ever dates)
-          const allRepActivities = activities.filter((a: R) => repContactIds.has(a.contact_id as string));
-          const allRepMeetings = meetings.filter((m: R) => repContactIds.has(m.contact_id as string));
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
+
+          // All-time meetings/activities for first-ever dates
+          const allRepMeetings = meetings.filter((m: R) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+          const allRepActivities = activities.filter((a: R) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
 
           // First-ever activity date per contact
           const firstActivity: Record<string, string> = {};
@@ -1745,25 +1816,59 @@ export function ReportsView({
         }
 
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, periodMeetings, inboundContactIds);
+        // From meeting assignees (primary attribution)
+        periodMeetings.forEach((m) => {
+          if (!inboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        periodActivities.forEach((a) => {
+          if (!inboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, periodMeetings, inboundContactIds);
-          const repActivities = periodActivities.filter(a => repContactIds.has(a.contact_id as string));
-          const repMeetings = periodMeetings.filter(m => repContactIds.has(m.contact_id as string));
 
-          // All-time activities & meetings to find first-ever dates
-          const allRepActs = activities.filter((a: R) => repContactIds.has(a.contact_id as string));
-          const allRepMtgs = meetings.filter((m: R) => repContactIds.has(m.contact_id as string));
+          // Meetings ASSIGNED TO this rep (on inbound contacts)
+          const repMeetings = periodMeetings.filter((m) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+
+          // Activities PERFORMED BY this rep (on inbound contacts)
+          const repActivities = periodActivities.filter((a) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
+
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
+
+          // All-time meetings/activities for first-ever dates
+          const allRepMtgs = meetings.filter((m: R) => {
+            if (!inboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+          const allRepActs = activities.filter((a: R) => {
+            if (!inboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
 
           const firstAct: Record<string, string> = {};
           allRepActs.forEach((a: R) => { const cid = a.contact_id as string; const d = (a.created_at as string).slice(0, 10); if (!firstAct[cid] || d < firstAct[cid]) firstAct[cid] = d; });
@@ -2004,20 +2109,50 @@ export function ReportsView({
         const pOrders = orders.filter(o => isInProspMonth(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, pMeetings, outboundContactIds);
+        // From meeting assignees (primary attribution)
+        pMeetings.forEach((m) => {
+          if (!outboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        pActivities.forEach((a) => {
+          if (!outboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, pMeetings, outboundContactIds);
-          const repMeetings = pMeetings.filter(m => repContactIds.has(m.contact_id as string));
+
+          // Meetings ASSIGNED TO this rep (on outbound contacts)
+          const repMeetings = pMeetings.filter((m) => {
+            if (!outboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+
+          // Activities PERFORMED BY this rep (on outbound contacts)
+          const repActivities = pActivities.filter((a) => {
+            if (!outboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
+
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
+
           const repOrders = pOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
@@ -2028,8 +2163,6 @@ export function ReportsView({
             // Fallback: if no owner, match by contact
             return d.contact_id ? repContactIds.has(d.contact_id as string) : false;
           });
-
-          const repActivities = pActivities.filter(a => repContactIds.has(a.contact_id as string));
 
           // Prospection
           // Suivi & relances: all calls after the first call per contact
@@ -2279,20 +2412,50 @@ export function ReportsView({
         const pOrders = orders.filter(o => isInWeekOut(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, pMeetings, outboundContactIds);
+        // From meeting assignees (primary attribution)
+        pMeetings.forEach((m) => {
+          if (!outboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        pActivities.forEach((a) => {
+          if (!outboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, pMeetings, outboundContactIds);
-          const repMeetings = pMeetings.filter(m => repContactIds.has(m.contact_id as string));
+
+          // Meetings ASSIGNED TO this rep (on outbound contacts)
+          const repMeetings = pMeetings.filter((m) => {
+            if (!outboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+
+          // Activities PERFORMED BY this rep (on outbound contacts)
+          const repActivities = pActivities.filter((a) => {
+            if (!outboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
+
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
+
           const repOrders = pOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
@@ -2303,8 +2466,6 @@ export function ReportsView({
             // Fallback: if no owner, match by contact
             return d.contact_id ? repContactIds.has(d.contact_id as string) : false;
           });
-
-          const repActivities = pActivities.filter(a => repContactIds.has(a.contact_id as string));
 
           // Prospection
           // Suivi & relances: all calls after the first call per contact
@@ -2543,21 +2704,49 @@ export function ReportsView({
         const pyOrders = orders.filter(o => isInPY(((o.close_date || o.created_at) as string)));
 
         const teamMembersSet = new Set<string>();
+        // From contact owners (for leads count)
         outboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
-        enrichTeamMembersFromMeetings(teamMembersSet, pyMeetings, outboundContactIds);
+        // From meeting assignees (primary attribution)
+        pyMeetings.forEach((m) => {
+          if (!outboundContactIds.has(m.contact_id as string)) return;
+          const name = getTeamMemberName(m);
+          if (name) teamMembersSet.add(name);
+        });
+        // From activity performers
+        pyActivities.forEach((a) => {
+          if (!outboundContactIds.has(a.contact_id as string)) return;
+          const name = getTeamMemberName(a);
+          if (name) teamMembersSet.add(name);
+        });
 
         const reps = Array.from(teamMembersSet).map((repName) => {
+          // Contacts owned by this rep (for leads/contacts count)
           const repContacts = outboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
-          const repContactIds = new Set(repContacts.map(c => c.id as string));
-          enrichRepContactIdsFromMeetings(repContactIds, repName, pyMeetings, outboundContactIds);
-          const repActivities = pyActivities.filter(a => repContactIds.has(a.contact_id as string));
-          const repMeetings = pyMeetings.filter(m => repContactIds.has(m.contact_id as string));
+
+          // Meetings ASSIGNED TO this rep (on outbound contacts)
+          const repMeetings = pyMeetings.filter((m) => {
+            if (!outboundContactIds.has(m.contact_id as string)) return false;
+            return getTeamMemberName(m) === repName;
+          });
+
+          // Activities PERFORMED BY this rep (on outbound contacts)
+          const repActivities = pyActivities.filter((a) => {
+            if (!outboundContactIds.has(a.contact_id as string)) return false;
+            return getTeamMemberName(a) === repName;
+          });
+
+          // Build repContactIds from BOTH owned contacts + contacts from meetings/activities
+          const repContactIds = new Set([
+            ...repContacts.map(c => c.id as string),
+            ...repMeetings.map(m => m.contact_id as string),
+            ...repActivities.map(a => a.contact_id as string),
+          ].filter(Boolean));
           const repOrders = pyOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;

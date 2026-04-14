@@ -101,7 +101,8 @@ export default async function HomePage() {
         .neq("status", "cancelled")
         .contains("trainers", [memberFirstName])
         .order("session_date", { ascending: true })
-        .limit(5),
+        .order("session_time", { ascending: true })
+        .limit(10),
 
       // Overdue tasks assigned to me
       supabase.from("activities").select("*, contacts:contact_id(first_name, last_name), learners:learner_id(first_name, last_name)")
