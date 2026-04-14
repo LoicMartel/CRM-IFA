@@ -121,6 +121,26 @@ export function ReportsView({
 
   const inboundContacts = contacts.filter((c: R) => (c as any).contact_type === "inbound");
   const outboundContacts = contacts.filter((c: R) => (c as any).contact_type === "outbound");
+  const inboundContactIds = new Set(inboundContacts.map(c => c.id as string));
+  const outboundContactIds = new Set(outboundContacts.map(c => c.id as string));
+
+  // Helper : enrichit teamMembersSet et repContactIds via meeting.assigned_to
+  // quand contact.owner_id est null (fallback)
+  function enrichTeamMembersFromMeetings(set: Set<string>, mtgs: R[], validContactIds: Set<string>) {
+    mtgs.forEach((m: R) => {
+      if (!validContactIds.has(m.contact_id as string)) return;
+      const tm = (m as any).team_members as { first_name: string; last_name: string } | null;
+      if (tm) set.add(`${tm.first_name} ${tm.last_name}`);
+    });
+  }
+  function enrichRepContactIdsFromMeetings(repIds: Set<string>, repName: string, mtgs: R[], validContactIds: Set<string>) {
+    mtgs.forEach((m: R) => {
+      const cid = m.contact_id as string;
+      if (repIds.has(cid) || !validContactIds.has(cid)) return;
+      const tm = (m as any).team_members as { first_name: string; last_name: string } | null;
+      if (tm && `${tm.first_name} ${tm.last_name}` === repName) repIds.add(cid);
+    });
+  }
 
   // Contacts filtered by type dropdown
   const filteredByType = filterContactType
@@ -1103,6 +1123,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, monthMeetings, inboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = inboundContacts.filter((c) => {
@@ -1111,6 +1132,7 @@ export function ReportsView({
           });
 
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, monthMeetings, inboundContactIds);
 
           const repActivities = monthActivities.filter((a) => repContactIds.has(a.contact_id as string));
           const repMeetings = monthMeetings.filter((m) => repContactIds.has(m.contact_id as string));
@@ -1393,6 +1415,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, weekMeetings, inboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = inboundContacts.filter((c) => {
@@ -1401,6 +1424,7 @@ export function ReportsView({
           });
 
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, weekMeetings, inboundContactIds);
 
           const repActivities = weekActivities.filter((a) => repContactIds.has(a.contact_id as string));
           const repMeetings = weekMeetings.filter((m) => repContactIds.has(m.contact_id as string));
@@ -1678,6 +1702,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, periodMeetings, inboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = inboundContacts.filter((c) => {
@@ -1685,6 +1710,7 @@ export function ReportsView({
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, periodMeetings, inboundContactIds);
           const repActivities = periodActivities.filter(a => repContactIds.has(a.contact_id as string));
           const repMeetings = periodMeetings.filter(m => repContactIds.has(m.contact_id as string));
 
@@ -1926,6 +1952,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, pMeetings, outboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = outboundContacts.filter((c) => {
@@ -1933,6 +1960,7 @@ export function ReportsView({
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, pMeetings, outboundContactIds);
           const repMeetings = pMeetings.filter(m => repContactIds.has(m.contact_id as string));
           const repOrders = pOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
@@ -2174,6 +2202,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, pMeetings, outboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = outboundContacts.filter((c) => {
@@ -2181,6 +2210,7 @@ export function ReportsView({
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, pMeetings, outboundContactIds);
           const repMeetings = pMeetings.filter(m => repContactIds.has(m.contact_id as string));
           const repOrders = pOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
@@ -2411,6 +2441,7 @@ export function ReportsView({
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
         });
+        enrichTeamMembersFromMeetings(teamMembersSet, pyMeetings, outboundContactIds);
 
         const reps = Array.from(teamMembersSet).map((repName) => {
           const repContacts = outboundContacts.filter((c) => {
@@ -2418,6 +2449,7 @@ export function ReportsView({
             return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
           });
           const repContactIds = new Set(repContacts.map(c => c.id as string));
+          enrichRepContactIdsFromMeetings(repContactIds, repName, pyMeetings, outboundContactIds);
           const repActivities = pyActivities.filter(a => repContactIds.has(a.contact_id as string));
           const repMeetings = pyMeetings.filter(m => repContactIds.has(m.contact_id as string));
           const repOrders = pyOrders.filter(o => {
