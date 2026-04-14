@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Upload, FileText, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
-import { RichNotes } from "@/components/ui/rich-notes";
+import { RichTextEditor } from "./rich-text-editor";
 import {
   POST_CATEGORY_LABELS,
   POST_BANNERS,
@@ -355,13 +355,10 @@ export function PostFormDialog({
           {/* Content */}
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Contenu</label>
-            <RichNotes
-              value={content}
+            <RichTextEditor
+              content={content}
               onChange={setContent}
               placeholder="Écrivez votre post..."
-              minHeight={120}
-              storageBucket="post-attachments"
-              storageFolder="inline"
             />
           </div>
 

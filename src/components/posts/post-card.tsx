@@ -28,6 +28,7 @@ import {
   type PostCategory,
 } from "@/types/database";
 import { CommentSection } from "./comment-section";
+import { RichTextContent } from "./rich-text-editor";
 
 const REACTION_EMOJIS = [
   { key: "like", icon: ThumbsUp, label: "J'aime" },
@@ -295,8 +296,8 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
 
       {/* Content */}
       {post.content && (
-        <div style={{ fontSize: 14, color: "#3a4a5a", lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: 12 }}>
-          <RenderTextWithLinks text={post.content} />
+        <div style={{ marginBottom: 12 }}>
+          <RichTextContent html={post.content} />
         </div>
       )}
 
@@ -423,31 +424,5 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       )}
       </div>
     </div>
-  );
-}
-
-function RenderTextWithLinks({ text }: { text: string }) {
-  const urlRegex = /(https?:\/\/[^\s<]+)/g;
-  const parts = text.split(urlRegex);
-  return (
-    <>
-      {parts.map((part, i) => {
-        if (urlRegex.test(part)) {
-          urlRegex.lastIndex = 0;
-          return (
-            <a
-              key={i}
-              href={part}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#1a6b9c", textDecoration: "underline", wordBreak: "break-all" }}
-            >
-              {part}
-            </a>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </>
   );
 }
