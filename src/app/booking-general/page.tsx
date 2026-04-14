@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Phone, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone, Video, CheckCircle, Calendar, Clock, MapPin } from "lucide-react";
 
 const DAYS = ["LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM.", "DIM."];
 const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
@@ -48,7 +48,7 @@ function BookingGeneralContent() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [mode] = useState<"phone">("phone");
+  const [mode, setMode] = useState<"phone" | "visio">("phone");
   const [form, setForm] = useState({
     firstName: "", lastName: "", email: "", phone: "", company: "", source: "", website: "",
   });
@@ -263,7 +263,7 @@ function BookingGeneralContent() {
                 <MapPin style={{ width: 16, height: 16, color: "#8399a9" }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a" }}>Lieu de la r&eacute;union</div>
-                  <div style={{ fontSize: 12, color: "#5a6f80" }}>Appel t&eacute;l&eacute;phonique</div>
+                  <div style={{ fontSize: 12, color: "#5a6f80" }}>{mode === "visio" ? "Visioconf\u00e9rence (Zoom)" : "Appel t\u00e9l\u00e9phonique"}</div>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
@@ -273,13 +273,33 @@ function BookingGeneralContent() {
                   <div style={{ fontSize: 12, color: "#5a6f80" }}>15 min</div>
                 </div>
               </div>
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                height: 36, borderRadius: 8, border: "2px solid #1a6b9c",
-                background: "#e8f0fe", color: "#1a6b9c",
-                fontSize: 12, fontWeight: 600, marginBottom: 16,
-              }}>
-                <Phone style={{ width: 14, height: 14 }} /> Appel t&eacute;l&eacute;phonique
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <button
+                  onClick={() => setMode("phone")}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 8,
+                    border: `2px solid ${mode === "phone" ? "#1a6b9c" : "#dce8f0"}`,
+                    background: mode === "phone" ? "#e8f0fe" : "white",
+                    color: mode === "phone" ? "#1a6b9c" : "#8399a9",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  <Phone style={{ width: 14, height: 14 }} /> T&eacute;l&eacute;phone
+                </button>
+                <button
+                  onClick={() => setMode("visio")}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 8,
+                    border: `2px solid ${mode === "visio" ? "#1a6b9c" : "#dce8f0"}`,
+                    background: mode === "visio" ? "#e8f0fe" : "white",
+                    color: mode === "visio" ? "#1a6b9c" : "#8399a9",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                >
+                  <Video style={{ width: 14, height: 14 }} /> Visio
+                </button>
               </div>
             </div>
 
@@ -357,7 +377,7 @@ function BookingGeneralContent() {
             <strong>{formatDateFr(selectedDate!)}</strong> &agrave; <strong>{selectedSlot.start.slice(11, 16)}</strong>
           </p>
           <p style={{ fontSize: 12, color: "#8399a9", marginBottom: 20 }}>
-            <MapPin style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> Appel t&eacute;l&eacute;phonique
+            <MapPin style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> {mode === "visio" ? "Visioconf\u00e9rence" : "Appel t\u00e9l\u00e9phonique"}
             <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#1a6b9c", fontWeight: 600, cursor: "pointer", marginLeft: 8, fontSize: 12 }}>Modifier</button>
           </p>
 
@@ -478,7 +498,10 @@ function BookingGeneralContent() {
           </div>
 
           <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 8 }}>
-            <Phone style={{ width: 14, height: 14, display: "inline", verticalAlign: "middle" }} /> Appel t&eacute;l&eacute;phonique &mdash; 15 min
+            {mode === "visio"
+              ? <><Video style={{ width: 14, height: 14, display: "inline", verticalAlign: "middle" }} /> Visioconf&eacute;rence &mdash; 15 min</>
+              : <><Phone style={{ width: 14, height: 14, display: "inline", verticalAlign: "middle" }} /> Appel t&eacute;l&eacute;phonique &mdash; 15 min</>
+            }
           </p>
           <p style={{ fontSize: 12, color: "#8399a9", marginTop: 16 }}>
             Un email de confirmation avec une invitation calendrier vous a &eacute;t&eacute; envoy&eacute;.

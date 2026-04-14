@@ -17,6 +17,7 @@ const TEAM = [
     name: "Loïc MARTEL",
     photo: "/photo-loic.jpeg",
     calendarIds: [
+      "loic@closing-academie.com",
       "b1d8e8cd626637bb6745ca2df63684a1f4ca9c6f1eef203c4cb97c7969dd8dc1@group.calendar.google.com",
       "5bd3cd57ce9939882f7db28b02bde52d2b4df03a0d1e857915e5ee8cf0b02ae2@group.calendar.google.com",
     ],
@@ -27,8 +28,13 @@ const TEAM = [
     name: "Rafi MOUHAMAD",
     photo: "/photo-rafi.jpeg",
     calendarIds: [
-      "rafi.mouhamad.nmfconsulting@gmail.com",
-      "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com",
+      "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com", // Rdv commerciaux/suivi
+      "rafi.mouhamad.nmfconsulting@gmail.com",                  // Visio
+      "lm5dnmkg9k8jpk2eeb009e2ev4@group.calendar.google.com", // Admin et prépa
+      "qnat0fo43j8hn7369kld0vnv1c@group.calendar.google.com", // Team NMF Consulting
+      "j2d3ldvcaj4c76lmefv6qjr0lk@group.calendar.google.com", // Perso
+      "r4df33kl5s8mnk2sd0ipird7fg@group.calendar.google.com", // Présentiel
+      "eea3flj6iqn5stu896e2tubo4o@group.calendar.google.com", // Trajets
     ],
   },
 ];
