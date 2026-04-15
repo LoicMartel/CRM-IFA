@@ -7,6 +7,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Search, Building2, User, Handshake, GraduationCap, X, Settings, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 const allTabs = [
   { label: "Dashboard", href: "/", restricted: true },
@@ -266,6 +267,11 @@ export function TopNav() {
           );
         })}
       </nav>
+
+      {/* Notification bell */}
+      <div style={{ marginLeft: 8 }}>
+        <NotificationBell />
+      </div>
 
       {/* User avatar menu */}
       <div ref={userMenuRef} style={{ position: "relative", flexShrink: 0, marginLeft: 8 }}>
