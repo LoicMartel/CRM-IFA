@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import { Underline } from "@tiptap/extension-underline";
@@ -10,6 +10,8 @@ import { Highlight } from "@tiptap/extension-highlight";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
+import { Mention } from "@tiptap/extension-mention";
+import { buildMentionSuggestion, type MentionMember } from "@/components/posts/mention-suggestion";
 import {
   Bold,
   Italic,
@@ -52,9 +54,35 @@ interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  mentionMembers?: MentionMember[];
 }
 
-export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post..." }: RichTextEditorProps) {
+const EMPTY_MENTION_LIST: MentionMember[] = [];
+
+export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post...", mentionMembers }: RichTextEditorProps) {
+  const members = mentionMembers ?? EMPTY_MENTION_LIST;
+  const mentionExtension = useMemo(
+    () =>
+      Mention.configure({
+        HTMLAttributes: {
+          style: "color: #1a6b9c; font-weight: 600; background: #e3f2fd; padding: 1px 4px; border-radius: 4px;",
+        },
+        renderHTML({ options, node }) {
+          return [
+            "span",
+            {
+              ...options.HTMLAttributes,
+              "data-type": "mention",
+              "data-id": node.attrs.id as string,
+            },
+            `@${node.attrs.label as string}`,
+          ];
+        },
+        suggestion: buildMentionSuggestion(members),
+      }),
+    [members]
+  );
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -67,6 +95,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Link.configure({ openOnClick: false, HTMLAttributes: { style: "color: #1a6b9c; text-decoration: underline;" } }),
       Placeholder.configure({ placeholder }),
+      mentionExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -77,7 +106,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
         style: "min-height: 150px; padding: 12px 14px; outline: none; font-size: 14px; line-height: 1.7; color: #1a2a3a;",
       },
     },
-  });
+  }, [mentionExtension]);
 
   if (!editor) return null;
 

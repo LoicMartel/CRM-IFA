@@ -4,6 +4,7 @@ import { upsertCalendarEvent, deleteCalendarEvent } from "@/lib/google-calendar"
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   try {
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     // Get trainer details
     const { data: trainerMembers } = await supabase
       .from("team_members")
-      .select("first_name, last_name, google_calendar_id, google_calendar_id_presentiel, zoom_link, email, slack_user_id, roles")
+      .select("id, first_name, last_name, google_calendar_id, google_calendar_id_presentiel, zoom_link, email, slack_user_id, roles")
       .in("first_name", trainers.length > 0 ? trainers : ["__none__"]);
 
     const slackToken = process.env.SLACK_BOT_TOKEN;
@@ -101,6 +102,21 @@ export async function POST(req: NextRequest) {
       const isExterne = trainerRoles.includes("Externe");
       const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
       const timeDisplay = `${session.session_date} à ${sessionTime}`;
+
+      // In-app notification for the trainer (new assignment OR updated session)
+      if (trainer.id) {
+        await createNotification({
+          recipientId: trainer.id as string,
+          type: isUpdate ? "session_assigned" : "session_assigned",
+          title: isUpdate
+            ? `Session modifiée : ${title}`
+            : `Nouvelle session pour toi : ${title}`,
+          body: `${timeDisplay} — ${companyName} (${durationHours}h)`,
+          linkUrl: `/planning`,
+          relatedEntityType: "training_session",
+          relatedEntityId: sessionId,
+        });
+      }
 
       // 1. Google Calendar (for everyone with a calendar configured)
       if (calendarId && isStepActive(wf, "google-calendar-trainers").active) {
@@ -291,7 +307,7 @@ export async function POST(req: NextRequest) {
     if (removedTrainerNames && removedTrainerNames.length > 0) {
       const { data: removedTrainers } = await supabase
         .from("team_members")
-        .select("first_name, last_name, google_calendar_id, google_calendar_id_presentiel, email, slack_user_id, roles")
+        .select("id, first_name, last_name, google_calendar_id, google_calendar_id_presentiel, email, slack_user_id, roles")
         .in("first_name", removedTrainerNames);
 
       for (const trainer of removedTrainers ?? []) {
@@ -300,6 +316,19 @@ export async function POST(req: NextRequest) {
         const calId = isJournee && trainer.google_calendar_id_presentiel
           ? trainer.google_calendar_id_presentiel
           : trainer.google_calendar_id;
+
+        // In-app notification for the removed trainer
+        if (trainer.id) {
+          await createNotification({
+            recipientId: trainer.id as string,
+            type: "session_cancelled",
+            title: `Session annulée : ${title}`,
+            body: `Tu as été retiré(e) de la session du ${timeDisplay} (${companyName})`,
+            linkUrl: `/planning`,
+            relatedEntityType: "training_session",
+            relatedEntityId: sessionId,
+          });
+        }
 
         // 1. Supprimer l'évènement sur son agenda (si on peut)
         let gcalStatus: string | undefined;

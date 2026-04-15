@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Upload, FileText, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { RichTextEditor } from "./rich-text-editor";
+import { extractMentionedIds, type MentionMember } from "./mention-suggestion";
 import {
   POST_CATEGORY_LABELS,
   POST_BANNERS,
@@ -13,6 +14,12 @@ import {
 } from "@/types/database";
 
 const CATEGORIES = Object.entries(POST_CATEGORY_LABELS) as [PostCategory, string][];
+
+function getMemberLabel(id: string | null, members: MentionMember[]): string {
+  if (!id) return "Quelqu'un";
+  const m = members.find((x) => x.id === id);
+  return m?.label ?? "Un membre";
+}
 
 interface PendingFile {
   file: File;
@@ -49,6 +56,30 @@ export function PostFormDialog({
   const [saving, setSaving] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [showNewTagInput, setShowNewTagInput] = useState(false);
+  const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
+
+  // Load active team members for @-mentions
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("team_members")
+        .select("id, first_name, last_name, avatar_url")
+        .eq("is_active", true)
+        .order("first_name");
+      if (data) {
+        setMentionMembers(
+          data.map((m: any) => ({
+            id: m.id,
+            label: `${m.first_name} ${m.last_name}`,
+            first_name: m.first_name,
+            avatar_url: m.avatar_url,
+          }))
+        );
+      }
+    })();
+  }, [open]);
 
   if (!open) return null;
 
@@ -126,9 +157,16 @@ export function PostFormDialog({
       banner: banner === "none" ? null : banner,
     };
 
+    let savedPostId: string | null = null;
+    let previouslyMentionedIds: string[] = [];
+
     if (editPost) {
+      // Capture previous mentions before update so we only notify newly-added ones
+      previouslyMentionedIds = extractMentionedIds(editPost.content ?? "");
+
       // Update
       await supabase.from("posts").update({ ...postData, updated_at: new Date().toISOString() }).eq("id", editPost.id);
+      savedPostId = editPost.id;
 
       // Remove deleted attachments
       if (removedAttachmentIds.length > 0) {
@@ -149,10 +187,33 @@ export function PostFormDialog({
         .select("id")
         .single();
 
+      savedPostId = newPost?.id ?? null;
+
       if (newPost && uploadedAttachments.length > 0) {
         await supabase.from("post_attachments").insert(
           uploadedAttachments.map((a) => ({ ...a, post_id: newPost.id }))
         );
+      }
+    }
+
+    // Create mention notifications for newly-mentioned members
+    if (savedPostId && content) {
+      const currentMentions = extractMentionedIds(content);
+      const newMentions = currentMentions.filter(
+        (id) => !previouslyMentionedIds.includes(id) && id !== memberId
+      );
+      if (newMentions.length > 0) {
+        const rows = newMentions.map((recipientId) => ({
+          recipient_id: recipientId,
+          type: "post_mention",
+          title: `${getMemberLabel(memberId, mentionMembers)} t'a mentionné dans un post`,
+          body: title.trim(),
+          link_url: `/posts#post-${savedPostId}`,
+          related_entity_type: "post",
+          related_entity_id: savedPostId,
+          actor_id: memberId,
+        }));
+        await supabase.from("notifications").insert(rows);
       }
     }
 
@@ -358,7 +419,8 @@ export function PostFormDialog({
             <RichTextEditor
               content={content}
               onChange={setContent}
-              placeholder="Écrivez votre post..."
+              placeholder="Écrivez votre post… (utilisez @ pour mentionner un membre)"
+              mentionMembers={mentionMembers}
             />
           </div>
 

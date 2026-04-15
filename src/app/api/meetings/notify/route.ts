@@ -5,6 +5,7 @@ import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { toParisDateTime } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
+import { createNotification } from "@/lib/notifications";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,6 +89,19 @@ export async function POST(req: NextRequest) {
 
     if (!assignedMember) {
       return NextResponse.json({ success: true, title, results: [{ action: "skip", status: "No assigned member" }] });
+    }
+
+    // In-app notification for the commercial owner
+    if (meeting.assigned_to) {
+      await createNotification({
+        recipientId: meeting.assigned_to as string,
+        type: "meeting_assigned",
+        title: `Nouveau ${meeting.meeting_type} : ${contactName}`,
+        body: `${dateDisplay} à ${timeStr}${companyName ? ` — ${companyName}` : ""}`,
+        linkUrl: `/contacts/${contact?.id ?? ""}`,
+        relatedEntityType: "meeting",
+        relatedEntityId: meetingId,
+      });
     }
 
     const memberRoles = (assignedMember.roles as string[]) ?? [];

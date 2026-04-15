@@ -10,11 +10,13 @@ import { useCurrentRoles } from "@/lib/use-current-roles";
 
 interface CommentSectionProps {
   postId: string;
+  postAuthorId: string;
+  postTitle: string;
   teamMembers: { id: string; first_name: string; last_name: string }[];
   onCommentCountChange: () => void;
 }
 
-export function CommentSection({ postId, teamMembers, onCommentCountChange }: CommentSectionProps) {
+export function CommentSection({ postId, postAuthorId, postTitle, teamMembers, onCommentCountChange }: CommentSectionProps) {
   const memberId = useCurrentMember();
   const { isAdmin } = useCurrentRoles();
   const [comments, setComments] = useState<any[]>([]);
@@ -42,11 +44,39 @@ export function CommentSection({ postId, teamMembers, onCommentCountChange }: Co
     if (!newComment.trim() || !memberId) return;
     setSubmitting(true);
     const supabase = createClient();
+    const commentContent = newComment.trim();
     await supabase.from("post_comments").insert({
       post_id: postId,
       author_id: memberId,
-      content: newComment.trim(),
+      content: commentContent,
     });
+
+    // Build notification recipients: post author + previously-commenting members (excluding current user)
+    const recipients = new Set<string>();
+    if (postAuthorId && postAuthorId !== memberId) recipients.add(postAuthorId);
+    for (const c of comments) {
+      if (c.author_id && c.author_id !== memberId) recipients.add(c.author_id);
+    }
+
+    if (recipients.size > 0) {
+      const author = teamMembers.find((m) => m.id === memberId);
+      const actorName = author ? `${author.first_name} ${author.last_name}` : "Quelqu'un";
+      const rows = Array.from(recipients).map((recipientId) => ({
+        recipient_id: recipientId,
+        type: recipientId === postAuthorId ? "post_comment" : "comment_reply",
+        title:
+          recipientId === postAuthorId
+            ? `${actorName} a commenté ton post`
+            : `${actorName} a répondu à un post que tu as commenté`,
+        body: `${postTitle} — « ${commentContent.slice(0, 120)}${commentContent.length > 120 ? "…" : ""} »`,
+        link_url: `/posts#post-${postId}`,
+        related_entity_type: "post",
+        related_entity_id: postId,
+        actor_id: memberId,
+      }));
+      await supabase.from("notifications").insert(rows);
+    }
+
     setNewComment("");
     setSubmitting(false);
     await loadComments();

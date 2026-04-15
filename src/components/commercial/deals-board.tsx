@@ -254,13 +254,36 @@ export function DealsBoard({
   async function handleDrop(targetStage: DealStage) {
     if (!draggedDealId) return;
     const supabase = createClient();
+    const deal = deals.find((d) => d.id === draggedDealId);
+    const previousStage = deal?.stage;
+
     await supabase.from("deals").update({
       stage: targetStage,
       probability: DEAL_STAGE_PROBABILITY[targetStage],
       close_date: targetStage === "closed_won" ? new Date().toISOString().split("T")[0] : null,
     }).eq("id", draggedDealId);
 
-    const deal = deals.find((d) => d.id === draggedDealId);
+    // Notify the deal owner of the stage change (if different from current user)
+    if (deal?.owner_id && previousStage !== targetStage) {
+      const stageLabels: Record<string, string> = {
+        new: "Nouveau",
+        qualified: "Qualifié",
+        proposal: "Proposition",
+        quote_signed: "Devis signé",
+        closed_won: "Gagné",
+        closed_lost: "Perdu",
+      };
+      await supabase.from("notifications").insert({
+        recipient_id: deal.owner_id,
+        type: "deal_stage_changed",
+        title: `Deal "${deal.name}" → ${stageLabels[targetStage] ?? targetStage}`,
+        body: previousStage ? `Déplacé depuis "${stageLabels[previousStage] ?? previousStage}"` : null,
+        link_url: `/sales`,
+        related_entity_type: "deal",
+        related_entity_id: draggedDealId,
+        actor_id: currentMemberId,
+      });
+    }
 
     // Si gagné → passer le contact en "signed" + entreprise en "customer"
     if (targetStage === "closed_won" && deal) {

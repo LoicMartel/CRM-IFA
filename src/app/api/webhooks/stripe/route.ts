@@ -152,6 +152,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // In-app notifications for all active team members
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("id, email")
+      .eq("is_active", true)
+      .in("email", NOTIFY_EMAILS);
+    if (members && members.length > 0) {
+      const notifRows = members.map((m: any) => ({
+        recipient_id: m.id,
+        type: "stripe_payment",
+        title: `💰 Paiement Stripe : ${amountTotal.toLocaleString("fr-FR")} €`,
+        body: `${contactName} — ${dealName}`,
+        link_url: "/sales",
+        related_entity_type: "deal",
+      }));
+      await supabase.from("notifications").insert(notifRows);
+    }
+
     console.log(`Deal "${dealName}" created, notifications sent to ${NOTIFY_EMAILS.length} recipients`);
   }
 

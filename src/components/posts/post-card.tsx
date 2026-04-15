@@ -81,6 +81,22 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       if (data) {
         setReactions((prev) => prev.map((r: any) => (r.id === tempId ? { ...r, id: data.id } : r)));
       }
+
+      // Notify post author of the new reaction (fire-and-forget)
+      if (post.author_id && post.author_id !== memberId) {
+        const actor = teamMembers.find((m) => m.id === memberId);
+        const actorName = actor ? `${actor.first_name} ${actor.last_name}` : "Quelqu'un";
+        supabase.from("notifications").insert({
+          recipient_id: post.author_id,
+          type: "post_reaction",
+          title: `${actorName} a réagi à ton post ${emoji}`,
+          body: post.title,
+          link_url: `/posts#post-${post.id}`,
+          related_entity_type: "post",
+          related_entity_id: post.id,
+          actor_id: memberId,
+        }).then(() => { /* no-op */ });
+      }
     }
   }
 
@@ -94,7 +110,25 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
 
   async function togglePin() {
     const supabase = createClient();
-    await supabase.from("posts").update({ pinned: !post.pinned }).eq("id", post.id);
+    const newPinned = !post.pinned;
+    await supabase.from("posts").update({ pinned: newPinned }).eq("id", post.id);
+
+    // Notify post author when someone else pins their post
+    if (newPinned && post.author_id && post.author_id !== memberId) {
+      const actor = teamMembers.find((m) => m.id === memberId);
+      const actorName = actor ? `${actor.first_name} ${actor.last_name}` : "Quelqu'un";
+      await supabase.from("notifications").insert({
+        recipient_id: post.author_id,
+        type: "post_pinned",
+        title: `${actorName} a épinglé ton post`,
+        body: post.title,
+        link_url: `/posts#post-${post.id}`,
+        related_entity_type: "post",
+        related_entity_id: post.id,
+        actor_id: memberId,
+      });
+    }
+
     onRefresh();
   }
 
@@ -418,6 +452,8 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       {showComments && (
         <CommentSection
           postId={post.id}
+          postAuthorId={post.author_id}
+          postTitle={post.title}
           teamMembers={teamMembers}
           onCommentCountChange={onRefresh}
         />

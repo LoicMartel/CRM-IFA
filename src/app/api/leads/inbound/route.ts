@@ -142,6 +142,35 @@ export async function POST(request: Request) {
     }
     if (emailPromises.length > 0) await Promise.all(emailPromises);
 
+    // In-app notifications for Pauline and Rafi
+    const { data: notifTargets } = await supabase
+      .from("team_members")
+      .select("id, email")
+      .in("email", ["pauline-ext@closing-academie.com", "rafi@closing-academie.com"]);
+    if (notifTargets && notifTargets.length > 0) {
+      const sourceLabel = source === "embed-form"
+        ? "Meta ads - tunnel commercial"
+        : source === "embed-form-book"
+        ? "Meta ads - tunnel book"
+        : "Landing Page";
+      const notifRows = notifTargets
+        .filter((m: any) => {
+          if (m.email === "pauline-ext@closing-academie.com") return isStepActive(wf, "notify-pauline").active;
+          if (m.email === "rafi@closing-academie.com") return isStepActive(wf, "notify-rafi").active;
+          return false;
+        })
+        .map((m: any) => ({
+          recipient_id: m.id,
+          type: "new_lead",
+          title: `Nouveau lead : ${firstName} ${lastName}`,
+          body: `${sourceLabel}${website ? ` — ${website}` : ""}`,
+          link_url: `/contacts/${contactId}`,
+          related_entity_type: "contact",
+          related_entity_id: contactId,
+        }));
+      if (notifRows.length > 0) await supabase.from("notifications").insert(notifRows);
+    }
+
     // 4. Send thank-you email with book PDF for book-related sources
     if ((source === "landing-book-financement" || source === "embed-form-book") && email && isStepActive(wf, "send-book-pdf").active) {
       try {
