@@ -147,6 +147,7 @@ export async function POST(request: Request) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
         const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);
+        if (!pdfRes.ok) throw new Error(`PDF fetch failed: ${pdfRes.status}`);
         const pdfBuffer = await pdfRes.arrayBuffer();
         const pdfContent = Buffer.from(pdfBuffer);
 
