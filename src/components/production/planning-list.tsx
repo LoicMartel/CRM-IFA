@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -136,7 +135,7 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
 };
 
 export function PlanningList({
-  servicePlans,
+  servicePlans: servicePlansProp,
   allLearners,
   programs,
   trainingTypes,
@@ -154,10 +153,31 @@ export function PlanningList({
   expertNames?: string[];
   expertMembers?: R[];
 }) {
-  const router = useRouter();
   const { isRestrictedExterne, isReadOnly, onlyOwnData, firstName: currentFirstName, lastName: currentLastName, isAdmin } = useCurrentRoles();
   const canDeletePlan = isAdmin || (currentFirstName === "Iman" && currentLastName === "KHARBA");
   const TRAINER_LIST = expertNames && expertNames.length > 0 ? expertNames : TRAINER_LIST_FALLBACK;
+
+  // Local state mirrors server data — client-side refetch after mutations preserves expandedIds & scroll
+  const [servicePlans, setServicePlans] = useState<ServicePlanRow[]>(servicePlansProp);
+  const refetchPlans = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("service_plans")
+      .select(`
+        *,
+        companies(name, address, city),
+        training_programs(name),
+        training_types(name),
+        service_plan_learners(
+          learner_id,
+          learners(id, first_name, last_name, email, phone, position, status)
+        ),
+        training_sessions(*, training_session_learners(learner_id, learners(id, first_name, last_name)))
+      `)
+      .order("start_date", { ascending: false });
+    if (data) setServicePlans(data as any);
+  }, []);
+
   const [search, setSearch] = useState("");
   const [filterProgram, setFilterProgram] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -526,7 +546,7 @@ export function PlanningList({
     setEditingPlanId(null);
     setSelectedLearnerIds([]);
     setForm(emptyForm);
-    router.refresh();
+    refetchPlans();
   }
 
   // Generate auto title for a session based on current plan context
@@ -639,7 +659,7 @@ export function PlanningList({
     setSessionPlanId(null);
     setEditingSessionId(null);
     setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [], custom_title: "" });
-    router.refresh();
+    refetchPlans();
   }
 
   function openEditSession(s: TrainingSession, planId: string) {
@@ -693,7 +713,7 @@ export function PlanningList({
     await supabase.from("training_sessions").update({ notes: notesPopup.notes || null }).eq("id", notesPopup.sessionId);
     setNotesPopup(null);
     sessionNotesVoice.stopRecording();
-    router.refresh();
+    refetchPlans();
   }
 
   function stopRecording() {
@@ -765,14 +785,14 @@ export function PlanningList({
     // Sync to delivery sessions table
     try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: sessionId }) }); } catch {}
 
-    router.refresh();
+    refetchPlans();
   }
 
   async function handleDeleteSession(sessionId: string) {
     if (!confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette session ?")) return;
     const supabase = createClient();
     await supabase.from("training_sessions").delete().eq("id", sessionId);
-    router.refresh();
+    refetchPlans();
   }
 
   function fmtEuro(n: number) {
@@ -967,7 +987,7 @@ export function PlanningList({
                         await supabase.from("training_sessions").delete().eq("service_plan_id", plan.id);
                         await supabase.from("service_plan_learners").delete().eq("service_plan_id", plan.id);
                         await supabase.from("service_plans").delete().eq("id", plan.id);
-                        router.refresh();
+                        refetchPlans();
                       }}
                       style={{ height: 32, borderRadius: 6, background: "#fde8e8", color: "#c62828", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                     >
@@ -2237,7 +2257,7 @@ export function PlanningList({
           learnerIds: (p.service_plan_learners ?? []).map((spl: any) => spl.learner_id),
         }))}
         onSessionsCreated={() => {
-          router.refresh();
+          refetchPlans();
         }}
       />
 
