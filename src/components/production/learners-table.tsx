@@ -70,7 +70,7 @@ export function LearnersTable({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 25;
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", position: "",
     company_id: "", status: "actuel", program_id: "", training_type_id: "", expert_id: "", notes: "",

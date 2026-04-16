@@ -40,7 +40,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 25;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
 

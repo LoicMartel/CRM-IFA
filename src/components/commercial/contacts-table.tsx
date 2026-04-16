@@ -105,7 +105,7 @@ export function ContactsTable({
   const [contactTypeTab, setContactTypeTab] = useState<"all" | "inbound" | "outbound">("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 50;
+  const PAGE_SIZE = 25;
   const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
