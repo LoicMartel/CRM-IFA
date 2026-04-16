@@ -40,7 +40,7 @@ export default async function HomePage() {
     { data: wonDeals },
   ] = await Promise.all([
     supabase.from("sales_targets").select("*").order("month", { ascending: true }),
-    supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won"),
+    supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won").limit(500),
   ]);
 
   // Personal data — filtered by current member
@@ -122,12 +122,13 @@ export default async function HomePage() {
     overdueTasks = ot ?? [];
   }
 
-  // Fetch all sessions (minimal) for progression display (VT 2/12, Journée 3/5)
+  // Fetch sessions (minimal) for progression display (VT 2/12, Journée 3/5)
   const { data: allProgressSessions } = await supabase
     .from("training_sessions")
     .select("id, service_plan_id, session_type, status, session_date")
     .neq("status", "cancelled")
-    .order("session_date", { ascending: true });
+    .order("session_date", { ascending: true })
+    .limit(1000);
 
   return (
     <div className="p-6">

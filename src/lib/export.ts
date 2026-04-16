@@ -1,13 +1,13 @@
-import * as XLSX from "xlsx";
-
 export type ExportFormat = "csv" | "xls" | "xlsx";
 
-export function exportData(
+export async function exportData(
   rows: Record<string, unknown>[],
   columns: { key: string; label: string }[],
   filename: string,
   format: ExportFormat
 ) {
+  const XLSX = await import("xlsx");
+
   const data = rows.map((row) => {
     const obj: Record<string, unknown> = {};
     columns.forEach(({ key, label }) => {
@@ -21,7 +21,7 @@ export function exportData(
   XLSX.utils.book_append_sheet(wb, ws, "Export");
 
   const ext = format === "csv" ? "csv" : format === "xls" ? "xls" : "xlsx";
-  const bookType: XLSX.BookType = format === "csv" ? "csv" : format === "xls" ? "biff8" : "xlsx";
+  const bookType = format === "csv" ? "csv" as const : format === "xls" ? "biff8" as const : "xlsx" as const;
 
   XLSX.writeFile(wb, `${filename}.${ext}`, { bookType });
 }

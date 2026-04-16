@@ -51,7 +51,7 @@ export function TopNav() {
 
   const [avatarRefresh, setAvatarRefresh] = useState(0);
 
-  // Load user initials & avatar — reload on navigation or avatar change
+  // Load user initials & avatar — once on mount + when avatar is updated from settings
   useEffect(() => {
     (async () => {
       const supabase = createClient();
@@ -63,7 +63,7 @@ export function TopNav() {
         setUserAvatarUrl(member.avatar_url ?? null);
       }
     })();
-  }, [pathname, avatarRefresh]);
+  }, [avatarRefresh]);
 
   // Listen for avatar updates from settings page
   useEffect(() => {

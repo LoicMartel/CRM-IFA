@@ -14,7 +14,7 @@ export default async function ContactsPage() {
     { data: teamMembers },
     { data: sources },
   ] = await Promise.all([
-    supabase.from("contacts").select("*, companies!contacts_company_id_fkey(name), team_members!contacts_owner_id_fkey(first_name, last_name)").order("last_name"),
+    supabase.from("contacts").select("*, companies!contacts_company_id_fkey(name), team_members!contacts_owner_id_fkey(first_name, last_name)").order("last_name").limit(500),
     supabase.from("companies").select("id, name").order("name"),
     supabase.from("team_members").select("id, first_name, last_name, roles").eq("is_active", true),
     supabase.from("lead_sources").select("id, name").order("name"),
