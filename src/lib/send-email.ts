@@ -59,7 +59,7 @@ export async function sendSessionEmail({
         content: Buffer.isBuffer(a.content)
           ? a.content.toString("base64")
           : Buffer.from(a.content, "utf-8").toString("base64"),
-        contentType: a.contentType || (a.filename.endsWith(".ics") ? "text/calendar" : a.filename.endsWith(".pdf") ? "application/pdf" : "application/octet-stream"),
+        contentType: a.contentType || (a.filename.endsWith(".ics") ? "text/calendar; method=REQUEST; charset=utf-8" : a.filename.endsWith(".pdf") ? "application/pdf" : "application/octet-stream"),
       }));
     }
 

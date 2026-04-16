@@ -209,6 +209,8 @@ export async function POST(req: NextRequest) {
           endDateTime: icsEndExt,
           organizerName: "La Closing Académie",
           organizerEmail: "contact@closing-academie.com",
+          attendeeEmail: assignedMember.email!,
+          attendeeName: `${assignedMember.first_name} ${assignedMember.last_name}`,
         });
 
         const emailBody = [
@@ -268,6 +270,8 @@ export async function POST(req: NextRequest) {
           endDateTime: icsEnd,
           organizerName: assignedMember ? `${assignedMember.first_name} ${assignedMember.last_name}` : "La Closing Académie",
           organizerEmail: (assignedMember?.email as string) || "contact@closing-academie.com",
+          attendeeEmail: contactEmail,
+          attendeeName: contactName,
         });
 
         const emailBody = [

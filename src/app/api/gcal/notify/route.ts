@@ -213,6 +213,8 @@ export async function POST(req: NextRequest) {
           endDateTime: icsEndExt,
           organizerName: "La Closing Académie",
           organizerEmail: "contact@closing-academie.com",
+          attendeeEmail: trainer.email!,
+          attendeeName: `${trainer.first_name} ${trainer.last_name}`,
         });
 
         const emailBody = [
@@ -253,24 +255,25 @@ export async function POST(req: NextRequest) {
       const totalMin = sH * 60 + sM + durationHours * 60;
       const icsEndDT = `${session.session_date}T${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}:00`;
 
-      const icsContent = generateICS({
-        summary: title,
-        description: [
-          `${typeLabel} ${sessionIndex}/${totalSessions}`,
-          `Entreprise : ${companyName}`,
-          `Apprenants : ${learnerFullNames || "Non assignés"}`,
-          `Durée : ${durationHours}h`,
-          isJournee ? `Lieu : ${(session as any).session_location || fullAddress || "Non renseigné"}` : "",
-          !isJournee && trainers.length > 0 ? `Expert : ${trainers.join(", ")}` : "",
-        ].filter(Boolean).join("\n"),
-        location: isJournee ? ((session as any).session_location || fullAddress || companyName) : "Visioconférence",
-        startDateTime: icsStartDT,
-        endDateTime: icsEndDT,
-        organizerName: "La Closing Académie",
-        organizerEmail: "contact@closing-academie.com",
-      });
-
       for (const learner of learnersWithEmail) {
+        const icsContent = generateICS({
+          summary: title,
+          description: [
+            `${typeLabel} ${sessionIndex}/${totalSessions}`,
+            `Entreprise : ${companyName}`,
+            `Apprenants : ${learnerFullNames || "Non assignés"}`,
+            `Durée : ${durationHours}h`,
+            isJournee ? `Lieu : ${(session as any).session_location || fullAddress || "Non renseigné"}` : "",
+            !isJournee && trainers.length > 0 ? `Expert : ${trainers.join(", ")}` : "",
+          ].filter(Boolean).join("\n"),
+          location: isJournee ? ((session as any).session_location || fullAddress || companyName) : "Visioconférence",
+          startDateTime: icsStartDT,
+          endDateTime: icsEndDT,
+          organizerName: "La Closing Académie",
+          organizerEmail: "contact@closing-academie.com",
+          attendeeEmail: (learner as any).email,
+          attendeeName: `${(learner as any).first_name} ${(learner as any).last_name}`,
+        });
         const emailBody = [
           `Bonjour ${(learner as any).first_name},`,
           "",
