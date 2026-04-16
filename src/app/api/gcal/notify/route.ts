@@ -142,7 +142,10 @@ export async function POST(req: NextRequest) {
           session.notes ? `\n📝 Notes : ${session.notes}` : "",
         ].filter(Boolean).join("\n");
 
-        const existingEventId = isUpdate ? (session as any).gcal_event_id : null;
+        // Lookup per-trainer event ID from the JSONB map
+        const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
+        const existingEventId = isUpdate ? (eventIdsMap[trainer.first_name] ?? null) : null;
+
         const upsert = await upsertCalendarEvent({
           calendarId,
           existingEventId,
@@ -153,9 +156,12 @@ export async function POST(req: NextRequest) {
           endDateTime: endDT,
         });
 
-        // Si un nouvel évènement a été créé (soit initial, soit fallback), persister l'ID
-        if (upsert.success && upsert.status === "created" && upsert.eventId) {
-          await supabase.from("training_sessions").update({ gcal_event_id: upsert.eventId }).eq("id", sessionId);
+        // Persist per-trainer event ID in the JSONB map
+        if (upsert.success && upsert.eventId) {
+          eventIdsMap[trainer.first_name] = upsert.eventId;
+          await supabase.from("training_sessions")
+            .update({ gcal_event_ids: eventIdsMap })
+            .eq("id", sessionId);
         }
 
         results.push({ trainer: trainer.first_name, gcal: upsert.success ? upsert.status : upsert.error });
@@ -333,11 +339,20 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // 1. Supprimer l'évènement sur son agenda (si on peut)
+        // 1. Supprimer l'évènement sur son agenda via le mapping per-trainer
         let gcalStatus: string | undefined;
-        if (calId && (session as any).gcal_event_id) {
-          const del = await deleteCalendarEvent({ calendarId: calId, eventId: (session as any).gcal_event_id });
+        const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
+        const trainerEventId = eventIdsMap[trainer.first_name];
+        if (calId && trainerEventId) {
+          const del = await deleteCalendarEvent({ calendarId: calId, eventId: trainerEventId });
           gcalStatus = del.success ? "removed" : (del.error?.toLowerCase().includes("not found") ? "already_absent" : del.error);
+          // Remove from the map
+          if (del.success) {
+            delete eventIdsMap[trainer.first_name];
+            await supabase.from("training_sessions")
+              .update({ gcal_event_ids: eventIdsMap })
+              .eq("id", sessionId);
+          }
         }
 
         // 2. Slack DM de retrait
