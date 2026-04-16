@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
         const emailBody = [
           `Bonjour ${trainer.first_name},`,
           "",
-          isUpdate ? "Une session de formation a été mise à jour :" : "Une session de formation vient d'être planifiée pour toi :",
+          isUpdate ? "Une session de formation a été mise à jour :" : "Une session de formation vient d'être planifiée pour vous :",
           "",
           `📋 ${typeLabel} ${sessionIndex}/${totalSessions}`,
           `🏢 Entreprise : ${companyName}`,
@@ -365,7 +365,7 @@ export async function POST(req: NextRequest) {
             "",
             `La session *${title}* prévue le ${timeDisplay} t'a été retirée.`,
             `Elle est désormais assignée à un autre expert (ou a été annulée).`,
-            calId ? `L'évènement a été supprimé de ton agenda Google.` : "",
+            calId ? `L'événement a été supprimé de ton agenda Google.` : "",
             "",
             `Belle journée,`,
           ].filter(Boolean).join("\n");
@@ -386,15 +386,17 @@ export async function POST(req: NextRequest) {
           const emailBody = [
             `Bonjour ${trainer.first_name},`,
             "",
-            `La session *${title}* prévue le ${timeDisplay} vous a été retirée.`,
+            `La session ${title} prévue le ${timeDisplay} vous a été retirée.`,
             `Elle est désormais assignée à un autre expert (ou a été annulée).`,
-            calId ? `L'évènement a été supprimé de votre agenda Google.` : "",
+            calId ? `L'événement a été supprimé de votre agenda Google.` : "",
             "",
-            `Belle journée,`,
+            "Belle journée,",
+            "",
+            "L'équipe La Closing Académie",
           ].filter(Boolean).join("\n");
           const emailRes = await sendSessionEmail({
             to: trainer.email,
-            subject: `Session retirée de ton planning — ${title}`,
+            subject: `Session retirée de votre planning — ${title}`,
             body: emailBody,
           });
           emailStatus = emailRes.success ? "sent" : emailRes.error;
@@ -419,12 +421,13 @@ export async function POST(req: NextRequest) {
         const emailBody = [
           `Bonjour ${learner.first_name},`,
           "",
-          `La session de formation *${title}* prévue le ${timeDisplay} a été annulée`,
-          `ou vous y avez été retiré(e).`,
+          `La session de formation ${title} prévue le ${timeDisplay} a été annulée ou vous y avez été retiré(e).`,
           "",
-          `Vous n'avez plus besoin d'y participer.`,
+          "Vous n'avez plus besoin d'y participer.",
           "",
-          `Belle journée,`,
+          "Belle journée,",
+          "",
+          "L'équipe La Closing Académie",
         ].filter(Boolean).join("\n");
         const emailRes = await sendSessionEmail({
           to: learner.email,
