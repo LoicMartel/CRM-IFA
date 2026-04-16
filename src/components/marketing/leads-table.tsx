@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -8,6 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, ArrowUpDown } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 
@@ -38,6 +39,8 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
   const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [sortAsc, setSortAsc] = useState(true);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
 
@@ -62,6 +65,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
       }
       return sortAsc ? cmp : -cmp;
     });
+
+  // Reset page when filters change
+  const filterKey = `${search}|${filterSource}`;
+  useMemo(() => { setPage(1); }, [filterKey]);
+
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -144,7 +153,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((l) => (
+              paginatedFiltered.map((l) => (
                 <TableRow
                   key={l.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -169,6 +178,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             )}
           </TableBody>
         </Table>
+        <TablePagination currentPage={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
     </>
   );

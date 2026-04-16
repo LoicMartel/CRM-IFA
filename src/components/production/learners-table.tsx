@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -17,6 +17,7 @@ import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { checkLearnerDuplicate } from "@/lib/duplicate-check";
 
 interface Learner {
@@ -68,6 +69,8 @@ export function LearnersTable({
   const [saving, setSaving] = useState(false);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", position: "",
     company_id: "", status: "actuel", program_id: "", training_type_id: "", expert_id: "", notes: "",
@@ -119,6 +122,11 @@ export function LearnersTable({
         return sortDir === "asc" ? cmp : -cmp;
       })
     : filtered;
+
+  const filterKey = `${search}|${filterStatus}|${filterProgram}|${filterCompany}|${filterExpert}`;
+  useMemo(() => { setPage(1); }, [filterKey]);
+
+  const paginatedSorted = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -337,7 +345,7 @@ export function LearnersTable({
                   Aucun apprenant trouvé
                 </TableCell>
               </TableRow>
-            ) : sorted.map((l) => {
+            ) : paginatedSorted.map((l) => {
               const sc = statusColors[l.status] ?? { bg: "#f0f0f0", text: "#666", label: l.status };
               return (
                 <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/learners/${l.id}`)}>
@@ -388,6 +396,7 @@ export function LearnersTable({
             })}
           </TableBody>
         </Table>
+        <TablePagination currentPage={page} totalItems={sorted.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       {open && (

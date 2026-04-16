@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
 import { useCurrentRoles } from "@/lib/use-current-roles";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 
 interface Company {
@@ -73,6 +74,8 @@ export function CompaniesTable({
   const [filterOwner, setFilterOwner] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -111,6 +114,11 @@ export function CompaniesTable({
       }
       return sortAsc ? cmp : -cmp;
     });
+
+  const filterKey = `${search}|${filterType}|${filterLifecycle}|${filterOwner}`;
+  useMemo(() => { setPage(1); }, [filterKey]);
+
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -261,7 +269,7 @@ export function CompaniesTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((c) => {
+              paginatedFiltered.map((c) => {
                 const lc = lifecycleColors[c.lifecycle_stage ?? ""] ?? null;
                 return (
                   <TableRow
@@ -307,6 +315,7 @@ export function CompaniesTable({
             )}
           </TableBody>
         </Table>
+        <TablePagination currentPage={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       <Sheet open={open} onOpenChange={setOpen}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCurrentMember } from "@/lib/use-current-member";
@@ -16,6 +16,7 @@ import { Plus, Search, ArrowUpDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { checkCompanyDuplicate } from "@/lib/duplicate-check";
 import { formatPhone } from "@/lib/utils";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { ExportButton } from "@/components/ui/export-button";
@@ -103,6 +104,8 @@ export function ContactsTable({
   const [filterLastActionTo, setFilterLastActionTo] = useState("");
   const [contactTypeTab, setContactTypeTab] = useState<"all" | "inbound" | "outbound">("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [sortAsc, setSortAsc] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -150,6 +153,11 @@ export function ContactsTable({
       }
       return sortAsc ? cmp : -cmp;
     });
+
+  const filterKey = `${search}|${filterLeadStatus}|${filterLifecycle}|${filterOwner}|${contactTypeTab}|${filterCreatedFrom}|${filterCreatedTo}|${filterLastActionFrom}|${filterLastActionTo}`;
+  useMemo(() => { setPage(1); }, [filterKey]);
+
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -408,7 +416,7 @@ export function ContactsTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((c) => {
+              paginatedFiltered.map((c) => {
                 const lc = lifecycleColors[c.lifecycle_stage ?? ""] ?? null;
                 const ls = leadStatusColors[c.lead_status ?? ""] ?? null;
                 const ct = contactTypeColors[c.contact_type ?? ""] ?? null;
@@ -481,6 +489,7 @@ export function ContactsTable({
             )}
           </TableBody>
         </Table>
+        <TablePagination currentPage={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
 
       <Sheet open={open} onOpenChange={setOpen}>
