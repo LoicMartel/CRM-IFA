@@ -28,11 +28,68 @@ function buildInfoBlock(p: ProspectEmailParams): string {
   return lines.join("\n");
 }
 
+interface TestimonialInfo {
+  name: string;
+  role: string;
+  quote: string;
+  result: string;
+  videoUrl: string;
+  thumbnailId: string;
+}
+
+const TESTIMONIAL_PHILIPPE: TestimonialInfo = {
+  name: "Philippe Fayette",
+  role: "Fondateur et dirigeant ABC Formation",
+  quote: "Si j'arr\u00eatais avec La Closing Acad\u00e9mie, je serais un mauvais chef d'entreprise",
+  result: "De 1,5 M\u20ac \u00e0 2,7 M\u20ac de chiffre d'affaires en 12 mois",
+  videoUrl: "https://www.youtube.com/watch?v=qxPHiC96_ss&t=1s",
+  thumbnailId: "qxPHiC96_ss",
+};
+
+const TESTIMONIAL_MARGUERITE: TestimonialInfo = {
+  name: "Marguerite Monnier",
+  role: "Dirigeante",
+  quote: "Un accompagnement qui a transform\u00e9 notre approche commerciale",
+  result: "Des r\u00e9sultats concrets d\u00e8s les premi\u00e8res semaines",
+  videoUrl: "https://www.youtube.com/watch?v=k9TUjjsDe6A&t=2s",
+  thumbnailId: "k9TUjjsDe6A",
+};
+
+function getTestimonial(meetingType: string): TestimonialInfo {
+  if (["R0", "R0+R1", "R1"].includes(meetingType)) return TESTIMONIAL_PHILIPPE;
+  return TESTIMONIAL_MARGUERITE;
+}
+
+function buildTestimonialBlock(t: TestimonialInfo): string {
+  const thumbUrl = `https://img.youtube.com/vi/${t.thumbnailId}/hqdefault.jpg`;
+  return [
+    "",
+    "---",
+    "",
+    `<div style="margin-top: 24px;">`,
+    `<p style="font-size: 18px; font-weight: 700; color: #1a2a3a; margin-bottom: 8px;">En attendant notre \u00e9change...</p>`,
+    `<p style="color: #5a6f80; margin-bottom: 4px;">Prenez 2 minutes pour d\u00e9couvrir le t\u00e9moignage d'un dirigeant accompagn\u00e9 par la Closing Acad\u00e9mie.</p>`,
+    `<p style="color: #1a2a3a; margin-bottom: 4px;"><strong>${t.result} apr\u00e8s avoir structur\u00e9 son approche commerciale.</strong></p>`,
+    `<p style="color: #5a6f80; margin-bottom: 16px;">Cette vid\u00e9o vous permettra d'aborder notre session avec une vision plus concr\u00e8te des r\u00e9sultats possibles.</p>`,
+    `<a href="${t.videoUrl}" style="display: block; text-decoration: none;">`,
+    `<div style="background: linear-gradient(135deg, #1a2a3a 0%, #2c4a6a 100%); border-radius: 12px; overflow: hidden; max-width: 500px;">`,
+    `<img src="${thumbUrl}" alt="T\u00e9moignage de ${t.name}" style="width: 100%; display: block; border-radius: 12px 12px 0 0;" />`,
+    `<div style="padding: 16px 20px;">`,
+    `<p style="color: white; font-size: 16px; font-weight: 700; margin: 0 0 4px 0;">T\u00e9moignage de ${t.name}</p>`,
+    `<p style="color: #a0b4c8; font-size: 13px; font-style: italic; margin: 0 0 8px 0;">${t.role}</p>`,
+    `<p style="color: #FF6B35; font-size: 14px; font-weight: 600; margin: 0;">\u25b6 Regarder la vid\u00e9o</p>`,
+    `</div>`,
+    `</div>`,
+    `</a>`,
+    `</div>`,
+  ].join("\n");
+}
+
 const introByType: Record<string, (name: string) => string> = {
   R0: (name) => [
     `Bonjour ${name},`,
     "",
-    "Suite \u00e0 notre \u00e9change, un premier appel est planifi\u00e9 pour mieux comprendre votre situation et vos enjeux.",
+    "Je vous confirme notre premier \u00e9change ensemble. L'objectif est simple : comprendre pr\u00e9cis\u00e9ment votre situation et d\u00e9terminer les leviers prioritaires d'am\u00e9lioration.",
     "",
     "Voici les d\u00e9tails :",
   ].join("\n"),
@@ -40,7 +97,7 @@ const introByType: Record<string, (name: string) => string> = {
   "R0+R1": (name) => [
     `Bonjour ${name},`,
     "",
-    "Votre rendez-vous de d\u00e9couverte est confirm\u00e9. Nous prendrons le temps de comprendre votre contexte et d'identifier ensemble les meilleures pistes d'accompagnement.",
+    "Je vous confirme notre premier \u00e9change ensemble. L'objectif est simple : comprendre pr\u00e9cis\u00e9ment votre situation et d\u00e9terminer les leviers prioritaires d'am\u00e9lioration.",
     "",
     "Voici les d\u00e9tails :",
   ].join("\n"),
@@ -48,7 +105,7 @@ const introByType: Record<string, (name: string) => string> = {
   R1: (name) => [
     `Bonjour ${name},`,
     "",
-    "Nous avons h\u00e2te de vous retrouver pour notre rendez-vous d\u00e9couverte ! Ce sera l'occasion d'explorer ensemble vos besoins et de comprendre comment nous pouvons vous accompagner au mieux.",
+    "Nous avons h\u00e2te de vous retrouver pour notre rendez-vous d\u00e9couverte ! Ce sera l'occasion d'approfondir vos enjeux, et de conna\u00eetre pr\u00e9cis\u00e9ment comment nous allons pouvoir vous accompagner \u00e0 atteindre vos objectifs.",
     "",
     "Voici les d\u00e9tails :",
   ].join("\n"),
@@ -74,6 +131,8 @@ export function getProspectEmailBody(p: ProspectEmailParams): string {
   const introFn = introByType[p.meetingType] ?? introByType["R1"];
   const intro = introFn(p.contactFirstName);
   const info = buildInfoBlock(p);
+  const testimonial = getTestimonial(p.meetingType);
+  const testimonialBlock = buildTestimonialBlock(testimonial);
 
   return [
     intro,
@@ -81,6 +140,7 @@ export function getProspectEmailBody(p: ProspectEmailParams): string {
     info,
     "",
     "Vous trouverez en pi\u00e8ce jointe une invitation calendrier (.ics) \u00e0 ajouter \u00e0 votre agenda.",
+    testimonialBlock,
     "",
     "\u00c0 tr\u00e8s bient\u00f4t,",
     "",
