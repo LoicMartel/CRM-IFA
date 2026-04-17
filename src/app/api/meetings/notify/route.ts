@@ -329,11 +329,15 @@ export async function POST(req: NextRequest) {
 
           const emailSubject = getProspectEmailSubject(meeting.meeting_type, ctName, companyName);
 
+          // BCC all managers so they have a copy
+          const managerEmails = allManagers.map(m => m.email).filter(Boolean) as string[];
+
           const emailResult = await sendSessionEmail({
             to: ct.email,
             subject: emailSubject,
             body: emailBody,
             attachments: [{ filename: "invitation.ics", content: icsContent }],
+            bcc: managerEmails,
           });
           results.push({ action: `Email prospect (${ct.first_name})`, status: emailResult.success ? "Envoye" : emailResult.error ?? "Erreur" });
         } catch (e: any) {

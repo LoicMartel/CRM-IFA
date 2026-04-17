@@ -15,11 +15,13 @@ export async function sendSessionEmail({
   subject,
   body,
   attachments,
+  bcc,
 }: {
   to: string;
   subject: string;
   body: string;
   attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
+  bcc?: string[];
 }): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   if (!resend) return { success: false, error: "Resend not configured" };
@@ -33,6 +35,7 @@ export async function sendSessionEmail({
       from: "L'équipe La Closing Académie <noreply@closing-academie.com>",
       to,
       subject,
+      ...(bcc && bcc.length > 0 ? { bcc } : {}),
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; color: #1a2a3a; line-height: 1.6;">
           ${htmlBody}
