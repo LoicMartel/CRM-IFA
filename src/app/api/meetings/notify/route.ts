@@ -238,7 +238,7 @@ export async function POST(req: NextRequest) {
             startDateTime: startDT,
             endDateTime: endDT,
             organizerName: "La Closing Academie",
-            organizerEmail: "contact@closing-academie.com",
+            organizerEmail: "noreply@closing-academie.com",
             attendeeEmail: manager.email!,
             attendeeName: `${manager.first_name} ${manager.last_name}`,
           });

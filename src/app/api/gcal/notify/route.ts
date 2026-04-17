@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
           startDateTime: icsStartExt,
           endDateTime: icsEndExt,
           organizerName: "La Closing Académie",
-          organizerEmail: "contact@closing-academie.com",
+          organizerEmail: "noreply@closing-academie.com",
           attendeeEmail: trainer.email!,
           attendeeName: `${trainer.first_name} ${trainer.last_name}`,
         });
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
           startDateTime: icsStartDT,
           endDateTime: icsEndDT,
           organizerName: "La Closing Académie",
-          organizerEmail: "contact@closing-academie.com",
+          organizerEmail: "noreply@closing-academie.com",
           attendeeEmail: (learner as any).email,
           attendeeName: `${(learner as any).first_name} ${(learner as any).last_name}`,
         });
