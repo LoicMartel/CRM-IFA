@@ -177,7 +177,6 @@ export async function POST(req: NextRequest) {
             location,
             startDateTime: startDT,
             endDateTime: endDT,
-            attendees: gcalAttendees,
           });
 
           results.push({ action: `Google Calendar (${manager.first_name})`, status: gcalResult.success ? "Ajoute" : gcalResult.error ?? "Erreur" });
