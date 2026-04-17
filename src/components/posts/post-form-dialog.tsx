@@ -6,7 +6,7 @@ import { X, Upload, FileText, Image as ImageIcon, Plus, Trash2 } from "lucide-re
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { RichTextEditor } from "./rich-text-editor";
-import { extractMentionedIds, type MentionMember } from "./mention-suggestion";
+import { extractMentionedIds, extractHashtags, type MentionMember } from "./mention-suggestion";
 import {
   POST_CATEGORY_LABELS,
   POST_BANNERS,
@@ -197,16 +197,72 @@ export function PostFormDialog({
     }
 
     // Create mention notifications for newly-mentioned members
+    const mentionedIds = new Set<string>();
     if (savedPostId && content) {
       const currentMentions = extractMentionedIds(content);
       const newMentions = currentMentions.filter(
         (id) => !previouslyMentionedIds.includes(id) && id !== memberId
       );
+      newMentions.forEach(id => mentionedIds.add(id));
       if (newMentions.length > 0) {
         const rows = newMentions.map((recipientId) => ({
           recipient_id: recipientId,
           type: "post_mention",
           title: `${getMemberLabel(memberId, mentionMembers)} t'a mentionné dans un post`,
+          body: title.trim(),
+          link_url: `/posts#post-${savedPostId}`,
+          related_entity_type: "post",
+          related_entity_id: savedPostId,
+          actor_id: memberId,
+        }));
+        await supabase.from("notifications").insert(rows);
+      }
+    }
+
+    // Create notifications for #category and #role tags
+    if (savedPostId && content) {
+      const { categories, roles } = extractHashtags(content);
+      const tagRecipientIds = new Set<string>();
+      const authorLabel = getMemberLabel(memberId, mentionMembers);
+
+      // Fetch members assigned to tagged categories
+      if (categories.length > 0) {
+        const { data: catMembers } = await supabase
+          .from("category_members")
+          .select("team_member_id")
+          .in("category", categories);
+        for (const cm of catMembers ?? []) {
+          tagRecipientIds.add(cm.team_member_id);
+        }
+      }
+
+      // Fetch members matching tagged roles
+      if (roles.length > 0) {
+        const { data: allMembers } = await supabase
+          .from("team_members")
+          .select("id, roles")
+          .eq("is_active", true);
+        for (const m of allMembers ?? []) {
+          const memberRoles = (m.roles as string[]) ?? [];
+          if (roles.some(r => memberRoles.includes(r))) {
+            tagRecipientIds.add(m.id);
+          }
+        }
+      }
+
+      // Remove self and already-mentioned members (avoid double notification)
+      tagRecipientIds.delete(memberId ?? "");
+      mentionedIds.forEach(id => tagRecipientIds.delete(id));
+
+      if (tagRecipientIds.size > 0) {
+        const tagLabels = [
+          ...categories.map(c => `#${c}`),
+          ...roles.map(r => `#${r}`),
+        ].join(", ");
+        const rows = Array.from(tagRecipientIds).map((recipientId) => ({
+          recipient_id: recipientId,
+          type: "post_category_tag",
+          title: `${authorLabel} a tagué ${tagLabels} dans un post`,
           body: title.trim(),
           link_url: `/posts#post-${savedPostId}`,
           related_entity_type: "post",

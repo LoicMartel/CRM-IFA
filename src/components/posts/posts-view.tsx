@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Settings, Trash2 } from "lucide-react";
+import { Plus, Search, Settings, Trash2, Users } from "lucide-react";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -43,6 +43,7 @@ export function PostsView({
   const [showForm, setShowForm] = useState(false);
   const [editPost, setEditPost] = useState<any>(null);
   const [showTagManager, setShowTagManager] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   function handleRefresh() {
     router.refresh();
@@ -173,24 +174,42 @@ export function PostsView({
             ))}
           </select>
 
-          {/* Tag manager (admin only) */}
+          {/* Admin tools */}
           {isAdmin && (
-            <button
-              onClick={() => setShowTagManager(!showTagManager)}
-              title="Gérer les projets"
-              style={{
-                padding: "7px 10px",
-                borderRadius: 8,
-                border: "1px solid #dce8f0",
-                background: showTagManager ? "#e3f2fd" : "white",
-                cursor: "pointer",
-                color: "#5a6f80",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <Settings style={{ width: 16, height: 16 }} />
-            </button>
+            <>
+              <button
+                onClick={() => setShowCategoryManager(!showCategoryManager)}
+                title="Gérer les catégories"
+                style={{
+                  padding: "7px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #dce8f0",
+                  background: showCategoryManager ? "#f3e5f5" : "white",
+                  cursor: "pointer",
+                  color: "#5a6f80",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Users style={{ width: 16, height: 16 }} />
+              </button>
+              <button
+                onClick={() => setShowTagManager(!showTagManager)}
+                title="Gérer les projets"
+                style={{
+                  padding: "7px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #dce8f0",
+                  background: showTagManager ? "#e3f2fd" : "white",
+                  cursor: "pointer",
+                  color: "#5a6f80",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Settings style={{ width: 16, height: 16 }} />
+              </button>
+            </>
           )}
 
           {/* New post button */}
@@ -215,6 +234,11 @@ export function PostsView({
           </button>
         </div>
       </div>
+
+      {/* Category manager panel */}
+      {showCategoryManager && isAdmin && (
+        <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} />
+      )}
 
       {/* Tag manager panel */}
       {showTagManager && isAdmin && (
@@ -311,6 +335,97 @@ function FilterTab({
     >
       {label}
     </button>
+  );
+}
+
+function CategoryManagerPanel({
+  teamMembers,
+  onRefresh,
+}: {
+  teamMembers: { id: string; first_name: string; last_name: string }[];
+  onRefresh: () => void;
+}) {
+  const [assignments, setAssignments] = useState<Record<string, string[]>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("category_members")
+      .select("category, team_member_id")
+      .then(({ data }) => {
+        const map: Record<string, string[]> = {};
+        for (const row of data ?? []) {
+          if (!map[row.category]) map[row.category] = [];
+          map[row.category].push(row.team_member_id);
+        }
+        setAssignments(map);
+        setLoaded(true);
+      });
+  }, []);
+
+  async function toggleMember(category: string, memberId: string) {
+    const supabase = createClient();
+    const current = assignments[category] ?? [];
+    if (current.includes(memberId)) {
+      await supabase.from("category_members").delete().eq("category", category).eq("team_member_id", memberId);
+      setAssignments((prev) => ({ ...prev, [category]: prev[category]?.filter((id) => id !== memberId) ?? [] }));
+    } else {
+      await supabase.from("category_members").insert({ category, team_member_id: memberId });
+      setAssignments((prev) => ({ ...prev, [category]: [...(prev[category] ?? []), memberId] }));
+    }
+  }
+
+  if (!loaded) return <div style={{ padding: 16, fontSize: 13, color: "#8399a9" }}>Chargement...</div>;
+
+  return (
+    <div style={{ padding: 16, borderRadius: 10, border: "1px solid #dce8f0", background: "#f8fbfd", marginBottom: 20 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 4 }}>
+        Gestion des notifications par catégorie
+      </h3>
+      <p style={{ fontSize: 12, color: "#8399a9", marginBottom: 16 }}>
+        Les membres assignés à une catégorie recevront une notification quand un post contient <span style={{ color: "#6a1b9a", fontWeight: 600 }}>#Catégorie</span>.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {ALL_CATEGORIES.map((cat) => {
+          const colors = POST_CATEGORY_COLORS[cat];
+          const label = POST_CATEGORY_LABELS[cat];
+          const assigned = assignments[cat] ?? [];
+          return (
+            <div key={cat} style={{ border: "1px solid #e8ecf1", borderRadius: 8, padding: 12, background: "white" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ background: colors.bg, color: colors.text, padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>{label}</span>
+                <span style={{ fontSize: 11, color: "#8399a9" }}>{assigned.length} membre{assigned.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {teamMembers.map((m) => {
+                  const isAssigned = assigned.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => toggleMember(cat, m.id)}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        border: isAssigned ? "2px solid #6a1b9a" : "1px solid #dce8f0",
+                        background: isAssigned ? "#f3e5f5" : "white",
+                        color: isAssigned ? "#6a1b9a" : "#5a6f80",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        fontWeight: isAssigned ? 600 : 400,
+                      }}
+                    >
+                      {m.first_name} {m.last_name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

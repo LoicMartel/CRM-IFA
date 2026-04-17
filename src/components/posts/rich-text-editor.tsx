@@ -11,7 +11,7 @@ import { TextAlign } from "@tiptap/extension-text-align";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Mention } from "@tiptap/extension-mention";
-import { buildMentionSuggestion, type MentionMember } from "@/components/posts/mention-suggestion";
+import { buildMentionSuggestion, buildTagSuggestion, type MentionMember } from "@/components/posts/mention-suggestion";
 import {
   Bold,
   Italic,
@@ -83,6 +83,28 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
     [members]
   );
 
+  const hashtagExtension = useMemo(
+    () =>
+      Mention.extend({ name: "hashtag" }).configure({
+        HTMLAttributes: {
+          style: "color: #6a1b9a; font-weight: 600; background: #f3e5f5; padding: 1px 6px; border-radius: 4px;",
+        },
+        renderHTML({ options, node }) {
+          return [
+            "span",
+            {
+              ...options.HTMLAttributes,
+              "data-type": "hashtag",
+              "data-id": node.attrs.id as string,
+            },
+            `#${node.attrs.label as string}`,
+          ];
+        },
+        suggestion: buildTagSuggestion(),
+      }),
+    []
+  );
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -96,6 +118,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
       Link.configure({ openOnClick: false, HTMLAttributes: { style: "color: #1a6b9c; text-decoration: underline;" } }),
       Placeholder.configure({ placeholder }),
       mentionExtension,
+      hashtagExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -106,7 +129,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
         style: "min-height: 150px; padding: 12px 14px; outline: none; font-size: 14px; line-height: 1.7; color: #1a2a3a;",
       },
     },
-  }, [mentionExtension]);
+  }, [mentionExtension, hashtagExtension]);
 
   if (!editor) return null;
 
