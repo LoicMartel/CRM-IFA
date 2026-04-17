@@ -61,27 +61,17 @@ function getTestimonial(meetingType: string): TestimonialInfo {
 }
 
 function buildTestimonialBlock(t: TestimonialInfo): string {
-  const thumbUrl = `https://img.youtube.com/vi/${t.thumbnailId}/hqdefault.jpg`;
   return [
     "",
-    "---",
+    "En attendant notre \u00e9change...",
     "",
-    `<div style="margin-top: 24px;">`,
-    `<p style="font-size: 18px; font-weight: 700; color: #1a2a3a; margin-bottom: 8px;">En attendant notre \u00e9change...</p>`,
-    `<p style="color: #5a6f80; margin-bottom: 4px;">Prenez 2 minutes pour d\u00e9couvrir le t\u00e9moignage d'un dirigeant accompagn\u00e9 par la Closing Acad\u00e9mie.</p>`,
-    `<p style="color: #1a2a3a; margin-bottom: 4px;"><strong>${t.result} apr\u00e8s avoir structur\u00e9 son approche commerciale.</strong></p>`,
-    `<p style="color: #5a6f80; margin-bottom: 16px;">Cette vid\u00e9o vous permettra d'aborder notre session avec une vision plus concr\u00e8te des r\u00e9sultats possibles.</p>`,
-    `<a href="${t.videoUrl}" style="display: block; text-decoration: none;">`,
-    `<div style="background: linear-gradient(135deg, #1a2a3a 0%, #2c4a6a 100%); border-radius: 12px; overflow: hidden; max-width: 500px;">`,
-    `<img src="${thumbUrl}" alt="T\u00e9moignage de ${t.name}" style="width: 100%; display: block; border-radius: 12px 12px 0 0;" />`,
-    `<div style="padding: 16px 20px;">`,
-    `<p style="color: white; font-size: 16px; font-weight: 700; margin: 0 0 4px 0;">T\u00e9moignage de ${t.name}</p>`,
-    `<p style="color: #a0b4c8; font-size: 13px; font-style: italic; margin: 0 0 8px 0;">${t.role}</p>`,
-    `<p style="color: #FF6B35; font-size: 14px; font-weight: 600; margin: 0;">\u25b6 Regarder la vid\u00e9o</p>`,
-    `</div>`,
-    `</div>`,
-    `</a>`,
-    `</div>`,
+    "Prenez 2 minutes pour d\u00e9couvrir le t\u00e9moignage d'un dirigeant accompagn\u00e9 par la Closing Acad\u00e9mie.",
+    "",
+    `${t.result} apr\u00e8s avoir structur\u00e9 son approche commerciale.`,
+    "",
+    "Cette vid\u00e9o vous permettra d'aborder notre session avec une vision plus concr\u00e8te des r\u00e9sultats possibles.",
+    "",
+    `\ud83c\udfac T\u00e9moignage de ${t.name} : ${t.videoUrl}`,
   ].join("\n");
 }
 
