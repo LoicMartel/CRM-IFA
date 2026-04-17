@@ -58,6 +58,21 @@ export function PostFormDialog({
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
 
+  // Reset form when dialog opens (new post or edit)
+  useEffect(() => {
+    if (!open) return;
+    setTitle(editPost?.title ?? "");
+    setContent(editPost?.content ?? "");
+    setCategory(editPost?.category ?? "annonces_generales");
+    setProjectTagId(editPost?.project_tag_id ?? "");
+    setBanner(editPost?.banner ?? "none");
+    setPendingFiles([]);
+    setExistingAttachments(editPost?.post_attachments ?? []);
+    setRemovedAttachmentIds([]);
+    setNewTagName("");
+    setShowNewTagInput(false);
+  }, [open, editPost]);
+
   // Load active team members for @-mentions
   useEffect(() => {
     if (!open) return;
