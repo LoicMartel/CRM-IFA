@@ -74,7 +74,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       .order("name"),
     supabase
       .from("team_members")
-      .select("id, first_name, last_name")
+      .select("id, first_name, last_name, roles")
       .eq("is_active", true),
     supabase
       .from("lead_sources")

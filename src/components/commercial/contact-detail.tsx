@@ -59,6 +59,7 @@ interface TeamMemberRef {
   id: string;
   first_name: string;
   last_name: string;
+  roles?: string[];
 }
 
 interface DealData {
@@ -2177,7 +2178,7 @@ export function ContactDetail({
                 })}
               </div>
               <div style={{ maxHeight: 140, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8, padding: 6 }}>
-                {teamMembers.filter(m => !selectedManagerIds.includes(m.id)).map(m => (
+                {teamMembers.filter(m => !selectedManagerIds.includes(m.id) && m.roles?.includes("Account Manager")).map(m => (
                   <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", cursor: "pointer", fontSize: 13 }}>
                     <input
                       type="checkbox"
