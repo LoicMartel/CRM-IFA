@@ -308,6 +308,31 @@ export function ContactDetail({
     action_date: "",
   });
 
+  // Multi-participant state
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([contact.id]);
+  const [selectedManagerIds, setSelectedManagerIds] = useState<string[]>(currentMemberId ? [currentMemberId] : []);
+  const [companyContacts, setCompanyContacts] = useState<{ id: string; first_name: string; last_name: string; email: string | null }[]>([]);
+
+  // Init selectedManagerIds once currentMemberId loads
+  useEffect(() => {
+    if (currentMemberId && selectedManagerIds.length === 0) {
+      setSelectedManagerIds([currentMemberId]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMemberId]);
+
+  // Fetch same-company contacts when RDV dialog opens
+  useEffect(() => {
+    if (!rdvOpen || !contact.company_id) { setCompanyContacts([]); return; }
+    const supabase = createClient();
+    supabase.from("contacts")
+      .select("id, first_name, last_name, email")
+      .eq("company_id", contact.company_id)
+      .neq("id", contact.id)
+      .order("last_name")
+      .then(({ data }) => { setCompanyContacts(data ?? []); });
+  }, [rdvOpen, contact.company_id, contact.id]);
+
   async function handleDelete() {
     const supabase = createClient();
     await supabase.from("contacts").delete().eq("id", contact.id);
@@ -473,6 +498,8 @@ export function ContactDetail({
       const fallbackNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       setEditingMeetingId(null);
       setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow });
+      setSelectedContactIds([contact.id]);
+      setSelectedManagerIds(currentMemberId ? [currentMemberId] : []);
       setRdvOpen(true);
     }
 
@@ -555,6 +582,12 @@ export function ContactDetail({
     router.refresh();
   }
 
+  function resetRdvState() {
+    setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+    setSelectedContactIds([contact.id]);
+    setSelectedManagerIds(currentMemberId ? [currentMemberId] : []);
+  }
+
   async function handleSaveRdv() {
     setSaving(true);
     const supabase = createClient();
@@ -567,11 +600,36 @@ export function ContactDetail({
     }
 
     const now = new Date().toISOString();
+    // Stats attribution: if multiple managers, attribute to the creator; if single, attribute to that manager
+    const primaryManagerId = selectedManagerIds.length === 1
+      ? selectedManagerIds[0]
+      : (currentMemberId || selectedManagerIds[0] || null);
+
+    // Helper: insert junction table rows for a meeting
+    async function insertParticipants(meetingId: string) {
+      if (selectedContactIds.length > 0) {
+        await supabase.from("meeting_contacts").insert(
+          selectedContactIds.map(cid => ({ meeting_id: meetingId, contact_id: cid, is_primary: cid === contact.id }))
+        );
+      }
+      if (selectedManagerIds.length > 0) {
+        await supabase.from("meeting_managers").insert(
+          selectedManagerIds.map(mid => ({ meeting_id: meetingId, team_member_id: mid, is_primary: mid === primaryManagerId }))
+        );
+      }
+    }
+
+    // Helper: update all selected contacts
+    async function updateAllContacts(updateData: Record<string, string>) {
+      for (const cid of selectedContactIds) {
+        await supabase.from("contacts").update(updateData).eq("id", cid);
+      }
+    }
 
     if (editingMeetingId && (rdvForm.status === "done" || rdvForm.status === "no_show" || rdvForm.status === "cancelled")) {
       // Status changed from booked → done/no_show/cancelled
       // Create a NEW entry with the result
-      const { error } = await supabase.from("meetings").insert({
+      const { data: resultMeeting, error } = await supabase.from("meetings").insert({
         meeting_type: rdvForm.meeting_type,
         status: rdvForm.status,
         scheduled_at: now,
@@ -581,19 +639,21 @@ export function ContactDetail({
         outcome: outcomeText || null,
         contact_id: contact.id,
         company_id: contact.company_id || null,
-        assigned_to: currentMemberId || null,
-      });
+        assigned_to: primaryManagerId,
+      }).select("id").single();
       if (error) { alert("Erreur: " + error.message); }
 
-      // Mark original as completed without changing its status (keep "booked" for stats)
-      // Add a flag in next_step to indicate it has been processed
+      // Insert participants for the result meeting
+      if (resultMeeting?.id) await insertParticipants(resultMeeting.id);
+
+      // Mark original as completed
       await supabase.from("meetings").update({ next_step: "completed" }).eq("id", editingMeetingId);
 
-      // Update contact status
+      // Update ALL selected contacts status
       if (rdvForm.status === "done" && rdvForm.rdv_result === "signed") {
-        await supabase.from("contacts").update({ lead_status: "signed", lifecycle_stage: "customer" }).eq("id", contact.id);
+        await updateAllContacts({ lead_status: "signed", lifecycle_stage: "customer" });
       } else if (rdvForm.status === "done") {
-        await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", contact.id);
+        await updateAllContacts({ lead_status: "rdv_done" });
       }
     } else if (editingMeetingId) {
       // Simple edit (notes, date, etc.) without status change
@@ -606,6 +666,11 @@ export function ContactDetail({
         outcome: outcomeText || null,
       }).eq("id", editingMeetingId);
       if (error) { alert("Erreur: " + error.message); }
+
+      // Update junction tables: remove old, insert new
+      await supabase.from("meeting_contacts").delete().eq("meeting_id", editingMeetingId);
+      await supabase.from("meeting_managers").delete().eq("meeting_id", editingMeetingId);
+      await insertParticipants(editingMeetingId);
     } else {
       // New meeting creation
       const { data: newMeeting, error } = await supabase.from("meetings").insert({
@@ -618,27 +683,36 @@ export function ContactDetail({
         outcome: outcomeText || null,
         contact_id: contact.id,
         company_id: contact.company_id || null,
-        assigned_to: currentMemberId || null,
+        assigned_to: primaryManagerId,
       }).select("id").single();
       if (error) { alert("Erreur: " + error.message); }
 
-      // Update lead_status to reflect latest action
+      // Insert participants
+      if (newMeeting?.id) await insertParticipants(newMeeting.id);
+
+      // Update lead_status for ALL selected contacts
       if (rdvForm.status === "booked") {
-        const updateData: Record<string, string> = { lead_status: "booked" };
-        // Lead marketing → prospect uniquement si R1 ou supérieur
-        if (contact.lifecycle_stage === "lead_marketing" && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(rdvForm.meeting_type)) {
-          updateData.lifecycle_stage = "prospect";
+        for (const cid of selectedContactIds) {
+          const updateData: Record<string, string> = { lead_status: "booked" };
+          // Lead marketing → prospect uniquement si R1 ou supérieur
+          if (contact.lifecycle_stage === "lead_marketing" && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(rdvForm.meeting_type)) {
+            updateData.lifecycle_stage = "prospect";
+          }
+          await supabase.from("contacts").update(updateData).eq("id", cid);
         }
-        await supabase.from("contacts").update(updateData).eq("id", contact.id);
       }
 
-      // Auto-notify: Google Calendar + Slack/Email
+      // Auto-notify: Google Calendar + Slack/Email for ALL participants
       if (newMeeting?.id && rdvForm.status === "booked") {
         try {
           const notifyRes = await fetch("/api/meetings/notify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ meetingId: newMeeting.id }),
+            body: JSON.stringify({
+              meetingId: newMeeting.id,
+              contactIds: selectedContactIds,
+              managerIds: selectedManagerIds,
+            }),
           });
           const notifyData = await notifyRes.json();
           if (notifyData.results?.length > 0) {
@@ -667,7 +741,7 @@ export function ContactDetail({
       setSaving(false);
       setRdvOpen(false);
       setEditingMeetingId(null);
-      setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+      resetRdvState();
 
       if (newDeal && !dealError) {
         router.push(`/deals?edit=${newDeal.id}`);
@@ -678,7 +752,7 @@ export function ContactDetail({
     setSaving(false);
     setRdvOpen(false);
     setEditingMeetingId(null);
-    setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+    resetRdvState();
     router.refresh();
   }
 
@@ -815,7 +889,7 @@ export function ContactDetail({
           <Button variant="outline" size="sm" onClick={() => { setEmailForm({ subject: "", body: "" }); setEmailOpen(true); }}>
             <MailPlus className="h-4 w-4 mr-1" /> Envoyer email
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16) }); setRdvOpen(true); }}>
+          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: now }); setSelectedContactIds([contact.id]); setSelectedManagerIds(currentMemberId ? [currentMemberId] : []); setRdvOpen(true); }}>
             <CalendarPlus className="h-4 w-4 mr-1" /> Créer RDV
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "note", title: "", description: "", due_date: "", call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
@@ -2021,7 +2095,7 @@ export function ContactDetail({
       {/* RDV Sheet (Create + Edit) */}
       <Sheet open={rdvOpen} onOpenChange={(open) => {
         setRdvOpen(open);
-        if (!open) { setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" }); }
+        if (!open) { setEditingMeetingId(null); resetRdvState(); }
       }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
@@ -2042,6 +2116,80 @@ export function ContactDetail({
                 <option value="R3">R3 — Négociation</option>
               </select>
             </div>
+
+            {/* Multi-select: Contacts participants (same company) */}
+            <div className="space-y-2">
+              <Label>Contacts participants</Label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                <span style={{ background: "#e3f2fd", color: "#1a6b9c", padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                  {contact.first_name} {contact.last_name} (principal)
+                </span>
+                {selectedContactIds.filter(id => id !== contact.id).map(id => {
+                  const c = companyContacts.find(cc => cc.id === id);
+                  if (!c) return null;
+                  return (
+                    <span key={id} style={{ background: "#f0f4f8", color: "#333", padding: "2px 10px", borderRadius: 999, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+                      {c.first_name} {c.last_name}
+                      <button type="button" onClick={() => setSelectedContactIds(prev => prev.filter(x => x !== id))} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontWeight: 700, fontSize: 14, lineHeight: 1 }}>&times;</button>
+                    </span>
+                  );
+                })}
+              </div>
+              {contact.company_id ? (
+                companyContacts.length > 0 ? (
+                  <div style={{ maxHeight: 140, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8, padding: 6 }}>
+                    {companyContacts.map(c => (
+                      <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", cursor: "pointer", fontSize: 13 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedContactIds.includes(c.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedContactIds(prev => [...prev, c.id]);
+                            else setSelectedContactIds(prev => prev.filter(x => x !== c.id));
+                          }}
+                        />
+                        {c.first_name} {c.last_name}
+                        {c.email && <span style={{ color: "#8399a9", fontSize: 11 }}>({c.email})</span>}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 11, color: "#8399a9" }}>Aucun autre contact dans cette entreprise.</p>
+                )
+              ) : (
+                <p style={{ fontSize: 11, color: "#8399a9" }}>Assignez une entreprise au contact pour ajouter des participants.</p>
+              )}
+            </div>
+
+            {/* Multi-select: Account managers */}
+            <div className="space-y-2">
+              <Label>Account managers</Label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                {selectedManagerIds.map(id => {
+                  const m = teamMembers.find(tm => tm.id === id);
+                  if (!m) return null;
+                  return (
+                    <span key={id} style={{ background: "#f3e8ff", color: "#7c3aed", padding: "2px 10px", borderRadius: 999, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+                      {m.first_name} {m.last_name}
+                      <button type="button" onClick={() => setSelectedManagerIds(prev => prev.filter(x => x !== id))} style={{ background: "none", border: "none", cursor: "pointer", color: "#999", fontWeight: 700, fontSize: 14, lineHeight: 1 }}>&times;</button>
+                    </span>
+                  );
+                })}
+              </div>
+              <div style={{ maxHeight: 140, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8, padding: 6 }}>
+                {teamMembers.filter(m => !selectedManagerIds.includes(m.id)).map(m => (
+                  <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", cursor: "pointer", fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => setSelectedManagerIds(prev => [...prev, m.id])}
+                    />
+                    {m.first_name} {m.last_name}
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>Date & Heure de l&apos;action</Label>
               <Input

@@ -130,6 +130,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Meeting creation failed", detail: meetingError.message, contactId: contact.id }, { status: 500 });
     }
     meetingId = newMeeting?.id ?? null;
+
+    // Insert junction table rows for multi-participant support
+    if (newMeeting?.id) {
+      await supabase.from("meeting_contacts").insert({ meeting_id: newMeeting.id, contact_id: contact.id, is_primary: true });
+      if (assignedTo) await supabase.from("meeting_managers").insert({ meeting_id: newMeeting.id, team_member_id: assignedTo, is_primary: true });
+    }
   }
 
   // 4. Trigger centralized notify (calendar + prospect email + Slack/email to assignee)

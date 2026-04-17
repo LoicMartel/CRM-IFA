@@ -12,7 +12,7 @@ export type ActivityType = "appel" | "email" | "réunion" | "note" | "tâche" | 
 export type Department = "ADMIN" | "MARKETING" | "PÉDAGOGIE" | "VENTE" | "RH";
 
 // New CRM types
-export type MeetingType = "R0" | "R1" | "R2" | "R3";
+export type MeetingType = "R0" | "R0+R1" | "R1" | "R2" | "R3" | "R4";
 export type MeetingStatus = "booked" | "done" | "no_show" | "cancelled";
 export type MeetingMode = "visio" | "phone" | "in_person";
 export type DealStage = "opportunities" | "quote_to_send" | "quote_sent" | "opco_deposit" | "quote_signed" | "closed_won" | "closed_lost";
@@ -109,6 +109,22 @@ export interface Meeting {
   next_step: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface MeetingContact {
+  id: string;
+  meeting_id: string;
+  contact_id: string;
+  is_primary: boolean;
+  created_at: string;
+}
+
+export interface MeetingManager {
+  id: string;
+  meeting_id: string;
+  team_member_id: string;
+  is_primary: boolean;
+  created_at: string;
 }
 
 export interface Deal {
@@ -360,9 +376,11 @@ export interface BillingMonth {
 // Labels & Colors helpers
 export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
   R0: "R0 — Qualification",
+  "R0+R1": "R0+R1 — Qualification + Découverte",
   R1: "R1 — Découverte",
   R2: "R2 — Solution",
   R3: "R3 — Négociation",
+  R4: "R4 — Suivi",
 };
 
 export const MEETING_STATUS_LABELS: Record<MeetingStatus, string> = {

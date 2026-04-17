@@ -111,6 +111,12 @@ export async function POST(request: Request) {
       notes: `Réservé via la booking page Naznine.\nSource: ${source || "—"}\nSite web: ${website || "—"}`,
     }).select("id").single();
     meetingId = newMeeting?.id ?? null;
+
+    // Insert junction table rows for multi-participant support
+    if (newMeeting?.id) {
+      await supabase.from("meeting_contacts").insert({ meeting_id: newMeeting.id, contact_id: contact.id, is_primary: true });
+      await supabase.from("meeting_managers").insert({ meeting_id: newMeeting.id, team_member_id: NAZNINE.id, is_primary: true });
+    }
   }
 
   // 4. Trigger centralized notify (calendar + prospect email + Slack/email to assignee)
