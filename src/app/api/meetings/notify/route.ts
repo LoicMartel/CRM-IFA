@@ -130,6 +130,8 @@ export async function POST(req: NextRequest) {
       ? allContactNames.join(", ")
       : contactName;
 
+    const primaryManager = allManagers[0];
+
     // ============================================================
     // LOOP OVER MANAGERS
     // ============================================================
@@ -237,8 +239,8 @@ export async function POST(req: NextRequest) {
             location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconference") : (meeting.location || ""),
             startDateTime: startDT,
             endDateTime: endDT,
-            organizerName: "La Closing Academie",
-            organizerEmail: "noreply@closing-academie.com",
+            organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "La Closing Academie",
+            organizerEmail: primaryManager?.email ?? "noreply@closing-academie.com",
             attendeeEmail: manager.email!,
             attendeeName: `${manager.first_name} ${manager.last_name}`,
           });
@@ -280,7 +282,6 @@ export async function POST(req: NextRequest) {
     // ============================================================
     // LOOP OVER CONTACTS — send prospect emails
     // ============================================================
-    const primaryManager = allManagers[0];
     const zoomLinkForProspect = primaryManager?.zoom_link ?? "";
 
     if (isStepActive(wf, "email-prospect-ics").active) {
@@ -308,7 +309,7 @@ export async function POST(req: NextRequest) {
             startDateTime: startDT,
             endDateTime: endDT,
             organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "La Closing Academie",
-            organizerEmail: primaryManager?.email ?? "contact@closing-academie.com",
+            organizerEmail: primaryManager?.email ?? "noreply@closing-academie.com",
             attendeeEmail: ct.email,
             attendeeName: ctName,
           });

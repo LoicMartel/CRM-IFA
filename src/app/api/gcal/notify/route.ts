@@ -91,6 +91,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, title, results: [{ trainer: "skip", gcal: "workflow disabled" }] });
     }
 
+    const primaryTrainer = (trainerMembers ?? [])[0];
+    const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "La Closing Académie";
+    const primaryOrganizerEmail = primaryTrainer?.email ?? "noreply@closing-academie.com";
+
     for (const trainer of (trainerMembers ?? [])) {
       const zoomLink = trainer.zoom_link ?? "";
       const sessionLoc = (session as any).session_location ?? "";
@@ -217,8 +221,8 @@ export async function POST(req: NextRequest) {
           location: isJournee ? (sessionLoc || fullAddress || companyName) : (zoomLink || "Visioconférence"),
           startDateTime: icsStartExt,
           endDateTime: icsEndExt,
-          organizerName: "La Closing Académie",
-          organizerEmail: "noreply@closing-academie.com",
+          organizerName: primaryOrganizerName,
+          organizerEmail: primaryOrganizerEmail,
           attendeeEmail: trainer.email!,
           attendeeName: `${trainer.first_name} ${trainer.last_name}`,
         });
@@ -275,8 +279,8 @@ export async function POST(req: NextRequest) {
           location: isJournee ? ((session as any).session_location || fullAddress || companyName) : "Visioconférence",
           startDateTime: icsStartDT,
           endDateTime: icsEndDT,
-          organizerName: "La Closing Académie",
-          organizerEmail: "noreply@closing-academie.com",
+          organizerName: primaryOrganizerName,
+          organizerEmail: primaryOrganizerEmail,
           attendeeEmail: (learner as any).email,
           attendeeName: `${(learner as any).first_name} ${(learner as any).last_name}`,
         });
