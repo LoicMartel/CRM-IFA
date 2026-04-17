@@ -275,13 +275,16 @@ export function PostsView({
       </div>
 
       {/* Form dialog */}
-      <PostFormDialog
-        open={showForm}
-        onClose={() => { setShowForm(false); setEditPost(null); }}
-        onSaved={handleRefresh}
-        editPost={editPost}
-        projectTags={projectTags}
-      />
+      {showForm && (
+        <PostFormDialog
+          key={editPost?.id ?? "new"}
+          open={showForm}
+          onClose={() => { setShowForm(false); setEditPost(null); }}
+          onSaved={handleRefresh}
+          editPost={editPost}
+          projectTags={projectTags}
+        />
+      )}
     </div>
   );
 }
