@@ -274,6 +274,8 @@ export function PostFormDialog({
           ...categories.map(c => `#${c}`),
           ...roles.map(r => `#${r}`),
         ].join(", ");
+
+        // In-app notifications
         const rows = Array.from(tagRecipientIds).map((recipientId) => ({
           recipient_id: recipientId,
           type: "post_category_tag",
@@ -285,6 +287,25 @@ export function PostFormDialog({
           actor_id: memberId,
         }));
         await supabase.from("notifications").insert(rows);
+
+        // Slack DM notifications
+        const slackToken = process.env.NEXT_PUBLIC_SLACK_BOT_TOKEN;
+        if (!slackToken) {
+          // Fallback: call a server endpoint to send Slack notifications
+          try {
+            await fetch("/api/posts/notify-slack", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                recipientIds: Array.from(tagRecipientIds),
+                authorName: authorLabel,
+                postTitle: title.trim(),
+                tagLabels,
+                postId: savedPostId,
+              }),
+            });
+          } catch {}
+        }
       }
     }
 
