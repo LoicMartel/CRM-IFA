@@ -40,7 +40,7 @@ const REACTION_EMOJIS = [
 
 interface PostCardProps {
   post: any;
-  teamMembers: { id: string; first_name: string; last_name: string }[];
+  teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   projectTags: { id: string; name: string; is_active: boolean }[];
   onEdit: (post: any) => void;
   onRefresh: () => void;
@@ -54,6 +54,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [animatingReaction, setAnimatingReaction] = useState<string | null>(null);
+  const [hoverReaction, setHoverReaction] = useState<string | null>(null);
 
   const author = post.team_members;
   const authorName = author ? `${author.first_name} ${author.last_name}` : "Inconnu";
@@ -184,7 +185,9 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
             width: 40,
             height: 40,
             borderRadius: "50%",
-            background: "#1a6b9c",
+            background: author?.avatar_url
+              ? `url(${author.avatar_url}) center/cover no-repeat`
+              : "#1a6b9c",
             color: "white",
             display: "flex",
             alignItems: "center",
@@ -194,7 +197,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
             flexShrink: 0,
           }}
         >
-          {authorInitials}
+          {!author?.avatar_url && authorInitials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -401,34 +404,77 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
           const count = reactions.filter((r: any) => r.emoji === key).length;
           const hasReacted = reactions.some((r: any) => r.emoji === key && r.team_member_id === memberId);
           const isAnimating = animatingReaction === key;
+          const reactorNames = count > 0
+            ? reactions
+                .filter((r: any) => r.emoji === key)
+                .map((r: any) => {
+                  const m = teamMembers.find((tm) => tm.id === r.team_member_id);
+                  return m ? `${m.first_name} ${m.last_name}` : null;
+                })
+                .filter(Boolean)
+            : [];
           return (
-            <button
-              key={key}
-              onClick={() => {
-                setAnimatingReaction(key);
-                setTimeout(() => setAnimatingReaction(null), 500);
-                toggleReaction(key);
-              }}
-              title={label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "4px 10px",
-                borderRadius: 20,
-                border: hasReacted ? `1.5px solid ${color}` : "1px solid #dce8f0",
-                background: hasReacted ? bg : "white",
-                cursor: "pointer",
-                fontSize: 12,
-                color: hasReacted ? color : "#8399a9",
-                fontWeight: hasReacted ? 600 : 400,
-                transition: "all 0.2s ease",
-                animation: isAnimating ? "reaction-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
-              }}
+            <div key={key} style={{ position: "relative" }}
+              onMouseEnter={() => setHoverReaction(key)}
+              onMouseLeave={() => setHoverReaction(null)}
             >
-              <Icon style={{ width: 14, height: 14, fill: hasReacted ? color : "none", transition: "all 0.2s ease" }} />
-              {count > 0 && <span>{count}</span>}
-            </button>
+              <button
+                onClick={() => {
+                  setAnimatingReaction(key);
+                  setTimeout(() => setAnimatingReaction(null), 500);
+                  toggleReaction(key);
+                }}
+                title={label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "4px 10px",
+                  borderRadius: 20,
+                  border: hasReacted ? `1.5px solid ${color}` : "1px solid #dce8f0",
+                  background: hasReacted ? bg : "white",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  color: hasReacted ? color : "#8399a9",
+                  fontWeight: hasReacted ? 600 : 400,
+                  transition: "all 0.2s ease",
+                  animation: isAnimating ? "reaction-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
+                }}
+              >
+                <Icon style={{ width: 14, height: 14, fill: hasReacted ? color : "none", transition: "all 0.2s ease" }} />
+                {count > 0 && <span>{count}</span>}
+              </button>
+              {hoverReaction === key && reactorNames.length > 0 && (
+                <div style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 6px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "#1a2a3a",
+                  color: "white",
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                  zIndex: 20,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  pointerEvents: "none",
+                }}>
+                  {reactorNames.join(", ")}
+                  <div style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 0, height: 0,
+                    borderLeft: "5px solid transparent",
+                    borderRight: "5px solid transparent",
+                    borderTop: "5px solid #1a2a3a",
+                  }} />
+                </div>
+              )}
+            </div>
           );
         })}
 

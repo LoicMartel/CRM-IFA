@@ -17,7 +17,7 @@ const ALL_CATEGORIES = Object.keys(POST_CATEGORY_LABELS) as PostCategory[];
 
 interface PostsViewProps {
   posts: any[];
-  teamMembers: { id: string; first_name: string; last_name: string }[];
+  teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   deals: { id: string; name: string }[];
@@ -369,7 +369,7 @@ function CategoryManagerPanel({
   teamMembers,
   onRefresh,
 }: {
-  teamMembers: { id: string; first_name: string; last_name: string }[];
+  teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onRefresh: () => void;
 }) {
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});

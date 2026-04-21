@@ -25,7 +25,7 @@ interface CommentSectionProps {
   postAuthorId: string;
   postTitle: string;
   postCategory: string;
-  teamMembers: { id: string; first_name: string; last_name: string }[];
+  teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onCommentCountChange: () => void;
 }
 
@@ -122,7 +122,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     const supabase = createClient();
     const { data } = await supabase
       .from("post_comments")
-      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name)")
+      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     setComments(data ?? []);
@@ -229,12 +229,15 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
           <div key={comment.id} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
             <div
               style={{
-                width: 30, height: 30, borderRadius: "50%", background: "#5a6f80",
+                width: 30, height: 30, borderRadius: "50%",
+                background: cAuthor?.avatar_url
+                  ? `url(${cAuthor.avatar_url}) center/cover no-repeat`
+                  : "#5a6f80",
                 color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                 fontWeight: 700, fontSize: 11, flexShrink: 0,
               }}
             >
-              {initials}
+              {!cAuthor?.avatar_url && initials}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

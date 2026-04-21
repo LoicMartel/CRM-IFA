@@ -19,13 +19,13 @@ export default async function PostsPage() {
     supabase
       .from("posts")
       .select(
-        "*, team_members!posts_author_id_fkey(id, first_name, last_name), post_attachments(*), post_comments(id), post_reactions(id, team_member_id, emoji)"
+        "*, team_members!posts_author_id_fkey(id, first_name, last_name, avatar_url), post_attachments(*), post_comments(id), post_reactions(id, team_member_id, emoji)"
       )
       .order("pinned", { ascending: false })
       .order("created_at", { ascending: false }),
     supabase
       .from("team_members")
-      .select("id, first_name, last_name")
+      .select("id, first_name, last_name, avatar_url")
       .eq("is_active", true)
       .order("first_name"),
     supabase.from("contacts").select("id, first_name, last_name").order("first_name"),
