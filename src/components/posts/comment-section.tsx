@@ -296,6 +296,14 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
       </div>
 
       <style>{`
+        .tiptap p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #8399a9;
+          pointer-events: none;
+          height: 0;
+        }
+        .tiptap p { margin: 2px 0; }
         .tiptap-content [data-type="mention"] {
           color: #1a6b9c;
           font-weight: 600;
