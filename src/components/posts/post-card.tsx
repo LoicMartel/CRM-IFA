@@ -31,11 +31,11 @@ import { CommentSection } from "./comment-section";
 import { RichTextContent } from "./rich-text-editor";
 
 const REACTION_EMOJIS = [
-  { key: "like", icon: ThumbsUp, label: "J'aime" },
-  { key: "love", icon: Heart, label: "J'adore" },
-  { key: "celebrate", icon: PartyPopper, label: "Bravo" },
-  { key: "insightful", icon: Lightbulb, label: "Intéressant" },
-  { key: "curious", icon: HelpCircle, label: "Curieux" },
+  { key: "like", icon: ThumbsUp, label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd" },
+  { key: "love", icon: Heart, label: "J'adore", color: "#e74c3c", bg: "#fce4ec" },
+  { key: "celebrate", icon: PartyPopper, label: "Bravo", color: "#e67e22", bg: "#fff3e0" },
+  { key: "insightful", icon: Lightbulb, label: "Intéressant", color: "#d4ac0d", bg: "#fffde7" },
+  { key: "curious", icon: HelpCircle, label: "Curieux", color: "#8e44ad", bg: "#f3e5f5" },
 ];
 
 interface PostCardProps {
@@ -53,6 +53,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
   const [reactions, setReactions] = useState<any[]>(post.post_reactions ?? []);
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [animatingReaction, setAnimatingReaction] = useState<string | null>(null);
 
   const author = post.team_members;
   const authorName = author ? `${author.first_name} ${author.last_name}` : "Inconnu";
@@ -396,13 +397,18 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
 
       {/* Reactions bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
-        {REACTION_EMOJIS.map(({ key, icon: Icon, label }) => {
+        {REACTION_EMOJIS.map(({ key, icon: Icon, label, color, bg }) => {
           const count = reactions.filter((r: any) => r.emoji === key).length;
           const hasReacted = reactions.some((r: any) => r.emoji === key && r.team_member_id === memberId);
+          const isAnimating = animatingReaction === key;
           return (
             <button
               key={key}
-              onClick={() => toggleReaction(key)}
+              onClick={() => {
+                setAnimatingReaction(key);
+                setTimeout(() => setAnimatingReaction(null), 500);
+                toggleReaction(key);
+              }}
               title={label}
               style={{
                 display: "flex",
@@ -410,16 +416,17 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                 gap: 4,
                 padding: "4px 10px",
                 borderRadius: 20,
-                border: hasReacted ? "1px solid #1a6b9c" : "1px solid #dce8f0",
-                background: hasReacted ? "#e3f2fd" : "white",
+                border: hasReacted ? `1.5px solid ${color}` : "1px solid #dce8f0",
+                background: hasReacted ? bg : "white",
                 cursor: "pointer",
                 fontSize: 12,
-                color: hasReacted ? "#1a6b9c" : "#8399a9",
+                color: hasReacted ? color : "#8399a9",
                 fontWeight: hasReacted ? 600 : 400,
-                transition: "all 0.15s",
+                transition: "all 0.2s ease",
+                animation: isAnimating ? "reaction-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
               }}
             >
-              <Icon style={{ width: 14, height: 14 }} />
+              <Icon style={{ width: 14, height: 14, fill: hasReacted ? color : "none", transition: "all 0.2s ease" }} />
               {count > 0 && <span>{count}</span>}
             </button>
           );
@@ -448,17 +455,26 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       </div>
 
       {/* Comments section */}
-      {/* Comments section */}
       {showComments && (
         <CommentSection
           postId={post.id}
           postAuthorId={post.author_id}
           postTitle={post.title}
+          postCategory={post.category}
           teamMembers={teamMembers}
           onCommentCountChange={onRefresh}
         />
       )}
       </div>
+      <style>{`
+        @keyframes reaction-pop {
+          0% { transform: scale(1); }
+          30% { transform: scale(1.3); }
+          60% { transform: scale(0.95); }
+          80% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

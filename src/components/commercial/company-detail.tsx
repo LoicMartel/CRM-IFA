@@ -207,10 +207,20 @@ export function CompanyDetail({
   async function handleDelete() {
     const supabase = createClient();
     const companyId = company.id as string;
-    // Detach related records before deleting to avoid foreign-key constraint errors
+    // Detach all related records before deleting to avoid foreign-key constraint errors
     await Promise.all([
       supabase.from("contacts").update({ company_id: null }).eq("company_id", companyId),
       supabase.from("deals").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("activities").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("leads").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("meetings").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("opportunities").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("orders").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("learners").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("sessions").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("invoices").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("billing_entries").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("service_plans").delete().eq("company_id", companyId),
     ]);
     const { error } = await supabase.from("companies").delete().eq("id", companyId);
     if (error) {

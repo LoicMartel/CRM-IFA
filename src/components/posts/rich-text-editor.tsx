@@ -11,7 +11,7 @@ import { TextAlign } from "@tiptap/extension-text-align";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Mention } from "@tiptap/extension-mention";
-import { buildMentionSuggestion, buildTagSuggestion, type MentionMember } from "@/components/posts/mention-suggestion";
+import { buildMentionSuggestion, buildTagSuggestion, type MentionMember, type CategoryInfo } from "@/components/posts/mention-suggestion";
 import {
   Bold,
   Italic,
@@ -55,12 +55,14 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   mentionMembers?: MentionMember[];
+  categoryInfo?: CategoryInfo;
 }
 
 const EMPTY_MENTION_LIST: MentionMember[] = [];
 
-export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post...", mentionMembers }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post...", mentionMembers, categoryInfo }: RichTextEditorProps) {
   const members = mentionMembers ?? EMPTY_MENTION_LIST;
+  const catKey = JSON.stringify(categoryInfo?.memberIds ?? []);
   const mentionExtension = useMemo(
     () =>
       Mention.configure({
@@ -78,9 +80,10 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
             `@${node.attrs.label as string}`,
           ];
         },
-        suggestion: buildMentionSuggestion(members),
+        suggestion: buildMentionSuggestion(members, categoryInfo),
       }),
-    [members]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [members, catKey, categoryInfo?.key]
   );
 
   const hashtagExtension = useMemo(

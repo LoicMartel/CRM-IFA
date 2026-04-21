@@ -21,9 +21,16 @@ export interface MentionMember {
 
 // ─── @-mention list (existing) ────────────────────────────────────────
 
+export interface CategoryInfo {
+  memberIds: string[];
+  key: string;
+  label: string;
+}
+
 interface MentionListProps {
   items: MentionMember[];
   command: (item: { id: string; label: string }) => void;
+  categoryMemberIds?: string[];
 }
 
 interface MentionListHandle {
@@ -31,14 +38,14 @@ interface MentionListHandle {
 }
 
 const MentionList = forwardRef<MentionListHandle, MentionListProps>(
-  ({ items, command }, ref) => {
+  ({ items, command, categoryMemberIds }, ref) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
 
     useEffect(() => setSelectedIndex(0), [items]);
 
     function selectItem(i: number) {
       const item = items[i];
-      if (item) command({ id: item.id, label: item.first_name });
+      if (item) command({ id: item.id, label: item.id.startsWith("all:") ? item.label : item.first_name });
     }
 
     useImperativeHandle(ref, () => ({
@@ -69,50 +76,65 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
       );
     }
 
+    const hasCat = categoryMemberIds && categoryMemberIds.length > 0;
+
     return (
       <div style={popoverStyle}>
-        {items.map((item, i) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => selectItem(i)}
-            onMouseEnter={() => setSelectedIndex(i)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              width: "100%",
-              padding: "8px 12px",
-              border: "none",
-              background: i === selectedIndex ? "#fff7f3" : "transparent",
-              cursor: "pointer",
-              textAlign: "left",
-              fontSize: 13,
-              color: "#1a2a3a",
-            }}
-          >
-            <span
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                background: item.avatar_url
-                  ? `url(${item.avatar_url}) center/cover`
-                  : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
-                color: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 11,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {!item.avatar_url && item.first_name[0]}
-            </span>
-            <span style={{ fontWeight: 500 }}>{item.label}</span>
-          </button>
-        ))}
+        {items.map((item, i) => {
+          const isAll = item.id.startsWith("all:");
+          const isCat = !isAll && hasCat && categoryMemberIds.includes(item.id);
+          const prev = i > 0 ? items[i - 1] : null;
+          const prevIsCatOrAll = prev && (prev.id.startsWith("all:") || (hasCat && categoryMemberIds.includes(prev.id)));
+          const showSep = hasCat && !isAll && !isCat && prevIsCatOrAll;
+
+          return (
+            <div key={item.id}>
+              {showSep && <div style={{ borderTop: "1px solid #eef2f6", margin: "4px 12px" }} />}
+              <button
+                type="button"
+                onClick={() => selectItem(i)}
+                onMouseEnter={() => setSelectedIndex(i)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  width: "100%",
+                  padding: isAll ? "8px 12px" : "6px 12px",
+                  border: "none",
+                  background: i === selectedIndex ? "#fff7f3" : isAll ? "#f0f7ff" : "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontSize: 13,
+                  color: "#1a2a3a",
+                }}
+              >
+                {isAll ? (
+                  <span style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    background: "linear-gradient(135deg, #1a6b9c 0%, #2196f3 100%)",
+                    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, flexShrink: 0,
+                  }}>
+                    @
+                  </span>
+                ) : (
+                  <span style={{
+                    width: 24, height: 24, borderRadius: "50%",
+                    background: item.avatar_url
+                      ? `url(${item.avatar_url}) center/cover`
+                      : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 700, flexShrink: 0,
+                  }}>
+                    {!item.avatar_url && item.first_name[0]}
+                  </span>
+                )}
+                <span style={{ fontWeight: isAll ? 600 : 500, flex: 1 }}>{item.label}</span>
+                {isCat && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1a6b9c", flexShrink: 0 }} />}
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -296,15 +318,40 @@ const popoverStyle: React.CSSProperties = {
  * Build the @-mention suggestion plugin configuration for tiptap.
  */
 export function buildMentionSuggestion(
-  members: MentionMember[]
+  members: MentionMember[],
+  categoryInfo?: CategoryInfo,
+  onActiveChange?: (active: boolean) => void,
 ): Omit<SuggestionOptions, "editor"> {
+  const catIds = categoryInfo?.memberIds;
+  const hasCat = catIds && catIds.length > 0 && categoryInfo;
+
   return {
     char: "@",
     items: ({ query }: { query: string }) => {
       const q = query.toLowerCase();
-      return members
-        .filter((m) => m.label.toLowerCase().includes(q) || m.first_name.toLowerCase().includes(q))
-        .slice(0, 8);
+      const results: MentionMember[] = [];
+
+      // "Tout le monde" option when a category has members
+      if (hasCat) {
+        const allLabel = `Tout le monde (${categoryInfo.label})`;
+        if (!q || allLabel.toLowerCase().includes(q) || "tout".includes(q)) {
+          results.push({ id: `all:${categoryInfo.key}`, label: allLabel, first_name: "Tout le monde", avatar_url: null });
+        }
+      }
+
+      const filtered = members.filter(
+        (m) => m.label.toLowerCase().includes(q) || m.first_name.toLowerCase().includes(q)
+      );
+
+      if (hasCat) {
+        const cat = filtered.filter(m => catIds.includes(m.id));
+        const others = filtered.filter(m => !catIds.includes(m.id));
+        results.push(...cat, ...others);
+      } else {
+        results.push(...filtered);
+      }
+
+      return results.slice(0, 12);
     },
     render: () => {
       let container: HTMLDivElement | null = null;
@@ -321,6 +368,7 @@ export function buildMentionSuggestion(
 
       return {
         onStart: (props: { editor: Editor; clientRect?: (() => DOMRect | null) | null; items: MentionMember[]; command: (attrs: { id: string; label: string }) => void; range: Range }) => {
+          onActiveChange?.(true);
           container = document.createElement("div");
           container.style.position = "absolute";
           container.style.zIndex = "1000";
@@ -330,7 +378,7 @@ export function buildMentionSuggestion(
           const listRef = (instance: MentionListHandle | null) => {
             ref.current = instance;
           };
-          root.render(<MentionList ref={listRef} items={props.items} command={props.command} />);
+          root.render(<MentionList ref={listRef} items={props.items} command={props.command} categoryMemberIds={catIds} />);
           position(props.clientRect);
         },
         onUpdate: (props: { items: MentionMember[]; command: (attrs: { id: string; label: string }) => void; clientRect?: (() => DOMRect | null) | null }) => {
@@ -338,7 +386,7 @@ export function buildMentionSuggestion(
           const listRef = (instance: MentionListHandle | null) => {
             ref.current = instance;
           };
-          root.render(<MentionList ref={listRef} items={props.items} command={props.command} />);
+          root.render(<MentionList ref={listRef} items={props.items} command={props.command} categoryMemberIds={catIds} />);
           position(props.clientRect);
         },
         onKeyDown: (props: { event: KeyboardEvent }) => {
@@ -346,6 +394,7 @@ export function buildMentionSuggestion(
           return ref.current?.onKeyDown(props) ?? false;
         },
         onExit: () => {
+          onActiveChange?.(false);
           if (root) {
             root.unmount();
             root = null;
@@ -448,4 +497,19 @@ export function extractHashtags(html: string): { categories: string[]; roles: st
     else if (id.startsWith("role:")) roles.add(id.slice(5));
   }
   return { categories: Array.from(categories), roles: Array.from(roles) };
+}
+
+/**
+ * Resolve mention IDs — expands "all:*" entries to their category member IDs.
+ */
+export function resolveMentionIds(ids: string[], categoryMemberIds: string[]): string[] {
+  const resolved = new Set<string>();
+  for (const id of ids) {
+    if (id.startsWith("all:")) {
+      categoryMemberIds.forEach((mid) => resolved.add(mid));
+    } else {
+      resolved.add(id);
+    }
+  }
+  return Array.from(resolved);
 }

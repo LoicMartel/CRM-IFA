@@ -44,6 +44,7 @@ export function PostsView({
   const [editPost, setEditPost] = useState<any>(null);
   const [showTagManager, setShowTagManager] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
 
   function handleRefresh() {
     router.refresh();
@@ -73,8 +74,14 @@ export function PostsView({
       );
     }
 
-    return result;
-  }, [posts, categoryFilter, authorFilter, projectTagFilter, searchQuery]);
+    return [...result].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return sortOrder === "recent" ? db - da : da - db;
+    });
+  }, [posts, categoryFilter, authorFilter, projectTagFilter, searchQuery, sortOrder]);
 
   const pinnedCount = posts.filter((p) => p.pinned).length;
   const thisWeek = posts.filter((p) => {
@@ -172,6 +179,23 @@ export function PostsView({
             {teamMembers.map((m) => (
               <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
             ))}
+          </select>
+
+          {/* Sort */}
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as "recent" | "oldest")}
+            style={{
+              padding: "7px 10px",
+              borderRadius: 8,
+              border: "1px solid #dce8f0",
+              fontSize: 13,
+              color: "#1a2a3a",
+              background: "#f8fbfd",
+            }}
+          >
+            <option value="recent">Plus récent</option>
+            <option value="oldest">Plus ancien</option>
           </select>
 
           {/* Admin tools */}

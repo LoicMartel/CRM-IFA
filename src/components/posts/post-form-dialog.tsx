@@ -6,7 +6,7 @@ import { X, Upload, FileText, Image as ImageIcon, Plus, Trash2 } from "lucide-re
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { RichTextEditor } from "./rich-text-editor";
-import { extractMentionedIds, extractHashtags, type MentionMember } from "./mention-suggestion";
+import { extractMentionedIds, extractHashtags, resolveMentionIds, type MentionMember, type CategoryInfo } from "./mention-suggestion";
 import {
   POST_CATEGORY_LABELS,
   POST_BANNERS,
@@ -57,6 +57,7 @@ export function PostFormDialog({
   const [newTagName, setNewTagName] = useState("");
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
+  const [categoryMemberIds, setCategoryMemberIds] = useState<string[]>([]);
 
   // Reset form when dialog opens (new post or edit)
   useEffect(() => {
@@ -95,6 +96,19 @@ export function PostFormDialog({
       }
     })();
   }, [open]);
+
+  // Load category members for @-mention filtering
+  useEffect(() => {
+    if (!open || !category) { setCategoryMemberIds([]); return; }
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("category_members")
+        .select("team_member_id")
+        .eq("category", category);
+      setCategoryMemberIds((data ?? []).map((r: any) => r.team_member_id));
+    })();
+  }, [open, category]);
 
   if (!open) return null;
 
@@ -214,9 +228,11 @@ export function PostFormDialog({
     // Create mention notifications for newly-mentioned members
     const mentionedIds = new Set<string>();
     if (savedPostId && content) {
-      const currentMentions = extractMentionedIds(content);
+      const rawMentions = extractMentionedIds(content);
+      const currentMentions = resolveMentionIds(rawMentions, categoryMemberIds);
+      const prevResolved = resolveMentionIds(previouslyMentionedIds, categoryMemberIds);
       const newMentions = currentMentions.filter(
-        (id) => !previouslyMentionedIds.includes(id) && id !== memberId
+        (id) => !prevResolved.includes(id) && id !== memberId
       );
       newMentions.forEach(id => mentionedIds.add(id));
       if (newMentions.length > 0) {
@@ -513,6 +529,7 @@ export function PostFormDialog({
               onChange={setContent}
               placeholder="Écrivez votre post… (utilisez @ pour mentionner un membre)"
               mentionMembers={mentionMembers}
+              categoryInfo={categoryMemberIds.length > 0 ? { memberIds: categoryMemberIds, key: category, label: POST_CATEGORY_LABELS[category] } : undefined}
             />
           </div>
 
