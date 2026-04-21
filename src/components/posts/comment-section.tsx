@@ -27,13 +27,15 @@ interface CommentSectionProps {
   postCategory: string;
   teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onCommentCountChange: () => void;
+  previewCount?: number;
 }
 
-export function CommentSection({ postId, postAuthorId, postTitle, postCategory, teamMembers, onCommentCountChange }: CommentSectionProps) {
+export function CommentSection({ postId, postAuthorId, postTitle, postCategory, teamMembers, onCommentCountChange, previewCount = 100 }: CommentSectionProps) {
   const memberId = useCurrentMember();
   const { isAdmin } = useCurrentRoles();
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentHtml, setCommentHtml] = useState("");
   const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
@@ -225,18 +227,36 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
 
   const memberMap = new Map(teamMembers.map((m) => [m.id, m]));
 
+  const hiddenCount = !showAll && comments.length > previewCount ? comments.length - previewCount : 0;
+  const visibleComments = !showAll && comments.length > previewCount
+    ? comments.slice(comments.length - previewCount)
+    : comments;
+
   if (loading) {
     return (
       <div style={{ padding: "12px 0", fontSize: 13, color: "#8399a9" }}>
-        Chargement des commentaires...
+        Chargement...
       </div>
     );
   }
 
   return (
     <div style={{ borderTop: "1px solid #eef2f6", paddingTop: 12, marginTop: 4 }}>
+      {/* "Show more" link */}
+      {hiddenCount > 0 && (
+        <button
+          onClick={() => setShowAll(true)}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            color: "#1a6b9c", fontSize: 12, fontWeight: 600, padding: "4px 0", marginBottom: 8,
+          }}
+        >
+          Voir les {hiddenCount} commentaire{hiddenCount > 1 ? "s" : ""} précédent{hiddenCount > 1 ? "s" : ""}
+        </button>
+      )}
+
       {/* Comments list */}
-      {comments.map((comment) => {
+      {visibleComments.map((comment) => {
         const cAuthor = comment.team_members ?? memberMap.get(comment.author_id);
         const name = cAuthor ? `${cAuthor.first_name} ${cAuthor.last_name}` : "Inconnu";
         const initials = cAuthor ? `${cAuthor.first_name[0]}${cAuthor.last_name[0]}` : "?";

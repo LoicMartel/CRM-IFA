@@ -49,7 +49,7 @@ interface PostCardProps {
 export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: PostCardProps) {
   const memberId = useCurrentMember();
   const { isAdmin } = useCurrentRoles();
-  const [showComments, setShowComments] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const [reactions, setReactions] = useState<any[]>(post.post_reactions ?? []);
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -478,39 +478,25 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
           );
         })}
 
-        {/* Comments toggle */}
-        <button
-          onClick={() => setShowComments(!showComments)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "4px 10px",
-            borderRadius: 20,
-            border: "1px solid #dce8f0",
-            background: showComments ? "#f0f4f8" : "white",
-            cursor: "pointer",
-            fontSize: 12,
-            color: "#5a6f80",
-            marginLeft: "auto",
-          }}
-        >
-          <MessageCircle style={{ width: 14, height: 14 }} />
-          {commentCount} commentaire{commentCount !== 1 ? "s" : ""}
-        </button>
+        {/* Comments count */}
+        {commentCount > 0 && (
+          <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#5a6f80", marginLeft: "auto" }}>
+            <MessageCircle style={{ width: 14, height: 14 }} />
+            {commentCount} commentaire{commentCount !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
-      {/* Comments section */}
-      {showComments && (
-        <CommentSection
-          postId={post.id}
-          postAuthorId={post.author_id}
-          postTitle={post.title}
-          postCategory={post.category}
-          teamMembers={teamMembers}
-          onCommentCountChange={onRefresh}
-        />
-      )}
+      {/* Comments section — always visible */}
+      <CommentSection
+        postId={post.id}
+        postAuthorId={post.author_id}
+        postTitle={post.title}
+        postCategory={post.category}
+        teamMembers={teamMembers}
+        onCommentCountChange={onRefresh}
+        previewCount={4}
+      />
       </div>
       <style>{`
         @keyframes reaction-pop {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Settings, Trash2, Users } from "lucide-react";
+import { Plus, Search, Settings, Trash2, Users, Hash, Pin, ChevronDown, ChevronRight } from "lucide-react";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -45,6 +45,7 @@ export function PostsView({
   const [showTagManager, setShowTagManager] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [expandProjects, setExpandProjects] = useState(false);
 
   function handleRefresh() {
     router.refresh();
@@ -52,28 +53,13 @@ export function PostsView({
 
   const filteredPosts = useMemo(() => {
     let result = posts;
-
-    if (categoryFilter !== "all") {
-      result = result.filter((p) => p.category === categoryFilter);
-    }
-
-    if (authorFilter !== "all") {
-      result = result.filter((p) => p.author_id === authorFilter);
-    }
-
-    if (projectTagFilter !== "all") {
-      result = result.filter((p) => p.project_tag_id === projectTagFilter);
-    }
-
+    if (categoryFilter !== "all") result = result.filter((p) => p.category === categoryFilter);
+    if (authorFilter !== "all") result = result.filter((p) => p.author_id === authorFilter);
+    if (projectTagFilter !== "all") result = result.filter((p) => p.project_tag_id === projectTagFilter);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title?.toLowerCase().includes(q) ||
-          p.content?.toLowerCase().includes(q)
-      );
+      result = result.filter((p) => p.title?.toLowerCase().includes(q) || p.content?.toLowerCase().includes(q));
     }
-
     return [...result].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -83,220 +69,204 @@ export function PostsView({
     });
   }, [posts, categoryFilter, authorFilter, projectTagFilter, searchQuery, sortOrder]);
 
+  // Count posts per category
+  const countByCategory = useMemo(() => {
+    const counts: Record<string, number> = { all: posts.length };
+    for (const cat of ALL_CATEGORIES) counts[cat] = posts.filter((p) => p.category === cat).length;
+    return counts;
+  }, [posts]);
+
   const pinnedCount = posts.filter((p) => p.pinned).length;
   const thisWeek = posts.filter((p) => {
     const d = new Date(p.created_at);
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return d >= weekAgo;
+    return d >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   }).length;
 
   return (
-    <div>
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total posts" value={posts.length} color="#1a6b9c" />
-        <StatCard label="Cette semaine" value={thisWeek} color="#2e7d32" />
-        <StatCard label="Épinglés" value={pinnedCount} color="#e65100" />
-      </div>
-
-      {/* Filters & actions */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20, alignItems: "center" }}>
-        {/* Category tabs */}
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-          <FilterTab
-            active={categoryFilter === "all"}
-            onClick={() => { setCategoryFilter("all"); setProjectTagFilter("all"); }}
-            label="Tous"
-          />
-          {ALL_CATEGORIES.map((cat) => (
-            <FilterTab
-              key={cat}
-              active={categoryFilter === cat}
-              onClick={() => { setCategoryFilter(cat); if (cat !== "projets_en_cours") setProjectTagFilter("all"); }}
-              label={POST_CATEGORY_LABELS[cat]}
-              color={POST_CATEGORY_COLORS[cat]}
-            />
-          ))}
+    <div style={{ display: "flex", gap: 0, minHeight: "calc(100vh - 130px)", margin: "-24px -24px -24px -24px" }}>
+      {/* ===== LEFT SIDEBAR ===== */}
+      <aside style={{
+        width: 250,
+        flexShrink: 0,
+        background: "#f7f9fb",
+        borderRight: "1px solid #e4eaf0",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}>
+        {/* Sidebar header */}
+        <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #e4eaf0" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "#1b2a4a", margin: 0 }}>Canaux</h2>
         </div>
 
-        {/* Project tag filter (only when projets_en_cours selected) */}
-        {categoryFilter === "projets_en_cours" && projectTags.filter((t) => t.is_active).length > 0 && (
-          <select
-            value={projectTagFilter}
-            onChange={(e) => setProjectTagFilter(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 8,
-              border: "1px solid #dce8f0",
-              fontSize: 13,
-              color: "#1a2a3a",
-              background: "#f8fbfd",
-            }}
-          >
-            <option value="all">Tous les projets</option>
-            {projectTags.filter((t) => t.is_active).map((tag) => (
-              <option key={tag.id} value={tag.id}>{tag.name}</option>
-            ))}
-          </select>
-        )}
+        {/* Channel list */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+          {/* All */}
+          <ChannelItem
+            label="Général"
+            count={countByCategory.all}
+            active={categoryFilter === "all"}
+            onClick={() => { setCategoryFilter("all"); setProjectTagFilter("all"); setExpandProjects(false); }}
+            dotColor="#1a6b9c"
+          />
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          {/* Search */}
-          <div style={{ position: "relative" }}>
-            <Search style={{ width: 14, height: 14, position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#8399a9" }} />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher..."
-              style={{
-                padding: "7px 10px 7px 30px",
-                borderRadius: 8,
-                border: "1px solid #dce8f0",
-                fontSize: 13,
-                color: "#1a2a3a",
-                outline: "none",
-                width: 200,
-                background: "#f8fbfd",
-              }}
-            />
+          {ALL_CATEGORIES.map((cat) => {
+            const colors = POST_CATEGORY_COLORS[cat];
+            const isProjects = cat === "projets_en_cours";
+            const isActive = categoryFilter === cat;
+            return (
+              <div key={cat}>
+                <ChannelItem
+                  label={POST_CATEGORY_LABELS[cat]}
+                  count={countByCategory[cat]}
+                  active={isActive}
+                  onClick={() => {
+                    setCategoryFilter(cat);
+                    if (!isProjects) setProjectTagFilter("all");
+                    if (isProjects) setExpandProjects(true);
+                    else setExpandProjects(false);
+                  }}
+                  dotColor={colors.text}
+                  hasArrow={isProjects && projectTags.filter(t => t.is_active).length > 0}
+                  expanded={isProjects && expandProjects}
+                />
+                {/* Project tag sub-items */}
+                {isProjects && expandProjects && isActive && (
+                  <div style={{ paddingLeft: 20 }}>
+                    <SubChannelItem
+                      label="Tous les projets"
+                      active={projectTagFilter === "all"}
+                      onClick={() => setProjectTagFilter("all")}
+                    />
+                    {projectTags.filter(t => t.is_active).map(tag => (
+                      <SubChannelItem
+                        key={tag.id}
+                        label={tag.name}
+                        active={projectTagFilter === tag.id}
+                        onClick={() => setProjectTagFilter(tag.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Sidebar footer — stats + admin */}
+        <div style={{ borderTop: "1px solid #e4eaf0", padding: 12 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: isAdmin ? 8 : 0 }}>
+            <MiniStat label="Total" value={posts.length} />
+            <MiniStat label="Semaine" value={thisWeek} />
+            <MiniStat label="Épinglés" value={pinnedCount} />
           </div>
-
-          {/* Author filter */}
-          <select
-            value={authorFilter}
-            onChange={(e) => setAuthorFilter(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1px solid #dce8f0",
-              fontSize: 13,
-              color: "#1a2a3a",
-              background: "#f8fbfd",
-            }}
-          >
-            <option value="all">Tous les auteurs</option>
-            {teamMembers.map((m) => (
-              <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
-            ))}
-          </select>
-
-          {/* Sort */}
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as "recent" | "oldest")}
-            style={{
-              padding: "7px 10px",
-              borderRadius: 8,
-              border: "1px solid #dce8f0",
-              fontSize: 13,
-              color: "#1a2a3a",
-              background: "#f8fbfd",
-            }}
-          >
-            <option value="recent">Plus récent</option>
-            <option value="oldest">Plus ancien</option>
-          </select>
-
-          {/* Admin tools */}
           {isAdmin && (
-            <>
+            <div style={{ display: "flex", gap: 4 }}>
               <button
-                onClick={() => setShowCategoryManager(!showCategoryManager)}
+                onClick={() => { setShowCategoryManager(!showCategoryManager); setShowTagManager(false); }}
                 title="Gérer les catégories"
-                style={{
-                  padding: "7px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #dce8f0",
-                  background: showCategoryManager ? "#f3e5f5" : "white",
-                  cursor: "pointer",
-                  color: "#5a6f80",
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                style={sidebarBtnStyle(showCategoryManager)}
               >
-                <Users style={{ width: 16, height: 16 }} />
+                <Users style={{ width: 13, height: 13 }} /> Catégories
               </button>
               <button
-                onClick={() => setShowTagManager(!showTagManager)}
+                onClick={() => { setShowTagManager(!showTagManager); setShowCategoryManager(false); }}
                 title="Gérer les projets"
-                style={{
-                  padding: "7px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #dce8f0",
-                  background: showTagManager ? "#e3f2fd" : "white",
-                  cursor: "pointer",
-                  color: "#5a6f80",
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                style={sidebarBtnStyle(showTagManager)}
               >
-                <Settings style={{ width: 16, height: 16 }} />
+                <Settings style={{ width: 13, height: 13 }} /> Projets
               </button>
-            </>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {/* Top bar */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "12px 20px",
+          borderBottom: "1px solid #e4eaf0", background: "white", flexWrap: "wrap",
+        }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1b2a4a", margin: 0, marginRight: 8 }}>
+            {categoryFilter === "all" ? "Tous les posts" : POST_CATEGORY_LABELS[categoryFilter]}
+          </h3>
+
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+            {/* Search */}
+            <div style={{ position: "relative" }}>
+              <Search style={{ width: 13, height: 13, position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "#8399a9" }} />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher..."
+                style={{
+                  padding: "6px 10px 6px 28px", borderRadius: 6, border: "1px solid #dce8f0",
+                  fontSize: 12, color: "#1a2a3a", outline: "none", width: 170, background: "#f8fbfd",
+                }}
+              />
+            </div>
+
+            <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)} style={selectStyle}>
+              <option value="all">Tous les auteurs</option>
+              {teamMembers.map((m) => (
+                <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+              ))}
+            </select>
+
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as "recent" | "oldest")} style={selectStyle}>
+              <option value="recent">Plus récent</option>
+              <option value="oldest">Plus ancien</option>
+            </select>
+
+            <button
+              onClick={() => { setEditPost(null); setShowForm(true); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 14px", borderRadius: 6, border: "none",
+                background: "#1a6b9c", color: "white", cursor: "pointer",
+                fontSize: 12, fontWeight: 600,
+              }}
+            >
+              <Plus style={{ width: 14, height: 14 }} />
+              Nouveau post
+            </button>
+          </div>
+        </div>
+
+        {/* Content area */}
+        <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+          {/* Category / Tag manager panels */}
+          {showCategoryManager && isAdmin && (
+            <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} />
+          )}
+          {showTagManager && isAdmin && (
+            <TagManagerPanel projectTags={projectTags} onRefresh={handleRefresh} />
           )}
 
-          {/* New post button */}
-          <button
-            onClick={() => { setEditPost(null); setShowForm(true); }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 16px",
-              borderRadius: 8,
-              border: "none",
-              background: "#1a6b9c",
-              color: "white",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            <Plus style={{ width: 16, height: 16 }} />
-            Nouveau post
-          </button>
-        </div>
-      </div>
-
-      {/* Category manager panel */}
-      {showCategoryManager && isAdmin && (
-        <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} />
-      )}
-
-      {/* Tag manager panel */}
-      {showTagManager && isAdmin && (
-        <TagManagerPanel projectTags={projectTags} onRefresh={handleRefresh} />
-      )}
-
-      {/* Posts list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {filteredPosts.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              color: "#8399a9",
-              fontSize: 14,
-            }}
-          >
-            {posts.length === 0
-              ? "Aucun post pour le moment. Soyez le premier à publier !"
-              : "Aucun post ne correspond aux filtres sélectionnés."}
+          {/* Posts list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 800, margin: "0 auto" }}>
+            {filteredPosts.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: "#8399a9", fontSize: 14 }}>
+                {posts.length === 0
+                  ? "Aucun post pour le moment. Soyez le premier à publier !"
+                  : "Aucun post ne correspond aux filtres sélectionnés."}
+              </div>
+            ) : (
+              filteredPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  teamMembers={teamMembers}
+                  projectTags={projectTags}
+                  onEdit={(p) => { setEditPost(p); setShowForm(true); }}
+                  onRefresh={handleRefresh}
+                />
+              ))
+            )}
           </div>
-        ) : (
-          filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              teamMembers={teamMembers}
-              projectTags={projectTags}
-              onEdit={(p) => { setEditPost(p); setShowForm(true); }}
-              onRefresh={handleRefresh}
-            />
-          ))
-        )}
-      </div>
+        </div>
+      </main>
 
       {/* Form dialog */}
       {showForm && (
@@ -313,57 +283,95 @@ export function PostsView({
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div
-      className="lca-card"
-      style={{
-        padding: "14px 18px",
-        borderRadius: 10,
-        border: "1px solid #dce8f0",
-        background: "white",
-      }}
-    >
-      <div style={{ fontSize: 11, color: "#8399a9", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color, marginTop: 4 }}>
-        {value}
-      </div>
-    </div>
-  );
-}
+/* ===== Sidebar Components ===== */
 
-function FilterTab({
-  active,
-  onClick,
-  label,
-  color,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  color?: { bg: string; text: string };
+function ChannelItem({ label, count, active, onClick, dotColor, hasArrow, expanded }: {
+  label: string; count: number; active: boolean; onClick: () => void;
+  dotColor: string; hasArrow?: boolean; expanded?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       style={{
-        padding: "6px 14px",
-        borderRadius: 20,
-        border: active ? "none" : "1px solid #dce8f0",
-        background: active ? (color?.bg ?? "#1a6b9c") : "white",
-        color: active ? (color?.text ?? "white") : "#5a6f80",
-        cursor: "pointer",
-        fontSize: 12,
-        fontWeight: 600,
-        transition: "all 0.15s",
+        display: "flex", alignItems: "center", gap: 8, width: "100%",
+        padding: "8px 16px", border: "none", cursor: "pointer", textAlign: "left",
+        background: active ? "#e8f0fe" : "transparent",
+        borderLeft: active ? "3px solid #1a6b9c" : "3px solid transparent",
+        transition: "all 0.12s",
       }}
     >
-      {label}
+      {hasArrow ? (
+        expanded ? <ChevronDown style={{ width: 13, height: 13, color: "#8399a9", flexShrink: 0 }} />
+                 : <ChevronRight style={{ width: 13, height: 13, color: "#8399a9", flexShrink: 0 }} />
+      ) : (
+        <Hash style={{ width: 13, height: 13, color: dotColor, flexShrink: 0 }} />
+      )}
+      <span style={{
+        fontSize: 13, fontWeight: active ? 600 : 400,
+        color: active ? "#1a6b9c" : "#3a4a5a", flex: 1, overflow: "hidden",
+        textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {label}
+      </span>
+      {count > 0 && (
+        <span style={{
+          fontSize: 10, color: active ? "#1a6b9c" : "#8399a9",
+          fontWeight: 600, minWidth: 18, textAlign: "right",
+        }}>
+          {count}
+        </span>
+      )}
     </button>
   );
 }
+
+function SubChannelItem({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 6, width: "100%",
+        padding: "5px 16px 5px 12px", border: "none", cursor: "pointer", textAlign: "left",
+        background: active ? "#e8f0fe" : "transparent",
+        fontSize: 12, color: active ? "#1a6b9c" : "#5a6f80",
+        fontWeight: active ? 600 : 400, transition: "all 0.12s",
+      }}
+    >
+      <span style={{ width: 4, height: 4, borderRadius: "50%", background: active ? "#1a6b9c" : "#b0bec5", flexShrink: 0 }} />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+    </button>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{
+      flex: 1, textAlign: "center", padding: "6px 4px",
+      background: "white", borderRadius: 6, border: "1px solid #e4eaf0",
+    }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: "#1b2a4a" }}>{value}</div>
+      <div style={{ fontSize: 9, color: "#8399a9", fontWeight: 600, textTransform: "uppercase" }}>{label}</div>
+    </div>
+  );
+}
+
+const selectStyle: React.CSSProperties = {
+  padding: "6px 10px", borderRadius: 6, border: "1px solid #dce8f0",
+  fontSize: 12, color: "#1a2a3a", background: "#f8fbfd",
+};
+
+function sidebarBtnStyle(active: boolean): React.CSSProperties {
+  return {
+    display: "flex", alignItems: "center", gap: 4, flex: 1,
+    padding: "5px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500,
+    border: "1px solid #dce8f0", cursor: "pointer",
+    background: active ? "#e8f0fe" : "white",
+    color: active ? "#1a6b9c" : "#5a6f80",
+    justifyContent: "center",
+  };
+}
+
+/* ===== Admin Panels (unchanged logic, kept below) ===== */
 
 function CategoryManagerPanel({
   teamMembers,
@@ -433,14 +441,11 @@ function CategoryManagerPanel({
                       type="button"
                       onClick={() => toggleMember(cat, m.id)}
                       style={{
-                        padding: "4px 10px",
-                        borderRadius: 999,
+                        padding: "4px 10px", borderRadius: 999,
                         border: isAssigned ? "2px solid #6a1b9a" : "1px solid #dce8f0",
                         background: isAssigned ? "#f3e5f5" : "white",
                         color: isAssigned ? "#6a1b9a" : "#5a6f80",
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: isAssigned ? 600 : 400,
+                        cursor: "pointer", fontSize: 12, fontWeight: isAssigned ? 600 : 400,
                       }}
                     >
                       {m.first_name} {m.last_name}
@@ -487,92 +492,43 @@ function TagManagerPanel({
   }
 
   return (
-    <div
-      style={{
-        padding: 16,
-        borderRadius: 10,
-        border: "1px solid #dce8f0",
-        background: "#f8fbfd",
-        marginBottom: 20,
-      }}
-    >
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>
-        Gestion des projets
-      </h3>
+    <div style={{ padding: 16, borderRadius: 10, border: "1px solid #dce8f0", background: "#f8fbfd", marginBottom: 20 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Gestion des projets</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
+          value={newName} onChange={(e) => setNewName(e.target.value)}
           placeholder="Nom du nouveau projet..."
-          style={{
-            flex: 1,
-            padding: "8px 12px",
-            borderRadius: 8,
-            border: "1px solid #dce8f0",
-            fontSize: 13,
-            outline: "none",
-          }}
+          style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #dce8f0", fontSize: 13, outline: "none" }}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreate(); } }}
         />
-        <button
-          onClick={handleCreate}
-          disabled={!newName.trim()}
+        <button onClick={handleCreate} disabled={!newName.trim()}
           style={{
-            padding: "8px 16px",
-            borderRadius: 8,
-            border: "none",
+            padding: "8px 16px", borderRadius: 8, border: "none",
             background: newName.trim() ? "#1a6b9c" : "#dce8f0",
             color: newName.trim() ? "white" : "#8399a9",
-            cursor: newName.trim() ? "pointer" : "default",
-            fontWeight: 600,
-            fontSize: 13,
+            cursor: newName.trim() ? "pointer" : "default", fontWeight: 600, fontSize: 13,
           }}
-        >
-          Ajouter
-        </button>
+        >Ajouter</button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {projectTags.map((tag) => (
-          <div
-            key={tag.id}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "6px 12px",
-              borderRadius: 8,
-              border: "1px solid #dce8f0",
-              background: tag.is_active ? "white" : "#f0f0f0",
-              fontSize: 13,
-            }}
-          >
-            <span style={{ color: tag.is_active ? "#1a2a3a" : "#8399a9", textDecoration: tag.is_active ? "none" : "line-through" }}>
-              {tag.name}
-            </span>
-            <button
-              onClick={() => toggleActive(tag.id, tag.is_active)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 11,
-                color: tag.is_active ? "#e65100" : "#2e7d32",
-                fontWeight: 600,
-              }}
-            >
+          <div key={tag.id} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "6px 12px",
+            borderRadius: 8, border: "1px solid #dce8f0",
+            background: tag.is_active ? "white" : "#f0f0f0", fontSize: 13,
+          }}>
+            <span style={{ color: tag.is_active ? "#1a2a3a" : "#8399a9", textDecoration: tag.is_active ? "none" : "line-through" }}>{tag.name}</span>
+            <button onClick={() => toggleActive(tag.id, tag.is_active)}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: tag.is_active ? "#e65100" : "#2e7d32", fontWeight: 600 }}>
               {tag.is_active ? "Archiver" : "Réactiver"}
             </button>
-            <button
-              onClick={() => handleDelete(tag.id)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 0, display: "flex" }}
-            >
+            <button onClick={() => handleDelete(tag.id)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 0, display: "flex" }}>
               <Trash2 style={{ width: 12, height: 12 }} />
             </button>
           </div>
         ))}
-        {projectTags.length === 0 && (
-          <span style={{ fontSize: 13, color: "#8399a9" }}>Aucun projet créé</span>
-        )}
+        {projectTags.length === 0 && <span style={{ fontSize: 13, color: "#8399a9" }}>Aucun projet créé</span>}
       </div>
     </div>
   );
