@@ -206,7 +206,17 @@ export function CompanyDetail({
 
   async function handleDelete() {
     const supabase = createClient();
-    await supabase.from("companies").delete().eq("id", company.id as string);
+    const companyId = company.id as string;
+    // Detach related records before deleting to avoid foreign-key constraint errors
+    await Promise.all([
+      supabase.from("contacts").update({ company_id: null }).eq("company_id", companyId),
+      supabase.from("deals").update({ company_id: null }).eq("company_id", companyId),
+    ]);
+    const { error } = await supabase.from("companies").delete().eq("id", companyId);
+    if (error) {
+      alert("Impossible de supprimer cette entreprise : " + error.message);
+      return;
+    }
     router.push("/companies");
   }
 

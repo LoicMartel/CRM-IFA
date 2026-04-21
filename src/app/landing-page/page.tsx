@@ -203,10 +203,10 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-[13px] font-semibold text-[#1a2a3a]">
-                    URL de la société<span className="text-red-500">*</span>
+                    URL de la société
                   </label>
                   <input
-                    type="url" name="website" required placeholder="ex: www.url-de-la-societe.com"
+                    type="url" name="website" placeholder="ex: www.url-de-la-societe.com"
                     value={form.website} onChange={handleChange}
                     className="w-full rounded border border-gray-200 px-3 py-2.5 text-[14px] text-[#1a2a3a] outline-none focus:border-[#2e7ab5]"
                   />
