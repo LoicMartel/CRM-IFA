@@ -236,10 +236,11 @@ export function PostFormDialog({
       );
       newMentions.forEach(id => mentionedIds.add(id));
       if (newMentions.length > 0) {
+        const authorLabel = getMemberLabel(memberId, mentionMembers);
         const rows = newMentions.map((recipientId) => ({
           recipient_id: recipientId,
           type: "post_mention",
-          title: `${getMemberLabel(memberId, mentionMembers)} t'a mentionné dans un post`,
+          title: `${authorLabel} t'a mentionné dans un post`,
           body: title.trim(),
           link_url: `/posts#post-${savedPostId}`,
           related_entity_type: "post",
@@ -247,6 +248,21 @@ export function PostFormDialog({
           actor_id: memberId,
         }));
         await supabase.from("notifications").insert(rows);
+
+        // Slack DM for @mentions
+        try {
+          await fetch("/api/posts/notify-slack", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              recipientIds: newMentions,
+              authorName: authorLabel,
+              postTitle: title.trim(),
+              postId: savedPostId,
+              type: "mention_post",
+            }),
+          });
+        } catch {}
       }
     }
 

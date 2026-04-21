@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { recipientIds, authorName, postTitle, tagLabels, postId } = await req.json();
+    const { recipientIds, authorName, postTitle, tagLabels, postId, type } = await req.json();
 
     const slackToken = process.env.SLACK_BOT_TOKEN;
     if (!slackToken || !recipientIds?.length) {
@@ -27,16 +27,39 @@ export async function POST(req: NextRequest) {
     for (const m of members ?? []) {
       if (!m.slack_user_id) continue;
 
-      const msg = [
-        `Bonjour ${m.first_name},`,
-        "",
-        `📝 *Nouveau post tagué ${tagLabels}*`,
-        "",
-        `*${postTitle}*`,
-        `Par ${authorName}`,
-        "",
-        `👉 <${postUrl}|Voir le post>`,
-      ].join("\n");
+      let msg: string;
+      if (type === "mention_post") {
+        msg = [
+          `Bonjour ${m.first_name},`,
+          "",
+          `💬 *${authorName} t'a mentionné dans un post*`,
+          "",
+          `*${postTitle}*`,
+          "",
+          `👉 <${postUrl}|Voir le post>`,
+        ].join("\n");
+      } else if (type === "mention_comment") {
+        msg = [
+          `Bonjour ${m.first_name},`,
+          "",
+          `💬 *${authorName} t'a mentionné dans un commentaire*`,
+          "",
+          `Sur le post : *${postTitle}*`,
+          "",
+          `👉 <${postUrl}|Voir le post>`,
+        ].join("\n");
+      } else {
+        msg = [
+          `Bonjour ${m.first_name},`,
+          "",
+          `📝 *Nouveau post tagué ${tagLabels}*`,
+          "",
+          `*${postTitle}*`,
+          `Par ${authorName}`,
+          "",
+          `👉 <${postUrl}|Voir le post>`,
+        ].join("\n");
+      }
 
       try {
         const res = await fetch("https://slack.com/api/chat.postMessage", {

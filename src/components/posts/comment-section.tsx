@@ -177,6 +177,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     }
 
     // Mention-specific notifications (for people not already notified)
+    const allMentionRecipients = resolvedMentions.filter(id => id !== memberId);
     if (mentionOnlyRecipients.length > 0) {
       const mentionRows = mentionOnlyRecipients.map((recipientId) => ({
         recipient_id: recipientId,
@@ -189,6 +190,23 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
         actor_id: memberId,
       }));
       await supabase.from("notifications").insert(mentionRows);
+    }
+
+    // Slack DM for all @mentioned people (including those already notified in-app via comment)
+    if (allMentionRecipients.length > 0) {
+      try {
+        await fetch("/api/posts/notify-slack", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipientIds: allMentionRecipients,
+            authorName: actorName,
+            postTitle,
+            postId,
+            type: "mention_comment",
+          }),
+        });
+      } catch {}
     }
 
     editor.commands.clearContent();
