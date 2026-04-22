@@ -9,11 +9,6 @@ import {
   Pencil,
   Trash2,
   MessageCircle,
-  ThumbsUp,
-  Heart,
-  PartyPopper,
-  Lightbulb,
-  HelpCircle,
   FileText,
   Image as ImageIcon,
   Download,
@@ -31,11 +26,11 @@ import { CommentSection } from "./comment-section";
 import { RichTextContent } from "./rich-text-editor";
 
 const REACTION_EMOJIS = [
-  { key: "like", icon: ThumbsUp, label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd" },
-  { key: "love", icon: Heart, label: "J'adore", color: "#e74c3c", bg: "#fce4ec" },
-  { key: "celebrate", icon: PartyPopper, label: "Bravo", color: "#e67e22", bg: "#fff3e0" },
-  { key: "insightful", icon: Lightbulb, label: "Intéressant", color: "#d4ac0d", bg: "#fffde7" },
-  { key: "curious", icon: HelpCircle, label: "Curieux", color: "#8e44ad", bg: "#f3e5f5" },
+  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd", animation: "reaction-thumbs" },
+  { key: "love", emoji: "\u2764\uFE0F", label: "J'adore", color: "#e74c3c", bg: "#fce4ec", animation: "reaction-heart" },
+  { key: "celebrate", emoji: "\uD83C\uDF89", label: "Bravo", color: "#e67e22", bg: "#fff3e0", animation: "reaction-confetti" },
+  { key: "insightful", emoji: "\uD83D\uDCA1", label: "Intéressant", color: "#d4ac0d", bg: "#fffde7", animation: "reaction-bulb" },
+  { key: "curious", emoji: "\uD83E\uDD14", label: "Curieux", color: "#8e44ad", bg: "#f3e5f5", animation: "reaction-think" },
 ];
 
 interface PostCardProps {
@@ -400,7 +395,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
 
       {/* Reactions bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
-        {REACTION_EMOJIS.map(({ key, icon: Icon, label, color, bg }) => {
+        {REACTION_EMOJIS.map(({ key, emoji, label, color, bg, animation }) => {
           const count = reactions.filter((r: any) => r.emoji === key).length;
           const hasReacted = reactions.some((r: any) => r.emoji === key && r.team_member_id === memberId);
           const isAnimating = animatingReaction === key;
@@ -421,7 +416,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
               <button
                 onClick={() => {
                   setAnimatingReaction(key);
-                  setTimeout(() => setAnimatingReaction(null), 500);
+                  setTimeout(() => setAnimatingReaction(null), 600);
                   toggleReaction(key);
                 }}
                 title={label}
@@ -438,10 +433,14 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                   color: hasReacted ? color : "#8399a9",
                   fontWeight: hasReacted ? 600 : 400,
                   transition: "all 0.2s ease",
-                  animation: isAnimating ? "reaction-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)" : undefined,
                 }}
               >
-                <Icon style={{ width: 14, height: 14, fill: hasReacted ? color : "none", transition: "all 0.2s ease" }} />
+                <span style={{
+                  fontSize: 16,
+                  lineHeight: 1,
+                  display: "inline-block",
+                  animation: isAnimating ? `${animation} 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)` : undefined,
+                }}>{emoji}</span>
                 {count > 0 && <span>{count}</span>}
               </button>
               {hoverReaction === key && reactorNames.length > 0 && (
@@ -452,25 +451,28 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                   transform: "translateX(-50%)",
                   background: "#1a2a3a",
                   color: "white",
-                  padding: "6px 10px",
+                  padding: "8px 12px",
                   borderRadius: 8,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 500,
-                  whiteSpace: "nowrap",
+                  whiteSpace: "pre-line",
+                  textAlign: "center",
+                  maxWidth: 220,
                   zIndex: 20,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
                   pointerEvents: "none",
+                  animation: "tooltip-fade 0.15s ease",
                 }}>
-                  {reactorNames.join(", ")}
+                  {reactorNames.join("\n")}
                   <div style={{
                     position: "absolute",
                     top: "100%",
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: 0, height: 0,
-                    borderLeft: "5px solid transparent",
-                    borderRight: "5px solid transparent",
-                    borderTop: "5px solid #1a2a3a",
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderTop: "6px solid #1a2a3a",
                   }} />
                 </div>
               )}
@@ -499,12 +501,49 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       />
       </div>
       <style>{`
-        @keyframes reaction-pop {
+        @keyframes reaction-thumbs {
+          0% { transform: scale(1) rotate(0deg); }
+          20% { transform: scale(1.4) rotate(-15deg); }
+          40% { transform: scale(1.4) rotate(15deg); }
+          60% { transform: scale(1.2) rotate(-5deg); }
+          80% { transform: scale(1.05) rotate(0deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes reaction-heart {
           0% { transform: scale(1); }
-          30% { transform: scale(1.3); }
+          15% { transform: scale(1.5); }
+          30% { transform: scale(0.9); }
+          45% { transform: scale(1.35); }
           60% { transform: scale(0.95); }
-          80% { transform: scale(1.05); }
+          80% { transform: scale(1.1); }
           100% { transform: scale(1); }
+        }
+        @keyframes reaction-confetti {
+          0% { transform: scale(1) rotate(0deg); }
+          20% { transform: scale(1.4) rotate(-20deg); }
+          40% { transform: scale(1.3) rotate(20deg); }
+          60% { transform: scale(1.2) rotate(-10deg); }
+          80% { transform: scale(1.1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes reaction-bulb {
+          0% { transform: scale(1); opacity: 1; }
+          20% { transform: scale(1.4); opacity: 0.6; }
+          40% { transform: scale(1.2); opacity: 1; }
+          60% { transform: scale(1.35); opacity: 0.7; }
+          80% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes reaction-think {
+          0% { transform: scale(1) translateY(0); }
+          25% { transform: scale(1.3) translateY(-3px); }
+          50% { transform: scale(1.2) translateY(0); }
+          75% { transform: scale(1.1) translateY(-1px); }
+          100% { transform: scale(1) translateY(0); }
+        }
+        @keyframes tooltip-fade {
+          from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
     </div>
