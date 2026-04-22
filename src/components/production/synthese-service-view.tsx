@@ -252,38 +252,23 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   }), { portfolio: 0, visioHours: 0, presentielHours: 0, totalPrevues: 0, totalDelivrees: 0, facturable: 0, nonFact: 0, pipe: 0 });
 
   // ========== COMMANDES PLANIFIEES TABLE ==========
-  // Combine: done sessions from deliverySessions + planned sessions from training_sessions
+  // Source unique : training_sessions (done + planned + no_show), somme des duration_hours réelles
   function computeCmdData(start: string, end: string) {
-    // Done sessions from delivery (exact data)
-    const periodDelivery = (deliverySessions ?? []).filter((s: R) => inRange(s.session_date as string, start, end));
-    // Planned only from training_sessions
-    const periodPlanned = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status === "planned");
+    const periodSessions = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status !== "cancelled");
 
     return activeTrainers.map(t => {
-      // Done: from delivery — count sessions for présentiel (1 session = 8h), sum hours for visio
-      const tDoneDelivery = periodDelivery.filter((s: R) => {
-        const trainer = s.team_members as { first_name: string; last_name: string } | null;
-        return trainer?.first_name === t;
-      });
-      const doneVisioH = tDoneDelivery.filter((s: R) => s.delivery_mode === "distanciel").reduce((sum: number, s: R) => sum + (Number(s.hours_delivered) || 0), 0);
-      const donePresCount = tDoneDelivery.filter((s: R) => s.delivery_mode === "présentiel").length;
-      const donePresH = donePresCount * 8;
+      const tSessions = periodSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
 
-      // Planned: from training_sessions — 1 journée = 8h
-      const tPlanned = periodPlanned.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
-      const plannedVisioH = tPlanned.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const plannedPresCount = tPlanned.filter((s: R) => s.session_type === "journee").length;
-      const plannedPresH = plannedPresCount * 8;
+      const presH = tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+      const visioH = tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
 
-      // Facturable planifié : sessions planifiées billable × hourly_rate
-      const plannedFacturable = tPlanned.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
+      // Facturable : sessions billable × hourly_rate
+      const plannedFacturable = tSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
         const hours = Number(s.duration_hours) || 0;
         const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
         return sum + hours * rate;
       }, 0);
 
-      const visioH = doneVisioH + plannedVisioH;
-      const presH = donePresH + plannedPresH;
       return { trainer: t, totalH: visioH + presH, presH, visioH, plannedFacturable };
     });
   }

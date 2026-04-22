@@ -51,18 +51,25 @@ export function TopNav() {
 
   const [avatarRefresh, setAvatarRefresh] = useState(0);
 
-  // Load user initials & avatar — once on mount + when avatar is updated from settings
+  // Load user initials & avatar — waits for auth session to be ready, re-runs on avatar update
   useEffect(() => {
-    (async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: member } = await supabase.from("team_members").select("first_name, last_name, avatar_url").or(`auth_user_id.eq.${user.id},email.eq.${user.email}`).limit(1).single();
+    const supabase = createClient();
+
+    async function loadAvatar(userId: string, email: string | undefined) {
+      const { data: member } = await supabase.from("team_members").select("first_name, last_name, avatar_url").or(`auth_user_id.eq.${userId},email.eq.${email}`).limit(1).single();
       if (member) {
         setUserInitials(`${member.first_name[0]}${member.last_name[0]}`);
         setUserAvatarUrl(member.avatar_url ?? null);
       }
-    })();
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadAvatar(session.user.id, session.user.email);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [avatarRefresh]);
 
   // Listen for avatar updates from settings page
