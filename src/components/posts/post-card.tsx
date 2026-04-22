@@ -404,7 +404,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                 .filter((r: any) => r.emoji === key)
                 .map((r: any) => {
                   const m = teamMembers.find((tm) => tm.id === r.team_member_id);
-                  return m ? `${m.first_name} ${m.last_name}` : null;
+                  return m ? m.first_name : null;
                 })
                 .filter(Boolean)
             : [];
