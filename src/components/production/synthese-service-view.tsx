@@ -144,20 +144,17 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const totalDaysDelivered = hoursToJ(totalHoursDelivered);
   const avgDailyRate = billableDays > 0 ? totalFacturable / billableDays : 0;
 
-  // Days to plan = remaining VT + remaining days from service plans
-  // VT: each done session of type "vt" counts as 1, total from vt_planned
-  // Days: each done session of type "journee" counts as 1, total from days_planned
-  const allPlanSessions = servicePlans.flatMap((p: R) => {
-    // Find training sessions linked to this plan
-    return fySessions.filter((s: R) => (s.service_plans as R)?.id === p.id);
-  });
+  // Days to plan = total capacity - done - already planned (all time, not just FY)
+  const allPlanSessions = sessions.filter((s: R) => s.status !== "cancelled");
   const vtDone = allPlanSessions.filter((s: R) => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
+  const vtPlanned = allPlanSessions.filter((s: R) => s.session_type === "vt" && s.status === "planned").length;
   const vtTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.vt_planned) || 0), 0);
-  const daysDone = allPlanSessions.filter((s: R) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
+  const daysDoneH = allPlanSessions.filter((s: R) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+  const daysPlannedH = allPlanSessions.filter((s: R) => s.session_type === "journee" && s.status === "planned").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
   const daysTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.days_planned) || 0), 0);
-  const remainingVt = Math.max(0, vtTotal - vtDone);
-  const remainingDays = Math.max(0, daysTotal - daysDone);
-  // Convert remaining VT to days (1 VT ≈ 1h, so /8), add remaining days
+  const remainingVt = Math.max(0, vtTotal - vtDone - vtPlanned);
+  const remainingDays = Math.max(0, daysTotal - daysDoneH / 8 - daysPlannedH / 8);
+  // Convert remaining VT to hours (1 VT ≈ 1h), add remaining days × 8h
   const hoursToplan = remainingVt + remainingDays * 8;
   const daysToplan = hoursToplan / 8;
 
@@ -528,11 +525,11 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
       {/* Charts row 2 */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Visio vs Présentiel (Prévues) */}
+        {/* Visio vs Présentiel (Délivrées) */}
         <div className="lca-card">
           <div className="lca-bar-gradient" />
           <div style={{ padding: 20 }}>
-            <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>Visio vs Présentiel (Prévues)</h3>
+            <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>Visio vs Présentiel (Délivrées)</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={visioPresentielData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e8ecf1" />
