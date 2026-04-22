@@ -68,8 +68,6 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const fy = getFiscalYear();
   const [detailPeriod, setDetailPeriod] = useState("year");
   const [detailIdx, setDetailIdx] = useState(0);
-  const [cmdPeriod, setCmdPeriod] = useState("year");
-  const [cmdIdx, setCmdIdx] = useState(0);
 
   const quarters = useMemo(() => getQuarters(fy), [fy.start]);
   const months = useMemo(() => getMonths(fy), [fy.start]);
@@ -249,29 +247,23 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   }), { portfolio: 0, visioHours: 0, presentielHours: 0, totalPrevues: 0, totalDelivrees: 0, facturable: 0, nonFact: 0, pipe: 0 });
 
   // ========== COMMANDES PLANIFIEES TABLE ==========
-  // Source unique : training_sessions (done + planned + no_show), somme des duration_hours réelles
-  function computeCmdData(start: string, end: string) {
-    const periodSessions = sessions.filter((s: R) => inRange(s.session_date as string, start, end) && s.status !== "cancelled");
+  // Portfolio complet par expert — toutes les sessions training_sessions (comme la Planification)
+  const allActiveSess = sessions.filter((s: R) => s.status !== "cancelled");
+  const cmdData = activeTrainers.map(t => {
+    const tSessions = allActiveSess.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
 
-    return activeTrainers.map(t => {
-      const tSessions = periodSessions.filter((s: R) => ((s.trainers as string[]) ?? []).includes(t));
+    const presH = tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+    const visioH = tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
 
-      const presH = tSessions.filter((s: R) => s.session_type === "journee").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
-      const visioH = tSessions.filter((s: R) => s.session_type === "vt").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+    // Facturable : sessions billable × hourly_rate
+    const plannedFacturable = tSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
+      const hours = Number(s.duration_hours) || 0;
+      const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
+      return sum + hours * rate;
+    }, 0);
 
-      // Facturable : sessions billable × hourly_rate
-      const plannedFacturable = tSessions.filter((s: R) => s.is_billable !== false).reduce((sum: number, s: R) => {
-        const hours = Number(s.duration_hours) || 0;
-        const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
-        return sum + hours * rate;
-      }, 0);
-
-      return { trainer: t, totalH: visioH + presH, presH, visioH, plannedFacturable };
-    });
-  }
-
-  const cmdRange = getDateRange(cmdPeriod, cmdIdx);
-  const cmdData = computeCmdData(cmdRange.start, cmdRange.end);
+    return { trainer: t, totalH: visioH + presH, presH, visioH, plannedFacturable };
+  });
   const cmdTotals = cmdData.reduce((acc, r) => ({ totalH: acc.totalH + r.totalH, presH: acc.presH + r.presH, visioH: acc.visioH + r.visioH, plannedFacturable: acc.plannedFacturable + r.plannedFacturable }), { totalH: 0, presH: 0, visioH: 0, plannedFacturable: 0 });
 
   // ========== VISIO VS PRESENTIEL CHART — from deliverySessions ==========
@@ -487,7 +479,6 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
         <div style={{ padding: 20 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a" }}>Commandes Planifiées par Expert</h3>
-            <PeriodSelector mode={cmdPeriod} setMode={setCmdPeriod} idx={cmdIdx} setIdx={setCmdIdx} />
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
