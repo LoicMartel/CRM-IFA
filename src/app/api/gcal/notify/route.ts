@@ -94,11 +94,14 @@ export async function POST(req: NextRequest) {
     const primaryTrainer = (trainerMembers ?? [])[0];
     const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "La Closing Académie";
     const primaryOrganizerEmail = primaryTrainer?.email ?? "noreply@closing-academie.com";
+    // Single Zoom link for the whole session (first trainer that has one)
+    const sessionZoomLink = (trainerMembers ?? []).find(t => t.zoom_link)?.zoom_link ?? "";
+    // Shared map across iterations so trainers don't overwrite each other
+    const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
 
     for (const trainer of (trainerMembers ?? [])) {
-      const zoomLink = trainer.zoom_link ?? "";
       const sessionLoc = (session as any).session_location ?? "";
-      const location = isJournee ? (sessionLoc || fullAddress || companyName) : zoomLink;
+      const location = isJournee ? (sessionLoc || fullAddress || companyName) : sessionZoomLink;
       const calendarId = isJournee && trainer.google_calendar_id_presentiel
         ? trainer.google_calendar_id_presentiel
         : trainer.google_calendar_id;
@@ -141,13 +144,11 @@ export async function POST(req: NextRequest) {
           `⏱️ Durée : ${durationHours}h`,
           "",
           isJournee ? `📍 Adresse : ${sessionLoc || fullAddress || "Non renseignée"}` : "",
-          !isJournee && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
-          isJournee && zoomLink ? `🔗 Lien Zoom (si besoin) : ${zoomLink}` : "",
+          !isJournee && sessionZoomLink ? `🔗 Lien Zoom : ${sessionZoomLink}` : "",
+          isJournee && sessionZoomLink ? `🔗 Lien Zoom (si besoin) : ${sessionZoomLink}` : "",
           session.notes ? `\n📝 Notes : ${session.notes}` : "",
         ].filter(Boolean).join("\n");
 
-        // Lookup per-trainer event ID from the JSONB map
-        const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
         const existingEventId = isUpdate ? (eventIdsMap[trainer.first_name] ?? null) : null;
 
         const upsert = await upsertCalendarEvent({
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
           `🏢 ${companyName}`,
           `👥 ${learnerFullNames || "Apprenants non assignés"}`,
           `📆 ${timeDisplay} (${durationHours}h)`,
-          !isJournee && zoomLink ? `🔗 Zoom : ${zoomLink}` : "",
+          !isJournee && sessionZoomLink ? `🔗 Zoom : ${sessionZoomLink}` : "",
           isJournee ? `📍 ${sessionLoc || fullAddress || "Lieu non renseigné"}` : "",
           "",
           calendarId ? `✅ L'événement a été ajouté à ton agenda Google.` : "",
@@ -216,9 +217,9 @@ export async function POST(req: NextRequest) {
             `Apprenants : ${learnerFullNames || "Non assignés"}`,
             `Durée : ${durationHours}h`,
             isJournee ? `Lieu : ${sessionLoc || fullAddress || "Non renseigné"}` : "",
-            !isJournee && zoomLink ? `Lien Zoom : ${zoomLink}` : "",
+            !isJournee && sessionZoomLink ? `Lien Zoom : ${sessionZoomLink}` : "",
           ].filter(Boolean).join("\n"),
-          location: isJournee ? (sessionLoc || fullAddress || companyName) : (zoomLink || "Visioconférence"),
+          location: isJournee ? (sessionLoc || fullAddress || companyName) : (sessionZoomLink || "Visioconférence"),
           startDateTime: icsStartExt,
           endDateTime: icsEndExt,
           organizerName: primaryOrganizerName,
@@ -237,7 +238,7 @@ export async function POST(req: NextRequest) {
           `👥 Apprenants : ${learnerFullNames || "Non assignés"}`,
           `📅 Date : ${timeDisplay} (${durationHours}h)`,
           isJournee ? `📍 Lieu : ${sessionLoc || fullAddress || "Non renseigné"}` : "",
-          !isJournee && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+          !isJournee && sessionZoomLink ? `🔗 Lien Zoom : ${sessionZoomLink}` : "",
           "",
           "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
           "",
@@ -275,8 +276,9 @@ export async function POST(req: NextRequest) {
             `Durée : ${durationHours}h`,
             isJournee ? `Lieu : ${(session as any).session_location || fullAddress || "Non renseigné"}` : "",
             !isJournee && trainers.length > 0 ? `Expert : ${trainers.join(", ")}` : "",
+            !isJournee && sessionZoomLink ? `Lien Zoom : ${sessionZoomLink}` : "",
           ].filter(Boolean).join("\n"),
-          location: isJournee ? ((session as any).session_location || fullAddress || companyName) : "Visioconférence",
+          location: isJournee ? ((session as any).session_location || fullAddress || companyName) : (sessionZoomLink || "Visioconférence"),
           startDateTime: icsStartDT,
           endDateTime: icsEndDT,
           organizerName: primaryOrganizerName,
@@ -291,7 +293,7 @@ export async function POST(req: NextRequest) {
           "",
           `📋 ${title}`,
           `📆 ${session.session_date} à ${sessionTime} (${durationHours}h)`,
-          isJournee ? `📍 ${(session as any).session_location || fullAddress || "Lieu à confirmer"}` : "🖥️ Visioconférence",
+          isJournee ? `📍 ${(session as any).session_location || fullAddress || "Lieu à confirmer"}` : (sessionZoomLink ? `🖥️ Visioconférence — Lien Zoom : ${sessionZoomLink}` : "🖥️ Visioconférence"),
           "",
           "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
           "",
