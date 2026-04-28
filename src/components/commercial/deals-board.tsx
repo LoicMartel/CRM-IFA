@@ -25,6 +25,8 @@ interface Deal {
   stage: string;
   amount: number | null;
   training_days: number | null;
+  training_days_presentiel: number | null;
+  training_days_distanciel: number | null;
   probability: number;
   expected_close_date: string | null;
   close_date: string | null;
@@ -126,6 +128,7 @@ export function DealsBoard({
   const [form, setForm] = useState({
     name: "", company_id: "", contact_id: "", owner_id: "", source_id: "",
     stage: "opportunities" as DealStage, amount: "", training_days: "",
+    training_days_presentiel: "", training_days_distanciel: "",
     expected_close_date: "", close_date: "", notes: "",
   });
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
@@ -220,6 +223,8 @@ export function DealsBoard({
       stage: (deal.stage as DealStage) ?? "opportunities",
       amount: deal.amount ? String(deal.amount) : "",
       training_days: deal.training_days ? String(deal.training_days) : "",
+      training_days_presentiel: deal.training_days_presentiel ? String(deal.training_days_presentiel) : "",
+      training_days_distanciel: deal.training_days_distanciel ? String(deal.training_days_distanciel) : "",
       expected_close_date: deal.expected_close_date ?? "",
       close_date: deal.close_date ?? "",
       notes: deal.notes ?? "",
@@ -315,6 +320,8 @@ export function DealsBoard({
       stage,
       amount: form.amount ? parseFloat(form.amount) : null,
       training_days: form.training_days ? parseFloat(form.training_days) : null,
+      training_days_presentiel: form.training_days_presentiel ? parseFloat(form.training_days_presentiel) : null,
+      training_days_distanciel: form.training_days_distanciel ? parseFloat(form.training_days_distanciel) : null,
       probability: DEAL_STAGE_PROBABILITY[stage],
       expected_close_date: form.expected_close_date || null,
       notes: form.notes || null,
@@ -344,7 +351,7 @@ export function DealsBoard({
     setSaving(false);
     setOpen(false);
     setEditingDealId(null);
-    setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" });
+    setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" });
     router.refresh();
     return savedId;
   }
@@ -418,7 +425,7 @@ export function DealsBoard({
             <span style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>{periodLabel}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+            <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
               <Plus className="h-4 w-4 mr-2" /> Nouveau deal
             </Button>
             <Button onClick={() => { setCotationDealId(null); setCotationOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
@@ -556,7 +563,7 @@ export function DealsBoard({
       </div>
 
       {/* New Deal Sheet */}
-      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", expected_close_date: "", close_date: "", notes: "" }); } }}>
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); } }}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingDealId ? "Modifier le deal" : "Nouveau deal"}</SheetTitle>
@@ -609,8 +616,18 @@ export function DealsBoard({
                 <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Jours formation</Label>
+                <Label>Jours formation (total)</Label>
                 <Input type="number" step="0.1" value={form.training_days} onChange={(e) => setForm({ ...form, training_days: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label style={{ fontSize: 12, color: "#5a6f80" }}>↳ Jours présentiel</Label>
+                <Input type="number" step="0.1" placeholder="0" value={form.training_days_presentiel} onChange={(e) => setForm({ ...form, training_days_presentiel: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label style={{ fontSize: 12, color: "#5a6f80" }}>↳ Jours distanciel</Label>
+                <Input type="number" step="0.1" placeholder="0" value={form.training_days_distanciel} onChange={(e) => setForm({ ...form, training_days_distanciel: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">
@@ -713,6 +730,20 @@ export function DealsBoard({
                   <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 12 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Jours formation</div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a", marginTop: 2 }}>{selectedDeal.training_days ? `${Number(selectedDeal.training_days).toFixed(1)}j` : "—"}</div>
+                    {(selectedDeal.training_days_presentiel || selectedDeal.training_days_distanciel) && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                        {selectedDeal.training_days_presentiel != null && (
+                          <span style={{ fontSize: 11, color: "#5a6f80", background: "#e8ecf1", padding: "2px 8px", borderRadius: 12 }}>
+                            Présentiel : {Number(selectedDeal.training_days_presentiel).toFixed(1)}j
+                          </span>
+                        )}
+                        {selectedDeal.training_days_distanciel != null && (
+                          <span style={{ fontSize: 11, color: "#5a6f80", background: "#e8ecf1", padding: "2px 8px", borderRadius: 12 }}>
+                            Distanciel : {Number(selectedDeal.training_days_distanciel).toFixed(1)}j
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -137,6 +137,8 @@ export interface Deal {
   stage: DealStage;
   amount: number | null;
   training_days: number | null;
+  training_days_presentiel: number | null;
+  training_days_distanciel: number | null;
   probability: number;
   expected_close_date: string | null;
   close_date: string | null;
