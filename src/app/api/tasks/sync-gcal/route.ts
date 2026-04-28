@@ -28,8 +28,9 @@ export async function POST(req: NextRequest) {
 
     if (!member) return NextResponse.json({ success: true, result: "Membre non trouvé" });
 
-    const isExterne = ((member.roles as string[]) ?? []).includes("Externe");
-    if (isExterne) return NextResponse.json({ success: true, result: "Membre externe — pas de sync Calendar" });
+    const roles = (member.roles as string[]) ?? [];
+    const isOnlyExterne = roles.includes("Externe") && !roles.includes("Account Manager");
+    if (isOnlyExterne) return NextResponse.json({ success: true, result: "Membre externe — pas de sync Calendar" });
 
     const calendarId = member.google_calendar_id_tasks || member.google_calendar_id_commercial || member.google_calendar_id;
     if (!calendarId) return NextResponse.json({ success: true, result: "Pas de calendrier configuré" });
@@ -41,8 +42,8 @@ export async function POST(req: NextRequest) {
 
     const title = `📋 Tâche: ${task.title}${contactName ? ` — ${contactName}` : ""}${companyName ? ` (${companyName})` : ""}`;
 
-    // Parse due_date or fallback to task_deadline
-    const rawDue = (task.due_date || task.task_deadline) as string | null;
+    // Parse task_deadline (priorité) or fallback to due_date
+    const rawDue = (task.task_deadline || task.due_date) as string | null;
     if (!rawDue) return NextResponse.json({ success: true, result: "Pas de date sur la tâche" });
 
     const dateStr = rawDue.slice(0, 10);

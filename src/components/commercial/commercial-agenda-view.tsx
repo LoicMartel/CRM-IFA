@@ -118,7 +118,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
   }
 
   function getEffectiveTaskDate(t: Task): string | null {
-    return t.due_date || t.task_deadline || null;
+    return t.task_deadline || t.due_date || null;
   }
 
   const weekTasks = tasks.filter(t => {
