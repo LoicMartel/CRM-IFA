@@ -435,10 +435,12 @@ export function ContactDetail({
       payload.team_member_id = currentMemberId || null;
     }
 
+    const hasTaskDate = activityForm.due_date || (activityForm.type === "tâche" && activityForm.task_deadline);
+
     if (editingActivityId) {
       await supabase.from("activities").update(payload).eq("id", editingActivityId);
       // Sync task to Google Calendar on update
-      if (activityForm.type === "tâche" && activityForm.due_date) {
+      if (activityForm.type === "tâche" && hasTaskDate) {
         try {
           await fetch("/api/tasks/sync-gcal", {
             method: "POST",
@@ -451,7 +453,7 @@ export function ContactDetail({
       const { data: newActivity } = await supabase.from("activities").insert(payload).select("id").single();
 
       // Sync task to Google Calendar
-      if (newActivity?.id && activityForm.type === "tâche" && activityForm.due_date) {
+      if (newActivity?.id && activityForm.type === "tâche" && hasTaskDate) {
         try {
           const notifyRes = await fetch("/api/tasks/sync-gcal", {
             method: "POST",

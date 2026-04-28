@@ -94,12 +94,13 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   const weekDays = Array.from({ length: 6 }, (_, i) => addDays(weekStart, i));
   const weekEnd = addDays(weekStart, 5);
+  const weekFilterEnd = addDays(weekStart, 6); // Sunday 00:00 — so Saturday tasks are included
 
   const weekMeetings = meetings.filter(m => {
     const d = new Date(m.scheduled_at);
     // Exclure les annulés ET les RDV "booked" dont le suivi a été fait
     // (next_step === "completed" = ancien RDV remplacé par un record "done")
-    return d >= weekStart && d <= weekEnd && m.status !== "cancelled" && m.next_step !== "completed";
+    return d >= weekStart && d < weekFilterEnd && m.status !== "cancelled" && m.next_step !== "completed";
   });
 
   function getMeetingsForDayAndMember(day: Date, memberId: string) {
@@ -116,22 +117,29 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
     });
   }
 
+  function getEffectiveTaskDate(t: Task): string | null {
+    return t.due_date || t.task_deadline || null;
+  }
+
   const weekTasks = tasks.filter(t => {
-    if (!t.due_date || t.is_completed) return false;
-    const d = new Date(t.due_date);
-    return d >= weekStart && d <= weekEnd;
+    const effective = getEffectiveTaskDate(t);
+    if (!effective || t.is_completed) return false;
+    const d = new Date(effective);
+    return d >= weekStart && d < weekFilterEnd;
   });
 
   function getTasksForDayAndMember(day: Date, memberId: string) {
     return weekTasks.filter(t => {
-      const d = new Date(t.due_date);
+      const effective = getEffectiveTaskDate(t)!;
+      const d = new Date(effective);
       return isSameDay(d, day) && t.team_member_id === memberId;
-    }).sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    }).sort((a, b) => new Date(getEffectiveTaskDate(a)!).getTime() - new Date(getEffectiveTaskDate(b)!).getTime());
   }
 
   function getUnassignedTasksForDay(day: Date) {
     return weekTasks.filter(t => {
-      const d = new Date(t.due_date);
+      const effective = getEffectiveTaskDate(t)!;
+      const d = new Date(effective);
       return isSameDay(d, day) && !t.team_member_id;
     });
   }
@@ -152,7 +160,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
     setTaskForm({
       title: t.title,
       description: t.description ?? "",
-      due_date: t.due_date ? new Date(t.due_date).toISOString().slice(0, 16) : "",
+      due_date: t.due_date ? new Date(t.due_date).toISOString().slice(0, 16) : (t.task_deadline ? `${t.task_deadline}T09:00` : ""),
       task_deadline: t.task_deadline ?? "",
     });
   }
@@ -406,7 +414,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   function renderTaskCard(t: Task) {
     const tc = { bg: "#fff8e1", text: "#e65100", border: "#f57f17" };
-    const time = t.due_date ? format(new Date(t.due_date), "HH:mm") : "";
+    const time = t.due_date && t.due_date.includes("T") ? format(new Date(t.due_date), "HH:mm") : "";
 
     return (
       <div

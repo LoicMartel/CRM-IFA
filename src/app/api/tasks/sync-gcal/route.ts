@@ -41,8 +41,10 @@ export async function POST(req: NextRequest) {
 
     const title = `📋 Tâche: ${task.title}${contactName ? ` — ${contactName}` : ""}${companyName ? ` (${companyName})` : ""}`;
 
-    // Parse due_date — stored as local time string from datetime-local input (e.g. "2026-04-01T15:30")
-    const rawDue = task.due_date as string;
+    // Parse due_date or fallback to task_deadline
+    const rawDue = (task.due_date || task.task_deadline) as string | null;
+    if (!rawDue) return NextResponse.json({ success: true, result: "Pas de date sur la tâche" });
+
     const dateStr = rawDue.slice(0, 10);
     const timeStr = rawDue.includes("T") ? rawDue.slice(11, 16) : "09:00";
 
