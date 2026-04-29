@@ -191,13 +191,26 @@ export function PlanningList({
     return planId ? new Set([planId]) : new Set();
   });
 
-  // Auto-scroll to the expanded plan when arriving from a notification
+  // Auto-expand + scroll to the plan when arriving from a notification (or navigating again)
   useEffect(() => {
     const planId = searchParams.get("planId");
     if (planId) {
+      // Clear filters so the plan is guaranteed visible
+      setSearch("");
+      setFilterProgram("");
+      setFilterType("");
+      setFilterTrainer("");
+      setFilterCompany("");
+      // Expand the plan
+      setExpandedIds(prev => {
+        const next = new Set(prev);
+        next.add(planId);
+        return next;
+      });
+      // Scroll after a short delay to let the DOM update
       setTimeout(() => {
         document.getElementById(`plan-${planId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 300);
+      }, 400);
     }
   }, [searchParams]);
   const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
