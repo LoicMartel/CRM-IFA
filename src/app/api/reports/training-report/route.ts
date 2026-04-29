@@ -268,8 +268,9 @@ function buildLearnerSections(
 /* ---- Route handler ---- */
 export async function POST(req: NextRequest) {
   try {
-    const { companyId, companyName, learnerIds } = (await req.json()) as {
+    const { companyId, companyName, learnerIds, dateFrom, dateTo } = (await req.json()) as {
       companyId: string; companyName: string; learnerIds: string[];
+      dateFrom?: string; dateTo?: string;
     };
 
     if (!companyId || !learnerIds?.length) {
@@ -306,7 +307,12 @@ export async function POST(req: NextRequest) {
     for (let idx = 0; idx < learners.length; idx++) {
       const learner = learners[idx];
       const sessions = (sessionsByLearner.get(learner.id) ?? [])
-        .filter((s: any) => s.status === "done" || s.status === "no_show")
+        .filter((s: any) => {
+          if (s.status !== "done" && s.status !== "no_show") return false;
+          if (dateFrom && s.session_date < dateFrom) return false;
+          if (dateTo && s.session_date > dateTo) return false;
+          return true;
+        })
         .sort((a: any, b: any) => a.session_date.localeCompare(b.session_date));
 
       // Prepare raw notes for Claude

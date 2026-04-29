@@ -123,6 +123,8 @@ export function CompanyDetail({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportLearnerIds, setReportLearnerIds] = useState<Set<string>>(new Set());
   const [reportGenerating, setReportGenerating] = useState(false);
+  const [reportDateFrom, setReportDateFrom] = useState("");
+  const [reportDateTo, setReportDateTo] = useState("");
 
   function toggleReportLearner(id: string) {
     setReportLearnerIds(prev => {
@@ -143,6 +145,8 @@ export function CompanyDetail({
           companyId: s(company.id),
           companyName: s(company.name),
           learnerIds: Array.from(reportLearnerIds),
+          dateFrom: reportDateFrom || undefined,
+          dateTo: reportDateTo || undefined,
         }),
       });
       if (!res.ok) throw new Error("Erreur lors de la génération");
@@ -155,6 +159,8 @@ export function CompanyDetail({
       URL.revokeObjectURL(url);
       setReportOpen(false);
       setReportLearnerIds(new Set());
+      setReportDateFrom("");
+      setReportDateTo("");
     } catch (e: any) {
       alert("Erreur : " + e.message);
     }
@@ -1381,6 +1387,29 @@ export function CompanyDetail({
             </div>
 
             <div style={{ padding: "16px 24px", overflowY: "auto", flex: 1 }}>
+              {/* Date range filter */}
+              <div style={{ marginBottom: 16, padding: "12px 14px", background: "#f5f7fa", borderRadius: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7a8bab", marginBottom: 8 }}>Période (optionnel)</div>
+                <div className="flex items-center gap-3">
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#7a8bab" }}>Du</label>
+                    <input type="date" value={reportDateFrom} onChange={e => setReportDateFrom(e.target.value)} style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid #e0e4ea", fontSize: 13 }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: "#7a8bab" }}>Au</label>
+                    <input type="date" value={reportDateTo} onChange={e => setReportDateTo(e.target.value)} style={{ width: "100%", padding: "6px 8px", borderRadius: 6, border: "1px solid #e0e4ea", fontSize: 13 }} />
+                  </div>
+                  {(reportDateFrom || reportDateTo) && (
+                    <button onClick={() => { setReportDateFrom(""); setReportDateTo(""); }} style={{ marginTop: 14, background: "none", border: "none", color: "#e74c3c", cursor: "pointer", fontSize: 11 }}>
+                      Effacer
+                    </button>
+                  )}
+                </div>
+                {!reportDateFrom && !reportDateTo && (
+                  <p style={{ fontSize: 11, color: "#aab5c0", marginTop: 6 }}>Laissez vide pour inclure toutes les sessions</p>
+                )}
+              </div>
+
               {learners.length === 0 ? (
                 <p style={{ color: "#7a8bab", fontSize: 13, textAlign: "center", padding: 24 }}>Aucun apprenant lié à cette entreprise</p>
               ) : (
