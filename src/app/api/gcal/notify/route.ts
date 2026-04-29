@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
             ? `Session modifiée : ${title}`
             : `Nouvelle session pour toi : ${title}`,
           body: `${timeDisplay} — ${companyName} (${durationHours}h)`,
-          linkUrl: `/planning`,
+          linkUrl: `/planning?planId=${session.service_plan_id}`,
           relatedEntityType: "training_session",
           relatedEntityId: sessionId,
         });
@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
             type: "session_cancelled",
             title: `Session annulée : ${title}`,
             body: `Tu as été retiré(e) de la session du ${timeDisplay} (${companyName})`,
-            linkUrl: `/planning`,
+            linkUrl: `/planning?planId=${session.service_plan_id}`,
             relatedEntityType: "training_session",
             relatedEntityId: sessionId,
           });

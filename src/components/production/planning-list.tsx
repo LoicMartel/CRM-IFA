@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -184,7 +185,21 @@ export function PlanningList({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filterTrainer, setFilterTrainer] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const searchParams = useSearchParams();
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    const planId = searchParams.get("planId");
+    return planId ? new Set([planId]) : new Set();
+  });
+
+  // Auto-scroll to the expanded plan when arriving from a notification
+  useEffect(() => {
+    const planId = searchParams.get("planId");
+    if (planId) {
+      setTimeout(() => {
+        document.getElementById(`plan-${planId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [searchParams]);
   const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -948,7 +963,7 @@ export function PlanningList({
           const mdColor = modeColors[plan.mode ?? ""] ?? { bg: "#f0f0f0", text: "#555" };
 
           return (
-            <div key={plan.id} className="lca-card" style={{ overflow: "hidden" }}>
+            <div key={plan.id} id={`plan-${plan.id}`} className="lca-card" style={{ overflow: "hidden" }}>
               {/* Header */}
               <div
                 className="cursor-pointer"
