@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { patchCalendarEventSummary } from "@/lib/google-calendar";
+import { sendSessionEmail } from "@/lib/send-email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
       .from("training_sessions")
       .select(`
         *,
-        training_session_learners(learner_id, learners(first_name)),
+        training_session_learners(learner_id, learners(first_name, last_name, email)),
         service_plans(
           id, company_id,
           companies(name)
@@ -101,6 +102,36 @@ export async function POST(req: NextRequest) {
           results.push({ trainer: trainer.first_name, slack: `error: ${e.message}` });
         }
       }
+    }
+
+    // 3. Email aux apprenants pour les avertir de l'annulation
+    const learners = ((session.training_session_learners ?? []) as any[])
+      .map(sl => sl.learners).filter(Boolean);
+
+    for (const learner of learners) {
+      if (!learner.email) continue;
+
+      const emailBody = [
+        `Bonjour ${learner.first_name},`,
+        "",
+        `La session de formation prévue le ${sessionDateFr} à ${sessionTime} (${durationHours}h) a été annulée.`,
+        "",
+        `📋 ${typeLabel} — ${companyName}`,
+        trainers.length > 0 ? `🎓 Expert : ${trainers.join(", ")}` : "",
+        "",
+        "Vous n'avez plus besoin d'y participer. Une nouvelle session sera reprogrammée si nécessaire.",
+        "",
+        "Belle journée,",
+        "",
+        "L'équipe La Closing Académie",
+      ].filter(Boolean).join("\n");
+
+      const emailRes = await sendSessionEmail({
+        to: learner.email,
+        subject: `Session annulée — ${typeLabel} du ${sessionDateFr}`,
+        body: emailBody,
+      });
+      results.push({ trainer: `${learner.first_name} ${learner.last_name}`, email: emailRes.success ? "sent" : emailRes.error } as any);
     }
 
     return NextResponse.json({ success: true, title: cancelledTitle, results });
