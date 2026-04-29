@@ -119,19 +119,28 @@ export function CompanyDetail({
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Company documents state
-  const [companyDocs, setCompanyDocs] = useState<{ id: string; name: string; file_path: string; file_size: number | null; file_type: string | null; document_type: string; created_at: string }[]>([]);
+  // Company documents state (company docs + deal docs merged)
+  type DocRow = { id: string; name: string; file_path: string; file_size: number | null; file_type: string | null; document_type: string; created_at: string; source: "company" | "deal"; deal_name?: string };
+  const [companyDocs, setCompanyDocs] = useState<DocRow[]>([]);
   const [uploadingCompanyDoc, setUploadingCompanyDoc] = useState(false);
   const [companyDocType, setCompanyDocType] = useState("autre");
 
-  // Load company documents on mount
-  useState(() => {
-    (async () => {
-      const supabase = createClient();
-      const { data } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
-      if (data) setCompanyDocs(data as any);
-    })();
-  });
+  // Load company documents + deal documents on mount
+  const loadAllDocs = async () => {
+    const supabase = createClient();
+    const companyId = s(company.id);
+    const [{ data: cDocs }, { data: dDocs }] = await Promise.all([
+      supabase.from("company_documents").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+      supabase.from("deal_documents").select("*, deals!inner(name, company_id)").eq("deals.company_id", companyId).order("created_at", { ascending: false }),
+    ]);
+    const merged: DocRow[] = [
+      ...(cDocs ?? []).map((d: any) => ({ ...d, source: "company" as const })),
+      ...(dDocs ?? []).map((d: any) => ({ id: d.id, name: d.name, file_path: d.file_path, file_size: d.file_size, file_type: d.file_type, document_type: d.document_type, created_at: d.created_at, source: "deal" as const, deal_name: d.deals?.name })),
+    ];
+    merged.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    setCompanyDocs(merged);
+  };
+  useState(() => { loadAllDocs(); });
 
   async function handleUploadCompanyDoc(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -142,21 +151,22 @@ export function CompanyDetail({
     const { error } = await supabase.storage.from("company-documents").upload(path, file);
     if (!error) {
       await supabase.from("company_documents").insert({ company_id: s(company.id), name: file.name, file_path: path, file_size: file.size, file_type: file.type, document_type: companyDocType });
-      const { data } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
-      if (data) setCompanyDocs(data as any);
+      await loadAllDocs();
     }
     setUploadingCompanyDoc(false);
     e.target.value = "";
   }
 
-  async function handleDownloadCompanyDoc(doc: { file_path: string }) {
+  async function handleDownloadCompanyDoc(doc: DocRow) {
     const supabase = createClient();
-    const { data } = await supabase.storage.from("company-documents").createSignedUrl(doc.file_path, 60);
+    const bucket = doc.source === "deal" ? "deal-documents" : "company-documents";
+    const { data } = await supabase.storage.from(bucket).createSignedUrl(doc.file_path, 60);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
-  async function handleDeleteCompanyDoc(doc: { id: string; file_path: string }) {
-    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer "${doc.file_path.split("/").pop()}" ?`)) return;
+  async function handleDeleteCompanyDoc(doc: DocRow) {
+    if (doc.source === "deal") return; // Deal docs are managed from the deal popup
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer "${doc.name}" ?`)) return;
     const supabase = createClient();
     await supabase.storage.from("company-documents").remove([doc.file_path]);
     await supabase.from("company_documents").delete().eq("id", doc.id);
@@ -216,8 +226,7 @@ export function CompanyDetail({
             file_size: blob.size, file_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             document_type: "reporting",
           });
-          const { data: docs } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
-          if (docs) setCompanyDocs(docs as any);
+          await loadAllDocs();
         }
       } catch {}
 
@@ -286,6 +295,7 @@ export function CompanyDetail({
       await supabase.from("deal_documents").insert({ deal_id: s(selectedDeal.id), name: file.name, file_path: path, file_size: file.size, file_type: file.type, document_type: docType });
       const { data: docs } = await supabase.from("deal_documents").select("*").eq("deal_id", s(selectedDeal.id)).order("created_at", { ascending: false });
       setDealDocuments(docs ?? []);
+      loadAllDocs(); // Refresh the Documents tab
     }
     setUploadingDoc(false);
     e.target.value = "";
@@ -1212,11 +1222,16 @@ export function CompanyDetail({
                           };
                           const tc = typeColor[doc.document_type] ?? typeColor.autre;
                           return (
-                            <TableRow key={doc.id}>
+                            <TableRow key={`${doc.source}-${doc.id}`}>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <FileText className="h-4 w-4" style={{ color: "#7a8bab" }} />
-                                  <span style={{ fontSize: 13, fontWeight: 500 }}>{doc.name}</span>
+                                  <div>
+                                    <span style={{ fontSize: 13, fontWeight: 500 }}>{doc.name}</span>
+                                    {doc.source === "deal" && doc.deal_name && (
+                                      <div style={{ fontSize: 11, color: "#aab5c0" }}>Deal : {doc.deal_name}</div>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -1230,9 +1245,11 @@ export function CompanyDetail({
                                   <button onClick={() => handleDownloadCompanyDoc(doc)} title="Télécharger" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1a6b9c" }}>
                                     <Download className="h-4 w-4" />
                                   </button>
-                                  <button onClick={() => handleDeleteCompanyDoc(doc)} title="Supprimer" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#e74c3c" }}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
+                                  {doc.source === "company" && (
+                                    <button onClick={() => handleDeleteCompanyDoc(doc)} title="Supprimer" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#e74c3c" }}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
