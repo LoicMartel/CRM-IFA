@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
         type: "stripe_payment",
         title: `💰 Paiement Stripe : ${amountTotal.toLocaleString("fr-FR")} €`,
         body: `${contactName} — ${dealName}`,
-        link_url: "/sales",
+        link_url: contactId ? `/contacts/${contactId}` : "/sales",
         related_entity_type: "deal",
       }));
       await supabase.from("notifications").insert(notifRows);

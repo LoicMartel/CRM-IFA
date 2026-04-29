@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
     const { data: unclosedSessions } = await supabase
       .from("training_sessions")
       .select(`
-        id, session_type, session_date, trainers, status,
+        id, session_type, session_date, trainers, status, service_plan_id,
         service_plans(companies(name))
       `)
       .eq("status", "planned")
@@ -198,7 +198,7 @@ export async function GET(req: NextRequest) {
           type: s.session_type === "journee" ? "session_unclosed" : "session_unclosed",
           title: `⚠️ ${typeLabel} d'hier non fermée : ${company}`,
           body: `Merci de clôturer la session (done / no_show) dans le CRM`,
-          link_url: `/planning`,
+          link_url: `/planning?planId=${(s as any).service_plan_id}`,
           related_entity_type: "training_session",
           related_entity_id: s.id,
         });
@@ -214,7 +214,7 @@ export async function GET(req: NextRequest) {
     const { data: unclosedMeetings } = await supabase
       .from("meetings")
       .select(`
-        id, meeting_type, scheduled_at, status, assigned_to,
+        id, meeting_type, scheduled_at, status, assigned_to, contact_id,
         contacts!meetings_contact_id_fkey(first_name, last_name, companies!contacts_company_id_fkey(name))
       `)
       .eq("status", "booked")
@@ -231,7 +231,7 @@ export async function GET(req: NextRequest) {
         type: "meeting_unclosed",
         title: `⚠️ ${m.meeting_type} d'hier non fermé : ${contactName}${company}`,
         body: `Merci de clôturer le rdv (done / no_show / cancelled)`,
-        link_url: `/sales`,
+        link_url: m.contact_id ? `/contacts/${m.contact_id}` : `/sales`,
         related_entity_type: "meeting",
         related_entity_id: m.id,
       };
@@ -246,7 +246,7 @@ export async function GET(req: NextRequest) {
     const { data: tomorrowSessions } = await supabase
       .from("training_sessions")
       .select(`
-        id, session_type, session_date, session_time, trainers, duration_hours,
+        id, session_type, session_date, session_time, trainers, duration_hours, service_plan_id,
         service_plans(companies(name))
       `)
       .eq("status", "planned")
@@ -277,7 +277,7 @@ export async function GET(req: NextRequest) {
           type: "session_reminder",
           title: `⏰ ${typeLabel} demain à ${time} — ${company}`,
           body: `Durée : ${s.duration_hours ?? "?"}h`,
-          link_url: `/planning`,
+          link_url: `/planning?planId=${(s as any).service_plan_id}`,
           related_entity_type: "training_session",
           related_entity_id: s.id,
         });
@@ -293,7 +293,7 @@ export async function GET(req: NextRequest) {
     const { data: tomorrowMeetings } = await supabase
       .from("meetings")
       .select(`
-        id, meeting_type, scheduled_at, status, assigned_to,
+        id, meeting_type, scheduled_at, status, assigned_to, contact_id,
         contacts!meetings_contact_id_fkey(first_name, last_name, companies!contacts_company_id_fkey(name))
       `)
       .eq("status", "booked")
@@ -312,7 +312,7 @@ export async function GET(req: NextRequest) {
         type: "meeting_reminder",
         title: `⏰ ${m.meeting_type} demain à ${time} : ${contactName}${company}`,
         body: null,
-        link_url: `/sales`,
+        link_url: m.contact_id ? `/contacts/${m.contact_id}` : `/sales`,
         related_entity_type: "meeting",
         related_entity_id: m.id,
       };

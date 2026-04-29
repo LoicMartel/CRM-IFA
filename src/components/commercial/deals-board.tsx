@@ -283,7 +283,7 @@ export function DealsBoard({
         type: "deal_stage_changed",
         title: `Deal "${deal.name}" → ${stageLabels[targetStage] ?? targetStage}`,
         body: previousStage ? `Déplacé depuis "${stageLabels[previousStage] ?? previousStage}"` : null,
-        link_url: `/sales`,
+        link_url: deal.contact_id ? `/contacts/${deal.contact_id}` : `/sales`,
         related_entity_type: "deal",
         related_entity_id: draggedDealId,
         actor_id: currentMemberId,
