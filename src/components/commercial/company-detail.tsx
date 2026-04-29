@@ -119,6 +119,48 @@ export function CompanyDetail({
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Reporting formation modal state
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportLearnerIds, setReportLearnerIds] = useState<Set<string>>(new Set());
+  const [reportGenerating, setReportGenerating] = useState(false);
+
+  function toggleReportLearner(id: string) {
+    setReportLearnerIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function generateReport() {
+    if (reportLearnerIds.size === 0) return;
+    setReportGenerating(true);
+    try {
+      const res = await fetch("/api/reports/training-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyId: s(company.id),
+          companyName: s(company.name),
+          learnerIds: Array.from(reportLearnerIds),
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de la génération");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "reporting.docx";
+      a.click();
+      URL.revokeObjectURL(url);
+      setReportOpen(false);
+      setReportLearnerIds(new Set());
+    } catch (e: any) {
+      alert("Erreur : " + e.message);
+    }
+    setReportGenerating(false);
+  }
+
   // Plan de formation collapse state
   const [collapsedPlans, setCollapsedPlans] = useState<Set<string>>(new Set());
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
@@ -293,6 +335,9 @@ export function CompanyDetail({
                 <Building2 style={{ width: 24, height: 24, color: "white" }} />
               </div>
               <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => { setReportOpen(true); setReportLearnerIds(new Set()); }} style={{ borderColor: "#1B3A5C", color: "#1B3A5C" }}>
+                  <FileText className="h-3 w-3 mr-1" /> Reporting
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
                   <Edit className="h-3 w-3 mr-1" /> Modifier
                 </Button>
@@ -1314,6 +1359,97 @@ export function CompanyDetail({
       })()}
 
       {openPlanId && <PlanPopup planId={openPlanId} onClose={() => setOpenPlanId(null)} />}
+
+      {/* ===== Reporting Formation Modal ===== */}
+      {reportOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setReportOpen(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: "white", borderRadius: 12, width: 480, maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 12px 40px rgba(0,0,0,0.2)" }}
+          >
+            <div style={{ padding: "18px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a", margin: 0 }}>Reporting de formation</h3>
+                <p style={{ fontSize: 12, color: "#7a8bab", margin: "4px 0 0" }}>Sélectionnez les apprenants pour le reporting</p>
+              </div>
+              <button onClick={() => setReportOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9" }}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div style={{ padding: "16px 24px", overflowY: "auto", flex: 1 }}>
+              {learners.length === 0 ? (
+                <p style={{ color: "#7a8bab", fontSize: 13, textAlign: "center", padding: 24 }}>Aucun apprenant lié à cette entreprise</p>
+              ) : (
+                <>
+                  <div style={{ marginBottom: 12 }}>
+                    <button
+                      onClick={() => {
+                        if (reportLearnerIds.size === learners.length) setReportLearnerIds(new Set());
+                        else setReportLearnerIds(new Set(learners.map(l => s(l.id))));
+                      }}
+                      style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      {reportLearnerIds.size === learners.length ? "Tout désélectionner" : "Tout sélectionner"}
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {learners.map(l => {
+                      const lid = s(l.id);
+                      const checked = reportLearnerIds.has(lid);
+                      return (
+                        <label
+                          key={lid}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                            borderRadius: 8, border: checked ? "2px solid #1B3A5C" : "1px solid #e8ecf1",
+                            background: checked ? "#f0f5fa" : "white", cursor: "pointer", transition: "all 0.15s",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleReportLearner(lid)}
+                            style={{ width: 16, height: 16, accentColor: "#1B3A5C" }}
+                          />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{s(l.first_name)} {s(l.last_name)}</div>
+                            {s(l.position) && <div style={{ fontSize: 12, color: "#7a8bab" }}>{s(l.position)}</div>}
+                          </div>
+                          {s(l.status) && (
+                            <span style={{
+                              fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
+                              background: s(l.status) === "actuel" ? "#e8f5e9" : s(l.status) === "futur" ? "#e3f2fd" : "#f0f0f0",
+                              color: s(l.status) === "actuel" ? "#2e7d32" : s(l.status) === "futur" ? "#1565c0" : "#666",
+                            }}>
+                              {s(l.status)}
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{ padding: "16px 24px", borderTop: "1px solid #e8ecf1", display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <Button variant="outline" size="sm" onClick={() => setReportOpen(false)}>Annuler</Button>
+              <Button
+                size="sm"
+                disabled={reportLearnerIds.size === 0 || reportGenerating}
+                onClick={generateReport}
+                style={{ background: "#1B3A5C", color: "white" }}
+              >
+                {reportGenerating ? "Génération..." : `Générer le reporting (${reportLearnerIds.size})`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
