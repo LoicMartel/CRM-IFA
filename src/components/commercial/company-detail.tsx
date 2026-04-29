@@ -119,6 +119,50 @@ export function CompanyDetail({
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Company documents state
+  const [companyDocs, setCompanyDocs] = useState<{ id: string; name: string; file_path: string; file_size: number | null; file_type: string | null; document_type: string; created_at: string }[]>([]);
+  const [uploadingCompanyDoc, setUploadingCompanyDoc] = useState(false);
+  const [companyDocType, setCompanyDocType] = useState("autre");
+
+  // Load company documents on mount
+  useState(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
+      if (data) setCompanyDocs(data as any);
+    })();
+  });
+
+  async function handleUploadCompanyDoc(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCompanyDoc(true);
+    const supabase = createClient();
+    const path = `${s(company.id)}/${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from("company-documents").upload(path, file);
+    if (!error) {
+      await supabase.from("company_documents").insert({ company_id: s(company.id), name: file.name, file_path: path, file_size: file.size, file_type: file.type, document_type: companyDocType });
+      const { data } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
+      if (data) setCompanyDocs(data as any);
+    }
+    setUploadingCompanyDoc(false);
+    e.target.value = "";
+  }
+
+  async function handleDownloadCompanyDoc(doc: { file_path: string }) {
+    const supabase = createClient();
+    const { data } = await supabase.storage.from("company-documents").createSignedUrl(doc.file_path, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
+  async function handleDeleteCompanyDoc(doc: { id: string; file_path: string }) {
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, `Supprimer "${doc.file_path.split("/").pop()}" ?`)) return;
+    const supabase = createClient();
+    await supabase.storage.from("company-documents").remove([doc.file_path]);
+    await supabase.from("company_documents").delete().eq("id", doc.id);
+    setCompanyDocs(prev => prev.filter(d => d.id !== doc.id));
+  }
+
   // Reporting formation modal state
   const [reportOpen, setReportOpen] = useState(false);
   const [reportLearnerIds, setReportLearnerIds] = useState<Set<string>>(new Set());
@@ -151,12 +195,32 @@ export function CompanyDetail({
       });
       if (!res.ok) throw new Error("Erreur lors de la génération");
       const blob = await res.blob();
+      const fileName = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "reporting.docx";
+
+      // Download the file
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = res.headers.get("Content-Disposition")?.match(/filename="(.+)"/)?.[1] ?? "reporting.docx";
+      a.download = fileName;
       a.click();
       URL.revokeObjectURL(url);
+
+      // Auto-save to company documents
+      try {
+        const supabase = createClient();
+        const storagePath = `${s(company.id)}/${Date.now()}_${fileName}`;
+        const { error: uploadErr } = await supabase.storage.from("company-documents").upload(storagePath, blob);
+        if (!uploadErr) {
+          await supabase.from("company_documents").insert({
+            company_id: s(company.id), name: fileName, file_path: storagePath,
+            file_size: blob.size, file_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            document_type: "reporting",
+          });
+          const { data: docs } = await supabase.from("company_documents").select("*").eq("company_id", s(company.id)).order("created_at", { ascending: false });
+          if (docs) setCompanyDocs(docs as any);
+        }
+      } catch {}
+
       setReportOpen(false);
       setReportLearnerIds(new Set());
       setReportDateFrom("");
@@ -464,6 +528,7 @@ export function CompanyDetail({
               <TabsTrigger value="invoices">Factures ({billingEntries.length})</TabsTrigger>
               <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
               <TabsTrigger value="learners">Apprenants ({learners.length})</TabsTrigger>
+              <TabsTrigger value="documents">Documents ({companyDocs.length})</TabsTrigger>
             </TabsList>
 
             {/* --- Vue d'ensemble --- */}
@@ -1082,6 +1147,94 @@ export function CompanyDetail({
                               </TableCell>
                               <TableCell>{prog?.name ?? "—"}</TableCell>
                               <TableCell>{tt?.name ?? "—"}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* --- Documents --- */}
+            <TabsContent value="documents" className="mt-4">
+              <div className="lca-card">
+                <div style={{ height: 4, background: "#1B3A5C" }} />
+                <div style={{ padding: 16 }}>
+                  {/* Upload zone */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+                    <select
+                      value={companyDocType}
+                      onChange={e => setCompanyDocType(e.target.value)}
+                      style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #e0e4ea", fontSize: 12 }}
+                    >
+                      <option value="reporting">Reporting</option>
+                      <option value="convention">Convention</option>
+                      <option value="programme">Programme</option>
+                      <option value="devis">Devis</option>
+                      <option value="facture">Facture</option>
+                      <option value="emargements">Émargements</option>
+                      <option value="bilan">Bilan</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                    <label style={{
+                      display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
+                      borderRadius: 6, border: "1px solid #1B3A5C", color: "#1B3A5C", fontSize: 12,
+                      fontWeight: 600, cursor: "pointer",
+                    }}>
+                      <Upload className="h-3 w-3" />
+                      {uploadingCompanyDoc ? "Upload..." : "Ajouter un document"}
+                      <input type="file" hidden onChange={handleUploadCompanyDoc} disabled={uploadingCompanyDoc} />
+                    </label>
+                  </div>
+
+                  {companyDocs.length === 0 ? (
+                    <p style={{ color: "#7a8bab", fontSize: 13, textAlign: "center", padding: 24 }}>Aucun document</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead style={{ textAlign: "right" }}>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {companyDocs.map(doc => {
+                          const typeLabel: Record<string, string> = { reporting: "Reporting", convention: "Convention", programme: "Programme", devis: "Devis", facture: "Facture", emargements: "Émargements", bilan: "Bilan", autre: "Autre" };
+                          const typeColor: Record<string, { bg: string; text: string }> = {
+                            reporting: { bg: "#e3f2fd", text: "#0d4f7a" }, convention: { bg: "#e8f0fe", text: "#0d4f7a" },
+                            programme: { bg: "#e8f5e9", text: "#2e7d32" }, devis: { bg: "#fff3e0", text: "#e65100" },
+                            facture: { bg: "#fce4ec", text: "#c62828" }, emargements: { bg: "#e0f2f1", text: "#00695c" },
+                            bilan: { bg: "#f3e5f5", text: "#6a1b9a" }, autre: { bg: "#f5f5f5", text: "#555" },
+                          };
+                          const tc = typeColor[doc.document_type] ?? typeColor.autre;
+                          return (
+                            <TableRow key={doc.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4" style={{ color: "#7a8bab" }} />
+                                  <span style={{ fontSize: 13, fontWeight: 500 }}>{doc.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: tc.bg, color: tc.text }}>
+                                  {typeLabel[doc.document_type] ?? doc.document_type}
+                                </span>
+                              </TableCell>
+                              <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{fmtDate(doc.created_at)}</TableCell>
+                              <TableCell style={{ textAlign: "right" }}>
+                                <div className="flex items-center justify-end gap-1">
+                                  <button onClick={() => handleDownloadCompanyDoc(doc)} title="Télécharger" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1a6b9c" }}>
+                                    <Download className="h-4 w-4" />
+                                  </button>
+                                  <button onClick={() => handleDeleteCompanyDoc(doc)} title="Supprimer" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#e74c3c" }}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </TableCell>
                             </TableRow>
                           );
                         })}
