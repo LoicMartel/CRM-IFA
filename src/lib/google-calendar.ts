@@ -352,6 +352,31 @@ export async function upsertCalendarEvent({
   return { success: false, status: "failed", error: created.error };
 }
 
+export async function patchCalendarEventSummary({
+  calendarId,
+  eventId,
+  summary,
+}: {
+  calendarId: string;
+  eventId: string;
+  summary: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const auth = getAuth();
+  if (!auth) return { success: false, error: "Google Calendar not configured" };
+
+  try {
+    const calendar = google.calendar({ version: "v3", auth });
+    await calendar.events.patch({
+      calendarId,
+      eventId,
+      requestBody: { summary },
+    });
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
 export async function deleteCalendarEvent({
   calendarId,
   eventId,

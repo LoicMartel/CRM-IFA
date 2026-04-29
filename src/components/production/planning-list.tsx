@@ -759,7 +759,7 @@ export function PlanningList({
       }
     }
 
-    // Notify Iman on Slack when a session is cancelled
+    // Notify Iman on Slack + update Google Calendar title when a session is cancelled
     if (newStatus === "cancelled") {
       try {
         const session = servicePlans.flatMap(p =>
@@ -777,6 +777,14 @@ export function PlanningList({
             body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: session.notes ?? "" }),
           });
         }
+      } catch {}
+      // Update Google Calendar event titles to show "ANNULEE" + notify trainers on Slack
+      try {
+        await fetch("/api/gcal/cancel-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, cancelledBy: currentFirstName ?? "" }),
+        });
       } catch {}
     }
 
