@@ -149,7 +149,8 @@ export function NotificationBell() {
     if (!n.read_at) markAsRead(n.id);
     if (n.link_url) {
       setOpen(false);
-      router.push(n.link_url);
+      // Hard navigation to ensure query params (planId, etc.) are read on mount
+      window.location.href = n.link_url;
     }
   }
 
