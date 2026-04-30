@@ -131,9 +131,13 @@ export function PostsView({
                     setExpandVeille(false);
                   }}
                   dotColor={colors.text}
+                  expanded={isProjects ? expandProjects : undefined}
+                  onToggleExpand={isProjects && projectTags.filter(t => t.is_active).length > 0
+                    ? () => setExpandProjects((prev) => !prev)
+                    : undefined}
                 />
                 {/* Project tag sub-items */}
-                {isProjects && expandProjects && isActive && (
+                {isProjects && expandProjects && (
                   <div style={{ paddingLeft: 20 }}>
                     <SubChannelItem
                       label="Tous les projets"
@@ -166,6 +170,8 @@ export function PostsView({
               setProjectTagFilter("all");
             }}
             dotColor="#283593"
+            expanded={expandVeille}
+            onToggleExpand={() => setExpandVeille((prev) => !prev)}
           />
           {expandVeille && (
             <div style={{ paddingLeft: 20 }}>
@@ -313,9 +319,9 @@ export function PostsView({
 
 /* ===== Sidebar Components ===== */
 
-function ChannelItem({ label, count, active, onClick, dotColor, hasArrow, expanded }: {
+function ChannelItem({ label, count, active, onClick, dotColor, expanded, onToggleExpand }: {
   label: string; count: number; active: boolean; onClick: () => void;
-  dotColor: string; hasArrow?: boolean; expanded?: boolean;
+  dotColor: string; expanded?: boolean; onToggleExpand?: () => void;
 }) {
   return (
     <button
@@ -328,12 +334,7 @@ function ChannelItem({ label, count, active, onClick, dotColor, hasArrow, expand
         transition: "all 0.12s",
       }}
     >
-      {hasArrow ? (
-        expanded ? <ChevronDown style={{ width: 13, height: 13, color: "#8399a9", flexShrink: 0 }} />
-                 : <ChevronRight style={{ width: 13, height: 13, color: "#8399a9", flexShrink: 0 }} />
-      ) : (
-        <Hash style={{ width: 13, height: 13, color: dotColor, flexShrink: 0 }} />
-      )}
+      <Hash style={{ width: 13, height: 13, color: dotColor, flexShrink: 0 }} />
       <span style={{
         fontSize: 13, fontWeight: active ? 600 : 400,
         color: active ? "#1a6b9c" : "#3a4a5a", flex: 1, overflow: "hidden",
@@ -347,6 +348,20 @@ function ChannelItem({ label, count, active, onClick, dotColor, hasArrow, expand
           fontWeight: 600, minWidth: 18, textAlign: "right",
         }}>
           {count}
+        </span>
+      )}
+      {onToggleExpand && (
+        <span
+          role="button"
+          onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0, cursor: "pointer", color: "#8399a9",
+            transition: "transform 0.15s ease",
+            transform: expanded ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        >
+          <ChevronDown style={{ width: 14, height: 14 }} />
         </span>
       )}
     </button>
