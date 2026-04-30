@@ -131,8 +131,6 @@ export function PostsView({
                     setExpandVeille(false);
                   }}
                   dotColor={colors.text}
-                  hasArrow={isProjects && projectTags.filter(t => t.is_active).length > 0}
-                  expanded={isProjects && expandProjects}
                 />
                 {/* Project tag sub-items */}
                 {isProjects && expandProjects && isActive && (
