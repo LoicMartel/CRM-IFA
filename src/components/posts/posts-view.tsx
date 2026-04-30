@@ -13,6 +13,8 @@ import {
 import { PostCard } from "./post-card";
 import { PostFormDialog } from "./post-form-dialog";
 
+const VEILLE_CATEGORIES: PostCategory[] = ["veille_reglementaire", "veille_metiers", "veille_pedagogie"];
+const MAIN_CATEGORIES = (Object.keys(POST_CATEGORY_LABELS) as PostCategory[]).filter(c => !VEILLE_CATEGORIES.includes(c));
 const ALL_CATEGORIES = Object.keys(POST_CATEGORY_LABELS) as PostCategory[];
 
 interface PostsViewProps {
@@ -46,6 +48,7 @@ export function PostsView({
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
   const [expandProjects, setExpandProjects] = useState(false);
+  const [expandVeille, setExpandVeille] = useState(false);
 
   function handleRefresh() {
     router.refresh();
@@ -110,7 +113,7 @@ export function PostsView({
             dotColor="#1a6b9c"
           />
 
-          {ALL_CATEGORIES.map((cat) => {
+          {MAIN_CATEGORIES.map((cat) => {
             const colors = POST_CATEGORY_COLORS[cat];
             const isProjects = cat === "projets_en_cours";
             const isActive = categoryFilter === cat;
@@ -125,6 +128,7 @@ export function PostsView({
                     if (!isProjects) setProjectTagFilter("all");
                     if (isProjects) setExpandProjects(true);
                     else setExpandProjects(false);
+                    setExpandVeille(false);
                   }}
                   dotColor={colors.text}
                   hasArrow={isProjects && projectTags.filter(t => t.is_active).length > 0}
@@ -151,6 +155,34 @@ export function PostsView({
               </div>
             );
           })}
+
+          {/* Veille group */}
+          <ChannelItem
+            label="Veille"
+            count={VEILLE_CATEGORIES.reduce((sum, c) => sum + (countByCategory[c] || 0), 0)}
+            active={VEILLE_CATEGORIES.includes(categoryFilter as PostCategory)}
+            onClick={() => {
+              setExpandVeille(true);
+              setExpandProjects(false);
+              setCategoryFilter(VEILLE_CATEGORIES[0]);
+              setProjectTagFilter("all");
+            }}
+            dotColor="#283593"
+            hasArrow
+            expanded={expandVeille}
+          />
+          {expandVeille && (
+            <div style={{ paddingLeft: 20 }}>
+              {VEILLE_CATEGORIES.map((cat) => (
+                <SubChannelItem
+                  key={cat}
+                  label={POST_CATEGORY_LABELS[cat]}
+                  active={categoryFilter === cat}
+                  onClick={() => setCategoryFilter(cat)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sidebar footer — stats + admin */}

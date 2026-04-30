@@ -432,7 +432,7 @@ export const COMPANY_LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
 };
 
 // Posts feature
-export type PostCategory = "annonces_generales" | "lead_gen" | "commercial" | "pedagogie" | "pilotage_lca" | "admin" | "projets_en_cours";
+export type PostCategory = "annonces_generales" | "lead_gen" | "commercial" | "pedagogie" | "pilotage_lca" | "admin" | "projets_en_cours" | "veille_reglementaire" | "veille_metiers" | "veille_pedagogie";
 export type PostEntityType = "contact" | "company" | "deal" | "order";
 
 export interface Post {
@@ -506,6 +506,9 @@ export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   pilotage_lca: "Pilotage LCA",
   admin: "Admin",
   projets_en_cours: "Projets en cours",
+  veille_reglementaire: "Règlementaire",
+  veille_metiers: "Métiers",
+  veille_pedagogie: "Pédagogie (Veille)",
 };
 
 export const POST_CATEGORY_COLORS: Record<PostCategory, { bg: string; text: string }> = {
@@ -516,6 +519,9 @@ export const POST_CATEGORY_COLORS: Record<PostCategory, { bg: string; text: stri
   pilotage_lca: { bg: "#e0f2f1", text: "#00695c" },
   admin: { bg: "#fce4ec", text: "#c62828" },
   projets_en_cours: { bg: "#fff8e1", text: "#f57f17" },
+  veille_reglementaire: { bg: "#e8eaf6", text: "#283593" },
+  veille_metiers: { bg: "#efebe9", text: "#4e342e" },
+  veille_pedagogie: { bg: "#fce4ec", text: "#880e4f" },
 };
 
 export const POST_ENTITY_TYPE_LABELS: Record<PostEntityType, string> = {
