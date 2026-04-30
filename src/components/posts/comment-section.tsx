@@ -20,6 +20,14 @@ import {
 } from "./mention-suggestion";
 import { POST_CATEGORY_LABELS, type PostCategory } from "@/types/database";
 
+const REACTION_EMOJIS = [
+  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd" },
+  { key: "love", emoji: "\u2764\uFE0F", label: "J'adore", color: "#e74c3c", bg: "#fce4ec" },
+  { key: "celebrate", emoji: "\uD83C\uDF89", label: "Bravo", color: "#e67e22", bg: "#fff3e0" },
+  { key: "insightful", emoji: "\uD83D\uDCA1", label: "Intéressant", color: "#d4ac0d", bg: "#fffde7" },
+  { key: "curious", emoji: "\uD83E\uDD14", label: "Curieux", color: "#8e44ad", bg: "#f3e5f5" },
+];
+
 interface CommentSectionProps {
   postId: string;
   postAuthorId: string;
@@ -124,7 +132,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     const supabase = createClient();
     const { data } = await supabase
       .from("post_comments")
-      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name, avatar_url)")
+      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name, avatar_url), comment_reactions(id, team_member_id, emoji)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     setComments(data ?? []);
@@ -256,61 +264,20 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
       )}
 
       {/* Comments list */}
-      {visibleComments.map((comment) => {
-        const cAuthor = comment.team_members ?? memberMap.get(comment.author_id);
-        const name = cAuthor ? `${cAuthor.first_name} ${cAuthor.last_name}` : "Inconnu";
-        const initials = cAuthor ? `${cAuthor.first_name[0]}${cAuthor.last_name[0]}` : "?";
-        const canDelete = comment.author_id === memberId || isAdmin;
-        const isHtml = comment.content?.includes("<p>") || comment.content?.includes("<span");
-
-        return (
-          <div key={comment.id} style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-            <div
-              style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: cAuthor?.avatar_url
-                  ? `url(${cAuthor.avatar_url}) center/cover no-repeat`
-                  : "#5a6f80",
-                color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 700, fontSize: 11, flexShrink: 0,
-              }}
-            >
-              {!cAuthor?.avatar_url && initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, color: "#1a2a3a" }}>{name}</span>
-                <span style={{ fontSize: 11, color: "#8399a9" }}>
-                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: fr })}
-                </span>
-                {canDelete && (
-                  <button
-                    onClick={() => handleDelete(comment.id)}
-                    style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      color: "#c0c8d0", padding: 2, marginLeft: "auto",
-                    }}
-                    title="Supprimer"
-                  >
-                    <Trash2 style={{ width: 12, height: 12 }} />
-                  </button>
-                )}
-              </div>
-              {isHtml ? (
-                <div
-                  className="tiptap-content"
-                  dangerouslySetInnerHTML={{ __html: comment.content }}
-                  style={{ fontSize: 13, color: "#3a4a5a", lineHeight: 1.5, marginTop: 2 }}
-                />
-              ) : (
-                <p style={{ fontSize: 13, color: "#3a4a5a", lineHeight: 1.5, marginTop: 2, whiteSpace: "pre-wrap" }}>
-                  {comment.content}
-                </p>
-              )}
-            </div>
-          </div>
-        );
-      })}
+      {visibleComments.map((comment) => (
+        <CommentItem
+          key={comment.id}
+          comment={comment}
+          memberId={memberId}
+          isAdmin={isAdmin}
+          memberMap={memberMap}
+          teamMembers={teamMembers}
+          postId={postId}
+          postTitle={postTitle}
+          onDelete={handleDelete}
+          onReactionsChange={loadComments}
+        />
+      ))}
 
       {/* New comment editor */}
       <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "flex-end" }}>
@@ -353,6 +320,224 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
           border-radius: 4px;
         }
       `}</style>
+    </div>
+  );
+}
+
+/* ===== Comment Item with Reactions ===== */
+
+function CommentItem({
+  comment,
+  memberId,
+  isAdmin,
+  memberMap,
+  teamMembers,
+  postId,
+  postTitle,
+  onDelete,
+  onReactionsChange,
+}: {
+  comment: any;
+  memberId: string | null;
+  isAdmin: boolean;
+  memberMap: Map<string, any>;
+  teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
+  postId: string;
+  postTitle: string;
+  onDelete: (id: string) => void;
+  onReactionsChange: () => void;
+}) {
+  const [reactions, setReactions] = useState<any[]>(comment.comment_reactions ?? []);
+  const [showPicker, setShowPicker] = useState(false);
+  const [hoverReaction, setHoverReaction] = useState<string | null>(null);
+
+  const cAuthor = comment.team_members ?? memberMap.get(comment.author_id);
+  const name = cAuthor ? `${cAuthor.first_name} ${cAuthor.last_name}` : "Inconnu";
+  const initials = cAuthor ? `${cAuthor.first_name[0]}${cAuthor.last_name[0]}` : "?";
+  const canDelete = comment.author_id === memberId || isAdmin;
+  const isHtml = comment.content?.includes("<p>") || comment.content?.includes("<span");
+
+  const activeEmojis = REACTION_EMOJIS.filter(({ key }) =>
+    reactions.some((r: any) => r.emoji === key)
+  );
+
+  async function toggleReaction(emojiKey: string) {
+    if (!memberId) return;
+    const supabase = createClient();
+    const existing = reactions.find((r: any) => r.team_member_id === memberId && r.emoji === emojiKey);
+    if (existing) {
+      setReactions((prev) => prev.filter((r: any) => r.id !== existing.id));
+      await supabase.from("comment_reactions").delete().eq("id", existing.id);
+    } else {
+      const tempId = crypto.randomUUID();
+      setReactions((prev) => [...prev, { id: tempId, team_member_id: memberId, emoji: emojiKey }]);
+      const { data } = await supabase
+        .from("comment_reactions")
+        .insert({ comment_id: comment.id, team_member_id: memberId, emoji: emojiKey })
+        .select("id")
+        .single();
+      if (data) {
+        setReactions((prev) => prev.map((r: any) => (r.id === tempId ? { ...r, id: data.id } : r)));
+      }
+
+      // Notify comment author
+      if (comment.author_id && comment.author_id !== memberId) {
+        const actor = teamMembers.find((m) => m.id === memberId);
+        const actorName = actor ? `${actor.first_name} ${actor.last_name}` : "Quelqu'un";
+        const emojiChar = REACTION_EMOJIS.find((e) => e.key === emojiKey)?.emoji ?? "";
+        supabase.from("notifications").insert({
+          recipient_id: comment.author_id,
+          type: "post_reaction",
+          title: `${actorName} a réagi à ton commentaire ${emojiChar}`,
+          body: postTitle,
+          link_url: `/posts#post-${postId}`,
+          related_entity_type: "post",
+          related_entity_id: postId,
+          actor_id: memberId,
+        }).then(() => {});
+      }
+    }
+    setShowPicker(false);
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+      <div
+        style={{
+          width: 30, height: 30, borderRadius: "50%",
+          background: cAuthor?.avatar_url
+            ? `url(${cAuthor.avatar_url}) center/cover no-repeat`
+            : "#5a6f80",
+          color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 700, fontSize: 11, flexShrink: 0,
+        }}
+      >
+        {!cAuthor?.avatar_url && initials}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontWeight: 600, fontSize: 13, color: "#1a2a3a" }}>{name}</span>
+          <span style={{ fontSize: 11, color: "#8399a9" }}>
+            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: fr })}
+          </span>
+          {canDelete && (
+            <button
+              onClick={() => onDelete(comment.id)}
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "#c0c8d0", padding: 2, marginLeft: "auto",
+              }}
+              title="Supprimer"
+            >
+              <Trash2 style={{ width: 12, height: 12 }} />
+            </button>
+          )}
+        </div>
+        {isHtml ? (
+          <div
+            className="tiptap-content"
+            dangerouslySetInnerHTML={{ __html: comment.content }}
+            style={{ fontSize: 13, color: "#3a4a5a", lineHeight: 1.5, marginTop: 2 }}
+          />
+        ) : (
+          <p style={{ fontSize: 13, color: "#3a4a5a", lineHeight: 1.5, marginTop: 2, whiteSpace: "pre-wrap" }}>
+            {comment.content}
+          </p>
+        )}
+
+        {/* Reaction bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 4, flexWrap: "wrap" }}>
+          {activeEmojis.map(({ key, emoji, label, color, bg }) => {
+            const count = reactions.filter((r: any) => r.emoji === key).length;
+            const hasReacted = reactions.some((r: any) => r.emoji === key && r.team_member_id === memberId);
+            const reactorNames = reactions
+              .filter((r: any) => r.emoji === key)
+              .map((r: any) => {
+                const m = teamMembers.find((tm) => tm.id === r.team_member_id);
+                return m ? m.first_name : null;
+              })
+              .filter(Boolean);
+            return (
+              <div key={key} style={{ position: "relative" }}
+                onMouseEnter={() => setHoverReaction(key)}
+                onMouseLeave={() => setHoverReaction(null)}
+              >
+                <button
+                  onClick={() => toggleReaction(key)}
+                  title={label}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 3,
+                    padding: "2px 7px", borderRadius: 12,
+                    border: hasReacted ? `1.5px solid ${color}` : "1px solid #e4eaf0",
+                    background: hasReacted ? bg : "#f8fbfd",
+                    cursor: "pointer", fontSize: 11,
+                    color: hasReacted ? color : "#8399a9",
+                    fontWeight: hasReacted ? 600 : 400,
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span style={{ fontSize: 13, lineHeight: 1 }}>{emoji}</span>
+                  {count > 0 && <span>{count}</span>}
+                </button>
+                {hoverReaction === key && reactorNames.length > 0 && (
+                  <div style={{
+                    position: "absolute", bottom: "calc(100% + 4px)", left: "50%",
+                    transform: "translateX(-50%)", background: "#1a2a3a", color: "white",
+                    padding: "5px 9px", borderRadius: 6, fontSize: 11, fontWeight: 500,
+                    whiteSpace: "pre-line", textAlign: "center", maxWidth: 180, zIndex: 20,
+                    boxShadow: "0 3px 8px rgba(0,0,0,0.2)", pointerEvents: "none",
+                  }}>
+                    {reactorNames.join("\n")}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Add reaction button */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowPicker(!showPicker)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 24, height: 24, borderRadius: 12,
+                border: "1px solid #e4eaf0", background: showPicker ? "#e8f0fe" : "#f8fbfd",
+                cursor: "pointer", fontSize: 13, color: "#8399a9",
+                transition: "all 0.15s ease",
+              }}
+              title="Réagir"
+            >
+              +
+            </button>
+            {showPicker && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 4px)", left: 0,
+                display: "flex", gap: 2, background: "white", border: "1px solid #e4eaf0",
+                borderRadius: 8, padding: "4px 6px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                zIndex: 30,
+              }}>
+                {REACTION_EMOJIS.map(({ key, emoji, label }) => {
+                  const hasReacted = reactions.some((r: any) => r.emoji === key && r.team_member_id === memberId);
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleReaction(key)}
+                      title={label}
+                      style={{
+                        background: hasReacted ? "#e8f0fe" : "none", border: "none",
+                        cursor: "pointer", fontSize: 16, padding: "3px 5px",
+                        borderRadius: 6, transition: "background 0.1s",
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
