@@ -168,8 +168,6 @@ export function PostsView({
               setProjectTagFilter("all");
             }}
             dotColor="#283593"
-            hasArrow
-            expanded={expandVeille}
           />
           {expandVeille && (
             <div style={{ paddingLeft: 20 }}>
