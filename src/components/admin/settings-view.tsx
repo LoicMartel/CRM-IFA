@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { KeyRound, User, Mail, Check, Camera } from "lucide-react";
+import { KeyRound, User, Mail, Check, Camera, Link, MessageSquare, Calendar, ChevronDown, ChevronRight, Copy } from "lucide-react";
 import Cropper from "react-easy-crop";
 
 interface CropArea { x: number; y: number; width: number; height: number; }
@@ -46,6 +46,14 @@ export function SettingsView() {
   const [pendingRemoveAvatar, setPendingRemoveAvatar] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Integration fields
+  const [zoomLink, setZoomLink] = useState("");
+  const [slackUserId, setSlackUserId] = useState("");
+  const [googleCalendarId, setGoogleCalendarId] = useState("");
+  const [initialIntegrations, setInitialIntegrations] = useState({ zoom: "", slack: "", gcal: "" });
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
   // Crop state
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -59,13 +67,21 @@ export function SettingsView() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? "");
-        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url")
+        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id")
           .or(`auth_user_id.eq.${user.id},email.eq.${user.email}`).limit(1).single();
         if (member) {
           setMemberName(`${member.first_name} ${member.last_name}`);
           setMemberId(member.id);
           setInitials(`${member.first_name[0]}${member.last_name[0]}`);
           setAvatarUrl(member.avatar_url ?? null);
+          setZoomLink(member.zoom_link ?? "");
+          setSlackUserId(member.slack_user_id ?? "");
+          setGoogleCalendarId(member.google_calendar_id ?? "");
+          setInitialIntegrations({
+            zoom: member.zoom_link ?? "",
+            slack: member.slack_user_id ?? "",
+            gcal: member.google_calendar_id ?? "",
+          });
         }
       }
     })();
@@ -173,6 +189,26 @@ export function SettingsView() {
         setNewPassword("");
         setConfirmPassword("");
         messages.push("Mot de passe modifié");
+      }
+    }
+
+    // 4. Save integration fields if changed
+    const intChanged = zoomLink !== initialIntegrations.zoom
+      || slackUserId !== initialIntegrations.slack
+      || googleCalendarId !== initialIntegrations.gcal;
+    if (intChanged && memberId) {
+      const supabase = createClient();
+      const { error } = await supabase.from("team_members").update({
+        zoom_link: zoomLink.trim() || null,
+        slack_user_id: slackUserId.trim() || null,
+        google_calendar_id: googleCalendarId.trim() || null,
+      }).eq("id", memberId);
+      if (error) {
+        messages.push("Erreur intégrations: " + error.message);
+        success = false;
+      } else {
+        setInitialIntegrations({ zoom: zoomLink, slack: slackUserId, gcal: googleCalendarId });
+        messages.push("Intégrations mises à jour");
       }
     }
 
@@ -309,15 +345,164 @@ export function SettingsView() {
             </div>
           </div>
         </div>
+        {/* Intégrations */}
+        <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ height: 4, background: "linear-gradient(90deg, #1a6b9c 0%, #00695c 100%)" }} />
+          <div style={{ padding: "20px 24px" }}>
+            <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <Link className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Intégrations
+            </h3>
+            <div className="space-y-4">
+              {/* Zoom */}
+              <div className="space-y-2">
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 16 }}>📹</span> Lien Zoom personnel
+                </label>
+                <input
+                  type="url"
+                  value={zoomLink}
+                  onChange={(e) => setZoomLink(e.target.value)}
+                  placeholder="https://us06web.zoom.us/j/1234567890"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                />
+                <p style={{ fontSize: 11, color: "#8399a9" }}>Votre lien de reunion Zoom personnel. Il sera utilise pour les sessions de formation.</p>
+              </div>
+
+              {/* Slack */}
+              <div className="space-y-2">
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
+                  <MessageSquare className="h-4 w-4" style={{ color: "#5a6f80" }} /> Slack ID
+                </label>
+                <input
+                  type="text"
+                  value={slackUserId}
+                  onChange={(e) => setSlackUserId(e.target.value)}
+                  placeholder="U0XXXXXXXXX"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                />
+                <p style={{ fontSize: 11, color: "#8399a9" }}>
+                  Pour trouver votre Slack ID : ouvrez Slack, cliquez sur votre profil, puis sur les <strong>trois points</strong> (⋯) et selectionnez <strong>&quot;Copier l&apos;identifiant du membre&quot;</strong>.
+                </p>
+              </div>
+
+              {/* Google Calendar ID */}
+              <div className="space-y-2">
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Calendar className="h-4 w-4" style={{ color: "#5a6f80" }} /> Google Calendar ID
+                </label>
+                <input
+                  type="text"
+                  value={googleCalendarId}
+                  onChange={(e) => setGoogleCalendarId(e.target.value)}
+                  placeholder="votre.email@gmail.com ou ID de calendrier"
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                />
+                <p style={{ fontSize: 11, color: "#8399a9" }}>
+                  En general c&apos;est votre adresse Gmail. Vous pouvez aussi le trouver dans Google Calendar &gt; Parametres du calendrier &gt; ID du calendrier.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tutoriel partage Google Calendar */}
+        <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ height: 4, background: "linear-gradient(90deg, #2e7d32 0%, #81c784 100%)" }} />
+          <div style={{ padding: "20px 24px" }}>
+            <button
+              onClick={() => setShowTutorial(!showTutorial)}
+              style={{
+                display: "flex", alignItems: "center", gap: 8, width: "100%",
+                background: "none", border: "none", cursor: "pointer", padding: 0,
+              }}
+            >
+              <Calendar className="h-5 w-5" style={{ color: "#2e7d32" }} />
+              <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0, flex: 1, textAlign: "left" }}>
+                Partager mon Google Calendar avec le CRM
+              </h3>
+              {showTutorial
+                ? <ChevronDown className="h-5 w-5" style={{ color: "#8399a9" }} />
+                : <ChevronRight className="h-5 w-5" style={{ color: "#8399a9" }} />
+              }
+            </button>
+
+            {showTutorial && (
+              <div style={{ marginTop: 16 }}>
+                <p style={{ fontSize: 13, color: "#3a4a5a", lineHeight: 1.6, marginBottom: 16 }}>
+                  Pour que le CRM puisse lire et creer des evenements dans votre agenda, vous devez partager votre Google Calendar avec notre compte de service. Voici comment faire :
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <StepItem step={1} title="Ouvrir Google Calendar">
+                    Allez sur <strong>calendar.google.com</strong> depuis votre navigateur.
+                  </StepItem>
+
+                  <StepItem step={2} title="Acceder aux parametres du calendrier">
+                    Dans la barre laterale gauche, survolez votre calendrier principal, cliquez sur les <strong>trois points</strong> (⋮) puis sur <strong>&quot;Parametres et partage&quot;</strong>.
+                  </StepItem>
+
+                  <StepItem step={3} title="Ajouter le compte CRM">
+                    Descendez jusqu&apos;a la section <strong>&quot;Partager avec des personnes ou des groupes specifiques&quot;</strong> et cliquez sur <strong>&quot;Ajouter des personnes et des groupes&quot;</strong>.
+                  </StepItem>
+
+                  <StepItem step={4} title="Entrer l'adresse du CRM">
+                    <span>Copiez et collez cette adresse :</span>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 8, marginTop: 8,
+                      padding: "8px 12px", background: "#f0f7f0", borderRadius: 8,
+                      border: "1px solid #c8e6c9",
+                    }}>
+                      <code style={{ fontSize: 12, color: "#2e7d32", flex: 1, wordBreak: "break-all" }}>
+                        lca-crm-2026@crm-lca.iam.gserviceaccount.com
+                      </code>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText("lca-crm-2026@crm-lca.iam.gserviceaccount.com");
+                          setCopiedEmail(true);
+                          setTimeout(() => setCopiedEmail(false), 2000);
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 4, padding: "4px 10px",
+                          borderRadius: 6, border: "1px solid #c8e6c9", background: copiedEmail ? "#2e7d32" : "white",
+                          color: copiedEmail ? "white" : "#2e7d32", cursor: "pointer",
+                          fontSize: 11, fontWeight: 600, transition: "all 0.2s",
+                        }}
+                      >
+                        {copiedEmail ? <><Check className="h-3 w-3" /> Copie !</> : <><Copy className="h-3 w-3" /> Copier</>}
+                      </button>
+                    </div>
+                  </StepItem>
+
+                  <StepItem step={5} title="Definir les autorisations">
+                    Dans le menu deroulant des autorisations, selectionnez <strong>&quot;Apporter des modifications aux evenements&quot;</strong>, puis cliquez sur <strong>&quot;Envoyer&quot;</strong>.
+                  </StepItem>
+
+                  <StepItem step={6} title="Renseigner votre Calendar ID ci-dessus">
+                    Revenez sur cette page et entrez votre Google Calendar ID dans le champ ci-dessus (en general votre adresse Gmail).
+                  </StepItem>
+                </div>
+
+                <div style={{
+                  marginTop: 16, padding: "12px 14px", background: "#fff8e1", borderRadius: 8,
+                  border: "1px solid #ffe082", fontSize: 12, color: "#f57f17", lineHeight: 1.5,
+                }}>
+                  <strong>Important :</strong> Sans ce partage, le CRM ne pourra pas synchroniser vos sessions de formation ni consulter vos disponibilites.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Global save button */}
         <div style={{ paddingTop: 8 }}>
           <button
             onClick={handleSaveAll}
-            disabled={saving || (!hasChanges && !newPassword && !confirmPassword)}
+            disabled={saving || (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal)}
             style={{
               width: "100%", height: 44, borderRadius: 10, border: "none", cursor: "pointer",
-              background: (!hasChanges && !newPassword && !confirmPassword) ? "#e8ecf1" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
-              color: (!hasChanges && !newPassword && !confirmPassword) ? "#8399a9" : "white",
+              background: (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal) ? "#e8ecf1" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+              color: (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal) ? "#8399a9" : "white",
               fontSize: 15, fontWeight: 700,
               opacity: saving ? 0.6 : 1,
             }}
@@ -373,6 +558,25 @@ export function SettingsView() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StepItem({ step, title, children }: { step: number; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", gap: 12 }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+        background: "#2e7d32", color: "white", display: "flex",
+        alignItems: "center", justifyContent: "center",
+        fontSize: 13, fontWeight: 700,
+      }}>
+        {step}
+      </div>
+      <div style={{ flex: 1, paddingTop: 3 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 12, color: "#5a6f80", lineHeight: 1.5 }}>{children}</div>
+      </div>
     </div>
   );
 }
