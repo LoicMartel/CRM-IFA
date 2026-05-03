@@ -63,11 +63,32 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       .select("*, team_members(first_name, last_name)")
       .eq("contact_id", id)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("meetings")
-      .select("*, team_members!meetings_assigned_to_fkey(first_name, last_name)")
-      .eq("contact_id", id)
-      .order("scheduled_at", { ascending: false }),
+    // Fetch meetings where contact is primary (contact_id) OR secondary participant (meeting_contacts)
+    (async () => {
+      const [{ data: directMeetings }, { data: junctionRows }] = await Promise.all([
+        supabase
+          .from("meetings")
+          .select("*, team_members!meetings_assigned_to_fkey(first_name, last_name)")
+          .eq("contact_id", id)
+          .order("scheduled_at", { ascending: false }),
+        supabase
+          .from("meeting_contacts")
+          .select("meeting_id")
+          .eq("contact_id", id),
+      ]);
+      const directIds = new Set((directMeetings ?? []).map((m: any) => m.id));
+      const extraIds = (junctionRows ?? [])
+        .map((r: any) => r.meeting_id as string)
+        .filter((mid: string) => !directIds.has(mid));
+      if (extraIds.length === 0) return { data: directMeetings };
+      const { data: extraMeetings } = await supabase
+        .from("meetings")
+        .select("*, team_members!meetings_assigned_to_fkey(first_name, last_name)")
+        .in("id", extraIds);
+      const all = [...(directMeetings ?? []), ...(extraMeetings ?? [])]
+        .sort((a: any, b: any) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
+      return { data: all };
+    })(),
     supabase
       .from("companies")
       .select("id, name")

@@ -3398,6 +3398,7 @@ export function ReportsView({
           const scheduledAt = m.scheduled_at as string | undefined;
           if (!scheduledAt) return false;
           if (status === "done" || status === "cancelled" || status === "no_show") return false;
+          if ((m as any).next_step === "completed") return false;
           const dateOnly = scheduledAt.split("T")[0];
           if (dateOnly > todayStr) return false;
           // Exclude if a "done" meeting exists for same contact + type + date
