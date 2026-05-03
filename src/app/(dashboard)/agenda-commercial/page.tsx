@@ -28,12 +28,34 @@ export default async function CommercialAgendaPage() {
       .order("due_date", { ascending: true }),
   ]);
 
+  // For meetings closed via report: the original (booked, next_step=completed) keeps the
+  // correct date, and a result record (done/cancelled/no_show) is created with today's date.
+  // Resolve the real outcome onto the original, then remove result duplicates.
+  const allMeetings = meetings ?? [];
+  const resultIds = new Set<string>();
+  const completedMeetings = allMeetings.filter((m: any) => m.next_step === "completed" && m.status === "booked");
+  for (const cm of completedMeetings) {
+    const result = allMeetings.find((m: any) =>
+      m.id !== cm.id &&
+      m.contact_id === cm.contact_id &&
+      m.meeting_type === cm.meeting_type &&
+      ["done", "cancelled", "no_show"].includes(m.status) &&
+      new Date(m.scheduled_at) >= new Date(cm.scheduled_at)
+    );
+    if (result) {
+      (cm as any).status = result.status;
+      (cm as any).outcome = result.outcome;
+      resultIds.add(result.id as string);
+    }
+  }
+  const cleanMeetings = allMeetings.filter((m: any) => !resultIds.has(m.id as string));
+
   return (
     <>
       <Header title="Agenda Commercial" />
       <div className="p-6">
         <CommercialAgendaView
-          meetings={(meetings ?? []) as any}
+          meetings={cleanMeetings as any}
           teamMembers={((teamMembers ?? []).filter((m: any) => ((m.roles as string[]) ?? []).includes("Account Manager"))) as any}
           tasks={(tasks ?? []) as any}
         />

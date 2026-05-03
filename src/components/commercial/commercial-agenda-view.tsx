@@ -98,9 +98,6 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
 
   const weekMeetings = meetings.filter(m => {
     const d = new Date(m.scheduled_at);
-    // Garder tous les RDV de la semaine, y compris cancelled/no_show.
-    // Exclure uniquement les "booked" dont le suivi a été fait (doublon remplacé par un record done/cancelled/no_show).
-    if (m.next_step === "completed") return false;
     return d >= weekStart && d < weekFilterEnd;
   });
 
