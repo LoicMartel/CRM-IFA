@@ -51,18 +51,20 @@ export async function POST(req: NextRequest) {
     const billableAmt = isBillable ? hours * rate : 0;
     const nonBillableAmt = !isBillable ? hours * rate : 0;
 
-    // Resolve trainer_id from trainer name
-    let trainerId: string | null = null;
-    const trainers = (ts.trainers as string[]) ?? [];
-    if (trainers.length > 0) {
+    // Resolve trainer IDs from trainer names
+    const trainerNames = (ts.trainers as string[]) ?? [];
+    const trainerIds: (string | null)[] = [];
+    for (const name of trainerNames) {
       const { data: member } = await supabase
         .from("team_members")
         .select("id")
-        .eq("first_name", trainers[0])
+        .eq("first_name", name)
         .limit(1)
         .maybeSingle();
-      trainerId = member?.id ?? null;
+      trainerIds.push(member?.id ?? null);
     }
+    // Fallback: if no trainers, still create one line
+    if (trainerIds.length === 0) trainerIds.push(null);
 
     // Build attendee names from linked learners
     const learnerLinks = (ts.training_session_learners ?? []) as { learner_id: string; learners: { first_name: string; last_name: string } | null }[];
@@ -79,41 +81,52 @@ export async function POST(req: NextRequest) {
     const durationLabel = hours >= 8 ? "" : hours >= 1 ? ` ${hours}H` : ` ${Math.round(hours * 60)}min`;
     const sessionLabel = `${typeLabel}${durationLabel}`;
 
-    // Check if a delivery record already exists for this training session
-    const { data: existing } = await supabase
-      .from("sessions")
-      .select("id")
-      .eq("session_date", ts.session_date)
-      .eq("company_id", plan?.company_id ?? "")
-      .eq("trainer_id", trainerId ?? "")
-      .eq("hours_delivered", hours)
-      .maybeSingle();
+    // Create one delivery line per trainer:
+    // - First trainer: facturable (billable)
+    // - Additional trainers: non facturable (co-animation)
+    for (let i = 0; i < trainerIds.length; i++) {
+      const trainerId = trainerIds[i];
+      const isFirstTrainer = i === 0;
+      const trainerBillable = isFirstTrainer ? isBillable : false;
+      const trainerBillableAmt = trainerBillable ? hours * rate : 0;
+      const trainerNonBillableAmt = !trainerBillable ? hours * rate : 0;
 
-    const sessionData = {
-      session_date: ts.session_date,
-      company_id: plan?.company_id ?? null,
-      delivery_mode: deliveryMode,
-      is_billable: isBillable,
-      hours_planned: hours,
-      hours_delivered: hours,
-      hourly_rate: rate,
-      billable_amount: billableAmt,
-      non_billable_amount: nonBillableAmt,
-      trainer_id: trainerId,
-      session_label: sessionLabel,
-      attendee_names: attendeeNames || null,
-      learners_planned: learnersCount > 0 ? learnersCount : null,
-      learners_delivered: learnersCount > 0 ? learnersCount : null,
-      notes: ts.notes,
-    };
+      // Check if a delivery record already exists for this trainer + session
+      const { data: existing } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("session_date", ts.session_date)
+        .eq("company_id", plan?.company_id ?? "")
+        .eq("trainer_id", trainerId ?? "")
+        .eq("hours_delivered", hours)
+        .maybeSingle();
 
-    if (existing) {
-      await supabase.from("sessions").update({
-        ...sessionData,
-        updated_at: new Date().toISOString(),
-      }).eq("id", existing.id);
-    } else {
-      await supabase.from("sessions").insert(sessionData);
+      const sessionData = {
+        session_date: ts.session_date,
+        company_id: plan?.company_id ?? null,
+        delivery_mode: deliveryMode,
+        is_billable: trainerBillable,
+        hours_planned: hours,
+        hours_delivered: hours,
+        hourly_rate: rate,
+        billable_amount: trainerBillableAmt,
+        non_billable_amount: trainerNonBillableAmt,
+        trainer_id: trainerId,
+        session_label: isFirstTrainer ? sessionLabel : `${sessionLabel} (co-animation)`,
+        attendee_names: attendeeNames || null,
+        learners_planned: learnersCount > 0 ? learnersCount : null,
+        learners_delivered: learnersCount > 0 ? learnersCount : null,
+        notes: ts.notes,
+      };
+
+      if (existing) {
+        await supabase.from("sessions").update({
+          ...sessionData,
+          updated_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+      } else {
+        await supabase.from("sessions").insert(sessionData);
+      }
     }
   }
 
