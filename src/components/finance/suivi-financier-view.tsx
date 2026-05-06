@@ -224,7 +224,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
           <tbody>
             <Row label="Objectif Commandes" field="objectif" values={monthData.map(m => m.objectif)} isCumul={cumul.objectif} />
             <Row label="Commandes" field="commandes" values={monthData.map(m => m.commandes)} isCumul={cumul.commandes} />
-            <Row label="Delivery Facturable" field="commandesFacturable" values={monthData.map(m => m.commandesFacturable)} isCumul={cumul.commandesFacturable} />
+            <Row label="Facturable ADV" field="commandesFacturable" values={monthData.map(m => m.commandesFacturable)} isCumul={cumul.commandesFacturable} />
             <Row label="Facturé HT" field="facture" values={monthData.map(m => m.facture)} isCumul={cumul.facture} isManual manualField="facture_ht" />
             <Row label="Encaissé TTC" field="encaisseTTC" values={monthData.map(m => m.encaisseTTC)} isCumul={cumul.encaisseTTC} isManual manualField="encaisse_ttc" />
             <Row label="TVA collectée" field="tvaCollecte" values={monthData.map(m => m.tvaCollecte)} isCumul={cumul.tvaCollecte} />
