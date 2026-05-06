@@ -14,6 +14,7 @@ export default async function PlanningPage() {
       companies(name, address, city),
       training_programs(name),
       training_types(name),
+      primary_trainer:team_members!service_plans_primary_trainer_id_fkey(first_name, last_name),
       service_plan_learners(
         learner_id,
         learners(id, first_name, last_name, email, phone, position, status)

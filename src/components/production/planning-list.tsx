@@ -1005,6 +1005,11 @@ export function PlanningList({
                   <span style={{ ...mdColor, fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: mdColor.bg, color: mdColor.text }}>
                     {modeLabels[plan.mode ?? ""] ?? "—"}
                   </span>
+                  {(plan as any).primary_trainer && (
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#e8f5e9", color: "#2e7d32" }}>
+                      Expert : {(plan as any).primary_trainer.first_name} {(plan as any).primary_trainer.last_name}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: "#5a6f80" }}>
                   <span>{planLearners.length} apprenant{planLearners.length > 1 ? "s" : ""}</span>
