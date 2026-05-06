@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { getDefaultCustomFrom } from "@/lib/fiscal-year";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -53,7 +54,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState("2025-09-01");
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;

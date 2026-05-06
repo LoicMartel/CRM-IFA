@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel } from "@/lib/fiscal-year";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
@@ -51,7 +52,7 @@ export function ReportsView({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [yearlyMode, setYearlyMode] = useState<"full" | "month" | "custom">("full");
-  const [yearlyFrom, setYearlyFrom] = useState("2025-09-01");
+  const [yearlyFrom, setYearlyFrom] = useState(() => getDefaultCustomFrom());
   const [yearlyTo, setYearlyTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -482,7 +483,7 @@ export function ReportsView({
             <div style={{ padding: 20 }}>
               <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
                 <div>
-                  <div className="lca-label">Progression annuelle 2025/2026</div>
+                  <div className="lca-label">Progression annuelle {getFiscalYearLabel(getCurrentFiscalYearStart())}</div>
                   <div className="lca-sub">{fmt(totalOrders)} réalisés sur {fmt(annualTarget)}</div>
                 </div>
                 <div className="lca-big-pct">{annualPct.toFixed(1)}%</div>
@@ -1794,11 +1795,12 @@ export function ReportsView({
 
       {/* ===== Report: Yearly ===== */}
       {selectedReport === "inbound" && inboundMode === "yearly" && (() => {
-        const periodStart = yearlyMode === "full" ? "2025-09-01" : yearlyFrom;
-        const periodEnd = yearlyMode === "full" ? "2026-08-31" : yearlyTo;
+        const fyRange = getCurrentFiscalYearRange();
+        const periodStart = yearlyMode === "full" ? fyRange.from : yearlyFrom;
+        const periodEnd = yearlyMode === "full" ? fyRange.to : yearlyTo;
 
         const periodLabel = yearlyMode === "full"
-          ? "Année complète 2025/2026"
+          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
           : `Du ${new Date(periodStart).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(periodEnd).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
         function isInPeriod(dateStr: string | null | undefined): boolean {
@@ -2687,10 +2689,11 @@ export function ReportsView({
       {selectedReport === "outbound" && outboundMode === "yearly" && (() => {
         function ini(name: string) { return name.split(" ").map(w => w[0]).join("").toUpperCase(); }
 
-        const pyStart = yearlyMode === "full" ? "2025-09-01" : yearlyFrom;
-        const pyEnd = yearlyMode === "full" ? "2026-08-31" : yearlyTo;
+        const pyFyRange = getCurrentFiscalYearRange();
+        const pyStart = yearlyMode === "full" ? pyFyRange.from : yearlyFrom;
+        const pyEnd = yearlyMode === "full" ? pyFyRange.to : yearlyTo;
         const pyLabel = yearlyMode === "full"
-          ? "Année complète 2025/2026"
+          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
           : `Du ${new Date(pyStart).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(pyEnd).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
         function isInPY(dateStr: string | null | undefined): boolean {
@@ -2951,7 +2954,7 @@ export function ReportsView({
       {selectedReport === "rdv_types" && (() => {
         // Period filter - supports fiscal, month, custom
         function getRdvPeriod(): { from: string; to: string } {
-          if (yearlyMode === "full") return { from: "2025-09-01", to: "2026-08-31" };
+          if (yearlyMode === "full") return getCurrentFiscalYearRange();
           if ((yearlyMode as string) === "month") {
             const [y, m] = selectedMonth.split("-").map(Number);
             const lastDay = new Date(y, m, 0).getDate();
@@ -2967,7 +2970,7 @@ export function ReportsView({
           return d >= rdvPeriod.from && d <= rdvPeriod.to;
         }
 
-        const rdvLabel = yearlyMode === "full" ? "Année fiscale 2025/2026"
+        const rdvLabel = yearlyMode === "full" ? `Année fiscale ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
           : (yearlyMode as string) === "month" ? (() => { const [y, m] = selectedMonth.split("-").map(Number); return new Date(y, m - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); })()
           : `Du ${new Date(yearlyFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(yearlyTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 

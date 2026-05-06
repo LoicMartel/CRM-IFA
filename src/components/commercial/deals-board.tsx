@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel } from "@/lib/fiscal-year";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -120,7 +121,7 @@ export function DealsBoard({
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState("2025-09-01");
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -367,7 +368,7 @@ export function DealsBoard({
 
   // Period filter logic
   const periodRange = (() => {
-    if (periodMode === "fiscal") return { from: "2025-09-01", to: "2026-08-31" };
+    if (periodMode === "fiscal") return getCurrentFiscalYearRange();
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -392,7 +393,7 @@ export function DealsBoard({
   const wonDisplayDeals = displayDeals.filter(d => d.stage === "closed_won");
   const totalWon = wonDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-  const periodLabel = periodMode === "fiscal" ? "Année fiscale 2025/2026"
+  const periodLabel = periodMode === "fiscal" ? `Année fiscale ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
     : periodMode === "month" ? new Date(filterMonth + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
     : `${new Date(customFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} — ${new Date(customTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 

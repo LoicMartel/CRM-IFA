@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions } from "@/lib/fiscal-year";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,7 +122,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const { isReadOnly } = useCurrentRoles();
 
   const [search, setSearch] = useState("");
-  const [fiscalYear, setFiscalYear] = useState("2025-2026");
+  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart()));
   const [addOpen, setAddOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<BillingEntryData | null>(null);
 
@@ -447,7 +448,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   }, [editingCell]);
 
   // Fiscal year options
-  const yearOptions = ["2024-2025", "2025-2026", "2026-2027"];
+  const yearOptions = getFiscalYearOptions(4).map(o => o.value);
 
   return (
     <>

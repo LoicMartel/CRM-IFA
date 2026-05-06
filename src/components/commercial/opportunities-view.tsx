@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEAL_STAGE_LABELS } from "@/types/database";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange } from "@/lib/fiscal-year";
 import type { DealStage } from "@/types/database";
 import Link from "next/link";
 
@@ -42,7 +43,7 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState("2025-09-01");
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -54,9 +55,8 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
   const filtered = deals.filter(d => {
     const date = d.created_at?.split("T")[0] ?? "";
     if (periodMode === "fiscal") {
-      const now = new Date();
-      const y = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-      if (date < `${y}-09-01` || date > `${y + 1}-08-31`) return false;
+      const { from: fyFrom, to: fyTo } = getCurrentFiscalYearRange();
+      if (date < fyFrom || date > fyTo) return false;
     } else if (periodMode === "month") {
       if (!date.startsWith(filterMonth)) return false;
     } else if (periodMode === "custom") {

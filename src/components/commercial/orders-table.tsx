@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange } from "@/lib/fiscal-year";
 import {
   Table,
   TableBody,
@@ -88,7 +89,7 @@ export function OrdersTable({
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState("2025-09-01");
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -109,7 +110,7 @@ export function OrdersTable({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const periodRange = (() => {
-    if (periodMode === "fiscal") return { from: "2025-09-01", to: "2026-08-31" };
+    if (periodMode === "fiscal") return getCurrentFiscalYearRange();
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();

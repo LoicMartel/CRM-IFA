@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions } from "@/lib/fiscal-year";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -78,13 +79,13 @@ export function RapportsFacturationView({ entries, companies }: {
 }) {
   const router = useRouter();
   const [selectedReport, setSelectedReport] = useState("global");
-  const [fiscalYear, setFiscalYear] = useState("2025-2026");
+  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart()));
   const [companySortGlobal, setCompanySortGlobal] = useState<"asc" | "desc" | null>(null);
   const [companySortStatus, setCompanySortStatus] = useState<"asc" | "desc" | null>(null);
   const [nameSortGlobal, setNameSortGlobal] = useState<"asc" | "desc" | null>(null);
   const [nameSortStatus, setNameSortStatus] = useState<"asc" | "desc" | null>(null);
 
-  const yearOptions = ["2024-2025", "2025-2026", "2026-2027"];
+  const yearOptions = getFiscalYearOptions(4).map(o => o.value);
   const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
 
   // Filter entries by fiscal year
