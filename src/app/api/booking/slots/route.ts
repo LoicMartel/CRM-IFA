@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { getParisOffset } from "@/lib/timezone";
+import { isFrenchHoliday } from "@/lib/french-holidays";
 
 // Rafi is priority; Naznine is fallback
 const MEMBERS = [
@@ -68,6 +69,10 @@ export async function GET(request: Request) {
 
   if (!date) {
     return NextResponse.json({ error: "Missing date parameter" }, { status: 400 });
+  }
+
+  if (isFrenchHoliday(date)) {
+    return NextResponse.json({ slots: [], assignedTo: null, assignedName: null });
   }
 
   // Use ISO format with timezone name — Google API handles the conversion

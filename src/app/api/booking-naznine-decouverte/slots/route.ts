@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { getParisOffset } from "@/lib/timezone";
+import { isFrenchHoliday } from "@/lib/french-holidays";
 
 const NAZNINE = {
   id: "9bcd91e5-0c11-44ba-9bc8-1de4bad9c040",
@@ -42,6 +43,10 @@ export async function GET(request: Request) {
 
   if (!date) {
     return NextResponse.json({ error: "Missing date parameter" }, { status: 400 });
+  }
+
+  if (isFrenchHoliday(date)) {
+    return NextResponse.json({ slots: [], assignedTo: NAZNINE.id, assignedName: NAZNINE.name });
   }
 
   const timeMin = new Date(`${date}T00:00:00`).toISOString();

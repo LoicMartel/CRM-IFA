@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCalendarEvents } from "@/lib/google-calendar";
 import { getParisOffset } from "@/lib/timezone";
+import { isFrenchHoliday } from "@/lib/french-holidays";
 
 // Priorité : Alexandre en premier, Loïc ensuite, Rafi en dernier recours
 const TEAM = [
@@ -76,6 +77,10 @@ export async function GET(request: Request) {
 
   if (!date) {
     return NextResponse.json({ error: "Missing date parameter" }, { status: 400 });
+  }
+
+  if (isFrenchHoliday(date)) {
+    return NextResponse.json({ slots: [] });
   }
 
   const timeMin = new Date(`${date}T00:00:00`).toISOString();
