@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
+import { sendSessionEmail } from "@/lib/send-email";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -129,6 +130,49 @@ export async function POST(req: NextRequest) {
           await supabase.from("contacts").update({ company_id: existingCompany.id }).eq("id", contact.id);
         }
       }
+    }
+
+    // Send email + in-app notifications to Alexandre, Rafi and Loïc
+    const LEAD_NOTIFY_EMAILS = [
+      "alexandre@closing-academie.com",
+      "rafi@closing-academie.com",
+      "loic@closing-academie.com",
+    ];
+
+    const notifSubject = `Nouveau lead marketing — ${firstName} ${lastName}`;
+    const notifBody = [
+      `Un nouveau lead vient d'arriver via le formulaire Webflow :`,
+      "",
+      `👤 ${firstName} ${lastName}`,
+      `✉️ ${email}`,
+      phone ? `📞 ${phone}` : "",
+      companyUrl ? `🌐 ${companyUrl}` : "",
+      "",
+      `Le contact a été créé automatiquement dans le CRM avec le statut "Lead Marketing".`,
+      "",
+      `👉 https://crm-lca.vercel.app/contacts/${contact.id}`,
+    ].filter(Boolean).join("\n");
+
+    await Promise.all(
+      LEAD_NOTIFY_EMAILS.map((to) => sendSessionEmail({ to, subject: notifSubject, body: notifBody }))
+    );
+
+    // In-app notifications
+    const { data: notifTargets } = await supabase
+      .from("team_members")
+      .select("id, email")
+      .in("email", LEAD_NOTIFY_EMAILS);
+    if (notifTargets && notifTargets.length > 0) {
+      const notifRows = notifTargets.map((m: any) => ({
+        recipient_id: m.id,
+        type: "new_lead",
+        title: `Nouveau lead : ${firstName} ${lastName}`,
+        body: `Webflow${companyUrl ? ` — ${companyUrl}` : ""}`,
+        link_url: `/contacts/${contact.id}`,
+        related_entity_type: "contact",
+        related_entity_id: contact.id,
+      }));
+      await supabase.from("notifications").insert(notifRows);
     }
 
     return NextResponse.json({ ok: true, contact_id: contact.id, action: "created" });
