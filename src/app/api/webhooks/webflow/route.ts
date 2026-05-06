@@ -10,8 +10,6 @@ const supabase = createClient(
 
 const WEBFLOW_SECRET = process.env.WEBFLOW_WEBHOOK_SECRET ?? "";
 
-// Pauline's team member ID
-const PAULINE_ID = "55e425cb-5041-4ea4-92c3-ce2f1dbce6a0";
 
 export async function POST(req: NextRequest) {
   try {
@@ -108,7 +106,6 @@ export async function POST(req: NextRequest) {
       lifecycle_stage: "lead_marketing",
       lead_status: "lead",
       contact_type: "inbound",
-      owner_id: PAULINE_ID,
       notes: companyUrl ? `Site web : ${companyUrl}` : null,
     }).select("id").single();
 

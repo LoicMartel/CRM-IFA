@@ -108,7 +108,13 @@ export async function POST(request: Request) {
       contactId = newContact?.id ?? null;
     }
 
-    // 3. Send email notification to Pauline and Rafi
+    // 3. Send email notification to Alexandre, Rafi and Loïc
+    const LEAD_NOTIFY_EMAILS = [
+      "alexandre@closing-academie.com",
+      "rafi@closing-academie.com",
+      "loic@closing-academie.com",
+    ];
+
     const notifSubject = `Nouveau lead marketing — ${firstName} ${lastName}`;
     const notifBody = [
       `Un nouveau lead vient d'arriver via la landing page :`,
@@ -124,50 +130,31 @@ export async function POST(request: Request) {
       `👉 https://crm-lca.vercel.app/contacts/${contactId}`,
     ].filter(Boolean).join("\n");
 
-    // Send to Pauline and Rafi (each individually toggleable)
-    const emailPromises: Promise<any>[] = [];
-    if (isStepActive(wf, "notify-pauline").active) {
-      emailPromises.push(sendSessionEmail({
-        to: "pauline-ext@closing-academie.com",
-        subject: notifSubject,
-        body: notifBody,
-      }));
-    }
-    if (isStepActive(wf, "notify-rafi").active) {
-      emailPromises.push(sendSessionEmail({
-        to: "rafi@closing-academie.com",
-        subject: notifSubject,
-        body: notifBody,
-      }));
-    }
+    const emailPromises = LEAD_NOTIFY_EMAILS.map((to) =>
+      sendSessionEmail({ to, subject: notifSubject, body: notifBody })
+    );
     if (emailPromises.length > 0) await Promise.all(emailPromises);
 
-    // In-app notifications for Pauline and Rafi
+    // In-app notifications for Alexandre, Rafi and Loïc
     const { data: notifTargets } = await supabase
       .from("team_members")
       .select("id, email")
-      .in("email", ["pauline-ext@closing-academie.com", "rafi@closing-academie.com"]);
+      .in("email", LEAD_NOTIFY_EMAILS);
     if (notifTargets && notifTargets.length > 0) {
       const sourceLabel = source === "embed-form"
         ? "Meta ads - tunnel commercial"
         : source === "embed-form-book"
         ? "Meta ads - tunnel book"
         : "Landing Page";
-      const notifRows = notifTargets
-        .filter((m: any) => {
-          if (m.email === "pauline-ext@closing-academie.com") return isStepActive(wf, "notify-pauline").active;
-          if (m.email === "rafi@closing-academie.com") return isStepActive(wf, "notify-rafi").active;
-          return false;
-        })
-        .map((m: any) => ({
-          recipient_id: m.id,
-          type: "new_lead",
-          title: `Nouveau lead : ${firstName} ${lastName}`,
-          body: `${sourceLabel}${website ? ` — ${website}` : ""}`,
-          link_url: `/contacts/${contactId}`,
-          related_entity_type: "contact",
-          related_entity_id: contactId,
-        }));
+      const notifRows = notifTargets.map((m: any) => ({
+        recipient_id: m.id,
+        type: "new_lead",
+        title: `Nouveau lead : ${firstName} ${lastName}`,
+        body: `${sourceLabel}${website ? ` — ${website}` : ""}`,
+        link_url: `/contacts/${contactId}`,
+        related_entity_type: "contact",
+        related_entity_id: contactId,
+      }));
       if (notifRows.length > 0) await supabase.from("notifications").insert(notifRows);
     }
 

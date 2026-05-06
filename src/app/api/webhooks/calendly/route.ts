@@ -7,8 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-// Pauline's team member ID
-const PAULINE_ID = "55e425cb-5041-4ea4-92c3-ce2f1dbce6a0";
 
 export async function POST(req: NextRequest) {
   try {
@@ -79,7 +77,6 @@ export async function POST(req: NextRequest) {
         lifecycle_stage: "lead_marketing",
         lead_status: "booked",
         contact_type: "inbound",
-        owner_id: PAULINE_ID,
       }).select("id").single();
 
       contactId = newContact?.id;
@@ -110,7 +107,6 @@ export async function POST(req: NextRequest) {
       status: "booked",
       contact_id: contactId,
       company_id: companyId || null,
-      assigned_to: PAULINE_ID,
       scheduled_at: scheduledAt || new Date().toISOString(),
       duration_minutes: durationMinutes,
       meeting_mode: "visio",

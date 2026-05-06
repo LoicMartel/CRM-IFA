@@ -18,7 +18,6 @@ function getSupabase() {
 }
 
 const NOTIFY_EMAILS = [
-  "pauline-ext@closing-academie.com",
   "rafi@closing-academie.com",
   "alexandre@closing-academie.com",
   "loic@closing-academie.com",
