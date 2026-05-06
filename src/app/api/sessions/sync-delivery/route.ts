@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     .select(`
       *,
       service_plans(
-        id, company_id, hourly_rate, format, mode,
+        id, company_id, hourly_rate, format, mode, primary_trainer_id,
         companies(id, name)
       ),
       training_session_learners(
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Training session not found" }, { status: 404 });
   }
 
-  const plan = ts.service_plans as { id: string; company_id: string | null; hourly_rate: number | null; format: string | null; mode: string | null } | null;
+  const plan = ts.service_plans as { id: string; company_id: string | null; hourly_rate: number | null; format: string | null; mode: string | null; primary_trainer_id: string | null } | null;
 
   // If status is "done" or "no_show" (billable), upsert into delivery sessions
   if (ts.status === "done" || ts.status === "no_show") {
@@ -65,6 +65,16 @@ export async function POST(req: NextRequest) {
     }
     // Fallback: if no trainers, still create one line
     if (trainerIds.length === 0) trainerIds.push(null);
+
+    // If plan has a primary_trainer_id, put that trainer first (= billable)
+    const primaryTrainerId = plan?.primary_trainer_id ?? null;
+    if (primaryTrainerId && trainerIds.length > 1) {
+      const idx = trainerIds.indexOf(primaryTrainerId);
+      if (idx > 0) {
+        trainerIds.splice(idx, 1);
+        trainerIds.unshift(primaryTrainerId);
+      }
+    }
 
     // Build attendee names from linked learners
     const learnerLinks = (ts.training_session_learners ?? []) as { learner_id: string; learners: { first_name: string; last_name: string } | null }[];

@@ -87,6 +87,7 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
         companies(name),
         training_programs(name),
         training_types(name),
+        primary_trainer:team_members!service_plans_primary_trainer_id_fkey(first_name, last_name),
         service_plan_learners(learner_id, learners(id, first_name, last_name, status)),
         training_sessions(*, training_session_learners(learner_id, learners(id, first_name, last_name)))
       `)
@@ -176,6 +177,7 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
               {plan.training_types?.name && <span>· {plan.training_types.name}</span>}
               {plan.format && <span style={{ fontSize: 11, fontWeight: 600, padding: "1px 8px", borderRadius: 20, background: "#f3e5f5", color: "#6a1b9a" }}>{formatLabels[plan.format] ?? plan.format}</span>}
               {plan.mode && <span style={{ fontSize: 11, fontWeight: 600, padding: "1px 8px", borderRadius: 20, background: "#fff3e0", color: "#e65100" }}>{modeLabels[plan.mode] ?? plan.mode}</span>}
+              {(plan as any).primary_trainer && <span style={{ fontSize: 11, fontWeight: 600, padding: "1px 8px", borderRadius: 20, background: "#e8f5e9", color: "#2e7d32" }}>Expert : {(plan as any).primary_trainer.first_name} {(plan as any).primary_trainer.last_name}</span>}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>

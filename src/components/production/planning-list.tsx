@@ -273,6 +273,7 @@ export function PlanningList({
     inter_companies: [] as { company_id: string; deal_id: string }[],
     plan_name: "",
     program_id: "", training_type_id: "", format: "individuel", mode: "distanciel",
+    primary_trainer_id: "",
     vt_planned: "", days_planned: "", hourly_rate: "",
     budget: "", start_date: "", end_date: "", notes: "",
   };
@@ -489,6 +490,7 @@ export function PlanningList({
       training_type_id: plan.training_type_id ?? "",
       format: plan.format ?? "individuel",
       mode: plan.mode ?? "distanciel",
+      primary_trainer_id: (plan as any).primary_trainer_id ?? "",
       vt_planned: String(plan.vt_planned ?? 0),
       days_planned: String(plan.days_planned ?? 0),
       hourly_rate: plan.hourly_rate != null ? String(plan.hourly_rate) : "",
@@ -526,6 +528,7 @@ export function PlanningList({
       training_type_id: form.training_type_id || null,
       format: form.format || "individuel",
       mode: form.mode || "distanciel",
+      primary_trainer_id: form.primary_trainer_id || null,
       vt_planned: form.vt_planned ? parseInt(form.vt_planned) : 0,
       days_planned: form.days_planned ? parseInt(form.days_planned) : 0,
       hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate.replace(",", ".")) : 0,
@@ -1754,6 +1757,19 @@ export function PlanningList({
                       <option value="mixte">Mixte</option>
                     </select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Expert Principal</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    value={form.primary_trainer_id}
+                    onChange={(e) => setForm({ ...form, primary_trainer_id: e.target.value })}
+                  >
+                    <option value="">— Aucun —</option>
+                    {expertMembers.map((m: any) => (
+                      <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
