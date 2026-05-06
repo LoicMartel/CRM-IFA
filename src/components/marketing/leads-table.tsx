@@ -19,8 +19,10 @@ interface Lead {
   email: string | null;
   phone: string | null;
   company_id: string | null;
+  owner_id: string | null;
   companies: { name: string }[] | { name: string } | null;
   lead_sources: { name: string }[] | { name: string } | null;
+  team_members: { id: string; first_name: string; last_name: string }[] | { id: string; first_name: string; last_name: string } | null;
   created_at: string;
 }
 
@@ -37,6 +39,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
+  const [filterOwner, setFilterOwner] = useState(searchParams.get("owner") ?? "");
   const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [sortAsc, setSortAsc] = useState(true);
   const [page, setPage] = useState(1);
@@ -44,9 +47,18 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
 
+  function getOwnerName(l: Lead): string | null {
+    const tm = l.team_members;
+    if (!tm) return null;
+    const m = Array.isArray(tm) ? tm[0] : tm;
+    return m ? `${m.first_name} ${m.last_name}` : null;
+  }
+  const ownerNames = Array.from(new Set(leads.map(getOwnerName).filter(Boolean) as string[])).sort();
+
   const filtered = leads
     .filter((l) => {
       if (filterSource && (getName(l.lead_sources) ?? "") !== filterSource) return false;
+      if (filterOwner && (getOwnerName(l) ?? "") !== filterOwner) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       const fullName = `${l.first_name} ${l.last_name}`.toLowerCase();
@@ -67,7 +79,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     });
 
   // Reset page when filters change
-  const filterKey = `${search}|${filterSource}`;
+  const filterKey = `${search}|${filterSource}|${filterOwner}`;
   useMemo(() => { setPage(1); }, [filterKey]);
 
   const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -97,6 +109,16 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             <option value="">Toutes les sources</option>
             {sourceNames.map((s) => (
               <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            value={filterOwner}
+            onChange={(e) => setFilterOwner(e.target.value)}
+          >
+            <option value="">Tous les Account Managers</option>
+            {ownerNames.map((n) => (
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
         </div>
