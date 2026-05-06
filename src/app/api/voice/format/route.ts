@@ -23,8 +23,9 @@ export async function POST(request: Request) {
     ? `\n\nNOMS PROPRES CONNUS (stagiaires, contacts, entreprises) — corrige la reconnaissance vocale pour correspondre à ces noms si un mot prononcé y ressemble :\n${names.join(", ")}`
     : "";
 
+  try {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
     max_tokens: 2048,
     system: `Tu es un assistant de reformatage de dictée vocale pour un CRM commercial. Tu gères le français ET l'anglais.
 Tu reçois du texte brut issu d'une reconnaissance vocale (sans ponctuation, sans majuscules, sans mise en forme).
@@ -70,4 +71,8 @@ STYLE ET TON : ${toneInstruction}${namesContext}`,
   const formatted = response.content[0].type === "text" ? response.content[0].text : rawText;
 
   return NextResponse.json({ formatted });
+  } catch (err: any) {
+    console.error("Voice format API error:", err?.message || err);
+    return NextResponse.json({ error: err?.message || "AI formatting failed", formatted: null }, { status: 500 });
+  }
 }
