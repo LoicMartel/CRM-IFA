@@ -130,7 +130,8 @@ export async function POST(req: NextRequest) {
         const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
         const [startH, startM] = sessionTime.split(":").map(Number);
         const startDT = `${session.session_date}T${sessionTime}:00`;
-        const totalMinutes = startH * 60 + startM + durationHours * 60;
+        const lunchBreak = isJournee ? 60 : 0; // 1h lunch break for full-day sessions
+        const totalMinutes = startH * 60 + startM + durationHours * 60 + lunchBreak;
         const endH = Math.floor(totalMinutes / 60);
         const endM = totalMinutes % 60;
         const endDT = `${session.session_date}T${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}:00`;
@@ -206,7 +207,8 @@ export async function POST(req: NextRequest) {
       if (isExterne && trainer.email && isStepActive(wf, "email-externe-ics").active) {
         const icsStartExt = `${session.session_date}T${sessionTime}:00`;
         const [extH, extM] = sessionTime.split(":").map(Number);
-        const extTotalMin = extH * 60 + extM + durationHours * 60;
+        const extLunchBreak = isJournee ? 60 : 0;
+        const extTotalMin = extH * 60 + extM + durationHours * 60 + extLunchBreak;
         const icsEndExt = `${session.session_date}T${String(Math.floor(extTotalMin / 60)).padStart(2, "0")}:${String(extTotalMin % 60).padStart(2, "0")}:00`;
 
         const icsContentExt = generateICS({
@@ -263,7 +265,8 @@ export async function POST(req: NextRequest) {
       const sessionTime = (session as any).session_time ? String((session as any).session_time).slice(0, 5) : "09:00";
       const icsStartDT = `${session.session_date}T${sessionTime}:00`;
       const [sH, sM] = sessionTime.split(":").map(Number);
-      const totalMin = sH * 60 + sM + durationHours * 60;
+      const learnerLunchBreak = isJournee ? 60 : 0;
+      const totalMin = sH * 60 + sM + durationHours * 60 + learnerLunchBreak;
       const icsEndDT = `${session.session_date}T${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}:00`;
 
       for (const learner of learnersWithEmail) {
