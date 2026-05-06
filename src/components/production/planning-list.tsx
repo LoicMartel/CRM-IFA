@@ -325,6 +325,7 @@ export function PlanningList({
       training_type_id: "",
       format: plan.format,
       mode: plan.mode,
+      primary_trainer_id: "",
       vt_planned: String(plan.vtCount),
       days_planned: String(plan.journeeCount),
       hourly_rate: "",
