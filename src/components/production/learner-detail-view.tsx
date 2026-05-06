@@ -492,7 +492,7 @@ export function LearnerDetailView({
                   <Separator />
                   <div>
                     <span className="text-xs text-muted-foreground block mb-1">Notes</span>
-                    <p className="text-sm whitespace-pre-wrap">{learner.notes}</p>
+                    <RichNotes value={learner.notes} onChange={() => {}} readOnly />
                   </div>
                 </>
               )}
