@@ -108,9 +108,9 @@ function formatDate(date: string | null) {
 }
 
 const formatLabels: Record<string, string> = {
-  individuel: "Individuel",
+  individuel: "Indiv.",
   collectif: "Collectif",
-  individuel_collectif: "Individuel + Collectif",
+  individuel_collectif: "Indiv. + Collectif",
 };
 const modeLabels: Record<string, string> = {
   presentiel: "Présentiel",
@@ -987,27 +987,27 @@ export function PlanningList({
                 onClick={() => toggleExpand(plan.id)}
                 style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  {isExpanded ? <ChevronDown className="h-5 w-5" style={{ color: "#8399a9" }} /> : <ChevronRight className="h-5 w-5" style={{ color: "#8399a9" }} />}
-                  <span style={{ fontWeight: 700, fontSize: 15, color: "#1a2a3a" }}>{plan.companies?.name ?? "—"}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
+                  {isExpanded ? <ChevronDown className="h-5 w-5" style={{ color: "#8399a9", flexShrink: 0 }} /> : <ChevronRight className="h-5 w-5" style={{ color: "#8399a9", flexShrink: 0 }} />}
+                  <span style={{ fontWeight: 700, fontSize: 14, color: "#1a2a3a", whiteSpace: "nowrap" }}>{plan.companies?.name ?? "—"}</span>
                   {(plan as any).plan_name && (
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginLeft: 4 }}>— {(plan as any).plan_name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>— {(plan as any).plan_name}</span>
                   )}
                   {plan.training_programs?.name && (
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#e8f0fe", color: "#0d4f7a" }}>{plan.training_programs.name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#e8f0fe", color: "#0d4f7a" }}>{plan.training_programs.name}</span>
                   )}
                   {plan.training_types?.name && (
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#f5f5f5", color: "#555" }}>{plan.training_types.name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#f5f5f5", color: "#555" }}>{plan.training_types.name}</span>
                   )}
-                  <span style={{ ...fmtColor, fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: fmtColor.bg, color: fmtColor.text }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: fmtColor.bg, color: fmtColor.text }}>
                     {formatLabels[plan.format ?? ""] ?? "—"}
                   </span>
-                  <span style={{ ...mdColor, fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: mdColor.bg, color: mdColor.text }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: mdColor.bg, color: mdColor.text }}>
                     {modeLabels[plan.mode ?? ""] ?? "—"}
                   </span>
                   {(plan as any).primary_trainer && (
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#e8f5e9", color: "#2e7d32" }}>
-                      Expert : {(plan as any).primary_trainer.first_name} {(plan as any).primary_trainer.last_name}
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#e8f5e9", color: "#2e7d32" }}>
+                      {(plan as any).primary_trainer.first_name}
                     </span>
                   )}
                 </div>
