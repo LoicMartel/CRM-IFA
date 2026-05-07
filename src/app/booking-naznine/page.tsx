@@ -197,10 +197,24 @@ function BookingNaznineContent() {
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          maxWidth: 900, width: "100%", overflow: "hidden",
+          maxWidth: 1100, width: "100%", overflow: "hidden",
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
-          {/* Left: Calendar */}
+          {/* Left: Intro text */}
+          <div style={{ flex: "1 1 280px", padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.7, fontSize: 13, color: "#1a2a3a" }}>
+            <p style={{ marginBottom: 10 }}>Bonjour,</p>
+            <p style={{ marginBottom: 10 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; La Closing Acad&eacute;mie !</p>
+            <p style={{ marginBottom: 10 }}>Afin de mieux comprendre vos enjeux, vos attentes et vos priorit&eacute;s lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont les indicateurs cl&eacute;s de votre activit&eacute; commerciale :</p>
+            <ul style={{ margin: "0 0 10px 20px", padding: 0, fontSize: 13 }}>
+              <li>Nombre de leads / de cibles</li>
+              <li>Nombre de RDVs r&eacute;alis&eacute;s</li>
+              <li>Nombre de signatures</li>
+              <li>Chiffre d&apos;affaires</li>
+            </ul>
+            <p style={{ marginBottom: 10 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous &ecirc;tre utile pour vous accompagner dans votre croissance</p>
+            <p style={{ marginBottom: 0 }}>Au plaisir de faire prochainement votre connaissance,<br /><strong>Naznine</strong></p>
+          </div>
+          {/* Center: Calendar */}
           <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
