@@ -2228,9 +2228,9 @@ export function ReportsView({
           }).length;
 
           // RDV
-          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done")).length;
+          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done")).length;
           const pctR1Pris = ciblesQualifiees > 0 ? Math.round((r1Pris / ciblesQualifiees) * 100) : 0;
-          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done").length;
+          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done").length;
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
 
           // Prop: nb of proposals (deals in quote_to_send + quote_sent + opco_deposit)
@@ -2260,8 +2260,8 @@ export function ReportsView({
             const cid = c.id as string;
             return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
           });
-          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done"));
-          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done");
+          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
+          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
           return {
             name: repName, suiviRelances, ciblesQualifiees, actionsSortantes,
@@ -2531,9 +2531,9 @@ export function ReportsView({
           }).length;
 
           // RDV
-          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done")).length;
+          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done")).length;
           const pctR1Pris = ciblesQualifiees > 0 ? Math.round((r1Pris / ciblesQualifiees) * 100) : 0;
-          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done").length;
+          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done").length;
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
 
           // Prop: nb of proposals (deals in quote_to_send + quote_sent + opco_deposit)
@@ -2563,8 +2563,8 @@ export function ReportsView({
             const cid = c.id as string;
             return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
           });
-          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done"));
-          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done");
+          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
+          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
           return {
             name: repName, suiviRelances, ciblesQualifiees, actionsSortantes,
@@ -2812,9 +2812,9 @@ export function ReportsView({
             return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
           }).length;
 
-          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done")).length;
+          const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done")).length;
           const pctR1Pris = ciblesQualifiees > 0 ? Math.round((r1Pris / ciblesQualifiees) * 100) : 0;
-          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done").length;
+          const r1Fait = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done").length;
           const pctR1Fait = r1Pris > 0 ? Math.round((r1Fait / r1Pris) * 100) : 0;
           const propDeals = repDeals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string) && isInPY((d.created_at) as string));
           const prop = propDeals.length;
@@ -2837,8 +2837,8 @@ export function ReportsView({
             const cid = c.id as string;
             return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
           });
-          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && (m.status === "booked" || m.status === "done"));
-          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1") && m.status === "done");
+          const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
+          const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
           return {
             name: repName, suiviRelances, ciblesQualifiees, actionsSortantes,
@@ -3507,7 +3507,7 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>R0 / R1 non fermés</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{overdue.filter((m: R) => m.meeting_type === "R0" || m.meeting_type === "R1").length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{overdue.filter((m: R) => m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1").length}</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>R2 / R3 non fermés</div>
