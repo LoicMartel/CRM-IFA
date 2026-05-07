@@ -430,11 +430,8 @@ export function ContactDetail({
       task_deadline: activityForm.type === "tâche" && activityForm.task_deadline ? activityForm.task_deadline : null,
       contact_id: contact.id,
       company_id: contact.company_id || null,
+      team_member_id: currentMemberId || null,
     };
-
-    if (activityForm.type === "tâche") {
-      payload.team_member_id = currentMemberId || null;
-    }
 
     const hasTaskDate = activityForm.due_date || (activityForm.type === "tâche" && activityForm.task_deadline);
 
