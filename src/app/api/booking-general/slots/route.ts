@@ -102,7 +102,19 @@ export async function GET(request: Request) {
     })
   );
 
+  // If a member has an event lasting 4h+ (formation), block the entire day
+  const blockedAllDay = new Set<string>();
+  for (const member of TEAM) {
+    const busy = busyByMember.get(member.id) ?? [];
+    const hasLongEvent = busy.some((b) => {
+      const duration = new Date(b.end).getTime() - new Date(b.start).getTime();
+      return duration >= 4 * 60 * 60 * 1000; // 4h+
+    });
+    if (hasLongEvent) blockedAllDay.add(member.id);
+  }
+
   function isMemberAvailable(memberId: string, slotStart: Date, slotEnd: Date): boolean {
+    if (blockedAllDay.has(memberId)) return false;
     const busy = busyByMember.get(memberId) ?? [];
     return !busy.some((b) => {
       const bs = new Date(b.start).getTime() - BUFFER;
@@ -134,12 +146,13 @@ export async function GET(request: Request) {
     // Si personne n'est dispo, le créneau n'apparaît pas
   }
 
-  // Filter past slots if today
+  // Filter slots: must be at least 4h from now
   const now = new Date();
+  const minTime = new Date(now.getTime() + 4 * 60 * 60 * 1000); // now + 4h
   const todayStr = now.toLocaleDateString("sv-SE", { timeZone: TZ });
   const filtered = date === todayStr
-    ? result.filter((s) => new Date(`${s.start}${offset}`) > now)
-    : result;
+    ? result.filter((s) => new Date(`${s.start}${offset}`) >= minTime)
+    : date < todayStr ? [] : result;
 
   return NextResponse.json({ slots: filtered });
 }
