@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, Plus, Trash2, Receipt, CreditCard, Clock, AlertTriangle, X, Edit,
-  ExternalLink, Upload, Download, FileText, ArrowUpDown,
+  ExternalLink, Upload, Download, FileText, ArrowUpDown, GripVertical,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -32,6 +32,7 @@ interface BillingEntryData {
   funding_type: string | null;
   fiscal_year: string;
   notes: string | null;
+  display_order: number;
   billing_months: BillingMonthData[];
   companies: { id: string; name: string } | null;
   deals: { id: string; name: string; amount: number } | null;
@@ -149,6 +150,18 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [saving, setSaving] = useState(false);
   const [companySort, setCompanySort] = useState<"asc" | "desc" | null>(null);
 
+  // Company edit panel state
+  const [companyEditOpen, setCompanyEditOpen] = useState(false);
+  const [companyEditId, setCompanyEditId] = useState<string | null>(null);
+  const [companyEditName, setCompanyEditName] = useState("");
+  const [companyEditEntries, setCompanyEditEntries] = useState<{
+    id: string | null; client_name: string; funding_type: string; deal_id: string;
+  }[]>([]);
+
+  // Drag-and-drop state
+  const [dragGroupIdx, setDragGroupIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
   const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
   const fiscalMonthsFull = useMemo(() => getFiscalMonthsFull(fiscalYear), [fiscalYear]);
 
@@ -199,7 +212,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
   // Group entries by company for display
   const groupedByCompany = useMemo(() => {
-    const groups: { companyName: string; companyId: string | null; entries: BillingEntryData[] }[] = [];
+    const groups: { companyName: string; companyId: string | null; entries: BillingEntryData[]; displayOrder: number }[] = [];
     const map = new Map<string, BillingEntryData[]>();
     const order: string[] = [];
     for (const e of filtered) {
@@ -210,7 +223,8 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     for (const key of order) {
       const entries = map.get(key)!;
       const companyName = entries[0].companies?.name ?? "Sans entreprise";
-      groups.push({ companyName, companyId: key === "__none__" ? null : key, entries });
+      const displayOrder = Math.min(...entries.map(e => e.display_order ?? 0));
+      groups.push({ companyName, companyId: key === "__none__" ? null : key, entries, displayOrder });
     }
     if (companySort) {
       groups.sort((a, b) => {
@@ -218,6 +232,9 @@ export function BillingGrid({ entries, companies, deals }: Props) {
         const cb = b.companyName.toLowerCase();
         return companySort === "asc" ? ca.localeCompare(cb, "fr") : cb.localeCompare(ca, "fr");
       });
+    } else {
+      // Sort by display_order when no alphabetical sort is active
+      groups.sort((a, b) => a.displayOrder - b.displayOrder);
     }
     return groups;
   }, [filtered, companySort]);
@@ -434,6 +451,94 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     router.refresh();
   }
 
+  // ---- Company edit panel ----
+
+  function openCompanyEdit(companyId: string | null, companyName: string) {
+    setCompanyEditId(companyId);
+    setCompanyEditName(companyName);
+    const companyEntries = filtered
+      .filter(e => (e.company_id ?? "__none__") === (companyId ?? "__none__"))
+      .map(e => ({
+        id: e.id as string | null,
+        client_name: e.client_name,
+        funding_type: e.funding_type ?? "",
+        deal_id: e.deal_id ?? "",
+      }));
+    setCompanyEditEntries(companyEntries);
+    setCompanyEditOpen(true);
+  }
+
+  function addCompanyEditLine() {
+    setCompanyEditEntries(prev => [...prev, { id: null, client_name: "", funding_type: "", deal_id: "" }]);
+  }
+
+  function removeCompanyEditLine(idx: number) {
+    setCompanyEditEntries(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleCompanyEditSave() {
+    setSaving(true);
+    const supabase = createClient();
+
+    for (const line of companyEditEntries) {
+      if (!line.client_name.trim()) continue;
+      if (line.id) {
+        // Update existing
+        await supabase.from("billing_entries").update({
+          client_name: line.client_name.trim(),
+          funding_type: line.funding_type || null,
+          deal_id: line.deal_id || null,
+          updated_at: new Date().toISOString(),
+        }).eq("id", line.id);
+      } else {
+        // Create new entry
+        await supabase.from("billing_entries").insert({
+          company_id: companyEditId,
+          client_name: line.client_name.trim(),
+          funding_type: line.funding_type || null,
+          deal_id: line.deal_id || null,
+          fiscal_year: fiscalYear,
+        });
+      }
+    }
+
+    // Delete removed entries
+    const existingIds = filtered
+      .filter(e => (e.company_id ?? "__none__") === (companyEditId ?? "__none__"))
+      .map(e => e.id);
+    const keptIds = companyEditEntries.filter(e => e.id).map(e => e.id!);
+    const deletedIds = existingIds.filter(id => !keptIds.includes(id));
+    for (const id of deletedIds) {
+      await supabase.from("billing_entries").delete().eq("id", id);
+    }
+
+    setSaving(false);
+    setCompanyEditOpen(false);
+    router.refresh();
+  }
+
+  // ---- Drag-and-drop handlers ----
+
+  async function handleDrop(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx) return;
+    const supabase = createClient();
+    // Recompute order for all groups
+    const reordered = [...groupedByCompany];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+
+    // Update display_order for all entries
+    for (const [idx, group] of reordered.entries()) {
+      for (const entry of group.entries) {
+        await supabase.from("billing_entries").update({ display_order: idx }).eq("id", entry.id);
+      }
+    }
+    setDragGroupIdx(null);
+    setDragOverIdx(null);
+    setCompanySort(null); // Reset alphabetical sort to show custom order
+    router.refresh();
+  }
+
   // Close popover on outside click
   useEffect(() => {
     if (!popoverCell) return;
@@ -534,6 +639,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, tableLayout: "fixed" }}>
             <colgroup>
+              {!isReadOnly && <col style={{ width: 28 }} />}
               <col style={{ width: 130 }} />
               <col style={{ width: 100 }} />
               <col style={{ width: 70 }} />
@@ -545,16 +651,19 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             </colgroup>
             <thead>
               <tr style={{ background: "#f8fafb", borderBottom: "2px solid #e8ecf1" }}>
+                {!isReadOnly && (
+                  <th style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "4px 2px", width: 28, borderRight: "1px solid #e8ecf1" }}></th>
+                )}
                 <th
-                  style={{ position: "sticky", left: 0, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1", cursor: "pointer" }}
+                  style={{ position: "sticky", left: isReadOnly ? 0 : 28, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1", cursor: "pointer" }}
                   onClick={() => setCompanySort(companySort === "asc" ? "desc" : companySort === "desc" ? null : "asc")}
                 >
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>Entreprise <ArrowUpDown style={{ width: 10, height: 10 }} /></span>
                 </th>
-                <th style={{ position: "sticky", left: 130, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1" }}>
+                <th style={{ position: "sticky", left: isReadOnly ? 130 : 158, zIndex: 10, background: "#f8fafb", padding: "8px 6px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "1px solid #e8ecf1" }}>
                   Raison sociale
                 </th>
-                <th style={{ position: "sticky", left: 230, zIndex: 10, background: "#f8fafb", padding: "8px 4px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "2px solid #dce8f0" }}>
+                <th style={{ position: "sticky", left: isReadOnly ? 230 : 258, zIndex: 10, background: "#f8fafb", padding: "8px 4px", textAlign: "left", fontWeight: 700, fontSize: 10, color: "#5a6a7a", borderRight: "2px solid #dce8f0" }}>
                   Type
                 </th>
                 {fiscalMonths.map((m) => (
@@ -573,36 +682,71 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={fiscalMonths.length + 5} style={{ padding: 40, textAlign: "center", color: "#8399a9" }}>
+                  <td colSpan={fiscalMonths.length + (isReadOnly ? 5 : 6)} style={{ padding: 40, textAlign: "center", color: "#8399a9" }}>
                     Aucune entrée de facturation
                   </td>
                 </tr>
               ) : (
-                groupedByCompany.map((group) =>
+                groupedByCompany.map((group, groupIdx) =>
                   group.entries.map((entry, idx) => (
-                    <tr key={entry.id} style={{ borderBottom: "1px solid #f0f4f8" }} className="hover:bg-[#fafcfd]">
+                    <tr
+                      key={entry.id}
+                      style={{
+                        borderBottom: "1px solid #f0f4f8",
+                        opacity: dragGroupIdx !== null && dragGroupIdx === groupIdx ? 0.5 : 1,
+                        background: dragOverIdx === groupIdx && dragGroupIdx !== groupIdx ? "#e8f4ff" : undefined,
+                      }}
+                      className="hover:bg-[#fafcfd]"
+                      onDragOver={(e) => { e.preventDefault(); setDragOverIdx(groupIdx); }}
+                      onDragLeave={() => setDragOverIdx(null)}
+                      onDrop={(e) => { e.preventDefault(); if (dragGroupIdx !== null) handleDrop(dragGroupIdx, groupIdx); }}
+                    >
+                      {/* Drag handle - rowSpan for group */}
+                      {!isReadOnly && idx === 0 && (
+                        <td className="billing-sticky-cell" rowSpan={group.entries.length} style={{
+                          position: "sticky", left: 0, zIndex: 5,
+                          padding: "2px", verticalAlign: "middle", textAlign: "center",
+                          borderRight: "1px solid #e8ecf1", borderBottom: "2px solid #dce8f0",
+                          cursor: "grab",
+                        }}
+                          draggable
+                          onDragStart={() => { setDragGroupIdx(groupIdx); setCompanySort(null); }}
+                          onDragEnd={() => { setDragGroupIdx(null); setDragOverIdx(null); }}
+                        >
+                          <GripVertical style={{ width: 14, height: 14, color: "#8399a9" }} />
+                        </td>
+                      )}
+
                       {/* Company name - sticky, rowSpan for group */}
                       {idx === 0 && (
                         <td className="billing-sticky-cell" rowSpan={group.entries.length} style={{
-                          position: "sticky", left: 0, zIndex: 5,
+                          position: "sticky", left: isReadOnly ? 0 : 28, zIndex: 5,
                           padding: "6px 6px", fontWeight: 700, fontSize: 11, color: "#1a2a3a",
                           borderRight: "1px solid #e8ecf1", verticalAlign: "top",
                           borderBottom: "2px solid #dce8f0",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }} title={group.companyName}>
                           {group.companyId ? (
-                            <span onClick={() => router.push(`/clients/${group.companyId}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                            <span
+                              onClick={() => openCompanyEdit(group.companyId, group.companyName)}
+                              style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                            >
                               {group.companyName}
                             </span>
                           ) : (
-                            <span style={{ color: "#8399a9", fontStyle: "italic" }}>{group.companyName}</span>
+                            <span
+                              onClick={() => openCompanyEdit(null, group.companyName)}
+                              style={{ color: "#8399a9", fontStyle: "italic", cursor: "pointer" }}
+                            >
+                              {group.companyName}
+                            </span>
                           )}
                         </td>
                       )}
 
                       {/* Client name - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 130, zIndex: 5,
+                        position: "sticky", left: isReadOnly ? 130 : 158, zIndex: 5,
                         padding: "6px 6px", fontWeight: 600, fontSize: 11, color: "#1a2a3a",
                         borderRight: "1px solid #e8ecf1", cursor: "pointer",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -612,7 +756,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
                       {/* Funding type - sticky */}
                       <td className="billing-sticky-cell" style={{
-                        position: "sticky", left: 230, zIndex: 5,
+                        position: "sticky", left: isReadOnly ? 230 : 258, zIndex: 5,
                         padding: "6px 4px", fontSize: 10, color: "#5a6a7a", fontWeight: 600,
                         borderRight: "2px solid #dce8f0",
                       }}>
@@ -709,15 +853,18 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               {/* Totals row */}
               {filtered.length > 0 && (
                 <tr style={{ borderTop: "2px solid #dce8f0", background: "#f8fafb" }}>
+                  {!isReadOnly && (
+                    <td className="billing-sticky-header" style={{ position: "sticky", left: 0, zIndex: 6, borderRight: "1px solid #e8ecf1" }}></td>
+                  )}
                   <td className="billing-sticky-header" style={{
-                    position: "sticky", left: 0, zIndex: 6,
+                    position: "sticky", left: isReadOnly ? 0 : 28, zIndex: 6,
                     padding: "8px 6px", fontWeight: 800, fontSize: 10, color: "#1a2a3a",
                     borderRight: "1px solid #e8ecf1",
                   }}>
                     TOTAUX
                   </td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 130, zIndex: 6, borderRight: "1px solid #e8ecf1" }}></td>
-                  <td className="billing-sticky-header" style={{ position: "sticky", left: 230, zIndex: 6, borderRight: "2px solid #dce8f0" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: isReadOnly ? 130 : 158, zIndex: 6, borderRight: "1px solid #e8ecf1" }}></td>
+                  <td className="billing-sticky-header" style={{ position: "sticky", left: isReadOnly ? 230 : 258, zIndex: 6, borderRight: "2px solid #dce8f0" }}></td>
                   {fiscalMonths.map((mk) => (
                     <td key={mk.key} style={{
                       padding: "8px 3px", textAlign: "right", fontWeight: 700, fontSize: 10,
@@ -1115,6 +1262,103 @@ export function BillingGrid({ entries, companies, deals }: Props) {
           </div>
         </div>
       )}
+
+      {/* Company edit panel */}
+      <Sheet open={companyEditOpen} onOpenChange={(open) => { setCompanyEditOpen(open); }}>
+        <SheetContent style={{ width: 560, maxWidth: "95vw", overflowY: "auto" }}>
+          <SheetHeader>
+            <SheetTitle>Modifier le plan — {companyEditName}</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-6 px-4">
+            <div style={{ fontSize: 12, color: "#8399a9" }}>
+              Modifiez les raisons sociales existantes ou ajoutez-en de nouvelles pour cette entreprise.
+            </div>
+
+            {companyEditEntries.map((line, idx) => (
+              <div key={idx} style={{
+                border: "1px solid #e8ecf1", borderRadius: 10, padding: 14,
+                background: idx % 2 === 0 ? "#fafcfd" : "white",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#8399a9", textTransform: "uppercase" }}>
+                    {line.id ? `Ligne existante` : "Nouvelle ligne"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (line.id) {
+                        if (!window.confirm("Supprimer cette raison sociale et toutes ses données de facturation ?")) return;
+                      }
+                      removeCompanyEditLine(idx);
+                    }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}
+                    title="Supprimer cette ligne"
+                  >
+                    <Trash2 style={{ width: 14, height: 14 }} />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label style={{ fontSize: 12 }}>Raison sociale *</Label>
+                    <Input
+                      value={line.client_name}
+                      onChange={(e) => setCompanyEditEntries(prev => prev.map((l, i) => i === idx ? { ...l, client_name: e.target.value } : l))}
+                      placeholder="Ex: anglais@marseille, WSE Rennes..."
+                      style={{ height: 34, fontSize: 13 }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label style={{ fontSize: 12 }}>Type de financement</Label>
+                      <select
+                        className="flex h-[34px] w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                        value={line.funding_type}
+                        onChange={(e) => setCompanyEditEntries(prev => prev.map((l, i) => i === idx ? { ...l, funding_type: e.target.value } : l))}
+                      >
+                        <option value="">Aucun</option>
+                        {FUNDING_TYPES.map((ft) => (
+                          <option key={ft} value={ft}>{ft}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label style={{ fontSize: 12 }}>Deal associé</Label>
+                      <select
+                        className="flex h-[34px] w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                        value={line.deal_id}
+                        onChange={(e) => setCompanyEditEntries(prev => prev.map((l, i) => i === idx ? { ...l, deal_id: e.target.value } : l))}
+                      >
+                        <option value="">Aucun</option>
+                        {(companyEditId
+                          ? deals.filter(d => d.company_id === companyEditId)
+                          : deals
+                        ).map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <Button variant="outline" onClick={addCompanyEditLine} className="w-full" style={{ borderStyle: "dashed", gap: 8 }}>
+              <Plus className="h-4 w-4" />
+              Ajouter une raison sociale
+            </Button>
+
+            <Button
+              onClick={handleCompanyEditSave}
+              disabled={saving || companyEditEntries.every(l => !l.client_name.trim())}
+              className="w-full"
+              style={{ height: 42, marginTop: 8 }}
+            >
+              {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

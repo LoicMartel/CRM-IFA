@@ -15,6 +15,7 @@ export default async function InvoicesPage() {
     supabase
       .from("billing_entries")
       .select("*, billing_months(*), companies(id, name), deals(id, name, amount)")
+      .order("display_order")
       .order("client_name"),
     supabase
       .from("companies")
