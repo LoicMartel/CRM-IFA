@@ -3792,6 +3792,8 @@ export function ReportsView({
         const planned = meetings.filter((m: R) => {
           if (!filteredContactIds.has(m.contact_id as string)) return false;
           if (m.status !== "booked") return false;
+          // Exclude meetings that already have a result (done/no_show/cancelled)
+          if (m.next_step === "completed") return false;
           const scheduledAt = m.scheduled_at as string | undefined;
           if (!scheduledAt) return false;
           // Exclude if a "done" meeting exists for same contact + type + date
