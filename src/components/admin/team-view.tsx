@@ -733,6 +733,7 @@ export function TeamView({ members }: { members: R[] }) {
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Visibilité</div>
 
                   {([
+                    { key: "canViewMarketing" as const, label: "Section Marketing", desc: "Leads, Suivi Tunnels, Campagnes, Dépenses Marketing, Rapports Marketing" },
                     { key: "canViewCommercial" as const, label: "Section Commerciale", desc: "Contacts, Entreprises, Pipeline, Opportunités, Commandes" },
                     { key: "canViewFinance" as const, label: "Section Finance", desc: "Facturation, Suivi Financier, Rapports Facturation" },
                     { key: "canViewDashboard" as const, label: "Dashboard & Synthèses", desc: "Dashboard, Synthèse Commerciale, Synthèse Finances" },

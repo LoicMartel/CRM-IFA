@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 export interface MemberPermissions {
   canViewCommercial: boolean;
   canViewFinance: boolean;
+  canViewMarketing: boolean;
   canViewDashboard: boolean;
   canViewReports: boolean;
   canEdit: boolean;
@@ -16,6 +17,7 @@ export interface MemberPermissions {
 export const DEFAULT_PERMISSIONS: MemberPermissions = {
   canViewCommercial: true,
   canViewFinance: true,
+  canViewMarketing: true,
   canViewDashboard: true,
   canViewReports: true,
   canEdit: true,
@@ -27,6 +29,7 @@ export const DEFAULT_PERMISSIONS: MemberPermissions = {
 const RESTRICTED_EXTERNE_PERMISSIONS: MemberPermissions = {
   canViewCommercial: false,
   canViewFinance: false,
+  canViewMarketing: false,
   canViewDashboard: false,
   canViewReports: false,
   canEdit: false,
@@ -113,6 +116,7 @@ export function useCurrentRoles() {
     canEditTeam: isAdmin,
     canViewCommercial: isAdmin || perms.canViewCommercial,
     canViewFinance: isAdmin || perms.canViewFinance,
+    canViewMarketing: isAdmin || perms.canViewMarketing,
     canViewReports: isAdmin || perms.canViewReports,
     canViewDashboard: isAdmin || perms.canViewDashboard,
     onlyOwnData: !isAdmin && perms.onlyOwnData,
