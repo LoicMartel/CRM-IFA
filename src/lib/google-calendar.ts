@@ -214,7 +214,7 @@ export async function createCalendarEvent({
 
     const event = await calendar.events.insert({
       calendarId,
-      sendUpdates: attendees.length > 0 ? "all" : "none",
+      sendUpdates: "none",
       requestBody: {
         summary,
         description,
@@ -260,6 +260,7 @@ export async function updateCalendarEvent({
     await calendar.events.update({
       calendarId,
       eventId,
+      sendUpdates: "none",
       requestBody: {
         summary,
         description,
@@ -369,6 +370,7 @@ export async function patchCalendarEventSummary({
     await calendar.events.patch({
       calendarId,
       eventId,
+      sendUpdates: "none",
       requestBody: { summary },
     });
     return { success: true };
@@ -389,7 +391,7 @@ export async function deleteCalendarEvent({
 
   try {
     const calendar = google.calendar({ version: "v3", auth });
-    await calendar.events.delete({ calendarId, eventId });
+    await calendar.events.delete({ calendarId, eventId, sendUpdates: "none" });
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
