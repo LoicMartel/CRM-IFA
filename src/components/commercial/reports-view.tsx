@@ -1214,11 +1214,15 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          // First-ever REAL contact date per contact (ALL reps, exclude unanswered calls)
           const firstInteraction: Record<string, string> = {};
           activities.forEach((a: R) => {
             const cid = a.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
+            if ((a.type as string) === "appel") {
+              const desc = String((a as any).description ?? "");
+              if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
+            }
             const d = (a.created_at as string).slice(0, 10);
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
@@ -1229,9 +1233,16 @@ export function ReportsView({
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          // Unique contacts contacted this month (via activities OR meetings by this rep)
+          // Unique contacts actually reached this month (exclude "Pas de réponse" and "Message vocal")
           const contactedThisMonth = new Set<string>();
-          repActivities.forEach((a: R) => { if (a.contact_id) contactedThisMonth.add(a.contact_id as string); });
+          repActivities.forEach((a: R) => {
+            if (!a.contact_id) return;
+            if (a.type === "appel") {
+              const desc = String(a.description ?? "");
+              if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
+            }
+            contactedThisMonth.add(a.contact_id as string);
+          });
           repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisMonth.add(m.contact_id as string); });
 
           // New contacted = first-ever interaction is in this month
@@ -1549,11 +1560,15 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          // First-ever REAL contact date per contact (ALL reps, exclude unanswered calls)
           const firstInteraction: Record<string, string> = {};
           activities.forEach((a: R) => {
             const cid = a.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
+            if ((a.type as string) === "appel") {
+              const desc = String((a as any).description ?? "");
+              if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
+            }
             const d = (a.created_at as string).slice(0, 10);
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
@@ -1880,11 +1895,15 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          // First-ever REAL contact date per contact (ALL reps, exclude unanswered calls)
           const firstInteraction: Record<string, string> = {};
           activities.forEach((a: R) => {
             const cid = a.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
+            if ((a.type as string) === "appel") {
+              const desc = String((a as any).description ?? "");
+              if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
+            }
             const d = (a.created_at as string).slice(0, 10);
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
