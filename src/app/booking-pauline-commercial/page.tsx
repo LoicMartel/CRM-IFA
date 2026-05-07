@@ -170,18 +170,20 @@ function BookingContent() {
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
           {/* Left: Intro text */}
-          <div style={{ flex: "1 1 280px", padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.6, fontSize: 12, color: "#1a2a3a" }}>
-            <p style={{ marginBottom: 10 }}>Bonjour,</p>
-            <p style={{ marginBottom: 10 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; La Closing Acad&eacute;mie !</p>
-            <p style={{ marginBottom: 10 }}>Afin de mieux comprendre vos enjeux, vos attentes et vos priorit&eacute;s lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont les indicateurs cl&eacute;s de votre activit&eacute; commerciale :</p>
-            <ul style={{ margin: "0 0 10px 20px", padding: 0, fontSize: 13 }}>
-              <li>Nombre de leads / de cibles</li>
-              <li>Nombre de RDVs r&eacute;alis&eacute;s</li>
-              <li>Nombre de signatures</li>
-              <li>Chiffre d&apos;affaires</li>
-            </ul>
-            <p style={{ marginBottom: 10 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous &ecirc;tre utile pour vous accompagner dans votre croissance</p>
-            <p style={{ marginBottom: 0 }}>Au plaisir de faire prochainement votre connaissance,<br /><strong>Pauline</strong></p>
+          <div style={{ flex: "1 1 300px", padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.7, fontSize: 13, color: "#1a2a3a" }}>
+            <p style={{ marginBottom: 12, fontSize: 15, fontWeight: 600 }}>Bonjour,</p>
+            <p style={{ marginBottom: 12 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; <strong>La Closing Acad&eacute;mie</strong> !</p>
+            <p style={{ marginBottom: 14 }}>Afin de mieux comprendre vos enjeux lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont :</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "0 0 14px 0" }}>
+              {["Nombre de leads / de cibles", "Nombre de RDVs r\u00e9alis\u00e9s", "Nombre de signatures", "Chiffre d\u2019affaires"].map((item) => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#f0f6fa", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", flexShrink: 0 }} />
+                  {item}
+                </div>
+              ))}
+            </div>
+            <p style={{ marginBottom: 12 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous accompagner dans votre croissance.</p>
+            <p style={{ marginBottom: 0, fontStyle: "italic", color: "#5a6f80" }}>Au plaisir de faire votre connaissance,<br /><strong style={{ color: "#1a2a3a", fontStyle: "normal" }}>Pauline</strong></p>
           </div>
           {/* Left: Calendar */}
           <div style={{ flex: "1 1 280px", padding: "16px 12px", borderRight: "1px solid #e8ecf1" }}>
