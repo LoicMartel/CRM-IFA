@@ -77,7 +77,7 @@ export default async function HomePage() {
         .gte("scheduled_at", `${today}T00:00:00`)
         .lte("scheduled_at", `${today}T23:59:59`)
         .eq("status", "booked")
-        .neq("next_step", "completed")
+        .or("next_step.neq.completed,next_step.is.null")
         .order("scheduled_at", { ascending: true }),
 
       // Today meetings where I'm a manager (via meeting_managers)
@@ -87,7 +87,7 @@ export default async function HomePage() {
             .gte("scheduled_at", `${today}T00:00:00`)
             .lte("scheduled_at", `${today}T23:59:59`)
             .eq("status", "booked")
-            .neq("next_step", "completed")
+            .or("next_step.neq.completed,next_step.is.null")
             .order("scheduled_at", { ascending: true })
         : Promise.resolve({ data: [] }),
 
@@ -113,7 +113,7 @@ export default async function HomePage() {
         .eq("assigned_to", currentMemberId)
         .gt("scheduled_at", `${today}T23:59:59`)
         .eq("status", "booked")
-        .neq("next_step", "completed")
+        .or("next_step.neq.completed,next_step.is.null")
         .order("scheduled_at", { ascending: true })
         .limit(10),
 
@@ -123,7 +123,7 @@ export default async function HomePage() {
             .in("id", managedMeetingIds)
             .gt("scheduled_at", `${today}T23:59:59`)
             .eq("status", "booked")
-            .neq("next_step", "completed")
+            .or("next_step.neq.completed,next_step.is.null")
             .order("scheduled_at", { ascending: true })
             .limit(10)
         : Promise.resolve({ data: [] }),
