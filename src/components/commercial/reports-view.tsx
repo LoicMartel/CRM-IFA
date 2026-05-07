@@ -1291,7 +1291,11 @@ export function ReportsView({
 
           const pctBked = oldCted > 0 ? Math.round((oldBked / oldCted) * 100) : 0;
 
-          const monthlyLeads = repContacts.length;
+          const repContactsInPeriod = repContacts.filter(c => {
+            const d = (c.created_at as string).slice(0, 10);
+            return d >= monthStart && d <= monthEnd;
+          });
+          const monthlyLeads = repContactsInPeriod.length;
           const monthlyLeadsCted = newCted + oldCted;
           const pctCtedOn90 = monthlyLeads > 0 ? Math.round((monthlyLeadsCted / monthlyLeads) * 100) : 0;
 
@@ -1326,7 +1330,7 @@ export function ReportsView({
             attendNew, pctAttend, totalDone, nSigned,
             closingTotal, closingNew, caHT, avgPrice, gainsPerCts,
             pctBking, pctAttendMkt, pctClosingMkt, pctGoalDone,
-            _repContacts: repContacts,
+            _repContacts: repContactsInPeriod,
             _repMeetings: repMeetings,
             _doneMeetings: doneMeetings,
             _repDeals: repDeals,
@@ -1638,7 +1642,8 @@ export function ReportsView({
           const pctBked = oldCted > 0 ? Math.round((oldBked / oldCted) * 100) : 0;
 
           // Only count leads created during this week
-          const weeklyLeads = repContacts.filter(c => isInWeek(c.created_at as string)).length;
+          const repContactsInPeriod = repContacts.filter(c => isInWeek(c.created_at as string));
+          const weeklyLeads = repContactsInPeriod.length;
           const monthlyLeads = weeklyLeads;
           const monthlyLeadsCted = newCted + oldCted;
           const pctCtedOn90 = monthlyLeads > 0 ? Math.round((monthlyLeadsCted / monthlyLeads) * 100) : 0;
@@ -1674,7 +1679,7 @@ export function ReportsView({
             attendNew, pctAttend, totalDone, nSigned,
             closingTotal, closingNew, caHT, avgPrice, gainsPerCts,
             pctBking, pctAttendMkt, pctClosingMkt, pctGoalDone,
-            _repContacts: repContacts,
+            _repContacts: repContactsInPeriod,
             _repMeetings: repMeetings,
             _doneMeetings: doneMeetings,
             _repDeals: repDeals,
@@ -1968,7 +1973,8 @@ export function ReportsView({
           });
 
           const pctBked = oldCted > 0 ? Math.round((oldBked / oldCted) * 100) : 0;
-          const monthlyLeads = repContacts.length;
+          const repContactsInPeriod = repContacts.filter(c => isInPeriod(c.created_at as string));
+          const monthlyLeads = repContactsInPeriod.length;
           const pctNewCted = monthlyLeads > 0 ? Math.round((newCted / monthlyLeads) * 100) : 0;
           const pctNewBked = newCted > 0 ? Math.round((newBkd / newCted) * 100) : 0;
           const pctAttend = monthlyLeads > 0 ? Math.round(((newCted + oldCted) / monthlyLeads) * 100) : 0;
