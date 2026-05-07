@@ -827,49 +827,7 @@ export function ContactDetail({
 
   const lc = lifecycleColors[contact.lifecycle_stage ?? ""] ?? null;
 
-  // Compute dynamic lead status badge based on latest action
-  const dynamicLeadStatus = (() => {
-    // Collect all events with timestamps
-    const events: { date: string; status: string }[] = [];
-
-    // Activities (calls → contacted)
-    activities.forEach(a => {
-      if (a.type === "appel" && a.description) {
-        const d = a.due_date || a.created_at;
-        if (d) {
-          if (String(a.description).includes("Pas intéressé")) {
-            events.push({ date: d, status: "not_interested" });
-          } else if (String(a.description).includes("Contacté → Booké") || String(a.description).includes("Booked")) {
-            events.push({ date: d, status: "booked" });
-          } else if (String(a.description).includes("Contacté")) {
-            events.push({ date: d, status: "contacted" });
-          }
-        }
-      }
-    });
-
-    // Meetings
-    meetings.forEach(m => {
-      const d = m.scheduled_at;
-      if (!d) return;
-      if (m.status === "booked" && m.next_step !== "completed") {
-        events.push({ date: d, status: "booked" });
-      }
-      if (m.status === "done") {
-        if (m.outcome && (m.outcome.includes("Signed") && !m.outcome.includes("Not signed"))) {
-          events.push({ date: d, status: "signed" });
-        } else {
-          events.push({ date: d, status: "rdv_done" });
-        }
-      }
-    });
-
-    // Sort by date descending, take the latest
-    events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return events.length > 0 ? events[0].status : (contact.lead_status ?? "lead");
-  })();
-
-  const ls = leadStatusColors[dynamicLeadStatus] ?? leadStatusColors[contact.lead_status ?? ""] ?? null;
+  const ls = leadStatusColors[contact.lead_status ?? ""] ?? null;
 
   // Build meeting progression
   const hasSomeSigned = meetings.some(m => m.status === "done" && m.outcome && m.outcome.includes("Signed") && !m.outcome.includes("Not signed")) || contact.lead_status === "signed";
