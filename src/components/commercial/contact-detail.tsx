@@ -110,9 +110,9 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
   contacted: { bg: "#e3f2fd", text: "#1565c0", label: "Contacted" },
   booked: { bg: "#fff3e0", text: "#e65100", label: "Booked" },
   rdv_done: { bg: "#f3e5f5", text: "#6a1b9a", label: "RDV Done" },
-  signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
-  not_interested: { bg: "#f3e5f5", text: "#6a1b9a", label: "Pas intéressé" },
   cancelled: { bg: "#fce4ec", text: "#c62828", label: "Cancelled" },
+  not_interested: { bg: "#f3e5f5", text: "#6a1b9a", label: "Pas intéressé" },
+  signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
 };
 
 const dealStageColors: Record<string, { bg: string; text: string; label: string }> = {
