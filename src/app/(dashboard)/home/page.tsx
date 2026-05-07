@@ -52,22 +52,44 @@ export default async function HomePage() {
   let overdueTasks: any[] = [];
 
   if (currentMemberId) {
+    // Helper: get meeting IDs where user is a manager (via junction table)
+    const { data: managedMeetingRows } = await supabase
+      .from("meeting_managers")
+      .select("meeting_id")
+      .eq("team_member_id", currentMemberId);
+    const managedMeetingIds = (managedMeetingRows ?? []).map(r => r.meeting_id);
+
+    const meetingSelect = "*, contacts!meetings_contact_id_fkey(first_name, last_name), companies:company_id(name), team_members!meetings_assigned_to_fkey(first_name, last_name)";
+
     const [
-      { data: tm },
+      { data: tmAssigned },
+      { data: tmManaged },
       { data: ts },
       { data: tt },
-      { data: um },
+      { data: umAssigned },
+      { data: umManaged },
       { data: us },
       { data: ot },
     ] = await Promise.all([
       // Today meetings assigned to me (exclut les RDV dont le suivi est fait)
-      supabase.from("meetings").select("*, contacts!meetings_contact_id_fkey(first_name, last_name), companies:company_id(name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
+      supabase.from("meetings").select(meetingSelect)
         .eq("assigned_to", currentMemberId)
         .gte("scheduled_at", `${today}T00:00:00`)
         .lte("scheduled_at", `${today}T23:59:59`)
         .eq("status", "booked")
         .neq("next_step", "completed")
         .order("scheduled_at", { ascending: true }),
+
+      // Today meetings where I'm a manager (via meeting_managers)
+      managedMeetingIds.length > 0
+        ? supabase.from("meetings").select(meetingSelect)
+            .in("id", managedMeetingIds)
+            .gte("scheduled_at", `${today}T00:00:00`)
+            .lte("scheduled_at", `${today}T23:59:59`)
+            .eq("status", "booked")
+            .neq("next_step", "completed")
+            .order("scheduled_at", { ascending: true })
+        : Promise.resolve({ data: [] }),
 
       // Today sessions where I'm a trainer (trainers is a text[] containing first names)
       supabase.from("training_sessions").select("*, service_plans(hourly_rate, companies(name), training_programs(name)), training_session_learners(learner_id, learners(id, first_name, last_name))")
@@ -93,7 +115,18 @@ export default async function HomePage() {
         .eq("status", "booked")
         .neq("next_step", "completed")
         .order("scheduled_at", { ascending: true })
-        .limit(5),
+        .limit(10),
+
+      // Upcoming meetings where I'm a manager (via meeting_managers)
+      managedMeetingIds.length > 0
+        ? supabase.from("meetings").select("*, contacts!meetings_contact_id_fkey(first_name, last_name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
+            .in("id", managedMeetingIds)
+            .gt("scheduled_at", `${today}T23:59:59`)
+            .eq("status", "booked")
+            .neq("next_step", "completed")
+            .order("scheduled_at", { ascending: true })
+            .limit(10)
+        : Promise.resolve({ data: [] }),
 
       // Upcoming sessions where I'm a trainer
       supabase.from("training_sessions").select("*, service_plans(hourly_rate, companies(name), training_programs(name)), training_session_learners(learner_id, learners(id, first_name, last_name))")
@@ -114,10 +147,18 @@ export default async function HomePage() {
         .order("task_deadline", { ascending: true }),
     ]);
 
-    todayMeetings = tm ?? [];
+    // Merge and deduplicate meetings by ID
+    const dedup = (a: any[], b: any[]) => {
+      const seen = new Set(a.map(m => m.id));
+      return [...a, ...b.filter(m => !seen.has(m.id))].sort((x, y) =>
+        (x.scheduled_at ?? "").localeCompare(y.scheduled_at ?? "")
+      );
+    };
+
+    todayMeetings = dedup(tmAssigned ?? [], tmManaged ?? []);
     todaySessions = ts ?? [];
     todayTasks = tt ?? [];
-    upcomingMeetings = um ?? [];
+    upcomingMeetings = dedup(umAssigned ?? [], umManaged ?? []).slice(0, 5);
     upcomingSessions = us ?? [];
     overdueTasks = ot ?? [];
   }
