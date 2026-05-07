@@ -2200,13 +2200,21 @@ export function ReportsView({
           });
 
           // Prospection
-          // Suivi & relances: all calls after the first call per contact
-          const callsByContact: Record<string, number> = {};
+          // Count ALL calls on rep's contacts (by anyone, not just this rep)
+          const repContactIdSet = new Set(repContacts.map(c => c.id as string));
+          const allCallsOnRepContacts: Record<string, number> = {};
+          activities.filter((a: R) => a.type === "appel" && repContactIdSet.has(a.contact_id as string)).forEach((a: R) => {
+            const cid = a.contact_id as string;
+            allCallsOnRepContacts[cid] = (allCallsOnRepContacts[cid] || 0) + 1;
+          });
+
+          // Suivi & relances: calls by this rep after the first
+          const callsByRep: Record<string, number> = {};
           repActivities.filter(a => a.type === "appel").forEach(a => {
             const cid = a.contact_id as string;
-            callsByContact[cid] = (callsByContact[cid] || 0) + 1;
+            callsByRep[cid] = (callsByRep[cid] || 0) + 1;
           });
-          const suiviRelances = Object.values(callsByContact).reduce((s, n) => s + Math.max(0, n - 1), 0);
+          const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
 
           // Cibles qualifiées: contacts marked as is_qualified
           const ciblesQualifiees = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true).length;
@@ -2214,17 +2222,16 @@ export function ReportsView({
           // Actions sortantes: all email + call activities
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
 
-          // Deci 1er contact: contacts reached on first call (has been contacted and has at least 1 call)
+          // Deci 1er contact: contacts reached (lead_status !== "lead") with at least 1 call by anyone
           const deci1erContact = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           }).length;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
 
-          // Deci recontacté: contacts reached after first call (more than 1 call and contacted)
+          // Deci recontacté: contacts reached with more than 1 call by anyone
           const deciRecontacte = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           }).length;
 
           // RDV
@@ -2253,12 +2260,11 @@ export function ReportsView({
           // Raw data for drill-down
           const _qualifiedContacts = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true);
           const _deci1erContacts = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           });
           const _deciRecontacteContacts = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           });
           const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
@@ -2503,13 +2509,21 @@ export function ReportsView({
           });
 
           // Prospection
-          // Suivi & relances: all calls after the first call per contact
-          const callsByContact: Record<string, number> = {};
+          // Count ALL calls on rep's contacts (by anyone, not just this rep)
+          const repContactIdSet = new Set(repContacts.map(c => c.id as string));
+          const allCallsOnRepContacts: Record<string, number> = {};
+          activities.filter((a: R) => a.type === "appel" && repContactIdSet.has(a.contact_id as string)).forEach((a: R) => {
+            const cid = a.contact_id as string;
+            allCallsOnRepContacts[cid] = (allCallsOnRepContacts[cid] || 0) + 1;
+          });
+
+          // Suivi & relances: calls by this rep after the first
+          const callsByRep: Record<string, number> = {};
           repActivities.filter(a => a.type === "appel").forEach(a => {
             const cid = a.contact_id as string;
-            callsByContact[cid] = (callsByContact[cid] || 0) + 1;
+            callsByRep[cid] = (callsByRep[cid] || 0) + 1;
           });
-          const suiviRelances = Object.values(callsByContact).reduce((s, n) => s + Math.max(0, n - 1), 0);
+          const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
 
           // Cibles qualifiées: contacts marked as is_qualified
           const ciblesQualifiees = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true).length;
@@ -2517,17 +2531,16 @@ export function ReportsView({
           // Actions sortantes: all email + call activities
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
 
-          // Deci 1er contact: contacts reached on first call (has been contacted and has at least 1 call)
+          // Deci 1er contact: contacts reached (lead_status !== "lead") with at least 1 call by anyone
           const deci1erContact = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           }).length;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
 
-          // Deci recontacté: contacts reached after first call (more than 1 call and contacted)
+          // Deci recontacté: contacts reached with more than 1 call by anyone
           const deciRecontacte = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           }).length;
 
           // RDV
@@ -2556,12 +2569,11 @@ export function ReportsView({
           // Raw data for drill-down
           const _qualifiedContacts = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true);
           const _deci1erContacts = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           });
           const _deciRecontacteContacts = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           });
           const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
@@ -2795,21 +2807,27 @@ export function ReportsView({
           });
 
           const callsByContact: Record<string, number> = {};
+          const repContactIdSet = new Set(repContacts.map(c => c.id as string));
+          const allCallsOnRepContacts: Record<string, number> = {};
+          activities.filter((a: R) => a.type === "appel" && repContactIdSet.has(a.contact_id as string)).forEach((a: R) => {
+            const cid = a.contact_id as string;
+            allCallsOnRepContacts[cid] = (allCallsOnRepContacts[cid] || 0) + 1;
+          });
+          const callsByRep: Record<string, number> = {};
           repActivities.filter(a => a.type === "appel").forEach(a => {
             const cid = a.contact_id as string;
-            callsByContact[cid] = (callsByContact[cid] || 0) + 1;
+            callsByRep[cid] = (callsByRep[cid] || 0) + 1;
           });
-          const suiviRelances = Object.values(callsByContact).reduce((s, n) => s + Math.max(0, n - 1), 0);
+          const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
           const ciblesQualifiees = repContacts.filter(c => (c as unknown as Record<string, unknown>).is_qualified === true).length;
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
           const deci1erContact = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           }).length;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
           const deciRecontacte = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           }).length;
 
           const r1Pris = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done")).length;
@@ -2830,12 +2848,11 @@ export function ReportsView({
           // Raw data for drill-down
           const _qualifiedContacts = repContacts.filter(c => (c as unknown as Record<string, unknown>).is_qualified === true);
           const _deci1erContacts = repContacts.filter(c => {
-            const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) >= 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted";
           });
           const _deciRecontacteContacts = repContacts.filter(c => {
             const cid = c.id as string;
-            return c.lead_status !== "lead" && (callsByContact[cid] || 0) > 1;
+            return c.lead_status !== "lead" && c.lead_status !== "new_not_contacted" && (allCallsOnRepContacts[cid] || 0) > 1;
           });
           const _r1PrisMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && (m.status === "booked" || m.status === "done"));
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
