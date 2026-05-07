@@ -95,7 +95,7 @@ export function TeamView({ members }: { members: R[] }) {
     } else if (Object.keys(dbPerms).length > 0) {
       effective = { ...DEFAULT_PERMISSIONS, ...dbPerms };
     } else if (isExterne) {
-      effective = { canViewCommercial: false, canViewFinance: false, canViewDashboard: false, canViewReports: false, canEdit: false, canDelete: false, onlyOwnData: true };
+      effective = { canViewCommercial: false, canViewFinance: false, canViewMarketing: false, canViewDashboard: false, canViewReports: false, canEdit: false, canDelete: false, onlyOwnData: true };
     } else {
       effective = { ...DEFAULT_PERMISSIONS };
     }
