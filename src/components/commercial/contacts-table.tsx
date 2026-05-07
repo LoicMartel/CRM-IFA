@@ -76,7 +76,7 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
   signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
 };
 
-type SortKey = "name" | "email" | "company" | "lifecycle_stage" | "lead_status" | "last_contacted_at";
+type SortKey = "last_name" | "first_name" | "email" | "company" | "lifecycle_stage" | "lead_status" | "last_contacted_at";
 
 interface Source { id: string; name: string; }
 
@@ -103,7 +103,7 @@ export function ContactsTable({
   const [filterLastActionFrom, setFilterLastActionFrom] = useState("");
   const [filterLastActionTo, setFilterLastActionTo] = useState("");
   const [contactTypeTab, setContactTypeTab] = useState<"all" | "inbound" | "outbound">("all");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 25;
   const [sortAsc, setSortAsc] = useState(true);
@@ -144,7 +144,8 @@ export function ContactsTable({
     .sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
-        case "name": cmp = `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`); break;
+        case "last_name": cmp = (a.last_name ?? "").localeCompare(b.last_name ?? "", "fr"); break;
+        case "first_name": cmp = (a.first_name ?? "").localeCompare(b.first_name ?? "", "fr"); break;
         case "email": cmp = (a.email ?? "").localeCompare(b.email ?? ""); break;
         case "company": cmp = (a.companies?.name ?? "").localeCompare(b.companies?.name ?? ""); break;
         case "lifecycle_stage": cmp = (a.lifecycle_stage ?? "").localeCompare(b.lifecycle_stage ?? ""); break;
@@ -385,8 +386,11 @@ export function ContactsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer" onClick={() => toggleSort("name")}>
-                <span className="flex items-center gap-1">Nom complet <ArrowUpDown className="h-3 w-3" /></span>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("last_name")}>
+                <span className="flex items-center gap-1">Nom <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("first_name")}>
+                <span className="flex items-center gap-1">Prénom <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("email")}>
                 <span className="flex items-center gap-1">Email <ArrowUpDown className="h-3 w-3" /></span>
@@ -411,7 +415,7 @@ export function ContactsTable({
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Aucun contact trouvé
                 </TableCell>
               </TableRow>
@@ -425,7 +429,8 @@ export function ContactsTable({
                     key={c.id}
                     className="cursor-pointer hover:bg-muted/50"
                   >
-                    <TableCell className="p-0 font-medium"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.first_name} {c.last_name}</Link></TableCell>
+                    <TableCell className="p-0 font-medium"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.last_name}</Link></TableCell>
+                    <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.first_name}</Link></TableCell>
                     <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.email ?? "—"}</Link></TableCell>
                     <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{formatPhone(c.phone)}</Link></TableCell>
                     <TableCell className="p-0"><Link href={`/contacts/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{c.companies?.name ?? "—"}</Link></TableCell>
