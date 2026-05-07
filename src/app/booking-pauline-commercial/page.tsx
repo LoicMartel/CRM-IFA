@@ -170,7 +170,7 @@ function BookingContent() {
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
           {/* Left: Intro text */}
-          <div style={{ flex: "1 1 300px", padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.7, fontSize: 13, color: "#1a2a3a" }}>
+          <div style={{ flex: "1 1 0", minWidth: 220, padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.7, fontSize: 13, color: "#1a2a3a" }}>
             <p style={{ marginBottom: 12, fontSize: 15, fontWeight: 600 }}>Bonjour,</p>
             <p style={{ marginBottom: 12 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; <strong>La Closing Acad&eacute;mie</strong> !</p>
             <p style={{ marginBottom: 14 }}>Afin de mieux comprendre vos enjeux lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont :</p>
@@ -186,7 +186,7 @@ function BookingContent() {
             <p style={{ marginBottom: 0, fontStyle: "italic", color: "#5a6f80" }}>Au plaisir de faire votre connaissance,<br /><strong style={{ color: "#1a2a3a", fontStyle: "normal" }}>Pauline</strong></p>
           </div>
           {/* Left: Calendar */}
-          <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
+          <div style={{ flex: "1.5 1 0", minWidth: 340, padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
             </h2>
@@ -246,7 +246,7 @@ function BookingContent() {
           </div>
 
           {/* Right: Slots + Options */}
-          <div style={{ flex: "1 1 300px", padding: "30px 24px" }}>
+          <div style={{ flex: "1 1 0", minWidth: 220, padding: "30px 24px" }}>
             {/* Meeting info */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
