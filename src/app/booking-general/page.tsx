@@ -139,6 +139,10 @@ function BookingGeneralContent() {
         .booking-form-grid { grid-template-columns: 1fr !important; }
         .booking-step-connector { width: 40px !important; }
       }
+      @media (max-width: 768px) {
+        .booking-3col { flex-direction: column !important; }
+        .booking-3col > div:first-child { width: 100% !important; }
+      }
     `}</style>
     <div style={{
       minHeight: "100vh",
@@ -188,34 +192,33 @@ function BookingGeneralContent() {
         </div>
       )}
 
-      {/* Intro text */}
-      {step < 3 && (
+      {/* Step 1: Calendar + Slots (3-column layout) */}
+      {step === 1 && (
+        <div className="booking-3col" style={{ display: "flex", gap: 20, maxWidth: 1200, width: "100%", alignItems: "flex-start" }}>
+        {/* Intro text (left column) */}
         <div style={{
           background: "rgba(255,255,255,0.85)", backdropFilter: "blur(10px)",
-          borderRadius: 14, padding: "20px 24px", maxWidth: 620, width: "100%",
-          marginBottom: 20, lineHeight: 1.7, fontSize: 14, color: "#1a2a3a",
-          border: "1px solid rgba(255,255,255,0.7)",
+          borderRadius: 14, padding: "20px 24px", width: 280, flexShrink: 0,
+          lineHeight: 1.7, fontSize: 13, color: "#1a2a3a",
+          border: "1px solid rgba(255,255,255,0.7)", alignSelf: "flex-start",
         }}>
-          <p style={{ marginBottom: 12 }}>Bonjour,</p>
-          <p style={{ marginBottom: 12 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; La Closing Acad&eacute;mie !</p>
-          <p style={{ marginBottom: 12 }}>Afin de mieux comprendre vos enjeux, vos attentes et vos priorit&eacute;s lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont les indicateurs cl&eacute;s de votre activit&eacute; commerciale :</p>
-          <ul style={{ margin: "0 0 12px 20px", padding: 0 }}>
+          <p style={{ marginBottom: 10 }}>Bonjour,</p>
+          <p style={{ marginBottom: 10 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; La Closing Acad&eacute;mie !</p>
+          <p style={{ marginBottom: 10 }}>Afin de mieux comprendre vos enjeux, vos attentes et vos priorit&eacute;s lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont les indicateurs cl&eacute;s de votre activit&eacute; commerciale :</p>
+          <ul style={{ margin: "0 0 10px 20px", padding: 0, fontSize: 13 }}>
             <li>Nombre de leads / de cibles</li>
             <li>Nombre de RDVs r&eacute;alis&eacute;s</li>
             <li>Nombre de signatures</li>
             <li>Chiffre d&apos;affaires</li>
           </ul>
-          <p style={{ marginBottom: 12 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous &ecirc;tre utile pour vous accompagner dans votre croissance</p>
+          <p style={{ marginBottom: 10 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous &ecirc;tre utile pour vous accompagner dans votre croissance</p>
           <p style={{ marginBottom: 0 }}>Au plaisir de faire prochainement votre connaissance,<br /><strong>L&apos;&eacute;quipe La Closing Acad&eacute;mie</strong></p>
         </div>
-      )}
-
-      {/* Step 1: Calendar + Slots */}
-      {step === 1 && (
+        {/* Booking card (center + right columns) */}
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          maxWidth: 900, width: "100%", overflow: "hidden",
+          flex: 1, overflow: "hidden",
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
           {/* Left: Calendar */}
@@ -384,6 +387,7 @@ function BookingGeneralContent() {
               </>
             )}
           </div>
+        </div>
         </div>
       )}
 
