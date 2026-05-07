@@ -111,6 +111,7 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
   booked: { bg: "#fff3e0", text: "#e65100", label: "Booked" },
   rdv_done: { bg: "#f3e5f5", text: "#6a1b9a", label: "RDV Done" },
   signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
+  not_interested: { bg: "#f3e5f5", text: "#6a1b9a", label: "Pas intéressé" },
 };
 
 const dealStageColors: Record<string, { bg: string; text: string; label: string }> = {
@@ -468,12 +469,20 @@ export function ContactDetail({
 
     // Update contact lead_status based on call result
     if (!editingActivityId && activityForm.type === "appel") {
-      if (activityForm.call_result === "contacted") {
+      if (activityForm.call_result === "not_interested") {
+        await supabase.from("contacts").update({
+          last_contacted_at: new Date().toISOString(),
+          lead_status: "not_interested",
+          lifecycle_stage: "prospect",
+        }).eq("id", contact.id);
+      } else if (activityForm.call_result === "contacted") {
         const callUpdate: Record<string, string> = {
           last_contacted_at: new Date().toISOString(),
           lead_status: activityForm.call_outcome === "booked" ? "booked" : "contacted",
         };
-        // Ne pas changer lifecycle_stage ici — le changement se fait quand le RDV R1+ est créé
+        if (activityForm.call_outcome === "booked") {
+          callUpdate.lifecycle_stage = "prospect";
+        }
         await supabase.from("contacts").update(callUpdate).eq("id", contact.id);
       } else {
         await supabase.from("contacts").update({
