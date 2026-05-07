@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -175,28 +176,30 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedFiltered.map((l) => (
+              paginatedFiltered.map((l) => {
+                const params = new URLSearchParams({ from: "leads" });
+                if (filterSource) params.set("source", filterSource);
+                if (search) params.set("q", search);
+                const href = `/contacts/${l.id}?${params.toString()}`;
+                return (
                 <TableRow
                   key={l.id}
                   className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => {
-                    const params = new URLSearchParams({ from: "leads" });
-                    if (filterSource) params.set("source", filterSource);
-                    if (search) params.set("q", search);
-                    router.push(`/contacts/${l.id}?${params.toString()}`);
-                  }}
                 >
-                  <TableCell style={{ fontSize: 11, color: "#5a6f80" }}>
-                    {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                  <TableCell className="p-0" style={{ fontSize: 11, color: "#5a6f80" }}>
+                    <Link href={href} className="block px-4 py-2 text-inherit no-underline">
+                      {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                    </Link>
                   </TableCell>
-                  <TableCell className="font-medium">{l.last_name}</TableCell>
-                  <TableCell>{l.first_name}</TableCell>
-                  <TableCell>{getName(l.lead_sources) ?? "—"}</TableCell>
-                  <TableCell>{l.email ?? "—"}</TableCell>
-                  <TableCell>{formatPhone(l.phone)}</TableCell>
-                  <TableCell>{getName(l.companies) ?? "—"}</TableCell>
+                  <TableCell className="p-0 font-medium"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.last_name}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.first_name}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{getName(l.lead_sources) ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.email ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{formatPhone(l.phone)}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{getName(l.companies) ?? "—"}</Link></TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>

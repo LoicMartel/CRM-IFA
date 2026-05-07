@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -348,35 +349,38 @@ export function LearnersTable({
             ) : paginatedSorted.map((l) => {
               const sc = statusColors[l.status] ?? { bg: "#f0f0f0", text: "#666", label: l.status };
               return (
-                <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/learners/${l.id}`)}>
+                <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50">
                   {!isRestrictedExterne && !isReadOnly && (
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    <TableCell>
                       <input type="checkbox" checked={selectedIds.has(l.id)} onChange={() => toggleSelect(l.id)} />
                     </TableCell>
                   )}
-                  <TableCell className="font-medium">
-                    {l.first_name} {l.last_name}
+                  <TableCell className="p-0 font-medium">
+                    <Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{l.first_name} {l.last_name}</Link>
                   </TableCell>
-                  <TableCell>{l.email ?? "—"}</TableCell>
-                  <TableCell>{formatPhone(l.phone)}</TableCell>
-                  <TableCell>{l.position ?? "—"}</TableCell>
-                  <TableCell>
+                  <TableCell className="p-0"><Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{l.email ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{formatPhone(l.phone)}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{l.position ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0">
                     {l.companies && l.company_id ? (
-                      <span
-                        onClick={() => router.push(`/clients/${l.company_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                      <Link
+                        href={`/clients/${l.company_id}`}
+                        className="block px-4 py-2 no-underline"
+                        style={{ color: "#1a6b9c", textDecoration: "underline" }}
                       >
                         {l.companies.name}
+                      </Link>
+                    ) : <Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">—</Link>}
+                  </TableCell>
+                  <TableCell className="p-0">
+                    <Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">
+                      <span style={{ background: sc.bg, color: sc.text, padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600 }}>
+                        {sc.label}
                       </span>
-                    ) : "—"}
+                    </Link>
                   </TableCell>
-                  <TableCell>
-                    <span style={{ background: sc.bg, color: sc.text, padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600 }}>
-                      {sc.label}
-                    </span>
-                  </TableCell>
-                  <TableCell>{l.training_programs?.name ?? "—"}</TableCell>
-                  <TableCell>{l.training_types?.name ?? "—"}</TableCell>
+                  <TableCell className="p-0"><Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{l.training_programs?.name ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0"><Link href={`/learners/${l.id}`} className="block px-4 py-2 text-inherit no-underline">{l.training_types?.name ?? "—"}</Link></TableCell>
                   <TableCell>
                     {!isRestrictedExterne && !isReadOnly && (
                     <button
