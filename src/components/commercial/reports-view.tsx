@@ -1214,52 +1214,55 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // All-time meetings/activities for first-ever dates
-          const allRepMeetings = meetings.filter((m: R) => {
-            if (!inboundContactIds.has(m.contact_id as string)) return false;
-            return getTeamMemberName(m) === repName;
-          });
-          const allRepActivities = activities.filter((a: R) => {
-            if (!inboundContactIds.has(a.contact_id as string)) return false;
-            return getTeamMemberName(a) === repName;
-          });
-
-          // First-ever activity date per contact
-          const firstActivity: Record<string, string> = {};
-          allRepActivities.forEach((a: R) => {
+          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          const firstInteraction: Record<string, string> = {};
+          activities.forEach((a: R) => {
             const cid = a.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
             const d = (a.created_at as string).slice(0, 10);
-            if (!firstActivity[cid] || d < firstActivity[cid]) firstActivity[cid] = d;
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
+          });
+          meetings.forEach((m: R) => {
+            const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
+            const d = (m.scheduled_at as string).slice(0, 10);
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          // First-ever meeting date per contact
+          // Unique contacts contacted this month (via activities OR meetings by this rep)
+          const contactedThisMonth = new Set<string>();
+          repActivities.forEach((a: R) => { if (a.contact_id) contactedThisMonth.add(a.contact_id as string); });
+          repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisMonth.add(m.contact_id as string); });
+
+          // New contacted = first-ever interaction is in this month
+          const newCtedContacts = new Set([...contactedThisMonth].filter(cid => {
+            const f = firstInteraction[cid];
+            return f && f >= monthStart && f <= monthEnd;
+          }));
+          const newCted = newCtedContacts.size;
+          const oldCted = contactedThisMonth.size - newCted;
+
+          // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
-          allRepMeetings.forEach((m: R) => {
+          meetings.forEach((m: R) => {
             const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
             const d = (m.scheduled_at as string).slice(0, 10);
             if (!firstMeeting[cid] || d < firstMeeting[cid]) firstMeeting[cid] = d;
           });
 
-          // Unique contacts with activity this month
-          // Per-contact counting: 1 "new" per unique contact (first-ever in period), rest = old
-          // New contacted = unique contacts whose first-ever activity falls in this month
-          const newCtedContacts = new Set([...new Set(repActivities.map((a: R) => a.contact_id as string))].filter(cid => {
-            const f = firstActivity[cid];
-            return f && f >= monthStart && f <= monthEnd;
-          }));
-          const newCted = newCtedContacts.size;
-          const oldCted = repActivities.length - newCted;
-
           // New booked = unique contacts whose first-ever meeting falls in this month
-          const newBkdContacts = new Set([...new Set(repMeetings.map((m: R) => m.contact_id as string))].filter(cid => {
+          const bookedThisMonth = new Set(repMeetings.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newBkdContacts = new Set([...bookedThisMonth].filter(cid => {
             const f = firstMeeting[cid];
             return f && f >= monthStart && f <= monthEnd;
           }));
           const newBkd = newBkdContacts.size;
-          const oldBked = repMeetings.length - newBkd;
+          const oldBked = bookedThisMonth.size - newBkd;
 
           const doneMeetings = repMeetings.filter((m: R) => m.status === "done");
-          const newDoneContacts = new Set([...new Set(doneMeetings.map((m: R) => m.contact_id as string))].filter(cid => {
+          const doneThisMonth = new Set(doneMeetings.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newDoneContacts = new Set([...doneThisMonth].filter(cid => {
             const f = firstMeeting[cid];
             return f && f >= monthStart && f <= monthEnd;
           }));
@@ -1546,55 +1549,58 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // All-time meetings/activities for first-ever dates
-          const allRepMeetings = meetings.filter((m: R) => {
-            if (!inboundContactIds.has(m.contact_id as string)) return false;
-            return getTeamMemberName(m) === repName;
-          });
-          const allRepActivities = activities.filter((a: R) => {
-            if (!inboundContactIds.has(a.contact_id as string)) return false;
-            return getTeamMemberName(a) === repName;
-          });
-
-          // First-ever activity date per contact
-          const firstActivity: Record<string, string> = {};
-          allRepActivities.forEach((a: R) => {
+          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          const firstInteraction: Record<string, string> = {};
+          activities.forEach((a: R) => {
             const cid = a.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
             const d = (a.created_at as string).slice(0, 10);
-            if (!firstActivity[cid] || d < firstActivity[cid]) firstActivity[cid] = d;
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
+          });
+          meetings.forEach((m: R) => {
+            const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
+            const d = (m.scheduled_at as string).slice(0, 10);
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          // First-ever meeting date per contact
+          // Unique contacts contacted this week (via activities OR meetings by this rep)
+          const contactedThisWeek = new Set<string>();
+          repActivities.forEach((a: R) => { if (a.contact_id) contactedThisWeek.add(a.contact_id as string); });
+          repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisWeek.add(m.contact_id as string); });
+
+          const newCtedContacts = new Set([...contactedThisWeek].filter(cid => {
+            const f = firstInteraction[cid];
+            return f && f >= weekStart && f <= weekEnd;
+          }));
+          const newCted = newCtedContacts.size;
+          const oldCted = contactedThisWeek.size - newCted;
+
+          // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
-          allRepMeetings.forEach((m: R) => {
+          meetings.forEach((m: R) => {
             const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
             const d = (m.scheduled_at as string).slice(0, 10);
             if (!firstMeeting[cid] || d < firstMeeting[cid]) firstMeeting[cid] = d;
           });
 
-          // New contacted = unique contacts whose first-ever activity falls in this week
-          const newCtedContacts = new Set([...new Set(repActivities.map((a: R) => a.contact_id as string))].filter(cid => {
-            const f = firstActivity[cid];
-            return f && f >= weekStart && f <= weekEnd;
-          }));
-          const newCted = newCtedContacts.size;
-          const oldCted = repActivities.length - newCted;
-
-          // New booked = unique contacts whose first-ever meeting falls in this week
-          const newBkdContacts = new Set([...new Set(repMeetings.map((m: R) => m.contact_id as string))].filter(cid => {
+          const bookedThisWeek = new Set(repMeetings.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newBkdContacts = new Set([...bookedThisWeek].filter(cid => {
             const f = firstMeeting[cid];
             return f && f >= weekStart && f <= weekEnd;
           }));
           const newBkd = newBkdContacts.size;
-          const oldBked = repMeetings.length - newBkd;
+          const oldBked = bookedThisWeek.size - newBkd;
 
           const doneMeetings = repMeetings.filter((m: R) => m.status === "done");
-          const newDoneContacts = new Set([...new Set(doneMeetings.map((m: R) => m.contact_id as string))].filter(cid => {
+          const doneThisWeek = new Set(doneMeetings.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newDoneContacts = new Set([...doneThisWeek].filter(cid => {
             const f = firstMeeting[cid];
             return f && f >= weekStart && f <= weekEnd;
           }));
           const newDone = newDoneContacts.size;
-          const oldDone = doneMeetings.length - newDone;
+          const oldDone = doneThisWeek.size - newDone;
 
           const repOrders = weekOrders.filter((o) => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
@@ -1874,43 +1880,58 @@ export function ReportsView({
             ...repActivities.map(a => a.contact_id as string),
           ].filter(Boolean));
 
-          // All-time meetings/activities for first-ever dates
-          const allRepMtgs = meetings.filter((m: R) => {
-            if (!inboundContactIds.has(m.contact_id as string)) return false;
-            return getTeamMemberName(m) === repName;
+          // First-ever interaction date per contact (ALL reps, activities + meetings)
+          const firstInteraction: Record<string, string> = {};
+          activities.forEach((a: R) => {
+            const cid = a.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
+            const d = (a.created_at as string).slice(0, 10);
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
-          const allRepActs = activities.filter((a: R) => {
-            if (!inboundContactIds.has(a.contact_id as string)) return false;
-            return getTeamMemberName(a) === repName;
+          meetings.forEach((m: R) => {
+            const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
+            const d = (m.scheduled_at as string).slice(0, 10);
+            if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          const firstAct: Record<string, string> = {};
-          allRepActs.forEach((a: R) => { const cid = a.contact_id as string; const d = (a.created_at as string).slice(0, 10); if (!firstAct[cid] || d < firstAct[cid]) firstAct[cid] = d; });
-          const firstMtg: Record<string, string> = {};
-          allRepMtgs.forEach((m: R) => { const cid = m.contact_id as string; const d = (m.scheduled_at as string).slice(0, 10); if (!firstMtg[cid] || d < firstMtg[cid]) firstMtg[cid] = d; });
+          // Unique contacts contacted this period (via activities OR meetings by this rep)
+          const contactedThisPeriod = new Set<string>();
+          repActivities.forEach((a: R) => { if (a.contact_id) contactedThisPeriod.add(a.contact_id as string); });
+          repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisPeriod.add(m.contact_id as string); });
 
-          // Per-contact counting: 1 "new" per unique contact (first-ever in period), rest = old
-          const newCtedContacts = new Set([...new Set(repActivities.map((a: R) => a.contact_id as string))].filter(cid => {
-            const f = firstAct[cid];
+          const newCtedContacts = new Set([...contactedThisPeriod].filter(cid => {
+            const f = firstInteraction[cid];
             return f && f >= periodStart && f <= periodEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = repActivities.length - newCted;
+          const oldCted = contactedThisPeriod.size - newCted;
 
-          const newBkdContacts = new Set([...new Set(repMeetings.map((m: R) => m.contact_id as string))].filter(cid => {
+          // First-ever meeting date per contact (ALL reps)
+          const firstMtg: Record<string, string> = {};
+          meetings.forEach((m: R) => {
+            const cid = m.contact_id as string;
+            if (!cid || !inboundContactIds.has(cid)) return;
+            const d = (m.scheduled_at as string).slice(0, 10);
+            if (!firstMtg[cid] || d < firstMtg[cid]) firstMtg[cid] = d;
+          });
+
+          const bookedThisPeriod = new Set(repMeetings.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newBkdContacts = new Set([...bookedThisPeriod].filter(cid => {
             const f = firstMtg[cid];
             return f && f >= periodStart && f <= periodEnd;
           }));
           const newBkd = newBkdContacts.size;
-          const oldBked = repMeetings.length - newBkd;
+          const oldBked = bookedThisPeriod.size - newBkd;
 
           const doneMtgs = repMeetings.filter((m: R) => m.status === "done");
-          const newDoneContacts = new Set([...new Set(doneMtgs.map((m: R) => m.contact_id as string))].filter(cid => {
+          const doneThisPeriod = new Set(doneMtgs.map((m: R) => m.contact_id as string).filter(Boolean));
+          const newDoneContacts = new Set([...doneThisPeriod].filter(cid => {
             const f = firstMtg[cid];
             return f && f >= periodStart && f <= periodEnd;
           }));
           const newDone = newDoneContacts.size;
-          const oldDone = doneMtgs.length - newDone;
+          const oldDone = doneThisPeriod.size - newDone;
 
           const repOrders = periodOrders.filter(o => {
             const tm = o.team_members as { first_name: string; last_name: string } | null;
