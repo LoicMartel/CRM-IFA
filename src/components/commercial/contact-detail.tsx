@@ -1455,7 +1455,7 @@ export function ContactDetail({
                             <span className="text-xs text-muted-foreground">{formatDate(a.due_date || a.created_at)}</span>
                             {a.due_date && (
                               <span className="text-xs text-muted-foreground block">
-                                {(() => { try { return new Date(a.due_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }); } catch { return ""; } })()}
+                                {(() => { try { const m = (a.due_date as string).match(/T(\d{2}:\d{2})/); return m ? m[1] : ""; } catch { return ""; } })()}
                               </span>
                             )}
                             {a.team_members && (
