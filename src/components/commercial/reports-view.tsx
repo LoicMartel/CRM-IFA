@@ -98,6 +98,11 @@ export function ReportsView({
   const [niFrom, setNiFrom] = useState("");
   const [niTo, setNiTo] = useState("");
   const [niOwner, setNiOwner] = useState("");
+  const [clPeriod, setClPeriod] = useState<"all" | "month" | "custom">("all");
+  const [clMonth, setClMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
+  const [clFrom, setClFrom] = useState("");
+  const [clTo, setClTo] = useState("");
+  const [clOwner, setClOwner] = useState("");
   // old_contacted filters
   const [ocPeriod, setOcPeriod] = useState<"all" | "month" | "custom">("all");
   const [ocMonth, setOcMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
@@ -440,6 +445,7 @@ export function ReportsView({
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
           <option value="pas_interesse">Pas intéressé</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
@@ -4167,44 +4173,28 @@ export function ReportsView({
       })()}
 
       {/* ===== Report: Pas intéressé ===== */}
+      {/* ===== Report: Pas intéressé (by lead_status) ===== */}
       {selectedReport === "pas_interesse" && (() => {
-        // Build set of contact IDs that have a "Pas intéressé" call activity
-        const niContactIds = new Set<string>();
-        const niActivityDates = new Map<string, string>(); // contactId -> latest activity date
-        activities.forEach((a: R) => {
-          if ((a.type as string) === "appel" && (a.description as string | null)?.includes("Pas intéressé") && a.contact_id) {
-            niContactIds.add(a.contact_id as string);
-            const existing = niActivityDates.get(a.contact_id as string);
-            const created = a.created_at as string;
-            if (!existing || created > existing) niActivityDates.set(a.contact_id as string, created);
-          }
-        });
-
-        // All owners for filter
         const niAllOwners = new Map<string, string>();
-        contacts.filter((c: R) => niContactIds.has(c.id as string)).forEach((c: R) => {
+        filteredByType.filter((c: R) => c.lead_status === "not_interested").forEach((c: R) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
           if (tm) niAllOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
         });
         const niOwnerList = Array.from(niAllOwners.keys()).sort();
 
-        const niContacts = contacts.filter((c: R) => {
-          if (!niContactIds.has(c.id as string)) return false;
-          // Date filter on activity date
-          const actDate = niActivityDates.get(c.id as string);
-          if (actDate && niPeriod !== "all") {
-            const dateOnly = actDate.split("T")[0];
+        const niContacts = filteredByType.filter((c: R) => {
+          if (c.lead_status !== "not_interested") return false;
+          if (niPeriod !== "all") {
+            const dateOnly = (c.created_at as string).split("T")[0];
             if (niPeriod === "month" && !dateOnly.startsWith(niMonth)) return false;
             if (niPeriod === "custom") {
               if (niFrom && dateOnly < niFrom) return false;
               if (niTo && dateOnly > niTo) return false;
             }
           }
-          // Owner filter
           if (niOwner) {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
-            const name = tm ? `${tm.first_name} ${tm.last_name}` : "";
-            if (name !== niOwner) return false;
+            if (!tm || `${tm.first_name} ${tm.last_name}` !== niOwner) return false;
           }
           return true;
         });
@@ -4216,7 +4206,6 @@ export function ReportsView({
 
         return (
           <>
-            {/* Filtres */}
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
               <select value={niPeriod} onChange={(e) => setNiPeriod(e.target.value as any)}
                 style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
@@ -4242,27 +4231,24 @@ export function ReportsView({
                 <option value="">Tous les Account Managers</option>
                 {niOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
+              {typeFilterSelect}
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total Pas intéressé</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#6a1b9a" }}>{niContacts.length}</div>
-                </div>
+              <div className="lca-card" style={{ padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total Pas intéressé</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#6a1b9a" }}>{niContacts.length}</div>
               </div>
-              <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{niContacts.filter(c => c.company_id).length}</div>
-                </div>
+              <div className="lca-card" style={{ padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{niContacts.filter(c => c.company_id).length}</div>
               </div>
             </div>
 
             <div className="lca-card">
               <div style={{ height: 4, background: "#6a1b9a" }} />
               <div style={{ padding: 16 }}>
-                <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Contacts marqués « Pas intéressé »</h3>
+                <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Contacts « Pas intéressé »</h3>
                 <div style={{ overflowX: "auto" }}>
                   <Table>
                     <TableHeader>
@@ -4273,38 +4259,144 @@ export function ReportsView({
                         <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
                         <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
                         <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>DATE APPEL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>CRÉÉ LE</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {niContacts.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8" style={{ color: "#8399a9" }}>
-                            Aucun contact « Pas intéressé »
-                          </TableCell>
-                        </TableRow>
+                        <TableRow><TableCell colSpan={7} className="text-center py-8" style={{ color: "#8399a9" }}>Aucun contact « Pas intéressé »</TableCell></TableRow>
                       ) : niContacts.map((c) => {
                         const tm = c.team_members as { first_name: string; last_name: string } | null;
                         const co = c.companies as { name: string } | null;
                         return (
-                          <TableRow
-                            key={c.id as string}
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => router.push(`/contacts/${c.id}`)}
-                          >
+                          <TableRow key={c.id as string} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/contacts/${c.id}`)}>
                             <TableCell className="font-medium">{c.last_name as string}</TableCell>
                             <TableCell>{c.first_name as string}</TableCell>
                             <TableCell>{(c.email as string) ?? "—"}</TableCell>
                             <TableCell>{formatPhone(c.phone as string | null)}</TableCell>
                             <TableCell>{co?.name ?? "—"}</TableCell>
                             <TableCell>
-                              {tm ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
-                                  {tm.first_name[0]}{tm.last_name[0]}
-                                </span>
-                              ) : "—"}
+                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
                             </TableCell>
-                            <TableCell>{fmtDate(niActivityDates.get(c.id as string) ?? null)}</TableCell>
+                            <TableCell>{fmtDate(c.created_at as string)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ===== Report: Cancelled (by lead_status) ===== */}
+      {selectedReport === "cancelled" && (() => {
+        const clAllOwners = new Map<string, string>();
+        filteredByType.filter((c: R) => c.lead_status === "cancelled").forEach((c: R) => {
+          const tm = c.team_members as { first_name: string; last_name: string } | null;
+          if (tm) clAllOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
+        });
+        const clOwnerList = Array.from(clAllOwners.keys()).sort();
+
+        const clContacts = filteredByType.filter((c: R) => {
+          if (c.lead_status !== "cancelled") return false;
+          if (clPeriod !== "all") {
+            const dateOnly = (c.created_at as string).split("T")[0];
+            if (clPeriod === "month" && !dateOnly.startsWith(clMonth)) return false;
+            if (clPeriod === "custom") {
+              if (clFrom && dateOnly < clFrom) return false;
+              if (clTo && dateOnly > clTo) return false;
+            }
+          }
+          if (clOwner) {
+            const tm = c.team_members as { first_name: string; last_name: string } | null;
+            if (!tm || `${tm.first_name} ${tm.last_name}` !== clOwner) return false;
+          }
+          return true;
+        });
+
+        function fmtDate(d: string | null | undefined): string {
+          if (!d) return "—";
+          try { return format(new Date(d as string), "dd MMM yyyy", { locale: fr }); } catch { return "—"; }
+        }
+
+        return (
+          <>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+              <select value={clPeriod} onChange={(e) => setClPeriod(e.target.value as any)}
+                style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
+                <option value="all">Toutes les dates</option>
+                <option value="month">Par mois</option>
+                <option value="custom">Personnalisé</option>
+              </select>
+              {clPeriod === "month" && (
+                <input type="month" value={clMonth} onChange={(e) => setClMonth(e.target.value)}
+                  style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }} />
+              )}
+              {clPeriod === "custom" && (
+                <>
+                  <input type="date" value={clFrom} onChange={(e) => setClFrom(e.target.value)}
+                    style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  <span style={{ color: "#8399a9" }}>→</span>
+                  <input type="date" value={clTo} onChange={(e) => setClTo(e.target.value)}
+                    style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                </>
+              )}
+              <select value={clOwner} onChange={(e) => setClOwner(e.target.value)}
+                style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
+                <option value="">Tous les Account Managers</option>
+                {clOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+              {typeFilterSelect}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="lca-card" style={{ padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total Cancelled</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#c62828" }}>{clContacts.length}</div>
+              </div>
+              <div className="lca-card" style={{ padding: "10px 14px" }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{clContacts.filter(c => c.company_id).length}</div>
+              </div>
+            </div>
+
+            <div className="lca-card">
+              <div style={{ height: 4, background: "#c62828" }} />
+              <div style={{ padding: 16 }}>
+                <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Contacts « Cancelled »</h3>
+                <div style={{ overflowX: "auto" }}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PRÉNOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>CRÉÉ LE</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clContacts.length === 0 ? (
+                        <TableRow><TableCell colSpan={7} className="text-center py-8" style={{ color: "#8399a9" }}>Aucun contact « Cancelled »</TableCell></TableRow>
+                      ) : clContacts.map((c) => {
+                        const tm = c.team_members as { first_name: string; last_name: string } | null;
+                        const co = c.companies as { name: string } | null;
+                        return (
+                          <TableRow key={c.id as string} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/contacts/${c.id}`)}>
+                            <TableCell className="font-medium">{c.last_name as string}</TableCell>
+                            <TableCell>{c.first_name as string}</TableCell>
+                            <TableCell>{(c.email as string) ?? "—"}</TableCell>
+                            <TableCell>{formatPhone(c.phone as string | null)}</TableCell>
+                            <TableCell>{co?.name ?? "—"}</TableCell>
+                            <TableCell>
+                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
+                            </TableCell>
+                            <TableCell>{fmtDate(c.created_at as string)}</TableCell>
                           </TableRow>
                         );
                       })}

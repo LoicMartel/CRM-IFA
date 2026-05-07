@@ -75,6 +75,7 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
   rdv_done: { bg: "#f3e5f5", text: "#6a1b9a", label: "RDV Done" },
   signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
   not_interested: { bg: "#f3e5f5", text: "#6a1b9a", label: "Pas intéressé" },
+  cancelled: { bg: "#fce4ec", text: "#c62828", label: "Cancelled" },
 };
 
 type SortKey = "last_name" | "first_name" | "email" | "company" | "lifecycle_stage" | "lead_status" | "last_contacted_at";

@@ -112,6 +112,7 @@ const leadStatusColors: Record<string, { bg: string; text: string; label: string
   rdv_done: { bg: "#f3e5f5", text: "#6a1b9a", label: "RDV Done" },
   signed: { bg: "#e8f5e9", text: "#2e7d32", label: "Signed" },
   not_interested: { bg: "#f3e5f5", text: "#6a1b9a", label: "Pas intéressé" },
+  cancelled: { bg: "#fce4ec", text: "#c62828", label: "Cancelled" },
 };
 
 const dealStageColors: Record<string, { bg: string; text: string; label: string }> = {
@@ -664,6 +665,8 @@ export function ContactDetail({
         await updateAllContacts({ lead_status: "signed", lifecycle_stage: "customer" });
       } else if (rdvForm.status === "done") {
         await updateAllContacts({ lead_status: "rdv_done" });
+      } else if (rdvForm.status === "cancelled") {
+        await updateAllContacts({ lead_status: "cancelled" });
       }
     } else if (editingMeetingId) {
       // Simple edit (notes, date, etc.) without status change
