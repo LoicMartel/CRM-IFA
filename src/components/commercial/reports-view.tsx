@@ -440,12 +440,12 @@ export function ReportsView({
           <option value="old_contacted">Old Contacted</option>
           <option value="anciens_clients">Anciens Clients</option>
           <option value="rdv_non_ferme">Rdvs non fermés</option>
+          <option value="cancelled">Rdv Cancelled</option>
           <option value="rdv_planifies">RDV planifiés</option>
           <option value="taches">Tâches à faire</option>
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
           <option value="pas_interesse">Pas intéressé</option>
-          <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
