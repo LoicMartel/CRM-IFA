@@ -3012,10 +3012,10 @@ export function ReportsView({
         const doneActivities = activities.filter(a => (a.type === "appel" || a.type === "relance") && isInRdvPeriod(a.created_at as string));
 
         // RDV types
-        const r0Count = doneMeetings.filter(m => m.meeting_type === "R0").length;
-        const r1Count = doneMeetings.filter(m => m.meeting_type === "R1").length;
-        const r2Count = doneMeetings.filter(m => m.meeting_type === "R2").length;
-        const r3Count = doneMeetings.filter(m => m.meeting_type === "R3").length;
+        const r0Count = doneMeetings.filter(m => m.meeting_type === "R0" || m.meeting_type === "R0+R1").length;
+        const r1Count = doneMeetings.filter(m => m.meeting_type === "R1" || m.meeting_type === "R0+R1").length;
+        const r2Count = doneMeetings.filter(m => m.meeting_type === "R2" || m.meeting_type === "R2+R3").length;
+        const r3Count = doneMeetings.filter(m => m.meeting_type === "R3" || m.meeting_type === "R2+R3").length;
 
         // Activity types
         const appelCount = doneActivities.filter(a => a.type === "appel").length;
@@ -3066,10 +3066,10 @@ export function ReportsView({
             initials: repName.split(" ").map(w => w[0]).join("").toUpperCase(),
             appel: repDoneActivities.filter(a => a.type === "appel").length,
             relance: repDoneActivities.filter(a => a.type === "relance").length,
-            r0: repDoneMeetings.filter(m => m.meeting_type === "R0").length,
-            r1: repDoneMeetings.filter(m => m.meeting_type === "R1").length,
-            r2: repDoneMeetings.filter(m => m.meeting_type === "R2").length,
-            r3: repDoneMeetings.filter(m => m.meeting_type === "R3").length,
+            r0: repDoneMeetings.filter(m => m.meeting_type === "R0" || m.meeting_type === "R0+R1").length,
+            r1: repDoneMeetings.filter(m => m.meeting_type === "R1" || m.meeting_type === "R0+R1").length,
+            r2: repDoneMeetings.filter(m => m.meeting_type === "R2" || m.meeting_type === "R2+R3").length,
+            r3: repDoneMeetings.filter(m => m.meeting_type === "R3" || m.meeting_type === "R2+R3").length,
             total: repDoneMeetings.length + repDoneActivities.length,
           };
         });
@@ -3511,7 +3511,7 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>R2 / R3 non fermés</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{overdue.filter((m: R) => m.meeting_type === "R2" || m.meeting_type === "R3").length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{overdue.filter((m: R) => m.meeting_type === "R2" || m.meeting_type === "R3" || m.meeting_type === "R2+R3").length}</div>
               </div>
             </div>
 
@@ -3834,10 +3834,10 @@ export function ReportsView({
           ? planned.filter((m: R) => { const o = m.team_members as { first_name: string; last_name: string } | null; return o ? `${o.first_name} ${o.last_name}` === rdvOwnerFilter : false; })
           : planned;
 
-        const r0Count = filtered.filter((m: R) => m.meeting_type === "R0").length;
-        const r1Count = filtered.filter((m: R) => m.meeting_type === "R1").length;
-        const r2Count = filtered.filter((m: R) => m.meeting_type === "R2").length;
-        const r3Count = filtered.filter((m: R) => m.meeting_type === "R3").length;
+        const r0Count = filtered.filter((m: R) => m.meeting_type === "R0" || m.meeting_type === "R0+R1").length;
+        const r1Count = filtered.filter((m: R) => m.meeting_type === "R1" || m.meeting_type === "R0+R1").length;
+        const r2Count = filtered.filter((m: R) => m.meeting_type === "R2" || m.meeting_type === "R2+R3").length;
+        const r3Count = filtered.filter((m: R) => m.meeting_type === "R3" || m.meeting_type === "R2+R3").length;
 
         return (
           <>
