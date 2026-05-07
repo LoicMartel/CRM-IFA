@@ -1451,6 +1451,19 @@ export function ContactDetail({
                                 {(() => { try { return format(new Date(a.due_date), "HH:mm", { locale: fr }); } catch { return ""; } })()}
                               </span>
                             )}
+                            {a.team_members && (
+                              <span
+                                title={`${a.team_members.first_name} ${a.team_members.last_name}`}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  width: 24, height: 24, borderRadius: "50%",
+                                  background: "#0d4f7a", color: "white",
+                                  fontSize: 9, fontWeight: 700, marginTop: 4,
+                                }}
+                              >
+                                {a.team_members.first_name[0]}{a.team_members.last_name[0]}
+                              </span>
+                            )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
@@ -1499,11 +1512,6 @@ export function ContactDetail({
                                 {a.description.replace(/__EMAIL_HTML__[\s\S]*?__END_HTML__\n\n/, "").slice(0, 80)}...
                               </p>
                             )}
-                            <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                              {a.team_members && (
-                                <span>Par {a.team_members.first_name} {a.team_members.last_name}</span>
-                              )}
-                            </div>
                           </div>
                           <div className="flex items-start gap-1 flex-shrink-0">
                             {a.type === "tâche" && !a.is_completed && (
