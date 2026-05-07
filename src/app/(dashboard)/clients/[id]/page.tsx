@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const supabase = await createClient();
   const { data: c } = await supabase.from("companies").select("name").eq("id", id).single();
-  return { title: c ? `CRM - ${c.name}` : "Fiche Client" };
+  return { title: c ? c.name : "Fiche Client" };
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
