@@ -58,11 +58,12 @@ export async function POST(req: NextRequest) {
     // 3. Find or create contact by email
     let contactId: string | null = null;
     let contactName = customerName;
+    let contactSourceId: string | null = null;
 
     if (customerEmail) {
       const { data: existingContact } = await supabase
         .from("contacts")
-        .select("id, first_name, last_name")
+        .select("id, first_name, last_name, source_id")
         .eq("email", customerEmail)
         .limit(1)
         .single();
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
       if (existingContact) {
         contactId = existingContact.id;
         contactName = `${existingContact.first_name} ${existingContact.last_name}`;
+        contactSourceId = existingContact.source_id;
       } else {
         // Create a new contact from Stripe data
         const nameParts = customerName.split(" ");
@@ -99,6 +101,8 @@ export async function POST(req: NextRequest) {
     const dealName = `Book financement Stripe - ${contactName}`;
     const today = new Date().toISOString().split("T")[0];
 
+    const LOIC_ID = "b52b6563-1991-46e8-b718-0c16c641b21a";
+
     const { data: deal, error: dealError } = await supabase
       .from("deals")
       .insert({
@@ -108,6 +112,8 @@ export async function POST(req: NextRequest) {
         amount: amountTotal,
         probability: 100,
         close_date: today,
+        owner_id: LOIC_ID,
+        source_id: contactSourceId ?? null,
         notes: `Paiement Stripe automatique\nSession ID: ${session.id}\nEmail: ${customerEmail}\nMontant: ${amountTotal}€`,
       })
       .select("id")
