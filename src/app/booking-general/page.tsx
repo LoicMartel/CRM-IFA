@@ -203,8 +203,8 @@ function BookingGeneralContent() {
           {/* Left: Intro text */}
           <div style={{ flex: "1 1 0", minWidth: 220, padding: "30px 24px", borderRight: "1px solid #e8ecf1", lineHeight: 1.7, fontSize: 13, color: "#1a2a3a" }}>
             <p style={{ marginBottom: 12, fontSize: 15, fontWeight: 600 }}>Bonjour,</p>
-            <p style={{ marginBottom: 12 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous portez &agrave; <strong>La Closing Acad&eacute;mie</strong> !</p>
-            <p style={{ marginBottom: 14 }}>Afin de mieux comprendre vos enjeux lors de notre bilan, je vous invite &agrave; pr&eacute;parer en amont :</p>
+            <p style={{ marginBottom: 12 }}>Merci pour l&apos;int&eacute;r&ecirc;t que vous nous portez.</p>
+            <p style={{ marginBottom: 14 }}>Pour mieux comprendre vos enjeux, merci de pr&eacute;parer en amont :</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "0 0 14px 0" }}>
               {["Nombre de leads / de cibles", "Nombre de RDVs r\u00e9alis\u00e9s", "Nombre de signatures", "Chiffre d\u2019affaires"].map((item) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#f0f6fa", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>
@@ -213,7 +213,7 @@ function BookingGeneralContent() {
                 </div>
               ))}
             </div>
-            <p style={{ marginBottom: 12 }}>Ainsi je pourrai vous dire facilement comment nous pourrons vous accompagner dans votre croissance.</p>
+            <p style={{ marginBottom: 12 }}>Nous pourrons alors vous proposer le meilleur accompagnement personnalis&eacute;.</p>
             <p style={{ marginBottom: 0, fontStyle: "italic", color: "#5a6f80" }}>Au plaisir de faire votre connaissance,<br /><strong style={{ color: "#1a2a3a", fontStyle: "normal" }}>L&apos;&eacute;quipe La Closing Acad&eacute;mie</strong></p>
           </div>
           {/* Center: Calendar */}
