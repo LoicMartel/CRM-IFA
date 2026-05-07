@@ -133,10 +133,10 @@ function BookingContent() {
       }
     `}</style>
     <div style={{
+      minHeight: "100vh",
       background: "linear-gradient(135deg, #f0f6fa 0%, #e8f0f7 50%, #f5f8fc 100%)",
       display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "20px 16px",
-      maxWidth: 820, margin: "0 auto",
+      padding: "30px 16px",
     }}>
       {/* Progress steps + Logo compact */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
