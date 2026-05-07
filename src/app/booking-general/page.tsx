@@ -218,7 +218,7 @@ function BookingGeneralContent() {
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          flex: 1, overflow: "hidden",
+          flex: 1, minWidth: 700, overflow: "hidden",
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
           {/* Left: Calendar */}
