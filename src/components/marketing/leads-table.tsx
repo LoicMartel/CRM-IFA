@@ -41,8 +41,8 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
   const [filterOwner, setFilterOwner] = useState(searchParams.get("owner") ?? "");
-  const [sortKey, setSortKey] = useState<SortKey>("last_name");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 25;
 
