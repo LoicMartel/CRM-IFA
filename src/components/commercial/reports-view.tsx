@@ -93,6 +93,11 @@ export function ReportsView({
   const [nbFrom, setNbFrom] = useState("");
   const [nbTo, setNbTo] = useState("");
   const [nbOwner, setNbOwner] = useState("");
+  const [niPeriod, setNiPeriod] = useState<"all" | "month" | "custom">("all");
+  const [niMonth, setNiMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
+  const [niFrom, setNiFrom] = useState("");
+  const [niTo, setNiTo] = useState("");
+  const [niOwner, setNiOwner] = useState("");
   // old_contacted filters
   const [ocPeriod, setOcPeriod] = useState<"all" | "month" | "custom">("all");
   const [ocMonth, setOcMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`; });
@@ -434,6 +439,7 @@ export function ReportsView({
           <option value="taches">Tâches à faire</option>
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
+          <option value="pas_interesse">Pas intéressé</option>
         </select>
       </div>
 
@@ -4157,6 +4163,157 @@ export function ReportsView({
               </div>
             </div>
           </div>
+        );
+      })()}
+
+      {/* ===== Report: Pas intéressé ===== */}
+      {selectedReport === "pas_interesse" && (() => {
+        // Build set of contact IDs that have a "Pas intéressé" call activity
+        const niContactIds = new Set<string>();
+        const niActivityDates = new Map<string, string>(); // contactId -> latest activity date
+        activities.forEach((a: R) => {
+          if ((a.type as string) === "appel" && (a.description as string | null)?.includes("Pas intéressé") && a.contact_id) {
+            niContactIds.add(a.contact_id as string);
+            const existing = niActivityDates.get(a.contact_id as string);
+            const created = a.created_at as string;
+            if (!existing || created > existing) niActivityDates.set(a.contact_id as string, created);
+          }
+        });
+
+        // All owners for filter
+        const niAllOwners = new Map<string, string>();
+        contacts.filter((c: R) => niContactIds.has(c.id as string)).forEach((c: R) => {
+          const tm = c.team_members as { first_name: string; last_name: string } | null;
+          if (tm) niAllOwners.set(`${tm.first_name} ${tm.last_name}`, `${tm.first_name} ${tm.last_name}`);
+        });
+        const niOwnerList = Array.from(niAllOwners.keys()).sort();
+
+        const niContacts = contacts.filter((c: R) => {
+          if (!niContactIds.has(c.id as string)) return false;
+          // Date filter on activity date
+          const actDate = niActivityDates.get(c.id as string);
+          if (actDate && niPeriod !== "all") {
+            const dateOnly = actDate.split("T")[0];
+            if (niPeriod === "month" && !dateOnly.startsWith(niMonth)) return false;
+            if (niPeriod === "custom") {
+              if (niFrom && dateOnly < niFrom) return false;
+              if (niTo && dateOnly > niTo) return false;
+            }
+          }
+          // Owner filter
+          if (niOwner) {
+            const tm = c.team_members as { first_name: string; last_name: string } | null;
+            const name = tm ? `${tm.first_name} ${tm.last_name}` : "";
+            if (name !== niOwner) return false;
+          }
+          return true;
+        });
+
+        function fmtDate(d: string | null | undefined): string {
+          if (!d) return "—";
+          try { return format(new Date(d as string), "dd MMM yyyy", { locale: fr }); } catch { return "—"; }
+        }
+
+        return (
+          <>
+            {/* Filtres */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+              <select value={niPeriod} onChange={(e) => setNiPeriod(e.target.value as any)}
+                style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
+                <option value="all">Toutes les dates</option>
+                <option value="month">Par mois</option>
+                <option value="custom">Personnalisé</option>
+              </select>
+              {niPeriod === "month" && (
+                <input type="month" value={niMonth} onChange={(e) => setNiMonth(e.target.value)}
+                  style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }} />
+              )}
+              {niPeriod === "custom" && (
+                <>
+                  <input type="date" value={niFrom} onChange={(e) => setNiFrom(e.target.value)}
+                    style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  <span style={{ color: "#8399a9" }}>→</span>
+                  <input type="date" value={niTo} onChange={(e) => setNiTo(e.target.value)}
+                    style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                </>
+              )}
+              <select value={niOwner} onChange={(e) => setNiOwner(e.target.value)}
+                style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}>
+                <option value="">Tous les Account Managers</option>
+                {niOwnerList.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total Pas intéressé</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#6a1b9a" }}>{niContacts.length}</div>
+                </div>
+              </div>
+              <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{niContacts.filter(c => c.company_id).length}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lca-card">
+              <div style={{ height: 4, background: "#6a1b9a" }} />
+              <div style={{ padding: 16 }}>
+                <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Contacts marqués « Pas intéressé »</h3>
+                <div style={{ overflowX: "auto" }}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PRÉNOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>DATE APPEL</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {niContacts.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8" style={{ color: "#8399a9" }}>
+                            Aucun contact « Pas intéressé »
+                          </TableCell>
+                        </TableRow>
+                      ) : niContacts.map((c) => {
+                        const tm = c.team_members as { first_name: string; last_name: string } | null;
+                        const co = c.companies as { name: string } | null;
+                        return (
+                          <TableRow
+                            key={c.id as string}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => router.push(`/contacts/${c.id}`)}
+                          >
+                            <TableCell className="font-medium">{c.last_name as string}</TableCell>
+                            <TableCell>{c.first_name as string}</TableCell>
+                            <TableCell>{(c.email as string) ?? "—"}</TableCell>
+                            <TableCell>{formatPhone(c.phone as string | null)}</TableCell>
+                            <TableCell>{co?.name ?? "—"}</TableCell>
+                            <TableCell>
+                              {tm ? (
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
+                                  {tm.first_name[0]}{tm.last_name[0]}
+                                </span>
+                              ) : "—"}
+                            </TableCell>
+                            <TableCell>{fmtDate(niActivityDates.get(c.id as string) ?? null)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </>
         );
       })()}
 
