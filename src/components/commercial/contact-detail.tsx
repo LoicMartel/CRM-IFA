@@ -837,7 +837,9 @@ export function ContactDetail({
       if (a.type === "appel" && a.description) {
         const d = a.due_date || a.created_at;
         if (d) {
-          if (String(a.description).includes("Contacté → Booké") || String(a.description).includes("Booked")) {
+          if (String(a.description).includes("Pas intéressé")) {
+            events.push({ date: d, status: "not_interested" });
+          } else if (String(a.description).includes("Contacté → Booké") || String(a.description).includes("Booked")) {
             events.push({ date: d, status: "booked" });
           } else if (String(a.description).includes("Contacté")) {
             events.push({ date: d, status: "contacted" });
