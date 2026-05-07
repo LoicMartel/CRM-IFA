@@ -2226,19 +2226,30 @@ export function ReportsView({
           });
           const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
 
+          // Contacts actually REACHED by this rep (exclude unanswered / voicemail)
+          const reachedByRep: Record<string, number> = {};
+          repActivities.filter(a => {
+            if (a.type !== "appel") return false;
+            const desc = String(a.description ?? "");
+            return !desc.includes("Pas de réponse") && !desc.includes("Message vocal");
+          }).forEach(a => {
+            const cid = a.contact_id as string;
+            reachedByRep[cid] = (reachedByRep[cid] || 0) + 1;
+          });
+
           // Cibles qualifiées: contacts owned by this rep marked as is_qualified
           const ciblesQualifiees = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true).length;
 
           // Actions sortantes: email + call activities performed by this rep
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
 
-          // Deci 1er contact: unique outbound contacts this rep has called at least once
-          const repCalledContactIds = new Set(Object.keys(callsByRep));
-          const deci1erContact = repCalledContactIds.size;
+          // Deci 1er contact: unique outbound contacts this rep has actually REACHED
+          const repReachedContactIds = new Set(Object.keys(reachedByRep));
+          const deci1erContact = repReachedContactIds.size;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
 
-          // Deci recontacté: contacts this rep has called more than once
-          const deciRecontacte = Object.values(callsByRep).filter(n => n > 1).length;
+          // Deci recontacté: contacts this rep has reached more than once
+          const deciRecontacte = Object.values(reachedByRep).filter(n => n > 1).length;
 
           // RDV pris: meetings booked where the booking call was made by this rep
           // (detected via "Booké" activity by this rep on the contact)
@@ -2282,8 +2293,8 @@ export function ReportsView({
 
           // Raw data for drill-down
           const _qualifiedContacts = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true);
-          const _deci1erContacts = [...repCalledContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
-          const _deciRecontacteContacts = Object.entries(callsByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deci1erContacts = [...repReachedContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deciRecontacteContacts = Object.entries(reachedByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
           const _r1PrisMeetings = r1PrisByBooking;
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
@@ -2533,12 +2544,24 @@ export function ReportsView({
             callsByRep[cid] = (callsByRep[cid] || 0) + 1;
           });
           const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
+
+          // Contacts actually REACHED by this rep (exclude unanswered / voicemail)
+          const reachedByRep: Record<string, number> = {};
+          repActivities.filter(a => {
+            if (a.type !== "appel") return false;
+            const desc = String(a.description ?? "");
+            return !desc.includes("Pas de réponse") && !desc.includes("Message vocal");
+          }).forEach(a => {
+            const cid = a.contact_id as string;
+            reachedByRep[cid] = (reachedByRep[cid] || 0) + 1;
+          });
+
           const ciblesQualifiees = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true).length;
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
-          const repCalledContactIds = new Set(Object.keys(callsByRep));
-          const deci1erContact = repCalledContactIds.size;
+          const repReachedContactIds = new Set(Object.keys(reachedByRep));
+          const deci1erContact = repReachedContactIds.size;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
-          const deciRecontacte = Object.values(callsByRep).filter(n => n > 1).length;
+          const deciRecontacte = Object.values(reachedByRep).filter(n => n > 1).length;
 
           // RDV pris: credit to who made the booking call
           const repBookedContactIds = new Set<string>();
@@ -2569,8 +2592,8 @@ export function ReportsView({
           const panierMoyen = nSignes > 0 ? Math.round(montantSigne / nSignes) : 0;
 
           const _qualifiedContacts = repContacts.filter(c => (c as Record<string, unknown>).is_qualified === true);
-          const _deci1erContacts = [...repCalledContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
-          const _deciRecontacteContacts = Object.entries(callsByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deci1erContacts = [...repReachedContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deciRecontacteContacts = Object.entries(reachedByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
           const _r1PrisMeetings = r1PrisByBooking;
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
@@ -2809,12 +2832,24 @@ export function ReportsView({
             callsByRep[cid] = (callsByRep[cid] || 0) + 1;
           });
           const suiviRelances = Object.values(callsByRep).reduce((s, n) => s + Math.max(0, n - 1), 0);
+
+          // Contacts actually REACHED by this rep (exclude unanswered / voicemail)
+          const reachedByRep: Record<string, number> = {};
+          repActivities.filter(a => {
+            if (a.type !== "appel") return false;
+            const desc = String(a.description ?? "");
+            return !desc.includes("Pas de réponse") && !desc.includes("Message vocal");
+          }).forEach(a => {
+            const cid = a.contact_id as string;
+            reachedByRep[cid] = (reachedByRep[cid] || 0) + 1;
+          });
+
           const ciblesQualifiees = repContacts.filter(c => (c as unknown as Record<string, unknown>).is_qualified === true).length;
           const actionsSortantes = repActivities.filter(a => a.type === "appel" || a.type === "email").length;
-          const repCalledContactIds = new Set(Object.keys(callsByRep));
-          const deci1erContact = repCalledContactIds.size;
+          const repReachedContactIds = new Set(Object.keys(reachedByRep));
+          const deci1erContact = repReachedContactIds.size;
           const pctDeciContacte = repContacts.length > 0 ? Math.round((deci1erContact / repContacts.length) * 100) : 0;
-          const deciRecontacte = Object.values(callsByRep).filter(n => n > 1).length;
+          const deciRecontacte = Object.values(reachedByRep).filter(n => n > 1).length;
 
           // RDV pris: credit to who made the booking call
           const repBookedContactIds = new Set<string>();
@@ -2844,8 +2879,8 @@ export function ReportsView({
           const panierMoyen = nSignes > 0 ? Math.round(montantSigne / nSignes) : 0;
 
           const _qualifiedContacts = repContacts.filter(c => (c as unknown as Record<string, unknown>).is_qualified === true);
-          const _deci1erContacts = [...repCalledContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
-          const _deciRecontacteContacts = Object.entries(callsByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deci1erContacts = [...repReachedContactIds].map(cid => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
+          const _deciRecontacteContacts = Object.entries(reachedByRep).filter(([, n]) => n > 1).map(([cid]) => outboundContacts.find(c => (c.id as string) === cid)).filter(Boolean) as R[];
           const _r1PrisMeetings = r1PrisByBooking;
           const _r1FaitMeetings = repMeetings.filter(m => (m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1") && m.status === "done");
 
