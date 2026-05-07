@@ -22,6 +22,7 @@ interface BillingMonthData {
   month: string;
   amount: number;
   status: BillingStatus | null;
+  notes: string | null;
 }
 
 interface BillingEntryData {
@@ -128,7 +129,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [editEntry, setEditEntry] = useState<BillingEntryData | null>(null);
 
   // Cell popover state
-  const [popoverCell, setPopoverCell] = useState<{ entryId: string; monthKey: string; monthId: string | null; rect: DOMRect } | null>(null);
+  const [popoverCell, setPopoverCell] = useState<{ entryId: string; monthKey: string; monthId: string | null; notes: string; rect: DOMRect } | null>(null);
   // Inline edit state
   const [editingCell, setEditingCell] = useState<{ entryId: string; monthKey: string } | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -252,6 +253,12 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       await supabase.from("billing_months").update({ status, updated_at: new Date().toISOString() }).eq("id", monthId);
     }
     setPopoverCell(null);
+    router.refresh();
+  }
+
+  async function updateCellNotes(monthId: string, notes: string) {
+    const supabase = createClient();
+    await supabase.from("billing_months").update({ notes: notes || null, updated_at: new Date().toISOString() }).eq("id", monthId);
     router.refresh();
   }
 
@@ -779,7 +786,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                               if (isReadOnly || isEditing || !md) return;
                               e.stopPropagation();
                               const rect = e.currentTarget.getBoundingClientRect();
-                              setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, rect });
+                              setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, notes: md.notes ?? "", rect });
                             }}
                             onDoubleClick={() => {
                               if (isReadOnly) return;
@@ -812,8 +819,15 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                                 }}
                               />
                             ) : (
-                              <div style={{ padding: "4px 3px", fontSize: 10, fontWeight: md?.amount ? 500 : 400 }}>
+                              <div style={{ padding: "4px 3px", fontSize: 10, fontWeight: md?.amount ? 500 : 400, position: "relative" }}>
                                 {md?.amount ? fmt(md.amount) : ""}
+                                {md?.notes && (
+                                  <span title={md.notes} style={{
+                                    position: "absolute", top: 1, right: 1,
+                                    width: 5, height: 5, borderRadius: "50%",
+                                    background: "#f59e0b",
+                                  }} />
+                                )}
                               </div>
                             )}
                           </td>
@@ -900,34 +914,71 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             borderRadius: 10,
             boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
             border: "1px solid #e8ecf1",
-            padding: 6,
+            padding: 8,
             display: "flex",
-            gap: 4,
+            flexDirection: "column",
+            gap: 6,
+            minWidth: 280,
           }}
         >
-          {Object.entries(STATUS_COLORS).map(([key, sc]) => (
+          <div style={{ display: "flex", gap: 4 }}>
+            {Object.entries(STATUS_COLORS).map(([key, sc]) => (
+              <button
+                key={key}
+                onClick={() => updateCellStatus(popoverCell.entryId, popoverCell.monthKey, popoverCell.monthId, key as BillingStatus)}
+                style={{
+                  background: sc.bg, color: sc.text, border: "none", cursor: "pointer",
+                  padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                }}
+                title={sc.label}
+              >
+                {sc.label}
+              </button>
+            ))}
             <button
-              key={key}
-              onClick={() => updateCellStatus(popoverCell.entryId, popoverCell.monthKey, popoverCell.monthId, key as BillingStatus)}
+              onClick={() => updateCellStatus(popoverCell.entryId, popoverCell.monthKey, popoverCell.monthId, null)}
               style={{
-                background: sc.bg, color: sc.text, border: "none", cursor: "pointer",
-                padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                background: "#f5f5f5", color: "#666", border: "none", cursor: "pointer",
+                padding: "5px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600,
               }}
-              title={sc.label}
+              title="Effacer le statut"
             >
-              {sc.label}
+              <X className="h-3 w-3" />
             </button>
-          ))}
-          <button
-            onClick={() => updateCellStatus(popoverCell.entryId, popoverCell.monthKey, popoverCell.monthId, null)}
-            style={{
-              background: "#f5f5f5", color: "#666", border: "none", cursor: "pointer",
-              padding: "5px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600,
-            }}
-            title="Effacer le statut"
-          >
-            <X className="h-3 w-3" />
-          </button>
+          </div>
+          {popoverCell.monthId && (
+            <div style={{ display: "flex", gap: 4 }}>
+              <input
+                type="text"
+                placeholder="Note rapide..."
+                defaultValue={popoverCell.notes}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    updateCellNotes(popoverCell.monthId!, (e.target as HTMLInputElement).value);
+                    setPopoverCell(null);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  flex: 1, padding: "5px 8px", border: "1px solid #e8ecf1", borderRadius: 6,
+                  fontSize: 11, outline: "none",
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  const input = (e.currentTarget as HTMLElement).previousElementSibling as HTMLInputElement;
+                  updateCellNotes(popoverCell.monthId!, input.value);
+                  setPopoverCell(null);
+                }}
+                style={{
+                  background: "#1a6b9c", color: "white", border: "none", cursor: "pointer",
+                  padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                }}
+              >
+                OK
+              </button>
+            </div>
+          )}
         </div>
       )}
 
