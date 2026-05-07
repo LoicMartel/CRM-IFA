@@ -197,7 +197,7 @@ function BookingGeneralContent() {
         <div style={{
           background: "rgba(255,255,255,0.9)", backdropFilter: "blur(20px)",
           borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-          maxWidth: 1700, width: "100%", overflow: "hidden",
+          maxWidth: 1400, width: "100%", overflow: "hidden",
           display: "flex", flexWrap: "wrap",
         }} className="booking-card">
           {/* Left: Intro text */}
