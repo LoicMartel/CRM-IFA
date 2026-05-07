@@ -3,7 +3,12 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { CompanyDetail } from "@/components/commercial/company-detail";
 
-export const metadata = { title: "Fiche Client" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: c } = await supabase.from("companies").select("name").eq("id", id).single();
+  return { title: c ? `CRM - ${c.name}` : "Fiche Client" };
+}
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -3,7 +3,12 @@ import { Header } from "@/components/layout/header";
 import { notFound } from "next/navigation";
 import { ContactDetail } from "@/components/commercial/contact-detail";
 
-export const metadata = { title: "Fiche Contact" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: c } = await supabase.from("contacts").select("first_name, last_name").eq("id", id).single();
+  return { title: c ? `CRM - ${c.first_name} ${c.last_name}` : "Fiche Contact" };
+}
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

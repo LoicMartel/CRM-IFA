@@ -4,7 +4,12 @@ import { notFound } from "next/navigation";
 import { LearnerDetailView } from "@/components/production/learner-detail-view";
 import { LmsProgressBar } from "@/components/learners/lms-progress-bar";
 
-export const metadata = { title: "Fiche Apprenant" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: l } = await supabase.from("learners").select("first_name, last_name").eq("id", id).single();
+  return { title: l ? `CRM - ${l.first_name} ${l.last_name}` : "Fiche Apprenant" };
+}
 
 export default async function LearnerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
