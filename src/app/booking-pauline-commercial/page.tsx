@@ -186,7 +186,7 @@ function BookingContent() {
             <p style={{ marginBottom: 0, fontStyle: "italic", color: "#5a6f80" }}>Au plaisir de faire votre connaissance,<br /><strong style={{ color: "#1a2a3a", fontStyle: "normal" }}>Pauline</strong></p>
           </div>
           {/* Left: Calendar */}
-          <div style={{ flex: "1 1 280px", padding: "16px 12px", borderRight: "1px solid #e8ecf1" }}>
+          <div style={{ flex: "1 1 400px", padding: "30px 24px", borderRight: "1px solid #e8ecf1" }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a2a3a", textAlign: "center", marginBottom: 4 }}>
               Bilan Commercial
             </h2>
@@ -246,7 +246,7 @@ function BookingContent() {
           </div>
 
           {/* Right: Slots + Options */}
-          <div style={{ flex: "1 1 200px", padding: "16px 12px" }}>
+          <div style={{ flex: "1 1 300px", padding: "30px 24px" }}>
             {/* Meeting info */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
