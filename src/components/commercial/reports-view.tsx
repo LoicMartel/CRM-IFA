@@ -1233,25 +1233,24 @@ export function ReportsView({
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          // Unique contacts actually reached this month (exclude "Pas de réponse" and "Message vocal")
-          const contactedThisMonth = new Set<string>();
+          // Unique contacts actually reached this period by THIS rep (activities only, not meetings)
+          const contactedThisPeriod = new Set<string>();
           repActivities.forEach((a: R) => {
             if (!a.contact_id) return;
             if (a.type === "appel") {
               const desc = String(a.description ?? "");
               if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
             }
-            contactedThisMonth.add(a.contact_id as string);
+            contactedThisPeriod.add(a.contact_id as string);
           });
-          repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisMonth.add(m.contact_id as string); });
 
           // New contacted = first-ever interaction is in this month
-          const newCtedContacts = new Set([...contactedThisMonth].filter(cid => {
+          const newCtedContacts = new Set([...contactedThisPeriod].filter(cid => {
             const f = firstInteraction[cid];
             return f && f >= monthStart && f <= monthEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = contactedThisMonth.size - newCted;
+          const oldCted = contactedThisPeriod.size - newCted;
 
           // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
@@ -1580,16 +1579,22 @@ export function ReportsView({
           });
 
           // Unique contacts contacted this week (via activities OR meetings by this rep)
-          const contactedThisWeek = new Set<string>();
-          repActivities.forEach((a: R) => { if (a.contact_id) contactedThisWeek.add(a.contact_id as string); });
-          repMeetings.forEach((m: R) => { if (m.contact_id) contactedThisWeek.add(m.contact_id as string); });
+          const contactedThisPeriod = new Set<string>();
+          repActivities.forEach((a: R) => {
+            if (!a.contact_id) return;
+            if (a.type === "appel") {
+              const desc = String(a.description ?? "");
+              if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
+            }
+            contactedThisPeriod.add(a.contact_id as string);
+          });
 
-          const newCtedContacts = new Set([...contactedThisWeek].filter(cid => {
+          const newCtedContacts = new Set([...contactedThisPeriod].filter(cid => {
             const f = firstInteraction[cid];
             return f && f >= weekStart && f <= weekEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = contactedThisWeek.size - newCted;
+          const oldCted = contactedThisPeriod.size - newCted;
 
           // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
