@@ -442,10 +442,10 @@ export function ReportsView({
           <option value="rdv_non_ferme">Rdvs non fermés</option>
           <option value="cancelled">Rdv annulés</option>
           <option value="rdv_planifies">RDV planifiés</option>
+          <option value="pas_interesse">Pas intéressé</option>
           <option value="taches">Tâches à faire</option>
           <option value="inbound">Inbound</option>
           <option value="outbound">Outbound</option>
-          <option value="pas_interesse">Pas intéressé</option>
         </select>
       </div>
 
