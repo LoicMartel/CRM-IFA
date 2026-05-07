@@ -54,7 +54,7 @@ export async function getCalendarEvents({
   timeMin: string;
   timeMax: string;
   timeZone?: string;
-}): Promise<{ events: { start: string; end: string }[]; error?: string }> {
+}): Promise<{ events: { start: string; end: string; summary?: string }[]; error?: string }> {
   const auth = getAuth();
   if (!auth) return { events: [], error: "Google Calendar not configured" };
 
@@ -70,11 +70,11 @@ export async function getCalendarEvents({
       maxResults: 250,
     });
 
-    const events: { start: string; end: string }[] = [];
+    const events: { start: string; end: string; summary?: string }[] = [];
     for (const e of res.data.items ?? []) {
       if (e.start?.dateTime && e.end?.dateTime) {
         // Timed event
-        events.push({ start: e.start.dateTime, end: e.end.dateTime });
+        events.push({ start: e.start.dateTime, end: e.end.dateTime, summary: e.summary ?? undefined });
       } else if (e.start?.date) {
         // All-day event → block entire day(s) using ISO format with Z
         // end date in Google is exclusive (next day), so we use it directly

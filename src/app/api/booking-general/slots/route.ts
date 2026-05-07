@@ -89,11 +89,11 @@ export async function GET(request: Request) {
   const allSlots = generateSlots(date);
 
   // Fetch busy times for ALL team members in parallel
-  const busyByMember: Map<string, { start: string; end: string }[]> = new Map();
+  const busyByMember: Map<string, { start: string; end: string; summary?: string }[]> = new Map();
 
   await Promise.all(
     TEAM.map(async (member) => {
-      const allBusy: { start: string; end: string }[] = [];
+      const allBusy: { start: string; end: string; summary?: string }[] = [];
       for (const calId of member.calendarIds) {
         const { events } = await getCalendarEvents({ calendarId: calId, timeMin, timeMax, timeZone: TZ });
         allBusy.push(...events);
@@ -104,6 +104,8 @@ export async function GET(request: Request) {
 
   // If a member has an event lasting 4h+ (formation), block the entire day
   const blockedAllDay = new Set<string>();
+  // Per-member "end of day" cutoff: no slots at or after this time
+  const endOfDayCutoff: Map<string, number> = new Map();
   for (const member of TEAM) {
     const busy = busyByMember.get(member.id) ?? [];
     const hasLongEvent = busy.some((b) => {
@@ -111,10 +113,21 @@ export async function GET(request: Request) {
       return duration >= 4 * 60 * 60 * 1000; // 4h+
     });
     if (hasLongEvent) blockedAllDay.add(member.id);
+    // Detect "end of day" event → block all slots from its start time
+    for (const b of busy) {
+      if (b.summary && b.summary.toLowerCase().includes("end of day")) {
+        const cutoff = new Date(b.start).getTime();
+        const existing = endOfDayCutoff.get(member.id);
+        if (!existing || cutoff < existing) endOfDayCutoff.set(member.id, cutoff);
+      }
+    }
   }
 
   function isMemberAvailable(memberId: string, slotStart: Date, slotEnd: Date): boolean {
     if (blockedAllDay.has(memberId)) return false;
+    // Block slots at or after "end of day"
+    const cutoff = endOfDayCutoff.get(memberId);
+    if (cutoff && slotStart.getTime() >= cutoff) return false;
     const busy = busyByMember.get(memberId) ?? [];
     return !busy.some((b) => {
       const bs = new Date(b.start).getTime() - BUFFER;
