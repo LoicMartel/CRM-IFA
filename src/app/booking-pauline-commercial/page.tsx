@@ -138,27 +138,57 @@ function BookingContent() {
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "30px 16px",
     }}>
-      {/* Progress steps + Logo compact */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-          {[1, 2, 3].map((s, i) => (
-            <div key={s} style={{ display: "flex", alignItems: "center" }}>
-              {i > 0 && <div style={{ width: 50, height: 2, background: step >= s ? "#FF6B35" : "#dce8f0", margin: "0 6px 16px" }} />}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= s ? "#FF6B35" : "#dce8f0", color: step >= s ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
-                  {step > s ? <CheckCircle style={{ width: 14, height: 14 }} /> : s}
-                </div>
-                <span style={{ fontSize: 9, fontWeight: 700, color: step >= s ? "#1a2a3a" : "#8399a9", textTransform: "uppercase" }}>
-                  {s === 1 ? "Heure" : s === 2 ? "Infos" : "Confirm."}
-                </span>
+      {/* Progress steps */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
+        {[1, 2, 3].map((s, i) => (
+          <div key={s} style={{ display: "flex", alignItems: "center" }}>
+            {i > 0 && <div className="booking-step-connector" style={{ width: 60, height: 2, background: step >= s ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%",
+                background: step >= s ? "#FF6B35" : "#dce8f0",
+                color: step >= s ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700,
+              }}>
+                {step > s ? <CheckCircle style={{ width: 16, height: 16 }} /> : s}
               </div>
+              <span style={{ fontSize: 10, fontWeight: 700, color: step >= s ? "#1a2a3a" : "#8399a9", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {s === 1 ? "Choisir l\u2019heure" : s === 2 ? "Vos informations" : "Confirmation"}
+              </span>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Logo + Photo Pauline */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        gap: 14, marginBottom: 24,
+      }}>
+        <div style={{
+          width: 56, height: 56, border: "2px solid #0a3d5f", borderRadius: 10,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "4px 6px",
+        }}>
+          <span style={{
+            color: "#0a3d5f", fontSize: 8, fontWeight: 700, lineHeight: 1.2,
+            textAlign: "center", fontFamily: "'Montserrat', sans-serif",
+            letterSpacing: "-0.02em",
+          }}>
+            LA<br />CLOSING<br />ACAD&Eacute;MIE<span style={{ fontSize: 5, verticalAlign: "super" }}>&reg;</span>
+          </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/photo-pauline.jpeg" alt="Pauline Becquerelle" style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid #fff", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }} />
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>Pauline Becquerelle</span>
-        </div>
+        <img
+          src="/photo-pauline.jpeg"
+          alt="Pauline Becquerelle"
+          style={{
+            width: 56, height: 56, borderRadius: "50%",
+            objectFit: "cover", objectPosition: "top",
+            border: "2px solid #fff",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          }}
+        />
+        <span style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>Pauline Becquerelle</span>
       </div>
 
       {/* Step 1: Calendar + Slots */}
