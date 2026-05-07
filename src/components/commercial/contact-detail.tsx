@@ -162,6 +162,7 @@ const callResultBadges: { match: string; label: string; bg: string; text: string
   { match: "Contacté", label: "Contacté", bg: "#e3f2fd", text: "#1565c0" },
   { match: "Message vocal laissé", label: "Message vocal", bg: "#fff8e1", text: "#f57c00" },
   { match: "Pas de réponse", label: "Pas de réponse", bg: "#fce4ec", text: "#c62828" },
+  { match: "Pas intéressé", label: "Pas intéressé", bg: "#f3e5f5", text: "#6a1b9a" },
 ];
 
 function getCallResultBadge(description: string | null) {
@@ -291,7 +292,7 @@ export function ContactDetail({
     description: "",
     due_date: "",
     task_deadline: "",
-    call_result: "" as "" | "no_answer" | "voicemail" | "contacted",
+    call_result: "" as "" | "no_answer" | "voicemail" | "contacted" | "not_interested",
     call_outcome: "" as "" | "not_booked" | "booked",
     rdv_date: "",
   });
@@ -412,7 +413,7 @@ export function ContactDetail({
     // Build description with call result if applicable
     let fullDescription = activityForm.description || "";
     if (activityForm.type === "appel" && activityForm.call_result) {
-      const resultLabels: Record<string, string> = { no_answer: "Pas de réponse", voicemail: "Message vocal laissé", contacted: "Contacté" };
+      const resultLabels: Record<string, string> = { no_answer: "Pas de réponse", voicemail: "Message vocal laissé", contacted: "Contacté", not_interested: "Pas intéressé" };
       const outcomeLabels: Record<string, string> = { not_booked: "Non booké", booked: "Booké" };
       let resultText = resultLabels[activityForm.call_result] || "";
       if (activityForm.call_result === "contacted" && activityForm.call_outcome) {
@@ -2047,6 +2048,7 @@ export function ContactDetail({
                   <option value="no_answer">Pas de réponse</option>
                   <option value="voicemail">Message vocal laissé</option>
                   <option value="contacted">Contacté</option>
+                  <option value="not_interested">Pas intéressé</option>
                 </select>
               </div>
             )}
