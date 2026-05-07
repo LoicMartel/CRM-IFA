@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
       // Contact exists, update lifecycle_stage if still a basic lead
       await supabase.from("contacts").update({
         lifecycle_stage: "lead_marketing",
+        was_lead_marketing: true,
         phone: phone || undefined,
       }).eq("id", existing.id);
 
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
       email: email.toLowerCase().trim(),
       phone: phone || null,
       lifecycle_stage: "lead_marketing",
+      was_lead_marketing: true,
       lead_status: "lead",
       contact_type: "inbound",
       notes: companyUrl ? `Site web : ${companyUrl}` : null,

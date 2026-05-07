@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         phone: phone || undefined,
         company_id: companyId || undefined,
         lifecycle_stage: "lead_marketing",
+        was_lead_marketing: true,
         ...(resolvedSourceId ? { source_id: resolvedSourceId } : {}),
       }).eq("id", existingContact.id);
       contactId = existingContact.id;
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
           company_id: companyId,
           contact_type: clientType === "entreprise" ? "outbound" : "inbound",
           lifecycle_stage: "lead_marketing",
+          was_lead_marketing: true,
           lead_status: "lead",
           source_id: resolvedSourceId,
           notes: `Source: ${source === "embed-form" ? "Meta ads - tunnel commercial" : source === "embed-form-book" ? "Meta ads - tunnel book" : source || "Landing Page"}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,

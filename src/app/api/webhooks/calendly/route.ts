@@ -74,9 +74,10 @@ export async function POST(req: NextRequest) {
         last_name: lastName,
         email: inviteeEmail.toLowerCase().trim(),
         phone: phone || null,
-        lifecycle_stage: "lead_marketing",
+        lifecycle_stage: "prospect",
         lead_status: "booked",
         contact_type: "inbound",
+        was_lead_marketing: true,
       }).select("id").single();
 
       contactId = newContact?.id;
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
       // Update existing contact status to booked
       await supabase.from("contacts").update({
         lead_status: "booked",
+        lifecycle_stage: "prospect",
         phone: phone || undefined,
       }).eq("id", contactId);
     }

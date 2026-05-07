@@ -84,6 +84,7 @@ export async function POST(request: Request) {
         phone,
         company_id: companyId,
         lead_status: "booked",
+        lifecycle_stage: "prospect",
         owner_id: assignedTo,
         notes: source ? `Source: ${source}` : null,
       }).eq("id", existingContact.id);
