@@ -1455,21 +1455,21 @@ export function ContactDetail({
                             <span className="text-xs text-muted-foreground">{formatDate(a.due_date || a.created_at)}</span>
                             {a.due_date && (
                               <span className="text-xs text-muted-foreground block">
-                                {(() => { try { return format(new Date(a.due_date), "HH:mm", { locale: fr }); } catch { return ""; } })()}
+                                {(() => { try { return new Date(a.due_date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }); } catch { return ""; } })()}
                               </span>
                             )}
                             {a.team_members && (
-                              <span
+                              <div
                                 title={`${a.team_members.first_name} ${a.team_members.last_name}`}
                                 style={{
-                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
                                   width: 24, height: 24, borderRadius: "50%",
                                   background: "#0d4f7a", color: "white",
                                   fontSize: 9, fontWeight: 700, marginTop: 4,
                                 }}
                               >
                                 {a.team_members.first_name[0]}{a.team_members.last_name[0]}
-                              </span>
+                              </div>
                             )}
                           </div>
                           <div className="flex-1">
