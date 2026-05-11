@@ -98,7 +98,7 @@ export async function POST(request: Request) {
           email,
           phone: phone || null,
           company_id: companyId,
-          contact_type: clientType === "entreprise" ? "outbound" : "inbound",
+          contact_type: "inbound",
           lifecycle_stage: "lead_marketing",
           was_lead_marketing: true,
           lead_status: "lead",
