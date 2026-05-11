@@ -26,8 +26,10 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (!session) {
+      console.error("[cancel-session] Session not found:", sessionId);
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
+    console.log("[cancel-session] Processing session:", sessionId, "trainers:", session.trainers);
 
     const plan = session.service_plans as any;
     const companyName = plan?.companies?.name ?? "Client";
@@ -131,11 +133,14 @@ export async function POST(req: NextRequest) {
         subject: `Session annulée — ${typeLabel} du ${sessionDateFr}`,
         body: emailBody,
       });
+      console.log("[cancel-session] Email to", learner.email, ":", emailRes.success ? "sent" : emailRes.error);
       results.push({ trainer: `${learner.first_name} ${learner.last_name}`, email: emailRes.success ? "sent" : emailRes.error } as any);
     }
 
+    console.log("[cancel-session] Done. Results:", JSON.stringify(results));
     return NextResponse.json({ success: true, title: cancelledTitle, results });
   } catch (err: any) {
+    console.error("[cancel-session] Unhandled error:", err.message, err.stack);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

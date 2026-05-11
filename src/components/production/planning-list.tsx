@@ -803,21 +803,25 @@ export function PlanningList({
           const sessionType = session.session_type === "journee" ? "Journée" : "VT";
           const duration = session.duration_hours ? `${Number(session.duration_hours).toFixed(0)}h` : "";
           const trainers = (session.trainers ?? []).join(", ");
-          await fetch("/api/slack/notify-cancelled", {
+          const slackRes = await fetch("/api/slack/notify-cancelled", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: session.notes ?? "" }),
           });
+          if (!slackRes.ok) console.error("[cancel] Slack notify-cancelled failed:", await slackRes.text());
+        } else {
+          console.error("[cancel] Session not found in local state for Slack notify:", sessionId);
         }
-      } catch {}
-      // Update Google Calendar event titles to show "ANNULEE" + notify trainers on Slack
+      } catch (err) { console.error("[cancel] Slack notify-cancelled error:", err); }
+      // Update Google Calendar event titles to show "ANNULEE" + notify trainers + email learners
       try {
-        await fetch("/api/gcal/cancel-session", {
+        const cancelRes = await fetch("/api/gcal/cancel-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, cancelledBy: currentFirstName ?? "" }),
         });
-      } catch {}
+        if (!cancelRes.ok) console.error("[cancel] cancel-session API failed:", await cancelRes.text());
+      } catch (err) { console.error("[cancel] cancel-session API error:", err); }
     }
 
     // Sync learner statuses (futur → actuel, actuel → ancien)
