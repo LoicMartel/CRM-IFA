@@ -793,6 +793,7 @@ export function PlanningList({
 
     // Notify Iman on Slack + update Google Calendar title when a session is cancelled
     if (newStatus === "cancelled") {
+      const cancelResults: any[] = [];
       try {
         const session = servicePlans.flatMap(p =>
           (p.training_sessions ?? []).map((s: any) => ({ ...s, plan: p }))
@@ -808,20 +809,25 @@ export function PlanningList({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: session.notes ?? "" }),
           });
-          if (!slackRes.ok) console.error("[cancel] Slack notify-cancelled failed:", await slackRes.text());
-        } else {
-          console.error("[cancel] Session not found in local state for Slack notify:", sessionId);
+          const slackData = await slackRes.json().catch(() => null);
+          cancelResults.push({ trainer: "Iman (admin)", slack: slackRes.ok && slackData?.success ? "sent" : (slackData?.error ?? "error") });
         }
       } catch (err) { console.error("[cancel] Slack notify-cancelled error:", err); }
       // Update Google Calendar event titles to show "ANNULEE" + notify trainers + email learners
+      let cancelTitle = "";
       try {
         const cancelRes = await fetch("/api/gcal/cancel-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, cancelledBy: currentFirstName ?? "" }),
         });
-        if (!cancelRes.ok) console.error("[cancel] cancel-session API failed:", await cancelRes.text());
+        const cancelData = await cancelRes.json().catch(() => null);
+        if (cancelData?.results) cancelResults.push(...cancelData.results);
+        if (cancelData?.title) cancelTitle = cancelData.title;
       } catch (err) { console.error("[cancel] cancel-session API error:", err); }
+      if (cancelResults.length > 0) {
+        setSyncPopup({ sessionId, syncData: { title: cancelTitle || "Session annulée", results: cancelResults, cancelled: true } });
+      }
     }
 
     // Sync learner statuses (futur → actuel, actuel → ancien)
@@ -2227,7 +2233,7 @@ export function PlanningList({
           >
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1" }}>
-                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>✅ Session créée et synchronisée</h3>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>{sd.cancelled ? "🚫 Session annulée" : "✅ Session créée et synchronisée"}</h3>
               </div>
 
               <div style={{ padding: 20 }} className="space-y-3">
