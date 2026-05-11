@@ -1173,7 +1173,7 @@ export function ReportsView({
         // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
-          if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
+          teamMembersSet.add(tm ? `${tm.first_name} ${tm.last_name}` : "N/A");
         });
         // From meeting assignees (primary attribution)
         monthMeetings.forEach((m) => {
@@ -1192,7 +1192,7 @@ export function ReportsView({
           // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
-            return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
+            return tm ? `${tm.first_name} ${tm.last_name}` === repName : repName === "N/A";
           });
 
           // Meetings ASSIGNED TO this rep (on inbound contacts)
@@ -1531,7 +1531,7 @@ export function ReportsView({
         // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
-          if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
+          teamMembersSet.add(tm ? `${tm.first_name} ${tm.last_name}` : "N/A");
         });
         // From meeting assignees (primary attribution)
         weekMeetings.forEach((m) => {
@@ -1550,7 +1550,7 @@ export function ReportsView({
           // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
-            return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
+            return tm ? `${tm.first_name} ${tm.last_name}` === repName : repName === "N/A";
           });
 
           // Meetings ASSIGNED TO this rep (on inbound contacts)
@@ -1881,7 +1881,7 @@ export function ReportsView({
         // From contact owners (for leads count)
         inboundContacts.forEach((c) => {
           const tm = c.team_members as { first_name: string; last_name: string } | null;
-          if (tm) teamMembersSet.add(`${tm.first_name} ${tm.last_name}`);
+          teamMembersSet.add(tm ? `${tm.first_name} ${tm.last_name}` : "N/A");
         });
         // From meeting assignees (primary attribution)
         periodMeetings.forEach((m) => {
@@ -1900,7 +1900,7 @@ export function ReportsView({
           // Contacts owned by this rep (for leads/contacts count)
           const repContacts = inboundContacts.filter((c) => {
             const tm = c.team_members as { first_name: string; last_name: string } | null;
-            return tm ? `${tm.first_name} ${tm.last_name}` === repName : false;
+            return tm ? `${tm.first_name} ${tm.last_name}` === repName : repName === "N/A";
           });
 
           // Meetings ASSIGNED TO this rep (on inbound contacts)
