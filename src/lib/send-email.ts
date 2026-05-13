@@ -10,6 +10,19 @@ function getResend() {
   return resendClient;
 }
 
+// Rate limiting: max 4 emails/sec to stay under Resend's 5/sec limit
+let lastSendTime = 0;
+const MIN_INTERVAL_MS = 300;
+
+async function rateLimitDelay() {
+  const now = Date.now();
+  const elapsed = now - lastSendTime;
+  if (elapsed < MIN_INTERVAL_MS) {
+    await new Promise(resolve => setTimeout(resolve, MIN_INTERVAL_MS - elapsed));
+  }
+  lastSendTime = Date.now();
+}
+
 export async function sendSessionEmail({
   to,
   subject,
@@ -66,6 +79,7 @@ export async function sendSessionEmail({
       }));
     }
 
+    await rateLimitDelay();
     const { error } = await resend.emails.send(emailPayload);
 
     if (error) return { success: false, error: error.message };

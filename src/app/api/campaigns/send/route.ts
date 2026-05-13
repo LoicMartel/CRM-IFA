@@ -38,10 +38,12 @@ export async function POST(req: NextRequest) {
   await supabase.from("marketing_campaigns").update({ status: "sending" }).eq("id", campaign_id);
 
   let sentCount = 0;
+  const MIN_INTERVAL_MS = 300;
 
   // Send emails one by one to track each individually
   for (const r of recipients) {
     try {
+      await new Promise(resolve => setTimeout(resolve, MIN_INTERVAL_MS));
       const { data } = await resend.emails.send({
         from: `${campaign.from_name} <${campaign.from_email}>`,
         to: [r.email],
