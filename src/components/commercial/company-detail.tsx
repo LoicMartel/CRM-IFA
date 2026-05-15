@@ -256,6 +256,7 @@ export function CompanyDetail({
   const [selectedDeal, setSelectedDeal] = useState<Record<string, unknown> | null>(null);
   const [dealInvoices, setDealInvoices] = useState<{ id: string; amount: number; month: string; status: string }[]>([]);
   const [dealDocuments, setDealDocuments] = useState<{ id: string; name: string; file_path: string; file_size: number | null; document_type: string; created_at: string }[]>([]);
+  const [dealNotifications, setDealNotifications] = useState<{ id: string; type: string; title: string; body: string | null; created_at: string }[]>([]);
   const [loadingDealData, setLoadingDealData] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [docType, setDocType] = useState("devis");
@@ -269,11 +270,12 @@ export function CompanyDetail({
     setLoadingDealData(true);
     const supabase = createClient();
     const companyId = s(company.id);
-    const [{ data: entries }, { data: docs }] = await Promise.all([
+    const [{ data: entries }, { data: docs }, { data: notifs }] = await Promise.all([
       companyId
         ? supabase.from("billing_entries").select("client_name, billing_months(id, amount, month, status)").eq("company_id", companyId)
         : Promise.resolve({ data: [] as any[] }),
       supabase.from("deal_documents").select("*").eq("deal_id", s(deal.id)).order("created_at", { ascending: false }),
+      supabase.from("notifications").select("id, type, title, body, created_at").eq("related_entity_id", s(deal.id)).eq("related_entity_type", "deal").order("created_at", { ascending: false }),
     ]);
     const billingMonths = (entries ?? []).flatMap((e: any) =>
       ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, status: m.status ?? "non_fait" }))
@@ -281,6 +283,7 @@ export function CompanyDetail({
     billingMonths.sort((a: any, b: any) => a.month.localeCompare(b.month));
     setDealInvoices(billingMonths);
     setDealDocuments(docs ?? []);
+    setDealNotifications(notifs ?? []);
     setLoadingDealData(false);
   }
 
@@ -1466,6 +1469,24 @@ export function CompanyDetail({
                     ) : <div style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>Aucune facture pour cette entreprise</div>}
                   </div>
                 </div>
+
+                {/* Notifications */}
+                {dealNotifications.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Notifications</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {dealNotifications.map(n => (
+                        <div key={n.id} style={{ padding: "8px 10px", background: "#f8fbfd", borderRadius: 8, border: "1px solid #e8ecf1" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{n.title}</span>
+                            <span style={{ fontSize: 10, color: "#8399a9" }}>{new Date(n.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                          {n.body && <p style={{ fontSize: 12, color: "#5a6f80", marginTop: 4, whiteSpace: "pre-wrap", lineHeight: 1.4 }}>{n.body}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Documents */}
                 <div>
