@@ -139,11 +139,23 @@ export async function GET(request: Request) {
   // For each slot, find the first available member by priority
   const result: { start: string; end: string; assignedTo: string; assignedName: string; assignedFirstName: string; assignedPhoto: string }[] = [];
 
+  // Alexandre : fin à 18h sauf jeudi (19h)
+  const ALEXANDRE_ID = "dd7e0013-3f99-4a18-9f9c-609264ca0a52";
+  const dayOfWeek = new Date(`${date}T12:00:00`).getUTCDay(); // 0=Dim, 4=Jeu
+
   for (const slot of allSlots) {
     const slotStart = new Date(`${slot.start}${offset}`);
     const slotEnd = new Date(`${slot.end}${offset}`);
 
     for (const member of TEAM) {
+      // Alexandre : dernier créneau doit finir à 18h (19h le jeudi)
+      if (member.id === ALEXANDRE_ID) {
+        const endH = parseInt(slot.end.substring(11, 13));
+        const endM = parseInt(slot.end.substring(14, 16));
+        const endTotal = endH * 60 + endM;
+        const maxEnd = dayOfWeek === 4 ? 19 * 60 : 18 * 60;
+        if (endTotal > maxEnd) continue;
+      }
       if (isMemberAvailable(member.id, slotStart, slotEnd)) {
         result.push({
           start: slot.start,
