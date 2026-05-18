@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getParisOffset } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
+import { processMeetingNotifications } from "@/lib/process-meeting-notifications";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -122,11 +123,16 @@ export async function POST(request: Request) {
 
   // 4. Trigger centralized notify (calendar + prospect email + Slack/email to assignee)
   if (meetingId && isStepActive(wf, "trigger-notifications").active) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
-    await fetch(`${baseUrl}/api/meetings/notify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meetingId }),
+    const mid = meetingId;
+    after(async () => {
+      try {
+        const result = await processMeetingNotifications({ meetingId: mid });
+        if (!result.success) console.error(`[booking-naznine] notification failed for meeting ${mid}:`, result.error);
+        const failures = result.results.filter(r => !["Envoye", "Ajoute"].includes(r.status));
+        if (failures.length > 0) console.error(`[booking-naznine] partial failures for meeting ${mid}:`, JSON.stringify(failures));
+      } catch (err) {
+        console.error(`[booking-naznine] notification error for meeting ${mid}:`, err);
+      }
     });
   }
 
