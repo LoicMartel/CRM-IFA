@@ -101,20 +101,22 @@ export function CompaniesTable({
     return signed[0]?.amount ?? null;
   }
 
-  const filtered = companies
-    .filter((c) => {
+  const filtered = useMemo(() => {
+    const list = companies.filter((c) => {
       if (onlyOwnData && roleMemberId && c.owner_id !== roleMemberId) return false;
       if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterType && c.company_types?.name !== filterType) return false;
       if (filterLifecycle && c.lifecycle_stage !== filterLifecycle) return false;
       if (filterOwner && c.owner_id !== filterOwner) return false;
       return true;
-    })
-    .sort((a, b) => {
+    });
+    return [...list].sort((a, b) => {
       let cmp = 0;
+      const nameA = a.name.trim().toLowerCase();
+      const nameB = b.name.trim().toLowerCase();
       switch (sortKey) {
-        case "name": cmp = a.name.localeCompare(b.name, "fr", { sensitivity: "base" }); break;
-        case "city": cmp = (a.city ?? "").localeCompare(b.city ?? "", "fr", { sensitivity: "base" }); break;
+        case "name": cmp = nameA.localeCompare(nameB, "fr", { numeric: true }); break;
+        case "city": cmp = (a.city ?? "").trim().toLowerCase().localeCompare((b.city ?? "").trim().toLowerCase(), "fr"); break;
         case "lifecycle_stage": cmp = (a.lifecycle_stage ?? "").localeCompare(b.lifecycle_stage ?? ""); break;
         case "contacts_count": cmp = getContactCount(a) - getContactCount(b); break;
         case "deals_count": cmp = getDealCount(a) - getDealCount(b); break;
@@ -131,6 +133,7 @@ export function CompaniesTable({
       }
       return sortAsc ? cmp : -cmp;
     });
+  }, [companies, search, filterType, filterLifecycle, filterOwner, onlyOwnData, roleMemberId, sortKey, sortAsc]);
 
   const filterKey = `${search}|${filterType}|${filterLifecycle}|${filterOwner}`;
   useMemo(() => { setPage(1); }, [filterKey]);
