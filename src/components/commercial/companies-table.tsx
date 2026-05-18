@@ -121,10 +121,10 @@ export function CompaniesTable({
         case "deal_amount": {
           const amtA = getLastSignedAmount(a);
           const amtB = getLastSignedAmount(b);
-          if (amtA == null && amtB == null) cmp = 0;
-          else if (amtA == null) cmp = -1;
-          else if (amtB == null) cmp = 1;
-          else cmp = amtA - amtB;
+          if (amtA == null && amtB == null) return 0;
+          if (amtA == null) return 1;
+          if (amtB == null) return -1;
+          cmp = amtA - amtB;
           break;
         }
         case "annual_revenue": cmp = (a.annual_revenue ?? 0) - (b.annual_revenue ?? 0); break;
