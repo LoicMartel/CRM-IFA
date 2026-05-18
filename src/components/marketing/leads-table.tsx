@@ -21,6 +21,8 @@ interface Lead {
   phone: string | null;
   company_id: string | null;
   owner_id: string | null;
+  lead_status: string | null;
+  lifecycle_stage: string | null;
   companies: { name: string }[] | { name: string } | null;
   lead_sources: { name: string }[] | { name: string } | null;
   team_members: { id: string; first_name: string; last_name: string }[] | { id: string; first_name: string; last_name: string } | null;
@@ -33,7 +35,15 @@ function getName(rel: { name: string }[] | { name: string } | null): string | nu
   return rel.name;
 }
 
-type SortKey = "created_at" | "last_name" | "first_name" | "source" | "email" | "phone" | "company";
+const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  lead: { label: "Lead", color: "#1a6b9c", bg: "#e8f4f8" },
+  contacted: { label: "Contacté", color: "#b8860b", bg: "#fef9e7" },
+  booked: { label: "Booké", color: "#2e7d32", bg: "#e8f5e9" },
+  rdv_done: { label: "RDV effectué", color: "#1565c0", bg: "#e3f2fd" },
+  not_interested: { label: "Non intéressé", color: "#c62828", bg: "#ffebee" },
+};
+
+type SortKey = "created_at" | "last_name" | "first_name" | "source" | "email" | "phone" | "company" | "status";
 
 export function LeadsTable({ leads }: { leads: Lead[] }) {
   const router = useRouter();
@@ -75,6 +85,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         case "email": cmp = (a.email ?? "").localeCompare(b.email ?? ""); break;
         case "phone": cmp = (a.phone ?? "").localeCompare(b.phone ?? ""); break;
         case "company": cmp = (getName(a.companies) ?? "").localeCompare(getName(b.companies) ?? ""); break;
+        case "status": cmp = (a.lead_status ?? "").localeCompare(b.lead_status ?? ""); break;
       }
       return sortAsc ? cmp : -cmp;
     });
@@ -127,6 +138,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           filtered.map((l) => ({
             nom: l.last_name,
             prenom: l.first_name,
+            statut: STATUS_LABELS[l.lead_status ?? ""]?.label ?? l.lead_status ?? "",
             source: getName(l.lead_sources) ?? "",
             email: l.email ?? "",
             telephone: l.phone ?? "",
@@ -134,8 +146,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           })),
           [
             { key: "nom", label: "Nom" }, { key: "prenom", label: "Prénom" },
-            { key: "source", label: "Source" }, { key: "email", label: "Email" },
-            { key: "telephone", label: "Téléphone" }, { key: "entreprise", label: "Entreprise" },
+            { key: "statut", label: "Statut" }, { key: "source", label: "Source" },
+            { key: "email", label: "Email" }, { key: "telephone", label: "Téléphone" },
+            { key: "entreprise", label: "Entreprise" },
           ],
           "leads-marketing", fmt
         )} />
@@ -147,6 +160,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             <TableRow>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>
                 <span className="flex items-center gap-1">Créé le <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => toggleSort("status")}>
+                <span className="flex items-center gap-1">Statut <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("last_name")}>
                 <span className="flex items-center gap-1">Nom <ArrowUpDown className="h-3 w-3" /></span>
@@ -171,7 +187,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
@@ -189,6 +205,14 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   <TableCell className="p-0" style={{ fontSize: 11, color: "#5a6f80" }}>
                     <Link href={href} className="block px-4 py-2 text-inherit no-underline">
                       {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="p-0">
+                    <Link href={href} className="block px-4 py-2 text-inherit no-underline">
+                      {(() => {
+                        const s = STATUS_LABELS[l.lead_status ?? ""] ?? { label: l.lead_status ?? "—", color: "#5a6f80", bg: "#f0f0f0" };
+                        return <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, color: s.color, backgroundColor: s.bg }}>{s.label}</span>;
+                      })()}
                     </Link>
                   </TableCell>
                   <TableCell className="p-0 font-medium"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.last_name}</Link></TableCell>
