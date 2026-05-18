@@ -140,6 +140,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
 
   return (
     <div
+      id={`post-${post.id}`}
       className="lca-card"
       style={{
         borderRadius: 12,

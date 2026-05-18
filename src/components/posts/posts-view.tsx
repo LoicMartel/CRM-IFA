@@ -442,6 +442,22 @@ function CategoryManagerPanel({
       });
   }, []);
 
+  // Scroll to post when URL contains a hash (e.g. /posts#post-xxx)
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    // Small delay to let posts render
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.style.boxShadow = "0 0 0 3px #FF6B35";
+        setTimeout(() => { el.style.boxShadow = ""; }, 2000);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   async function toggleMember(category: string, memberId: string) {
     const supabase = createClient();
     const current = assignments[category] ?? [];
