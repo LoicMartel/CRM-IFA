@@ -204,7 +204,7 @@ export function MarketingReportsView({
 
   // === GLOBAL KPIs ===
   const totalInvestment = filteredExpenses.reduce((a, e) => a + Number(e.amount), 0);
-  const totalLeads = filteredStats.reduce((a, s) => a + s.leads, 0);
+  const totalLeads = filteredLeads.length;
   const totalSales = filteredWonDeals.length;
   // CA généré = somme des deals gagnés/signés, calculée auto (même logique que Dépenses Marketing)
   const totalRevenue = filteredWonDeals.reduce((a, d) => a + (Number(d.amount) || 0), 0);
