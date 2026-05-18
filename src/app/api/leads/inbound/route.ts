@@ -80,11 +80,14 @@ export async function POST(request: Request) {
       : null;
 
     if (existingContact) {
-      // Update existing contact
+      // Update existing contact (including name in case it changed on re-submission)
       await supabase.from("contacts").update({
+        first_name: firstName,
+        last_name: lastName,
         phone: phone || undefined,
         company_id: companyId || undefined,
         lifecycle_stage: "lead_marketing",
+        lead_status: "lead",
         was_lead_marketing: true,
         ...(resolvedSourceId ? { source_id: resolvedSourceId } : {}),
       }).eq("id", existingContact.id);
