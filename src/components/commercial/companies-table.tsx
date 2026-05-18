@@ -118,7 +118,15 @@ export function CompaniesTable({
         case "lifecycle_stage": cmp = (a.lifecycle_stage ?? "").localeCompare(b.lifecycle_stage ?? ""); break;
         case "contacts_count": cmp = getContactCount(a) - getContactCount(b); break;
         case "deals_count": cmp = getDealCount(a) - getDealCount(b); break;
-        case "deal_amount": cmp = (getLastSignedAmount(a) ?? 0) - (getLastSignedAmount(b) ?? 0); break;
+        case "deal_amount": {
+          const amtA = getLastSignedAmount(a);
+          const amtB = getLastSignedAmount(b);
+          if (amtA == null && amtB == null) cmp = 0;
+          else if (amtA == null) cmp = -1;
+          else if (amtB == null) cmp = 1;
+          else cmp = amtA - amtB;
+          break;
+        }
         case "annual_revenue": cmp = (a.annual_revenue ?? 0) - (b.annual_revenue ?? 0); break;
       }
       return sortAsc ? cmp : -cmp;
