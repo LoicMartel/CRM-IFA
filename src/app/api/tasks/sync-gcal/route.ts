@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
 
     const title = `📋 Tâche: ${task.title}${contactName ? ` — ${contactName}` : ""}${companyName ? ` (${companyName})` : ""}`;
 
-    // Parse task_deadline (priorité) or fallback to due_date
-    const rawDue = (task.task_deadline || task.due_date) as string | null;
+    // Parse due_date (date d'action avec heure) en priorité, fallback sur task_deadline
+    const rawDue = (task.due_date || task.task_deadline) as string | null;
     if (!rawDue) return NextResponse.json({ success: true, result: "Pas de date sur la tâche" });
 
     const dateStr = rawDue.slice(0, 10);
