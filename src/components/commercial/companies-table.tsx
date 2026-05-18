@@ -113,8 +113,8 @@ export function CompaniesTable({
     .sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
-        case "name": cmp = a.name.localeCompare(b.name); break;
-        case "city": cmp = (a.city ?? "").localeCompare(b.city ?? ""); break;
+        case "name": cmp = a.name.localeCompare(b.name, "fr", { sensitivity: "base" }); break;
+        case "city": cmp = (a.city ?? "").localeCompare(b.city ?? "", "fr", { sensitivity: "base" }); break;
         case "lifecycle_stage": cmp = (a.lifecycle_stage ?? "").localeCompare(b.lifecycle_stage ?? ""); break;
         case "contacts_count": cmp = getContactCount(a) - getContactCount(b); break;
         case "deals_count": cmp = getDealCount(a) - getDealCount(b); break;
