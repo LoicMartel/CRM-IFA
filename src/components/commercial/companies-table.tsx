@@ -34,6 +34,7 @@ interface Company {
   team_members: { first_name: string; last_name: string } | null;
   contacts: { count: number }[];
   deals: { count: number }[];
+  signed_deals: { amount: number | null; stage: string; close_date: string | null }[];
 }
 
 interface CompanyType {
@@ -55,7 +56,7 @@ const lifecycleColors: Record<string, { bg: string; text: string; label: string 
   former_customer: { bg: "#fce4ec", text: "#c62828", label: "Ancien client" },
 };
 
-type SortKey = "name" | "city" | "lifecycle_stage" | "contacts_count" | "deals_count" | "annual_revenue";
+type SortKey = "name" | "city" | "lifecycle_stage" | "contacts_count" | "deals_count" | "deal_amount" | "annual_revenue";
 
 export function CompaniesTable({
   companies,
@@ -93,6 +94,13 @@ export function CompaniesTable({
     return c.deals?.[0]?.count ?? 0;
   }
 
+  function getLastSignedAmount(c: Company): number | null {
+    const signed = (c.signed_deals ?? [])
+      .filter(d => d.stage === "closed_won" || d.stage === "quote_signed")
+      .sort((a, b) => (b.close_date ?? "").localeCompare(a.close_date ?? ""));
+    return signed[0]?.amount ?? null;
+  }
+
   const filtered = companies
     .filter((c) => {
       if (onlyOwnData && roleMemberId && c.owner_id !== roleMemberId) return false;
@@ -110,6 +118,7 @@ export function CompaniesTable({
         case "lifecycle_stage": cmp = (a.lifecycle_stage ?? "").localeCompare(b.lifecycle_stage ?? ""); break;
         case "contacts_count": cmp = getContactCount(a) - getContactCount(b); break;
         case "deals_count": cmp = getDealCount(a) - getDealCount(b); break;
+        case "deal_amount": cmp = (getLastSignedAmount(a) ?? 0) - (getLastSignedAmount(b) ?? 0); break;
         case "annual_revenue": cmp = (a.annual_revenue ?? 0) - (b.annual_revenue ?? 0); break;
       }
       return sortAsc ? cmp : -cmp;
@@ -223,12 +232,14 @@ export function CompaniesTable({
               cycle: c.lifecycle_stage ?? "",
               contacts: String(getContactCount(c)),
               deals: String(getDealCount(c)),
+              montant_deal: (() => { const a = getLastSignedAmount(c); return a != null ? String(a) : ""; })(),
               proprietaire: c.team_members ? `${c.team_members.first_name} ${c.team_members.last_name}` : "",
             })),
             [
               { key: "nom", label: "Nom" }, { key: "ville", label: "Ville" },
               { key: "cycle", label: "Cycle de vie" }, { key: "contacts", label: "Contacts" },
-              { key: "deals", label: "Deals" }, { key: "proprietaire", label: "Propriétaire" },
+              { key: "deals", label: "Deals" }, { key: "montant_deal", label: "Montant deal" },
+              { key: "proprietaire", label: "Propriétaire" },
             ],
             "entreprises", fmt
           )} />
@@ -258,13 +269,16 @@ export function CompaniesTable({
               <TableHead className="cursor-pointer text-center" onClick={() => toggleSort("deals_count")}>
                 <span className="flex items-center gap-1 justify-center">Deals <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
+              <TableHead className="cursor-pointer text-right" onClick={() => toggleSort("deal_amount")}>
+                <span className="flex items-center gap-1 justify-end">Montant deal <ArrowUpDown className="h-3 w-3" /></span>
+              </TableHead>
               <TableHead>Propriétaire</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Aucune entreprise trouvée
                 </TableCell>
               </TableRow>
@@ -292,6 +306,14 @@ export function CompaniesTable({
                     </TableCell>
                     <TableCell className="p-0 text-center"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{getContactCount(c)}</Link></TableCell>
                     <TableCell className="p-0 text-center"><Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">{getDealCount(c)}</Link></TableCell>
+                    <TableCell className="p-0 text-right">
+                      <Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
+                        {(() => {
+                          const amt = getLastSignedAmount(c);
+                          return amt != null ? `${Number(amt).toLocaleString("fr-FR")} €` : "—";
+                        })()}
+                      </Link>
+                    </TableCell>
                     <TableCell className="p-0">
                       <Link href={`/clients/${c.id}`} className="block px-4 py-2 text-inherit no-underline">
                         {c.team_members ? (

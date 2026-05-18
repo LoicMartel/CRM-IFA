@@ -13,7 +13,7 @@ export default async function ClientsPage() {
 
   const { data: companies } = await supabase
     .from("companies")
-    .select("*, company_types(name), contacts!contacts_company_id_fkey(count), deals(count)")
+    .select("*, company_types(name), contacts!contacts_company_id_fkey(count), deals(count), signed_deals:deals!deals_company_id_fkey(amount, stage, close_date)")
     .order("name");
 
   const { data: contacts } = await supabase
