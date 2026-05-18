@@ -51,7 +51,13 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
   const [filterOwner, setFilterOwner] = useState(searchParams.get("owner") ?? "");
-  const [filterDate, setFilterDate] = useState(searchParams.get("date") ?? "");
+  const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
@@ -67,23 +73,17 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   }
   const ownerNames = Array.from(new Set(leads.map(getOwnerName).filter(Boolean) as string[])).sort();
 
-  const dateCutoff = useMemo(() => {
-    if (!filterDate) return null;
-    const now = new Date();
-    switch (filterDate) {
-      case "7d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-      case "14d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
-      case "30d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
-      case "90d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
-      default: return null;
-    }
-  }, [filterDate]);
+  function inPeriod(dateStr: string) {
+    if (periodMode === "month") return dateStr.startsWith(filterMonth);
+    if (periodMode === "custom" && customFrom && customTo) return dateStr >= customFrom && dateStr <= customTo;
+    return true;
+  }
 
   const filtered = leads
     .filter((l) => {
       if (filterSource && (getName(l.lead_sources) ?? "") !== filterSource) return false;
       if (filterOwner && (getOwnerName(l) ?? "") !== filterOwner) return false;
-      if (dateCutoff && new Date(l.created_at) < dateCutoff) return false;
+      if (!inPeriod(l.created_at.split("T")[0])) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       const fullName = `${l.first_name} ${l.last_name}`.toLowerCase();
@@ -105,7 +105,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     });
 
   // Reset page when filters change
-  const filterKey = `${search}|${filterSource}|${filterOwner}|${filterDate}`;
+  const filterKey = `${search}|${filterSource}|${filterOwner}|${periodMode}|${filterMonth}|${customFrom}|${customTo}`;
   useMemo(() => { setPage(1); }, [filterKey]);
 
   const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -149,15 +149,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           </select>
           <select
             className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
+            value={periodMode}
+            onChange={(e) => setPeriodMode(e.target.value as "all" | "month" | "custom")}
           >
-            <option value="">Toutes les dates</option>
-            <option value="7d">7 derniers jours</option>
-            <option value="14d">14 derniers jours</option>
-            <option value="30d">30 derniers jours</option>
-            <option value="90d">90 derniers jours</option>
+            <option value="all">Toutes les périodes</option>
+            <option value="month">Par mois</option>
+            <option value="custom">Personnalisé</option>
           </select>
+          {periodMode === "month" && (
+            <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-40 h-9" />
+          )}
+          {periodMode === "custom" && (
+            <div className="flex items-center gap-2">
+              <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-36 h-9 text-xs" />
+              <span style={{ color: "#8399a9" }}>au</span>
+              <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-36 h-9 text-xs" />
+            </div>
+          )}
         </div>
         <ExportButton onExport={(fmt: ExportFormat) => exportData(
           filtered.map((l) => ({
