@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 
@@ -10,7 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [loading, setLoading] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -61,7 +62,7 @@ export default function LoginPage() {
 
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     });
 
     if (error) {
