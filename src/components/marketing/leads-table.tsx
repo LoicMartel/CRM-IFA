@@ -51,6 +51,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [filterSource, setFilterSource] = useState(searchParams.get("source") ?? "");
   const [filterOwner, setFilterOwner] = useState(searchParams.get("owner") ?? "");
+  const [filterDate, setFilterDate] = useState(searchParams.get("date") ?? "");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
@@ -66,10 +67,23 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   }
   const ownerNames = Array.from(new Set(leads.map(getOwnerName).filter(Boolean) as string[])).sort();
 
+  const dateCutoff = useMemo(() => {
+    if (!filterDate) return null;
+    const now = new Date();
+    switch (filterDate) {
+      case "7d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+      case "14d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14);
+      case "30d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+      case "90d": return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 90);
+      default: return null;
+    }
+  }, [filterDate]);
+
   const filtered = leads
     .filter((l) => {
       if (filterSource && (getName(l.lead_sources) ?? "") !== filterSource) return false;
       if (filterOwner && (getOwnerName(l) ?? "") !== filterOwner) return false;
+      if (dateCutoff && new Date(l.created_at) < dateCutoff) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       const fullName = `${l.first_name} ${l.last_name}`.toLowerCase();
@@ -91,7 +105,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     });
 
   // Reset page when filters change
-  const filterKey = `${search}|${filterSource}|${filterOwner}`;
+  const filterKey = `${search}|${filterSource}|${filterOwner}|${filterDate}`;
   useMemo(() => { setPage(1); }, [filterKey]);
 
   const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -132,6 +146,17 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             {ownerNames.map((n) => (
               <option key={n} value={n}>{n}</option>
             ))}
+          </select>
+          <select
+            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          >
+            <option value="">Toutes les dates</option>
+            <option value="7d">7 derniers jours</option>
+            <option value="14d">14 derniers jours</option>
+            <option value="30d">30 derniers jours</option>
+            <option value="90d">90 derniers jours</option>
           </select>
         </div>
         <ExportButton onExport={(fmt: ExportFormat) => exportData(
