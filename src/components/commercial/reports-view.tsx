@@ -353,7 +353,14 @@ export function ReportsView({
   }
 
   // ===== Computed data =====
-  const targets = salesTargets;
+  // Deduplicate targets by month (YYYY-MM)
+  const seenMonths = new Set<string>();
+  const targets = salesTargets.filter((t) => {
+    const mKey = (t.month as string).slice(0, 7);
+    if (seenMonths.has(mKey)) return false;
+    seenMonths.add(mKey);
+    return true;
+  });
   const annualTarget = targets.reduce((s, t) => s + (Number(t.target_amount) || 0), 0) || 860000;
 
   // Won deals (orders prop now contains closed_won deals)
