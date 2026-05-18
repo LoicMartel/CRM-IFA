@@ -733,6 +733,19 @@ export function PlanningList({
 
   // Notes popup state
   const [notesPopup, setNotesPopup] = useState<{ sessionId: string; notes: string } | null>(null);
+  const [editingRateSessionId, setEditingRateSessionId] = useState<string | null>(null);
+  const [editingRateValue, setEditingRateValue] = useState("");
+
+  async function saveInlineRate(sessionId: string, planHourlyRate: number) {
+    const supabase = createClient();
+    const val = editingRateValue.trim();
+    const newRate = val ? parseFloat(val) : null;
+    // If the entered rate matches the plan rate, store null (use plan default)
+    const rateToStore = newRate != null && newRate === planHourlyRate ? null : newRate;
+    await supabase.from("training_sessions").update({ hourly_rate: rateToStore }).eq("id", sessionId);
+    setEditingRateSessionId(null);
+    refetchPlans();
+  }
   const sessionNotesVoice = useVoiceDictation(
     () => notesPopup?.notes ?? "",
     (t) => setNotesPopup(prev => prev ? { ...prev, notes: t } : null),
@@ -1462,10 +1475,34 @@ export function PlanningList({
                                       </select>
                                     </TableCell>
                                     {hourlyRate > 0 && (
-                                      <TableCell style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: s.is_billable === false ? "#ccc" : s.status === "done" ? "#1a2a3a" : "#8399a9" }}>
+                                      <TableCell
+                                        style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: s.is_billable === false ? "#ccc" : s.status === "done" ? "#1a2a3a" : "#8399a9", cursor: s.is_billable !== false ? "pointer" : "default" }}
+                                        onClick={() => {
+                                          if (s.is_billable === false || isReadOnly) return;
+                                          setEditingRateSessionId(s.id);
+                                          setEditingRateValue(s.hourly_rate != null ? String(s.hourly_rate) : String(hourlyRate));
+                                        }}
+                                        title={s.is_billable !== false ? `Taux: ${s.hourly_rate ?? hourlyRate} €/h — cliquer pour modifier` : ""}
+                                      >
                                         {s.is_billable === false ? (
                                           <span style={{ fontWeight: 400, fontStyle: "italic", color: "#999" }}>Non fact.</span>
-                                        ) : fmt((Number(s.duration_hours) || 0) * (s.hourly_rate ?? hourlyRate))}
+                                        ) : editingRateSessionId === s.id ? (
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            autoFocus
+                                            value={editingRateValue}
+                                            onChange={(e) => setEditingRateValue(e.target.value)}
+                                            onBlur={() => saveInlineRate(s.id, hourlyRate)}
+                                            onKeyDown={(e) => { if (e.key === "Enter") saveInlineRate(s.id, hourlyRate); if (e.key === "Escape") setEditingRateSessionId(null); }}
+                                            style={{ width: 80, height: 28, borderRadius: 6, border: "2px solid #1a6b9c", textAlign: "right", fontSize: 13, fontWeight: 700, padding: "0 6px" }}
+                                            onClick={(e) => e.stopPropagation()}
+                                          />
+                                        ) : (
+                                          <span style={{ borderBottom: s.hourly_rate != null ? "2px dashed #1a6b9c" : "1px dashed #ccc" }}>
+                                            {fmt((Number(s.duration_hours) || 0) * (s.hourly_rate ?? hourlyRate))}
+                                          </span>
+                                        )}
                                       </TableCell>
                                     )}
                                     <TableCell
