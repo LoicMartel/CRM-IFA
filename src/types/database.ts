@@ -142,6 +142,7 @@ export interface Deal {
   probability: number;
   expected_close_date: string | null;
   close_date: string | null;
+  stage_changed_at: string | null;
   lost_reason: string | null;
   notes: string | null;
   created_at: string;

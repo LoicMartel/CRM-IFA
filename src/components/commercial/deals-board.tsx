@@ -31,6 +31,7 @@ interface Deal {
   probability: number;
   expected_close_date: string | null;
   close_date: string | null;
+  stage_changed_at: string | null;
   notes: string | null;
   owner_id: string | null;
   company_id: string | null;
@@ -267,6 +268,7 @@ export function DealsBoard({
       stage: targetStage,
       probability: DEAL_STAGE_PROBABILITY[targetStage],
       close_date: targetStage === "closed_won" ? new Date().toISOString().split("T")[0] : null,
+      stage_changed_at: new Date().toISOString(),
     }).eq("id", draggedDealId);
 
     // Notify the deal owner of the stage change (if different from current user)
@@ -677,11 +679,16 @@ export function DealsBoard({
             return (
               <div className="space-y-4" style={{ marginTop: 8 }}>
                 {/* Stage badge */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span style={{ background: sc.bg, color: sc.text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
                     {DEAL_STAGE_LABELS[selectedDeal.stage as DealStage] ?? selectedDeal.stage}
                   </span>
                   <span style={{ fontSize: 12, color: "#8399a9" }}>{selectedDeal.probability}% de probabilité</span>
+                  {selectedDeal.stage_changed_at && (
+                    <span style={{ fontSize: 11, color: "#5a6f80" }}>
+                      — le {new Date(selectedDeal.stage_changed_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                    </span>
+                  )}
                 </div>
 
                 {/* Infos */}
