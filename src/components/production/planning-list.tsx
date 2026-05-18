@@ -43,6 +43,7 @@ interface TrainingSession {
   status: "planned" | "done" | "cancelled" | "no_show";
   trainers: string[] | null;
   is_billable: boolean;
+  hourly_rate: number | null;
   notes: string | null;
   training_session_learners?: SessionLearnerJoin[];
 }
@@ -245,7 +246,7 @@ export function PlanningList({
 
   // Session add state
   const [sessionPlanId, setSessionPlanId] = useState<string | null>(null);
-  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [] as string[], custom_title: "" });
+  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [] as string[], custom_title: "" });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const importQueue: PlanImportRow[] = [];
@@ -614,6 +615,7 @@ export function PlanningList({
       duration_hours: sessionForm.duration_hours ? parseFloat(sessionForm.duration_hours) : 1,
       trainers: sessionForm.trainers.length > 0 ? sessionForm.trainers : null,
       is_billable: sessionForm.is_billable,
+      hourly_rate: sessionForm.hourly_rate ? parseFloat(sessionForm.hourly_rate) : null,
       notes: sessionForm.notes || null,
     };
 
@@ -690,7 +692,7 @@ export function PlanningList({
     setSavingSession(false);
     setSessionPlanId(null);
     setEditingSessionId(null);
-    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [], custom_title: "" });
+    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: "" });
     refetchPlans();
   }
 
@@ -722,6 +724,7 @@ export function PlanningList({
       duration_hours: String(Number(s.duration_hours) || 1),
       trainers: existingTrainers,
       is_billable: s.is_billable ?? true,
+      hourly_rate: s.hourly_rate != null ? String(s.hourly_rate) : "",
       notes: s.notes ?? "",
       learner_ids: existingLearnerIds,
       custom_title: autoTitle,
@@ -981,8 +984,8 @@ export function PlanningList({
           const billablePlanned = sessions.filter(s => s.status === "planned" && s.is_billable !== false);
           const totalHoursDone = billableDone.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);
           const totalHoursPlanned = billablePlanned.reduce((s, sess) => s + (Number(sess.duration_hours) || 0), 0);
-          const consumedAmount = totalHoursDone * hourlyRate;
-          const plannedAmount = totalHoursPlanned * hourlyRate;
+          const consumedAmount = billableDone.reduce((s, sess) => s + (Number(sess.duration_hours) || 0) * (sess.hourly_rate ?? hourlyRate), 0);
+          const plannedAmount = billablePlanned.reduce((s, sess) => s + (Number(sess.duration_hours) || 0) * (sess.hourly_rate ?? hourlyRate), 0);
           const budgetInitial = Number(plan.budget) || 0;
           const budgetRemaining = budgetInitial - consumedAmount;
 
@@ -1168,7 +1171,7 @@ export function PlanningList({
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
                       {!isRestrictedExterne && !isReadOnly && (<>
                       <button
-                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, notes: "", learner_ids: [], custom_title: t }); }}
+                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
@@ -1462,7 +1465,7 @@ export function PlanningList({
                                       <TableCell style={{ textAlign: "right", fontWeight: 700, fontSize: 13, color: s.is_billable === false ? "#ccc" : s.status === "done" ? "#1a2a3a" : "#8399a9" }}>
                                         {s.is_billable === false ? (
                                           <span style={{ fontWeight: 400, fontStyle: "italic", color: "#999" }}>Non fact.</span>
-                                        ) : fmt((Number(s.duration_hours) || 0) * hourlyRate)}
+                                        ) : fmt((Number(s.duration_hours) || 0) * (s.hourly_rate ?? hourlyRate))}
                                       </TableCell>
                                     )}
                                     <TableCell
@@ -2100,6 +2103,12 @@ export function PlanningList({
                   <input type="checkbox" checked={sessionForm.is_billable} onChange={(e) => setSessionForm({ ...sessionForm, is_billable: e.target.checked })} style={{ accentColor: "#27ae60" }} />
                   <span style={{ fontWeight: sessionForm.is_billable ? 600 : 400, color: sessionForm.is_billable ? "#27ae60" : "#8399a9" }}>{sessionForm.is_billable ? "Facturable" : "Non facturable"}</span>
                 </label>
+                {sessionForm.is_billable && (
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Taux horaire (€/h) — vide = taux du plan</label>
+                    <input type="number" step="0.01" placeholder={(() => { const p = servicePlans.find(p => p.id === sessionPlanId); return p?.hourly_rate ? `${p.hourly_rate} €/h (plan)` : "Non défini"; })()} value={sessionForm.hourly_rate} onChange={(e) => setSessionForm({ ...sessionForm, hourly_rate: e.target.value })} style={{ width: 200, height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  </div>
+                )}
               </div>
               <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button onClick={() => setSessionPlanId(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>Annuler</button>
