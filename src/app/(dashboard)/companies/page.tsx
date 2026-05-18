@@ -13,7 +13,7 @@ export default async function CompaniesPage() {
     { data: companyTypes },
     { data: teamMembers },
   ] = await Promise.all([
-    supabase.from("companies").select("*, company_types(name), contacts!contacts_company_id_fkey(count), deals(count), team_members!companies_owner_id_fkey(first_name, last_name)").order("name"),
+    supabase.from("companies").select("*, company_types(name), contacts!contacts_company_id_fkey(count), deals(count), signed_deals:deals!deals_company_id_fkey(amount, stage, close_date), team_members!companies_owner_id_fkey(first_name, last_name)").order("name"),
     supabase.from("company_types").select("id, name").order("name"),
     supabase.from("team_members").select("id, first_name, last_name").eq("is_active", true),
   ]);
