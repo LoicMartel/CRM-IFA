@@ -153,7 +153,7 @@ export function LearnerDetailView({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, firstName: currentFirstName } = useCurrentRoles();
   const typedSessions = sessions as unknown as SessionData[];
   const typedPlans = servicePlans as unknown as ServicePlanData[];
 
@@ -791,8 +791,30 @@ export function LearnerDetailView({
                                   <select
                                     defaultValue={s.status}
                                     onChange={async (e) => {
+                                      const newStatus = e.target.value;
                                       const sb = createClient();
-                                      await sb.from("training_sessions").update({ status: e.target.value }).eq("id", s.id);
+                                      await sb.from("training_sessions").update({ status: newStatus }).eq("id", s.id);
+                                      if (newStatus === "cancelled") {
+                                        try {
+                                          await fetch("/api/gcal/cancel-session", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ sessionId: s.id, cancelledBy: currentFirstName ?? "" }),
+                                          });
+                                        } catch {}
+                                        try {
+                                          const companyName = s.service_plans?.companies?.name ?? "—";
+                                          const sessionDate = s.session_date ? new Date(s.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
+                                          const sessionType = s.session_type === "journee" ? "Journée" : "VT";
+                                          const duration = s.duration_hours ? `${Number(s.duration_hours).toFixed(0)}h` : "";
+                                          const trainers = (s.trainers ?? []).join(", ");
+                                          await fetch("/api/slack/notify-cancelled", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: s.notes ?? "" }),
+                                          });
+                                        } catch {}
+                                      }
                                       try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: s.id }) }); } catch {}
                                       router.refresh();
                                     }}

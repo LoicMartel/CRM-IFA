@@ -162,6 +162,29 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         } catch {}
       }
 
+      // If cancelled → update Google Calendar + Slack + email learners
+      if (sessionStatus === "cancelled") {
+        try {
+          await fetch("/api/gcal/cancel-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: selectedSession.id, cancelledBy: currentFirstName ?? "" }),
+          });
+        } catch (err) { console.error("[agenda] cancel-session API error:", err); }
+        try {
+          const companyName = (selectedSession as any).service_plans?.companies?.name ?? "—";
+          const sessionDate = selectedSession.session_date ? new Date(selectedSession.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
+          const sessionType = selectedSession.session_type === "journee" ? "Journée" : "VT";
+          const duration = selectedSession.duration_hours ? `${Number(selectedSession.duration_hours).toFixed(0)}h` : "";
+          const trainers = ((selectedSession as any).trainers ?? []).join(", ");
+          await fetch("/api/slack/notify-cancelled", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ companyName, sessionDate, sessionType, duration, trainers, notes: (selectedSession as any).notes ?? "" }),
+          });
+        } catch (err) { console.error("[agenda] Slack notify-cancelled error:", err); }
+      }
+
       // Sync learner statuses and delivery (fire and forget)
       fetch("/api/learners/sync-status").catch(() => {});
       try { await fetch("/api/sessions/sync-delivery", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ trainingSessionId: selectedSession.id }) }); } catch {}
