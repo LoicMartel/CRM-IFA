@@ -9,22 +9,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const PAULINE = {
-  id: "55e425cb-5041-4ea4-92c3-ce2f1dbce6a0",
-  name: "Pauline BECQUERELLE",
-};
-
 export async function POST(request: Request) {
   const body = await request.json();
   const {
     date, time, firstName, lastName, email, phone, company, source, website,
     mode, // "visio" | "phone"
     clientType, // "particulier" | "entreprise"
+    assignedTo, assignedName,
   } = body;
 
   const isEntreprise = clientType === "entreprise";
 
-  if (!date || !time || !firstName || !lastName || !email || !phone || !company) {
+  if (!date || !time || !firstName || !lastName || !email || !phone || !company || !assignedTo) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -74,7 +70,7 @@ export async function POST(request: Request) {
         company_id: companyId,
         lead_status: "booked",
         lifecycle_stage: "prospect",
-        owner_id: PAULINE.id,
+        owner_id: assignedTo,
         notes: source ? `Source: ${source}` : null,
       }).eq("id", existingContact.id);
       contact = existingContact;
@@ -90,7 +86,7 @@ export async function POST(request: Request) {
           contact_type: "inbound",
           lifecycle_stage: "prospect",
           lead_status: "booked",
-          owner_id: PAULINE.id,
+          owner_id: assignedTo,
           notes: source ? `Source: ${source}` : null,
         })
         .select("id")
@@ -108,7 +104,7 @@ export async function POST(request: Request) {
     const { data: newMeeting, error: meetingError } = await supabase.from("meetings").insert({
       contact_id: contact.id,
       company_id: companyId,
-      assigned_to: PAULINE.id,
+      assigned_to: assignedTo,
       meeting_type: "R0",
       status: "booked",
       scheduled_at: startDateTime,
@@ -124,7 +120,7 @@ export async function POST(request: Request) {
     // Insert junction table rows for multi-participant support
     if (newMeeting?.id) {
       await supabase.from("meeting_contacts").insert({ meeting_id: newMeeting.id, contact_id: contact.id, is_primary: true });
-      await supabase.from("meeting_managers").insert({ meeting_id: newMeeting.id, team_member_id: PAULINE.id, is_primary: true });
+      await supabase.from("meeting_managers").insert({ meeting_id: newMeeting.id, team_member_id: assignedTo, is_primary: true });
     }
   }
 
@@ -147,6 +143,6 @@ export async function POST(request: Request) {
     success: true,
     contactId: contact?.id,
     meetingId,
-    assignedName: PAULINE.name,
+    assignedName: assignedName || "La Closing Académie",
   });
 }

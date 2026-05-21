@@ -35,7 +35,7 @@ function BookingContent() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [slots, setSlots] = useState<{ start: string; end: string }[]>([]);
+  const [slots, setSlots] = useState<{ start: string; end: string; assignedTo?: string; assignedName?: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string | null>(null);
@@ -71,8 +71,6 @@ function BookingContent() {
       const res = await fetch(`/api/booking-pauline/slots?date=${dateStr}`);
       const data = await res.json();
       setSlots(data.slots ?? []);
-      setAssignedTo(data.assignedTo);
-      setAssignedName(data.assignedName);
     } catch {
       setSlots([]);
     }
@@ -320,7 +318,7 @@ function BookingContent() {
                     return (
                       <button
                         key={time}
-                        onClick={() => { setSelectedSlot(time); }}
+                        onClick={() => { setSelectedSlot(time); setAssignedTo(slot.assignedTo ?? null); setAssignedName(slot.assignedName ?? null); }}
                         style={{
                           height: 42, borderRadius: 8,
                           border: `2px solid ${isActive ? "#1a6b9c" : "#dce8f0"}`,
