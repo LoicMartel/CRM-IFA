@@ -29,20 +29,24 @@ export async function sendSessionEmail({
   body,
   attachments,
   bcc,
+  isHtml = false,
 }: {
   to: string;
   subject: string;
   body: string;
   attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
   bcc?: string[];
+  isHtml?: boolean;
 }): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   if (!resend) return { success: false, error: "Resend not configured" };
 
   try {
-    const htmlBody = body
-      .replace(/\n/g, "<br>")
-      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
+    const htmlBody = isHtml
+      ? body
+      : body
+        .replace(/\n/g, "<br>")
+        .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 
     const emailPayload: any = {
       from: "L'équipe La Closing Académie <noreply@closing-academie.com>",

@@ -209,6 +209,7 @@ export async function POST(req: NextRequest) {
         to: customerEmail,
         subject: "Votre Book Financements est prêt !",
         body: buyerEmailBody,
+        isHtml: true,
       });
 
       if (!buyerResult.success) {
