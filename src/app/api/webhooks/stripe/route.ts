@@ -175,6 +175,47 @@ export async function POST(req: NextRequest) {
       await supabase.from("notifications").insert(notifRows);
     }
 
+    // 6. Send thank-you email to buyer with book download link
+    if (customerEmail) {
+      const buyerFirstName = customerName.split(" ")[0] || "Bonjour";
+      const bookDownloadUrl = "https://drive.google.com/file/d/1y6Cm4AfJi4k6eQ0iketQiBv1K8FT3rJ7/view?usp=drive_link";
+      const bookingUrl = "https://crm-lca.vercel.app/booking-general";
+
+      const buyerEmailBody = `
+<h2 style="color: #2e7ab5;">Merci pour votre achat !</h2>
+
+<p>Bonjour ${buyerFirstName},</p>
+
+<p>Merci pour votre achat ! Vous pouvez télécharger votre Book Financements Complet en cliquant sur le lien ci-dessous :</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="${bookDownloadUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #2e7ab5; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
+    Télécharger le Book Financements
+  </a>
+</p>
+
+<p>Ce guide vous donne toutes les clés pour structurer le financement de vos formations. Pour aller encore plus loin et bénéficier d'un accompagnement personnalisé, n'hésitez pas à réserver un appel gratuit avec notre équipe :</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #FF6B35; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
+    Réserver un créneau
+  </a>
+</p>
+
+<p>À très vite,</p>
+`;
+
+      const buyerResult = await sendSessionEmail({
+        to: customerEmail,
+        subject: "Votre Book Financements est prêt !",
+        body: buyerEmailBody,
+      });
+
+      if (!buyerResult.success) {
+        console.error(`Failed to send buyer email to ${customerEmail}:`, buyerResult.error);
+      }
+    }
+
     console.log(`Deal "${dealName}" created, notifications sent to ${NOTIFY_EMAILS.length} recipients`);
   }
 
