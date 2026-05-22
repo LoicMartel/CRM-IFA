@@ -134,6 +134,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
   const [savingSession, setSavingSession] = useState(false);
   const [allSessions, setAllSessions] = useState<AllSessionSummary[]>([]);
   const [schedulingDone, setSchedulingDone] = useState(false);
+  const [calendarViewDate, setCalendarViewDate] = useState<string | null>(null);
+  const [manualProposals, setManualProposals] = useState<Proposal[]>([]);
 
   const [form, setForm] = useState({
     clientAvailableDays: [] as string[],
@@ -261,6 +263,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           setSessionMeta(data.sessionMeta);
           setProposals(data.proposals);
           setTrainerCalendars(data.trainerCalendars);
+          setCalendarViewDate(null);
+          setManualProposals([]);
           if (data.allSessions) setAllSessions(data.allSessions);
         }
       }
@@ -274,7 +278,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
   // Validate selected proposal → save session
   async function handleConfirmSession() {
     if (selectedProposalIndex === null || !sessionMeta) return;
-    const proposal = proposals[selectedProposalIndex];
+    const currentAllProposals = [...proposals, ...manualProposals];
+    const proposal = currentAllProposals[selectedProposalIndex];
     if (!proposal || !planId) return;
 
     setSavingSession(true);
@@ -367,6 +372,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           setSessionMeta(data.sessionMeta);
           setProposals(data.proposals);
           setTrainerCalendars(data.trainerCalendars);
+          setCalendarViewDate(null);
+          setManualProposals([]);
           if (data.allSessions) setAllSessions(data.allSessions);
         }
       }
@@ -401,6 +408,60 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
   };
   const formationRegion = CITY_REGION[form.city] ?? "";
   const totalSessions = sessionMeta?.total ?? allSessions.length;
+
+  // ─── Day navigation + manual slot helpers ───
+  const allProposals = [...proposals, ...manualProposals];
+  const proposalDates = [...new Set(proposals.map(p => p.session_date))].sort();
+  const currentViewDate = calendarViewDate ?? proposalDates[0] ?? form.startDate;
+
+  function addDaysStr(dateStr: string, days: number): string {
+    const d = new Date(dateStr + "T12:00:00");
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split("T")[0];
+  }
+  // Skip weekends when navigating
+  function nextWeekday(dateStr: string, direction: number): string {
+    let d = new Date(dateStr + "T12:00:00");
+    do { d.setDate(d.getDate() + direction); } while (d.getDay() === 0 || d.getDay() === 6);
+    return d.toISOString().split("T")[0];
+  }
+  const canGoPrev = currentViewDate > form.startDate;
+  const canGoNext = currentViewDate < form.endDate;
+  function handlePrevDay() { setCalendarViewDate(nextWeekday(currentViewDate, -1)); }
+  function handleNextDay() { setCalendarViewDate(nextWeekday(currentViewDate, +1)); }
+
+  function handleClickEmptySlot(trainerName: string, time: string) {
+    if (!sessionMeta) return;
+    const trainer = trainerCalendars.find(tc => tc.trainerName === trainerName);
+    if (!trainer) return;
+    // Check for duplicates
+    const isDuplicate = allProposals.some(p => p.session_date === currentViewDate && p.session_time === time && p.trainer_name === trainerName);
+    if (isDuplicate) return;
+    // Simple conflict check against trainer events
+    const [h, m] = time.split(":").map(Number);
+    const slotStart = h * 60 + m;
+    const slotEnd = slotStart + sessionMeta.duration_hours * 60;
+    const hasConflict = trainer.events.some(ev => {
+      const startDt = new Date(ev.start);
+      if (startDt.toISOString().split("T")[0] !== currentViewDate) return false;
+      const evStart = startDt.getHours() * 60 + startDt.getMinutes();
+      const endDt = new Date(ev.end);
+      const evEnd = endDt.getHours() * 60 + endDt.getMinutes();
+      return slotStart < evEnd && slotEnd > evStart;
+    });
+    if (hasConflict) return;
+
+    const newProposal: Proposal = {
+      session_date: currentViewDate,
+      session_time: time,
+      duration_hours: sessionMeta.duration_hours,
+      trainer_name: trainerName,
+      trainer_id: trainer.trainerId,
+    };
+    const updatedManual = [...manualProposals, newProposal];
+    setManualProposals(updatedManual);
+    setSelectedProposalIndex(proposals.length + updatedManual.length - 1);
+  }
 
   return (
     <div
@@ -875,40 +936,41 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 )}
 
                 {/* Proposals + Calendar */}
-                {!loadingProposals && proposals.length > 0 && sessionMeta && (
+                {!loadingProposals && sessionMeta && (
                   <div style={{ display: "flex", gap: 20 }}>
-                    {/* Calendar view */}
+                    {/* Calendar view — single navigable day */}
                     <div style={{ flex: "1 1 55%", minWidth: 0 }}>
-                      {/* Show timeline for each unique proposal date */}
-                      {[...new Set(proposals.map(p => p.session_date))].map(date => (
-                        <div key={date} style={{ marginBottom: 16 }}>
-                          <DayTimeline
-                            date={date}
-                            trainers={trainerCalendars.map(tc => ({
-                              name: tc.trainerName,
-                              events: tc.events,
-                            }))}
-                            proposals={proposals.map((p, idx) => ({
-                              time: p.session_time,
-                              duration: p.duration_hours,
-                              trainerName: p.trainer_name,
-                              isSelected: selectedProposalIndex === idx,
-                            })).filter(p => {
-                              const proposalForDate = proposals.find(pr => pr.session_date === date && pr.session_time === p.time && pr.trainer_name === p.trainerName);
-                              return !!proposalForDate;
-                            })}
-                            onSelectProposal={(localIdx) => {
-                              // Map local index back to global proposal index
-                              const dateProposals = proposals
-                                .map((p, idx) => ({ ...p, globalIdx: idx }))
-                                .filter(p => p.session_date === date);
-                              if (dateProposals[localIdx]) {
-                                setSelectedProposalIndex(dateProposals[localIdx].globalIdx);
-                              }
-                            }}
-                          />
-                        </div>
-                      ))}
+                      <DayTimeline
+                        date={currentViewDate}
+                        trainers={trainerCalendars.map(tc => ({
+                          name: tc.trainerName,
+                          events: tc.events,
+                        }))}
+                        proposals={allProposals
+                          .map((p, idx) => ({
+                            time: p.session_time,
+                            duration: p.duration_hours,
+                            trainerName: p.trainer_name,
+                            isSelected: selectedProposalIndex === idx,
+                          }))
+                          .filter(p => allProposals.some(
+                            pr => pr.session_date === currentViewDate && pr.session_time === p.time && pr.trainer_name === p.trainerName
+                          ))}
+                        onSelectProposal={(localIdx) => {
+                          const dateProposals = allProposals
+                            .map((p, idx) => ({ ...p, globalIdx: idx }))
+                            .filter(p => p.session_date === currentViewDate);
+                          if (dateProposals[localIdx]) {
+                            setSelectedProposalIndex(dateProposals[localIdx].globalIdx);
+                          }
+                        }}
+                        onPrevDay={handlePrevDay}
+                        onNextDay={handleNextDay}
+                        canGoPrev={canGoPrev}
+                        canGoNext={canGoNext}
+                        onClickEmptySlot={handleClickEmptySlot}
+                        sessionDuration={sessionMeta.duration_hours}
+                      />
                     </div>
 
                     {/* Proposal cards */}
@@ -917,58 +979,68 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         Créneaux proposés
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {proposals.map((p, idx) => (
-                          <div
-                            key={idx}
-                            onClick={() => setSelectedProposalIndex(idx)}
-                            style={{
-                              padding: "14px 16px", borderRadius: 10, cursor: "pointer",
-                              border: selectedProposalIndex === idx ? "2px solid #2e7d32" : "1px solid #dce8f0",
-                              background: selectedProposalIndex === idx ? "#f1f8f1" : "white",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <div>
-                                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", textTransform: "capitalize" }}>
-                                  {fmtDate(p.session_date)}
-                                </div>
-                                <div style={{ fontSize: 13, color: "#5a6f80", marginTop: 2 }}>
-                                  {p.session_time} — {p.duration_hours}h
-                                </div>
-                              </div>
-                              <div style={{ textAlign: "right" }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c" }}>
-                                  {p.trainer_name}
-                                </div>
-                                {p.warning && (
-                                  <div style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>
-                                    {p.warning}
+                        {allProposals.map((p, idx) => {
+                          const isManual = idx >= proposals.length;
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setSelectedProposalIndex(idx);
+                                setCalendarViewDate(p.session_date);
+                              }}
+                              style={{
+                                padding: "14px 16px", borderRadius: 10, cursor: "pointer",
+                                border: selectedProposalIndex === idx ? "2px solid #2e7d32" : "1px solid #dce8f0",
+                                background: selectedProposalIndex === idx ? "#f1f8f1" : "white",
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", textTransform: "capitalize" }}>
+                                      {fmtDate(p.session_date)}
+                                    </span>
+                                    {isManual && (
+                                      <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 6, background: "#fff3e0", color: "#e65100" }}>
+                                        Manuel
+                                      </span>
+                                    )}
                                   </div>
-                                )}
+                                  <div style={{ fontSize: 13, color: "#5a6f80", marginTop: 2 }}>
+                                    {p.session_time} — {p.duration_hours}h
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: "right" }}>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c" }}>
+                                    {p.trainer_name}
+                                  </div>
+                                  {p.warning && (
+                                    <div style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>
+                                      {p.warning}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
+                              {selectedProposalIndex === idx && (
+                                <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #e8ecf1", display: "flex", alignItems: "center", gap: 6 }}>
+                                  <CheckCircle style={{ width: 14, height: 14, color: "#2e7d32" }} />
+                                  <span style={{ fontSize: 11, fontWeight: 600, color: "#2e7d32" }}>Sélectionné</span>
+                                </div>
+                              )}
                             </div>
-                            {selectedProposalIndex === idx && (
-                              <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #e8ecf1", display: "flex", alignItems: "center", gap: 6 }}>
-                                <CheckCircle style={{ width: 14, height: 14, color: "#2e7d32" }} />
-                                <span style={{ fontSize: 11, fontWeight: 600, color: "#2e7d32" }}>Sélectionné</span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* No proposals */}
-                {!loadingProposals && proposals.length === 0 && !schedulingDone && sessionMeta && (
-                  <div style={{ padding: 20, textAlign: "center", color: "#e65100" }}>
-                    <AlertTriangle style={{ width: 32, height: 32, margin: "0 auto 12px" }} />
-                    <p style={{ fontSize: 14, fontWeight: 600 }}>Aucun créneau disponible pour cette session.</p>
-                    <p style={{ fontSize: 12, color: "#5a6f80", marginTop: 4 }}>
-                      Essayez de modifier les critères ou la période de formation.
-                    </p>
+                {/* No proposals hint */}
+                {!loadingProposals && proposals.length === 0 && allProposals.length === 0 && !schedulingDone && sessionMeta && (
+                  <div style={{ padding: "12px 16px", textAlign: "center", color: "#e65100", background: "#fff8f0", borderRadius: 8, fontSize: 13 }}>
+                    <AlertTriangle style={{ width: 16, height: 16, display: "inline", verticalAlign: "middle", marginRight: 6 }} />
+                    Aucun créneau auto-proposé. Naviguez dans le calendrier et cliquez pour sélectionner manuellement.
                   </div>
                 )}
 

@@ -408,27 +408,11 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Return trainer calendar events for the relevant date window
-      const proposalDates = proposals.map(p => p.session_date);
-      const allRelevantDates = [...new Set([...candidateDates.slice(0, 5), ...proposalDates])];
-      const minDate = allRelevantDates.length > 0 ? allRelevantDates.sort()[0] : startDate;
-      const maxDate = allRelevantDates.length > 0 ? allRelevantDates.sort().reverse()[0] : endDate;
-
-      // Extend window by 1 day on each side for context
-      const windowMin = new Date(minDate + "T00:00:00");
-      windowMin.setDate(windowMin.getDate() - 1);
-      const windowMax = new Date(maxDate + "T23:59:59");
-      windowMax.setDate(windowMax.getDate() + 1);
-
+      // Return all trainer calendar events for the full date range (enables day navigation in UI)
       const trainerCalendars = trainersWithBusy.map(t => ({
         trainerName: t.firstName,
         trainerId: t.id,
-        events: t.busyEvents
-          .filter(e => {
-            const eDate = new Date(e.start);
-            return eDate >= windowMin && eDate <= windowMax;
-          })
-          .map(e => ({ start: e.start, end: e.end, summary: e.summary })),
+        events: t.busyEvents.map(e => ({ start: e.start, end: e.end, summary: e.summary })),
       }));
 
       return NextResponse.json({
