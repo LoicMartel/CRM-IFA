@@ -272,6 +272,14 @@ export function ReportsView({
           owner_id: m.assigned_to || null, stage: dealStage, probability: dealStage === "quote_to_send" ? 40 : 20,
         });
       }
+      // Send no-show email to prospect
+      if (newStatus === "no_show" && m.contact_id) {
+        fetch("/api/meetings/no-show-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contactId: m.contact_id }),
+        }).catch(() => {});
+      }
     } else {
       await supabase.from("meetings").update({
         meeting_type: rdvForm.meeting_type, duration_minutes: parseInt(rdvForm.duration_minutes) || 60,

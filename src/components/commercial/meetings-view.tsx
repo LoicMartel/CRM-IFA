@@ -144,6 +144,20 @@ export function MeetingsView({
   async function updateStatus(id: string, newStatus: MeetingStatus) {
     const supabase = createClient();
     await supabase.from("meetings").update({ status: newStatus }).eq("id", id);
+
+    // Send no-show email to prospect
+    if (newStatus === "no_show") {
+      const meeting = meetings.find(m => m.id === id);
+      const contactId = (meeting as any)?.contact_id;
+      if (contactId) {
+        fetch("/api/meetings/no-show-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contactId }),
+        }).catch(() => {});
+      }
+    }
+
     router.refresh();
   }
 

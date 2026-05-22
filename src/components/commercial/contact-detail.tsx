@@ -660,6 +660,15 @@ export function ContactDetail({
       // Mark original as completed
       await supabase.from("meetings").update({ next_step: "completed" }).eq("id", editingMeetingId);
 
+      // Send no-show email to prospect
+      if (rdvForm.status === "no_show" && contact.id) {
+        fetch("/api/meetings/no-show-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contactId: contact.id }),
+        }).catch(() => {});
+      }
+
       // Update ALL selected contacts status
       if (rdvForm.status === "done" && rdvForm.rdv_result === "signed") {
         await updateAllContacts({ lead_status: "signed", lifecycle_stage: "customer" });
