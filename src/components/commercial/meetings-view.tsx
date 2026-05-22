@@ -145,11 +145,12 @@ export function MeetingsView({
     const supabase = createClient();
     await supabase.from("meetings").update({ status: newStatus }).eq("id", id);
 
-    // Send no-show email to prospect
+    // No-show: update contact lead_status + send email
     if (newStatus === "no_show") {
       const meeting = meetings.find(m => m.id === id);
       const contactId = (meeting as any)?.contact_id;
       if (contactId) {
+        await supabase.from("contacts").update({ lead_status: "no_show" }).eq("id", contactId);
         fetch("/api/meetings/no-show-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

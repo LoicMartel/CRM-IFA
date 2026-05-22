@@ -260,6 +260,8 @@ export function ReportsView({
           }
         } else if (newStatus === "done") {
           await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", m.contact_id as string);
+        } else if (newStatus === "no_show") {
+          await supabase.from("contacts").update({ lead_status: "no_show" }).eq("id", m.contact_id as string);
         }
       }
       if (newStatus === "done" && (rdvForm.rdv_result === "opportunity_detected" || rdvForm.rdv_result === "quote_to_send")) {

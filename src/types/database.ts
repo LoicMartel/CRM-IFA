@@ -17,7 +17,7 @@ export type MeetingStatus = "booked" | "done" | "no_show" | "cancelled";
 export type MeetingMode = "visio" | "phone" | "in_person";
 export type DealStage = "opportunities" | "quote_to_send" | "quote_sent" | "opco_deposit" | "quote_signed" | "closed_won" | "closed_lost";
 export type LifecycleStage = "subscriber" | "lead" | "lead_marketing" | "mql" | "sql" | "opportunity" | "customer" | "evangelist";
-export type ContactLeadStatus = "lead" | "contacted" | "booked" | "rdv_done" | "signed";
+export type ContactLeadStatus = "lead" | "contacted" | "booked" | "rdv_done" | "no_show" | "signed";
 export type ContactType = "inbound" | "outbound";
 export type CompanyLifecycle = "lead" | "prospect" | "customer" | "partner" | "former_customer";
 
