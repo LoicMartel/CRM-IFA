@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
 
 <p style="text-align: center; margin: 24px 0;">
   <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #FF6B35; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
-    Réserver un créneau
+    Réserver un bilan
   </a>
 </p>
 
