@@ -984,7 +984,7 @@ export function PlanningList({
           <div style={{ textAlign: "center", color: "#8399a9", padding: 32 }}>Aucun plan de formation trouvé</div>
         ) : filtered.map((plan) => {
           const isExpanded = expandedIds.has(plan.id);
-          const planLearners = (plan.service_plan_learners ?? []).map((spl) => spl.learners).filter(Boolean) as LearnerNested[];
+          const planLearners = ((plan.service_plan_learners ?? []).map((spl) => spl.learners).filter(Boolean) as LearnerNested[]).sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '', 'fr'));
           const sessions = (plan.training_sessions ?? []) as TrainingSession[];
 
           const vtDone = sessions.filter(s => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
@@ -2065,7 +2065,7 @@ export function PlanningList({
       {/* Session Edit/Add Popup */}
       {sessionPlanId && (() => {
         const currentPlan = servicePlans.find(p => p.id === sessionPlanId);
-        const popupLearners = currentPlan ? ((currentPlan.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean) as LearnerNested[]) : [];
+        const popupLearners = currentPlan ? ((currentPlan.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean) as LearnerNested[]).sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '', 'fr')) : [];
         const compAddr = currentPlan?.companies ? [currentPlan.companies.address, currentPlan.companies.city].filter(Boolean).join(", ") : "";
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={(e) => { if (e.target === e.currentTarget) setSessionPlanId(null); }}>
