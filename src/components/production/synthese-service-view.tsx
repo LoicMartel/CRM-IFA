@@ -149,14 +149,17 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   const vtDone = allPlanSessions.filter((s: R) => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
   const vtPlanned = allPlanSessions.filter((s: R) => s.session_type === "vt" && s.status === "planned").length;
   const vtTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.vt_planned) || 0), 0);
+  const daysDoneCount = allPlanSessions.filter((s: R) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
   const daysDoneH = allPlanSessions.filter((s: R) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
+  const daysPlannedCount = allPlanSessions.filter((s: R) => s.session_type === "journee" && s.status === "planned").length;
   const daysPlannedH = allPlanSessions.filter((s: R) => s.session_type === "journee" && s.status === "planned").reduce((sum: number, s: R) => sum + (Number(s.duration_hours) || 0), 0);
   const daysTotal = servicePlans.reduce((s: number, p: R) => s + (Number(p.days_planned) || 0), 0);
   const remainingVt = Math.max(0, vtTotal - vtDone - vtPlanned);
-  const remainingDays = Math.max(0, daysTotal - daysDoneH / 8 - daysPlannedH / 8);
-  // Convert remaining VT to hours (1 VT ≈ 1h), add remaining days × 8h
-  const hoursToplan = remainingVt + remainingDays * 8;
-  const daysToplan = hoursToplan / 8;
+  const remainingDays = Math.max(0, daysTotal - daysDoneCount - daysPlannedCount);
+  // Avg journée duration from existing sessions, fallback to 8h
+  const avgJourneeDur = (daysDoneCount + daysPlannedCount) > 0 ? (daysDoneH + daysPlannedH) / (daysDoneCount + daysPlannedCount) : 8;
+  const hoursToplan = remainingVt + remainingDays * avgJourneeDur;
+  const daysToplan = avgJourneeDur > 0 ? hoursToplan / avgJourneeDur : 0;
 
   // Unique trainers with data (from both sources)
   const activeTrainers = TRAINERS.filter(t => {

@@ -7,7 +7,7 @@ import { DayTimeline } from "./day-timeline";
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
 const JOURNEE_RHYTHMS = ["1x/mois", "2x/mois", "1x/2 mois"];
-const VT_DURATIONS = [{ value: "1", label: "1h" }, { value: "1.5", label: "1h30" }, { value: "2", label: "2h" }];
+const VT_DURATIONS = [{ value: "1", label: "1h" }, { value: "1.5", label: "1h30" }, { value: "2", label: "2h" }, { value: "3", label: "3h" }, { value: "3.5", label: "3h30" }];
 const ALL_EXP = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
 
 const CITY_REGION: Record<string, string> = {
@@ -145,6 +145,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
     vtDuration: "1",
     vtCount: String(prefill?.vtCount ?? ""),
     journeeRhythm: "1x/mois",
+    journeeTimeFrom: "09:00",
+    journeeTimeTo: "17:00",
     journeeLocation: prefill?.journeeLocation ?? "",
     daysCount: String(prefill?.daysCount ?? ""),
     expertise: "",
@@ -240,6 +242,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           vtDuration: form.vtDuration,
           vtCount: form.vtCount,
           journeeRhythm: form.journeeRhythm,
+          journeeTimeFrom: form.journeeTimeFrom,
+          journeeDuration: (() => { const [fH, fM] = form.journeeTimeFrom.split(":").map(Number); const [tH, tM] = form.journeeTimeTo.split(":").map(Number); return ((tH * 60 + tM) - (fH * 60 + fM)) / 60 - 1; })(),
           journeeLocation: form.journeeLocation,
           daysCount: form.daysCount,
           startDate: form.startDate,
@@ -349,6 +353,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
           vtDuration: form.vtDuration,
           vtCount: form.vtCount,
           journeeRhythm: form.journeeRhythm,
+          journeeTimeFrom: form.journeeTimeFrom,
+          journeeDuration: (() => { const [fH, fM] = form.journeeTimeFrom.split(":").map(Number); const [tH, tM] = form.journeeTimeTo.split(":").map(Number); return ((tH * 60 + tM) - (fH * 60 + fM)) / 60 - 1; })(),
           journeeLocation: form.journeeLocation,
           daysCount: form.daysCount,
           startDate: form.startDate,
@@ -589,7 +595,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Journées présentielles
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-5 gap-3">
                 <div className="space-y-1">
                   <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Nb de journées</label>
                   <input type="number" value={form.daysCount} onChange={(e) => setForm({ ...form, daysCount: e.target.value })}
@@ -601,6 +607,16 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
                     {JOURNEE_RHYTHMS.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
+                </div>
+                <div className="space-y-1">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Heure début</label>
+                  <input type="time" value={form.journeeTimeFrom} onChange={(e) => setForm({ ...form, journeeTimeFrom: e.target.value })}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Heure fin</label>
+                  <input type="time" value={form.journeeTimeTo} onChange={(e) => setForm({ ...form, journeeTimeTo: e.target.value })}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
                 <div className="space-y-1">
                   <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Lieu</label>

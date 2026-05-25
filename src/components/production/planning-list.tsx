@@ -246,7 +246,7 @@ export function PlanningList({
 
   // Session add state
   const [sessionPlanId, setSessionPlanId] = useState<string | null>(null);
-  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [] as string[], custom_title: "" });
+  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [] as string[], custom_title: "" });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const importQueue: PlanImportRow[] = [];
@@ -612,7 +612,9 @@ export function PlanningList({
       session_date: sessionForm.session_date,
       session_time: sessionForm.session_time,
       session_location: sessionForm.session_type === "journee" ? (sessionForm.session_location || null) : null,
-      duration_hours: sessionForm.duration_hours ? parseFloat(sessionForm.duration_hours) : 1,
+      duration_hours: sessionForm.session_type === "journee"
+        ? (() => { const [fH, fM] = sessionForm.session_time.split(":").map(Number); const [tH, tM] = sessionForm.session_end_time.split(":").map(Number); return ((tH * 60 + tM) - (fH * 60 + fM)) / 60 - 1; })()
+        : (sessionForm.duration_hours ? parseFloat(sessionForm.duration_hours) : 1),
       trainers: sessionForm.trainers.length > 0 ? sessionForm.trainers : null,
       is_billable: sessionForm.is_billable,
       hourly_rate: sessionForm.hourly_rate ? parseFloat(sessionForm.hourly_rate) : null,
@@ -692,7 +694,7 @@ export function PlanningList({
     setSavingSession(false);
     setSessionPlanId(null);
     setEditingSessionId(null);
-    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: "" });
+    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: "" });
     refetchPlans();
   }
 
@@ -716,12 +718,18 @@ export function PlanningList({
     const trainerStr = existingTrainers.length > 0 ? " x " + existingTrainers.join(", ") : "";
     const autoTitle = `${typeLabel} ${sessionIdx}/${totalForType} ${learnerNames.join(", ")} ${companyName}${trainerStr}`.trim();
 
+    const startTime = (s as any).session_time ? String((s as any).session_time).slice(0, 5) : "09:00";
+    const dur = Number(s.duration_hours) || 1;
+    const [stH, stM] = startTime.split(":").map(Number);
+    const endMin = stH * 60 + stM + dur * 60;
+    const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
     setSessionForm({
       session_type: s.session_type,
       session_date: s.session_date,
-      session_time: (s as any).session_time ? String((s as any).session_time).slice(0, 5) : "09:00",
+      session_time: startTime,
+      session_end_time: endTime,
       session_location: (s as any).session_location ?? "",
-      duration_hours: String(Number(s.duration_hours) || 1),
+      duration_hours: String(dur),
       trainers: existingTrainers,
       is_billable: s.is_billable ?? true,
       hourly_rate: s.hourly_rate != null ? String(s.hourly_rate) : "",
@@ -1184,7 +1192,7 @@ export function PlanningList({
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
                       {!isRestrictedExterne && !isReadOnly && (<>
                       <button
-                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t }); }}
+                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
@@ -1203,7 +1211,7 @@ export function PlanningList({
                               onChange={(e) => {
                                 const t = e.target.value as "vt" | "journee";
                                 const compAddr = plan.companies ? [plan.companies.address, plan.companies.city].filter(Boolean).join(", ") : "";
-                                setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_time: t === "journee" ? "09:00" : "09:00", session_location: t === "journee" ? compAddr : "" });
+                                setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_time: t === "journee" ? "09:00" : "09:00", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: t === "journee" ? compAddr : "" });
                               }}
                               style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
                             >
@@ -1229,13 +1237,19 @@ export function PlanningList({
                               style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
                             />
                           </div>
+                          {sessionForm.session_type === "journee" ? (
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Heure fin</div>
+                            <input
+                              type="time"
+                              value={sessionForm.session_end_time}
+                              onChange={(e) => setSessionForm({ ...sessionForm, session_end_time: e.target.value })}
+                              style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }}
+                            />
+                          </div>
+                          ) : (
                           <div>
                             <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Durée</div>
-                            {sessionForm.session_type === "journee" ? (
-                              <div style={{ height: 34, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, color: "#1a2a3a", padding: "0 10px", background: "#f0f0f0", borderRadius: 6, border: "1px solid #dce8f0" }}>
-                                8h (journée)
-                              </div>
-                            ) : (
                               <select
                                 value={sessionForm.duration_hours}
                                 onChange={(e) => setSessionForm({ ...sessionForm, duration_hours: e.target.value })}
@@ -1245,9 +1259,10 @@ export function PlanningList({
                                 <option value="1.5">1h30</option>
                                 <option value="2">2h</option>
                                 <option value="3">3h</option>
+                                <option value="3.5">3h30</option>
                               </select>
-                            )}
                           </div>
+                          )}
                         </div>
                         {sessionForm.session_type === "journee" && (
                           <div style={{ marginTop: 10 }}>
@@ -2065,7 +2080,7 @@ export function PlanningList({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Type</div>
-                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_location: t === "journee" ? compAddr : "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
+                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: t === "journee" ? compAddr : "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
                       <option value="vt">Visio Training (VT)</option>
                       <option value="journee">Journée</option>
                     </select>
@@ -2078,16 +2093,19 @@ export function PlanningList({
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Heure</div>
                     <input type="time" value={sessionForm.session_time} onChange={(e) => setSessionForm({ ...sessionForm, session_time: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
                   </div>
+                  {sessionForm.session_type === "journee" ? (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Heure fin</div>
+                    <input type="time" value={sessionForm.session_end_time} onChange={(e) => setSessionForm({ ...sessionForm, session_end_time: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                  </div>
+                  ) : (
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Durée</div>
-                    {sessionForm.session_type === "journee" ? (
-                      <div style={{ height: 34, display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, padding: "0 10px", background: "#f0f0f0", borderRadius: 6, border: "1px solid #dce8f0" }}>8h</div>
-                    ) : (
                       <select value={sessionForm.duration_hours} onChange={(e) => setSessionForm({ ...sessionForm, duration_hours: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
-                        <option value="1">1h</option><option value="1.5">1h30</option><option value="2">2h</option><option value="3">3h</option>
+                        <option value="1">1h</option><option value="1.5">1h30</option><option value="2">2h</option><option value="3">3h</option><option value="3.5">3h30</option>
                       </select>
-                    )}
                   </div>
+                  )}
                 </div>
                 {sessionForm.session_type === "journee" && (
                   <div>

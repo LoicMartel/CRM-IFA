@@ -87,7 +87,7 @@ function isConflicting(
 /** Build the ordered list of all sessions to plan (VT first, then journees) */
 function buildSessionList(params: {
   vtCount: number; vtDuration: number; daysCount: number;
-  journeeLocation: string;
+  journeeDuration: number; journeeLocation: string;
 }): SessionMeta[] {
   const sessions: SessionMeta[] = [];
   for (let i = 0; i < params.vtCount; i++) {
@@ -98,11 +98,12 @@ function buildSessionList(params: {
       session_location: null,
     });
   }
+  const jourDur = params.journeeDuration > 0 ? params.journeeDuration : 8;
   for (let i = 0; i < params.daysCount; i++) {
     sessions.push({
       index: sessions.length,
       session_type: "journee",
-      duration_hours: 8,
+      duration_hours: jourDur,
       session_location: params.journeeLocation || null,
     });
   }
@@ -188,7 +189,7 @@ export async function POST(req: NextRequest) {
     const {
       planId, expertise, city, budget,
       clientAvailableDays, vtRhythm, vtTimeSlot, vtDuration,
-      journeeRhythm, journeeLocation,
+      journeeRhythm, journeeTimeFrom, journeeDuration, journeeLocation,
       startDate, endDate, vtCount, daysCount,
       selectedTrainerIds,
       // New: single-session mode
@@ -295,9 +296,11 @@ export async function POST(req: NextRequest) {
     const vtTotal = parseInt(vtCount) || 0;
     const vtDur = parseFloat(vtDuration) || 1;
     const jourTotal = parseInt(daysCount) || 0;
+    const jourDur = parseFloat(journeeDuration) || 8;
+    const jourStartTime = journeeTimeFrom || "09:00";
     const sessionList = buildSessionList({
       vtCount: vtTotal, vtDuration: vtDur,
-      daysCount: jourTotal, journeeLocation: journeeLocation || "",
+      daysCount: jourTotal, journeeDuration: jourDur, journeeLocation: journeeLocation || "",
     });
 
     // ─── SINGLE SESSION MODE ───
@@ -377,14 +380,14 @@ export async function POST(req: NextRequest) {
             tryFindVTProposal(date, trainer, preferredSlots);
           } else {
             const combinedBusy = [...trainer.busyEvents, ...bookedAsBusy];
-            if (!isConflicting(date, "09:00", 8, combinedBusy)) {
-              const key = `${date}|09:00|${trainer.id}`;
+            if (!isConflicting(date, jourStartTime, sessionMeta.duration_hours, combinedBusy)) {
+              const key = `${date}|${jourStartTime}|${trainer.id}`;
               if (!usedSlots.has(key)) {
                 usedSlots.add(key);
                 proposals.push({
                   session_date: date,
-                  session_time: "09:00",
-                  duration_hours: 8,
+                  session_time: jourStartTime,
+                  duration_hours: sessionMeta.duration_hours,
                   trainer_name: trainer.firstName,
                   trainer_id: trainer.id,
                   warning: trainer !== trainersWithBusy[0] ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
@@ -500,7 +503,7 @@ export async function POST(req: NextRequest) {
     }
 
     function tryAssignJournee(date: string, trainer: TrainerData): boolean {
-      return !isConflicting(date, "09:00", 8, trainer.busyEvents);
+      return !isConflicting(date, jourStartTime, jourDur, trainer.busyEvents);
     }
 
     function findSlotFlexible(
@@ -535,8 +538,8 @@ export async function POST(req: NextRequest) {
               const isAlternative = trainer !== trainersWithBusy[0];
               if (isAlternative) warnings.push(`${date} (Journée) : ${trainersWithBusy[0].firstName} indisponible → ${trainer.firstName}`);
               return {
-                session_type: "journee", session_date: date, session_time: "09:00",
-                duration_hours: 8, trainer_name: trainer.firstName,
+                session_type: "journee", session_date: date, session_time: jourStartTime,
+                duration_hours: jourDur, trainer_name: trainer.firstName,
                 session_location: journeeLocation || null,
                 warning: isAlternative ? `${trainersWithBusy[0].firstName} indisponible` : undefined,
               };
@@ -571,7 +574,7 @@ export async function POST(req: NextRequest) {
       const cursor = new Date(rangeStart);
       let placed = 0;
       while (cursor <= rangeEnd && placed < jourTotal) {
-        const session = findSlotFlexible(cursor, Math.min(journeeInterval, 14), "journee", 8, clientAvailableDays);
+        const session = findSlotFlexible(cursor, Math.min(journeeInterval, 14), "journee", jourDur, clientAvailableDays);
         if (session) {
           proposedSessions.push(session);
           bookedDates.add(session.session_date);
