@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
-import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator } from "lucide-react";
+import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -110,7 +110,58 @@ export function DealsBoard({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, isAdmin, roles } = useCurrentRoles();
+  const [triggeringAdv, setTriggeringAdv] = useState<string | null>(null);
+
+  const canCreateQuoteFor = (deal: Deal) =>
+    isAdmin || (currentMemberId !== null && deal.owner_id === currentMemberId);
+  const canInvoiceDeal = () => isAdmin || roles.includes("Finance");
+
+  async function handleCreateQuote(deal: Deal) {
+    if (triggeringAdv) return;
+    if (!confirm(`Créer le devis Pennylane pour "${deal.name}" ?\n\nLe workflow va générer le devis et envoyer l'email signature au client.`)) return;
+    setTriggeringAdv(deal.id);
+    try {
+      const res = await fetch("/api/quotes/create-from-deal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: deal.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(`Échec : ${json.error ?? "erreur inconnue"}`);
+      } else {
+        alert(json.message ?? "Devis Pennylane déclenché.");
+      }
+    } catch (e) {
+      alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setTriggeringAdv(null);
+    }
+  }
+
+  async function handleInvoiceDeal(deal: Deal) {
+    if (triggeringAdv) return;
+    if (!confirm(`Déclencher la facturation Pennylane pour "${deal.name}" ?\n\nUne invoice va être créée et envoyée par email au client.`)) return;
+    setTriggeringAdv(deal.id);
+    try {
+      const res = await fetch("/api/invoices/create-from-deal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: deal.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(`Échec : ${json.error ?? "erreur inconnue"}`);
+      } else {
+        alert(json.message ?? "Facturation Pennylane déclenchée.");
+      }
+    } catch (e) {
+      alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setTriggeringAdv(null);
+    }
+  }
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -518,6 +569,26 @@ export function DealsBoard({
                     }}
                   >
                     <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 0 }}>
+                      {(["opportunities", "quote_to_send"].includes(deal.stage)) && canCreateQuoteFor(deal) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCreateQuote(deal); }}
+                          disabled={triggeringAdv === deal.id}
+                          title="Créer le devis Pennylane"
+                          style={{ color: "#e8632b", background: "none", border: "none", cursor: triggeringAdv === deal.id ? "wait" : "pointer", padding: 1, opacity: triggeringAdv === deal.id ? 0.4 : 1 }}
+                        >
+                          <FileText style={{ width: 10, height: 10 }} />
+                        </button>
+                      )}
+                      {(["quote_signed", "opco_deposit"].includes(deal.stage)) && canInvoiceDeal() && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleInvoiceDeal(deal); }}
+                          disabled={triggeringAdv === deal.id}
+                          title="Déclencher la facturation Pennylane"
+                          style={{ color: "#27ae60", background: "none", border: "none", cursor: triggeringAdv === deal.id ? "wait" : "pointer", padding: 1, opacity: triggeringAdv === deal.id ? 0.4 : 1 }}
+                        >
+                          <Receipt style={{ width: 10, height: 10 }} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditDeal(deal); }}
                         style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 1 }}
