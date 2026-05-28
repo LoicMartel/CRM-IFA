@@ -46,7 +46,9 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
   const [showAll, setShowAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentHtml, setCommentHtml] = useState("");
+  const commentHtmlRef = useRef("");
   const [pendingFiles, setPendingFiles] = useState<{ file: File; preview?: string }[]>([]);
+  const pendingFilesRef = useRef<{ file: File; preview?: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
   const [categoryMemberIds, setCategoryMemberIds] = useState<string[]>([]);
@@ -112,7 +114,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
       mentionExtension,
     ],
     content: "",
-    onUpdate: ({ editor: e }) => setCommentHtml(e.getHTML()),
+    onUpdate: ({ editor: e }) => { const h = e.getHTML(); setCommentHtml(h); commentHtmlRef.current = h; },
     editorProps: {
       attributes: {
         style: "padding: 8px 12px; min-height: 36px; max-height: 120px; overflow-y: auto; outline: none; font-size: 13px; line-height: 1.5; color: #1a2a3a;",
@@ -147,7 +149,11 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
       const isImage = file.type.startsWith("image/");
       return { file, preview: isImage ? URL.createObjectURL(file) : undefined };
     });
-    setPendingFiles((prev) => [...prev, ...newPending]);
+    setPendingFiles((prev) => {
+      const next = [...prev, ...newPending];
+      pendingFilesRef.current = next;
+      return next;
+    });
     e.target.value = "";
   }
 
@@ -155,21 +161,24 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     setPendingFiles((prev) => {
       const removed = prev[index];
       if (removed.preview) URL.revokeObjectURL(removed.preview);
-      return prev.filter((_, i) => i !== index);
+      const next = prev.filter((_, i) => i !== index);
+      pendingFilesRef.current = next;
+      return next;
     });
   }
 
   async function handleSubmit() {
-    const isEmpty = !commentHtml || commentHtml === "<p></p>" || commentHtml.replace(/<[^>]*>/g, "").trim() === "";
-    if ((isEmpty && pendingFiles.length === 0) || !memberId || !editor) return;
+    const html = commentHtmlRef.current;
+    const files = pendingFilesRef.current;
+    const isEmpty = !html || html === "<p></p>" || html.replace(/<[^>]*>/g, "").trim() === "";
+    if ((isEmpty && files.length === 0) || !memberId || !editor) return;
     setSubmitting(true);
     const supabase = createClient();
-    const html = commentHtml;
     const plainText = editor.getText().trim();
 
     // Upload pending files
     const uploadedAttachments: { file_name: string; file_url: string; file_type: string }[] = [];
-    for (const pf of pendingFiles) {
+    for (const pf of files) {
       const path = `comments/${Date.now()}_${pf.file.name}`;
       const { error } = await supabase.storage.from("post-attachments").upload(path, pf.file);
       if (!error) {
@@ -265,8 +274,10 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
 
     editor.commands.clearContent();
     setCommentHtml("");
-    pendingFiles.forEach((pf) => { if (pf.preview) URL.revokeObjectURL(pf.preview); });
+    commentHtmlRef.current = "";
+    files.forEach((pf) => { if (pf.preview) URL.revokeObjectURL(pf.preview); });
     setPendingFiles([]);
+    pendingFilesRef.current = [];
     setSubmitting(false);
     await loadComments();
     onCommentCountChange();
