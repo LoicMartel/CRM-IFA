@@ -499,6 +499,15 @@ export interface PostAttachment {
   created_at: string;
 }
 
+export interface CommentAttachment {
+  id: string;
+  comment_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  created_at: string;
+}
+
 export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   annonces_generales: "Annonces Générales",
   lead_gen: "Lead Gen",

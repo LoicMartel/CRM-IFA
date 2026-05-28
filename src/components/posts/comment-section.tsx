@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Send, Trash2 } from "lucide-react";
+import { Send, Trash2, Paperclip, X, FileText, Download } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
@@ -46,6 +46,8 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
   const [showAll, setShowAll] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [commentHtml, setCommentHtml] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; preview?: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [mentionMembers, setMentionMembers] = useState<MentionMember[]>([]);
   const [categoryMemberIds, setCategoryMemberIds] = useState<string[]>([]);
   const mentionActiveRef = useRef(false);
@@ -132,26 +134,66 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     const supabase = createClient();
     const { data } = await supabase
       .from("post_comments")
-      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name, avatar_url), comment_reactions(id, team_member_id, emoji)")
+      .select("*, team_members!post_comments_author_id_fkey(id, first_name, last_name, avatar_url), comment_reactions(id, team_member_id, emoji), comment_attachments(id, file_name, file_url, file_type)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     setComments(data ?? []);
     setLoading(false);
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    const newPending = files.map((file) => {
+      const isImage = file.type.startsWith("image/");
+      return { file, preview: isImage ? URL.createObjectURL(file) : undefined };
+    });
+    setPendingFiles((prev) => [...prev, ...newPending]);
+    e.target.value = "";
+  }
+
+  function removePendingFile(index: number) {
+    setPendingFiles((prev) => {
+      const removed = prev[index];
+      if (removed.preview) URL.revokeObjectURL(removed.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
   async function handleSubmit() {
     const isEmpty = !commentHtml || commentHtml === "<p></p>" || commentHtml.replace(/<[^>]*>/g, "").trim() === "";
-    if (isEmpty || !memberId || !editor) return;
+    if ((isEmpty && pendingFiles.length === 0) || !memberId || !editor) return;
     setSubmitting(true);
     const supabase = createClient();
     const html = commentHtml;
     const plainText = editor.getText().trim();
 
-    await supabase.from("post_comments").insert({
+    // Upload pending files
+    const uploadedAttachments: { file_name: string; file_url: string; file_type: string }[] = [];
+    for (const pf of pendingFiles) {
+      const path = `comments/${Date.now()}_${pf.file.name}`;
+      const { error } = await supabase.storage.from("post-attachments").upload(path, pf.file);
+      if (!error) {
+        const { data: urlData } = supabase.storage.from("post-attachments").getPublicUrl(path);
+        uploadedAttachments.push({
+          file_name: pf.file.name,
+          file_url: urlData.publicUrl,
+          file_type: pf.file.type,
+        });
+      }
+    }
+
+    const { data: insertedComment } = await supabase.from("post_comments").insert({
       post_id: postId,
       author_id: memberId,
-      content: html,
-    });
+      content: isEmpty ? "<p></p>" : html,
+    }).select("id").single();
+
+    // Save comment attachments
+    if (insertedComment && uploadedAttachments.length > 0) {
+      await supabase.from("comment_attachments").insert(
+        uploadedAttachments.map((a) => ({ ...a, comment_id: insertedComment.id }))
+      );
+    }
 
     // Build notification recipients: post author + previous commenters + mentioned members
     const recipients = new Set<string>();
@@ -221,6 +263,8 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
 
     editor.commands.clearContent();
     setCommentHtml("");
+    pendingFiles.forEach((pf) => { if (pf.preview) URL.revokeObjectURL(pf.preview); });
+    setPendingFiles([]);
     setSubmitting(false);
     await loadComments();
     onCommentCountChange();
@@ -279,6 +323,32 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
         />
       ))}
 
+      {/* Pending files preview */}
+      {pendingFiles.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+          {pendingFiles.map((pf, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
+              borderRadius: 6, border: "1px solid #dce8f0", background: "#f8fbfd", fontSize: 11,
+            }}>
+              {pf.preview ? (
+                <img src={pf.preview} alt="" style={{ width: 20, height: 20, borderRadius: 3, objectFit: "cover" }} />
+              ) : (
+                <FileText style={{ width: 14, height: 14, color: "#1a6b9c" }} />
+              )}
+              <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#3a4a5a" }}>
+                {pf.file.name}
+              </span>
+              <button onClick={() => removePendingFile(i)} style={{
+                background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex",
+              }}>
+                <X style={{ width: 12, height: 12, color: "#8399a9" }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* New comment editor */}
       <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "flex-end" }}>
         <div style={{
@@ -286,15 +356,36 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
         }}>
           <EditorContent editor={editor} />
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+          onChange={handleFileSelect}
+          style={{ display: "none" }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          title="Joindre un fichier"
+          style={{
+            padding: "8px", borderRadius: 8, border: "none",
+            background: "#f0f4f8", cursor: "pointer",
+            display: "flex", alignItems: "center", flexShrink: 0,
+            color: "#5a6f80",
+          }}
+        >
+          <Paperclip style={{ width: 14, height: 14 }} />
+        </button>
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={submitting || !commentHtml || commentHtml === "<p></p>"}
+          disabled={submitting || (((!commentHtml || commentHtml === "<p></p>") && pendingFiles.length === 0))}
           style={{
             padding: "8px 14px", borderRadius: 8, border: "none",
-            background: commentHtml && commentHtml !== "<p></p>" ? "#1a6b9c" : "#dce8f0",
-            color: commentHtml && commentHtml !== "<p></p>" ? "white" : "#8399a9",
-            cursor: commentHtml && commentHtml !== "<p></p>" ? "pointer" : "default",
+            background: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "#1a6b9c" : "#dce8f0",
+            color: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "white" : "#8399a9",
+            cursor: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "pointer" : "default",
             display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600,
             flexShrink: 0,
           }}
@@ -445,6 +536,9 @@ function CommentItem({
           </p>
         )}
 
+        {/* Comment attachments */}
+        <CommentAttachments attachments={comment.comment_attachments ?? []} />
+
         {/* Reaction bar */}
         <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 4, flexWrap: "wrap" }}>
           {activeEmojis.map(({ key, emoji, label, color, bg }) => {
@@ -538,6 +632,64 @@ function CommentItem({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ===== Comment Attachments ===== */
+
+function CommentAttachments({ attachments }: { attachments: any[] }) {
+  if (!attachments || attachments.length === 0) return null;
+
+  const images = attachments.filter((a: any) =>
+    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(a.file_name)
+  );
+  const files = attachments.filter(
+    (a: any) => !/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(a.file_name)
+  );
+
+  return (
+    <div style={{ marginTop: 6 }}>
+      {images.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: files.length > 0 ? 6 : 0 }}>
+          {images.map((att: any) => (
+            <a key={att.id} href={att.file_url} target="_blank" rel="noopener noreferrer">
+              <img
+                src={att.file_url}
+                alt={att.file_name}
+                style={{
+                  maxWidth: 200, maxHeight: 150, objectFit: "cover",
+                  borderRadius: 6, border: "1px solid #dce8f0", cursor: "pointer",
+                }}
+              />
+            </a>
+          ))}
+        </div>
+      )}
+      {files.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {files.map((att: any) => (
+            <a
+              key={att.id}
+              href={att.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "5px 10px", borderRadius: 6,
+                border: "1px solid #dce8f0", background: "#f8fbfd",
+                fontSize: 11, color: "#1a6b9c", textDecoration: "none", fontWeight: 500,
+              }}
+            >
+              <FileText style={{ width: 13, height: 13 }} />
+              <span style={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {att.file_name}
+              </span>
+              <Download style={{ width: 11, height: 11, color: "#8399a9" }} />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
