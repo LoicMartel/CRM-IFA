@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, X, Video, Building2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, fmtDuration } from "@/lib/utils";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -175,7 +175,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           const companyName = (selectedSession as any).service_plans?.companies?.name ?? "—";
           const sessionDate = selectedSession.session_date ? new Date(selectedSession.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
           const sessionType = selectedSession.session_type === "journee" ? "Journée" : "VT";
-          const duration = selectedSession.duration_hours ? `${Number(selectedSession.duration_hours).toFixed(0)}h` : "";
+          const duration = selectedSession.duration_hours ? fmtDuration(selectedSession.duration_hours) : "";
           const trainers = ((selectedSession as any).trainers ?? []).join(", ");
           await fetch("/api/slack/notify-cancelled", {
             method: "POST",

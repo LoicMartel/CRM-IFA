@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle, Users, Star, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { DayTimeline } from "./day-timeline";
+import { fmtDuration } from "@/lib/utils";
 
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
 const JOURNEE_RHYTHMS = ["1x/mois", "2x/mois", "1x/2 mois"];
-const VT_DURATIONS = [{ value: "1", label: "1h" }, { value: "1.5", label: "1h30" }, { value: "2", label: "2h" }, { value: "3", label: "3h" }, { value: "3.5", label: "3h30" }];
+const VT_DURATIONS = [{ value: "0.5", label: "30mn" }, { value: "1", label: "1h" }, { value: "1.5", label: "1h30" }, { value: "2", label: "2h" }, { value: "3", label: "3h" }, { value: "3.5", label: "3h30" }];
 const ALL_EXP = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
 
 const CITY_REGION: Record<string, string> = {
@@ -864,7 +865,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                               </span>
                             </td>
                             <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.session_time}</td>
-                            <td style={{ padding: "8px 6px", textAlign: "center" }}>{s.duration_hours}h</td>
+                            <td style={{ padding: "8px 6px", textAlign: "center" }}>{fmtDuration(s.duration_hours)}</td>
                             <td style={{ padding: "8px 10px", fontWeight: 600 }}>{s.trainer_name}</td>
                           </tr>
                         ))}
@@ -904,7 +905,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                           background: sessionMeta.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
                           color: sessionMeta.session_type === "vt" ? "#1a6b9c" : "#e65100",
                         }}>
-                          {sessionMeta.session_type === "vt" ? `VT (${sessionMeta.duration_hours}h)` : "Journée (8h)"}
+                          {sessionMeta.session_type === "vt" ? `VT (${fmtDuration(sessionMeta.duration_hours)})` : "Journée (8h)"}
                         </span>
                       )}
                     </div>
@@ -1024,7 +1025,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                                     )}
                                   </div>
                                   <div style={{ fontSize: 13, color: "#5a6f80", marginTop: 2 }}>
-                                    {p.session_time} — {p.duration_hours}h
+                                    {p.session_time} — {fmtDuration(p.duration_hours)}
                                   </div>
                                 </div>
                                 <div style={{ textAlign: "right" }}>

@@ -22,7 +22,7 @@ import {
   MailPlus, CalendarPlus, PlusCircle, Trash2, ClipboardList, GraduationCap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, fmtDuration } from "@/lib/utils";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { PlanPopup } from "@/components/production/plan-popup";
@@ -1716,7 +1716,7 @@ export function ContactDetail({
                                     );
                                   })()}
                                 </TableCell>
-                                <TableCell className="text-right" style={{ fontWeight: 600 }}>{sess.duration_hours ? `${Number(sess.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                                <TableCell className="text-right" style={{ fontWeight: 600 }}>{fmtDuration(sess.duration_hours)}</TableCell>
                                 <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
                                 <TableCell style={{ textAlign: "center" }}>
                                   <button

@@ -23,7 +23,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { PlanPopup } from "@/components/production/plan-popup";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, fmtDuration } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -595,7 +595,7 @@ export function LearnerDetailView({
                                 )}
                               </div>
                               <span style={{ fontSize: 12, color: "#8399a9" }}>
-                                {s.duration_hours ? `${s.duration_hours}h` : "\u2014"}
+                                {fmtDuration(s.duration_hours)}
                               </span>
                             </div>
                           );
@@ -785,7 +785,7 @@ export function LearnerDetailView({
                                   {s.trainers && s.trainers.length > 0 ? s.trainers.join(", ") : "\u2014"}
                                 </TableCell>
                                 <TableCell style={{ fontSize: 13 }}>
-                                  {s.duration_hours ? `${s.duration_hours}h` : "\u2014"}
+                                  {fmtDuration(s.duration_hours)}
                                 </TableCell>
                                 <TableCell>
                                   <select
@@ -806,7 +806,7 @@ export function LearnerDetailView({
                                           const companyName = s.service_plans?.companies?.name ?? "—";
                                           const sessionDate = s.session_date ? new Date(s.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
                                           const sessionType = s.session_type === "journee" ? "Journée" : "VT";
-                                          const duration = s.duration_hours ? `${Number(s.duration_hours).toFixed(0)}h` : "";
+                                          const duration = s.duration_hours ? fmtDuration(s.duration_hours) : "";
                                           const trainers = (s.trainers ?? []).join(", ");
                                           await fetch("/api/slack/notify-cancelled", {
                                             method: "POST",

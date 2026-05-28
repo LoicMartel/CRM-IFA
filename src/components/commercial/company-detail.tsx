@@ -19,7 +19,7 @@ import {
   X, Upload, FileText, Download, Calendar, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, fmtDuration } from "@/lib/utils";
 import { RichNotes } from "@/components/ui/rich-notes";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -1078,7 +1078,7 @@ export function CompanyDetail({
                                           );
                                         })()}
                                       </TableCell>
-                                      <TableCell className="text-right">{ts.duration_hours ? `${Number(ts.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                                      <TableCell className="text-right">{fmtDuration(ts.duration_hours as number)}</TableCell>
                                       <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
                                       <TableCell style={{ fontSize: 11, color: "#7a8bab", maxWidth: 200 }} className="truncate">{learnersNames || "—"}</TableCell>
                                       <TableCell style={{ textAlign: "center" }}>

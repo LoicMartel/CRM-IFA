@@ -7,6 +7,8 @@ import {
   ShadingType,
 } from "docx";
 
+import { fmtDuration } from "@/lib/utils";
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 /* ---- Design tokens ---- */
@@ -319,7 +321,7 @@ export async function POST(req: NextRequest) {
       const rawSessions = sessions.map((s: any) => ({
         date: fmtDateFr(s.session_date),
         type: s.session_type === "journee" ? "Journée" : "VT",
-        duration: `${Number(s.duration_hours) || 1}h`,
+        duration: fmtDuration(Number(s.duration_hours) || 1),
         notes: s.notes || "Pas de notes",
       }));
 

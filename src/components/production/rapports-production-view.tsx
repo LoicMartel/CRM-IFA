@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { useCurrentRoles } from "@/lib/use-current-roles";
+import { fmtDuration } from "@/lib/utils";
 
 type R = Record<string, unknown>;
 
@@ -464,7 +465,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                             {s.session_type === "journee" ? "Journée" : "VT"}
                           </span>
                         </TableCell>
-                        <TableCell>{s.duration_hours ? `${Number(s.duration_hours).toFixed(0)}h` : "—"}</TableCell>
+                        <TableCell>{fmtDuration(s.duration_hours as number)}</TableCell>
                         <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
                         <TableCell style={{ fontSize: 12, color: "#7a8bab", maxWidth: 200 }} className="truncate">{String(s.notes ?? "") || "—"}</TableCell>
                       </TableRow>

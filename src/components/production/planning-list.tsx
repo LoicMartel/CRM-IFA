@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
+import { fmtDuration } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -826,7 +827,7 @@ export function PlanningList({
           const companyName = session.plan?.companies?.name ?? "—";
           const sessionDate = session.session_date ? new Date(session.session_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
           const sessionType = session.session_type === "journee" ? "Journée" : "VT";
-          const duration = session.duration_hours ? `${Number(session.duration_hours).toFixed(0)}h` : "";
+          const duration = session.duration_hours ? fmtDuration(session.duration_hours) : "";
           const trainers = (session.trainers ?? []).join(", ");
           const slackRes = await fetch("/api/slack/notify-cancelled", {
             method: "POST",
@@ -1445,7 +1446,7 @@ export function PlanningList({
                                         {s.session_type === "vt" ? "VT" : "Journée"}
                                       </span>
                                     </TableCell>
-                                    <TableCell style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{Number(s.duration_hours) || 0}h</TableCell>
+                                    <TableCell style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{fmtDuration(s.duration_hours)}</TableCell>
                                     <TableCell style={{ fontSize: 12 }}>
                                       {(s.trainers && s.trainers.length > 0) ? (
                                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -2102,7 +2103,7 @@ export function PlanningList({
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Durée</div>
                       <select value={sessionForm.duration_hours} onChange={(e) => setSessionForm({ ...sessionForm, duration_hours: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
-                        <option value="1">1h</option><option value="1.5">1h30</option><option value="2">2h</option><option value="3">3h</option><option value="3.5">3h30</option>
+                        <option value="0.5">30mn</option><option value="1">1h</option><option value="1.5">1h30</option><option value="2">2h</option><option value="3">3h</option><option value="3.5">3h30</option>
                       </select>
                   </div>
                   )}
