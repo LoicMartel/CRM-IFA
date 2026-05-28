@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Send, Trash2, Paperclip, X, FileText, Download } from "lucide-react";
+import { Send, Trash2, Paperclip, X, FileText, Download, Pencil } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extension-placeholder";
@@ -182,16 +182,18 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
       }
     }
 
-    const { data: insertedComment } = await supabase.from("post_comments").insert({
+    const commentId = crypto.randomUUID();
+    await supabase.from("post_comments").insert({
+      id: commentId,
       post_id: postId,
       author_id: memberId,
       content: isEmpty ? "<p></p>" : html,
-    }).select("id").single();
+    });
 
     // Save comment attachments
-    if (insertedComment && uploadedAttachments.length > 0) {
+    if (uploadedAttachments.length > 0) {
       await supabase.from("comment_attachments").insert(
-        uploadedAttachments.map((a) => ({ ...a, comment_id: insertedComment.id }))
+        uploadedAttachments.map((a) => ({ ...a, comment_id: commentId }))
       );
     }
 
@@ -441,12 +443,26 @@ function CommentItem({
   const [reactions, setReactions] = useState<any[]>(comment.comment_reactions ?? []);
   const [showPicker, setShowPicker] = useState(false);
   const [hoverReaction, setHoverReaction] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const cAuthor = comment.team_members ?? memberMap.get(comment.author_id);
   const name = cAuthor ? `${cAuthor.first_name} ${cAuthor.last_name}` : "Inconnu";
   const initials = cAuthor ? `${cAuthor.first_name[0]}${cAuthor.last_name[0]}` : "?";
-  const canDelete = comment.author_id === memberId || isAdmin;
+  const isOwner = comment.author_id === memberId;
+  const canDelete = isOwner || isAdmin;
   const isHtml = comment.content?.includes("<p>") || comment.content?.includes("<span");
+
+  async function handleSaveEdit() {
+    if (!editText.trim()) return;
+    setSavingEdit(true);
+    const supabase = createClient();
+    await supabase.from("post_comments").update({ content: editText }).eq("id", comment.id);
+    setEditing(false);
+    setSavingEdit(false);
+    onReactionsChange(); // reloads comments
+  }
 
   const activeEmojis = REACTION_EMOJIS.filter(({ key }) =>
     reactions.some((r: any) => r.emoji === key)
@@ -511,20 +527,75 @@ function CommentItem({
           <span style={{ fontSize: 11, color: "#8399a9" }}>
             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: fr })}
           </span>
-          {canDelete && (
-            <button
-              onClick={() => onDelete(comment.id)}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "#c0c8d0", padding: 2, marginLeft: "auto",
-              }}
-              title="Supprimer"
-            >
-              <Trash2 style={{ width: 12, height: 12 }} />
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
+            {isOwner && !editing && (
+              <button
+                onClick={() => { setEditing(true); setEditText(comment.content ?? ""); }}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#c0c8d0", padding: 2,
+                }}
+                title="Modifier"
+              >
+                <Pencil style={{ width: 12, height: 12 }} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete(comment.id)}
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#c0c8d0", padding: 2,
+                }}
+                title="Supprimer"
+              >
+                <Trash2 style={{ width: 12, height: 12 }} />
+              </button>
+            )}
+          </div>
         </div>
-        {isHtml ? (
+        {editing ? (
+          <div style={{ marginTop: 4 }}>
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                if (e.key === "Escape") setEditing(false);
+              }}
+              style={{
+                width: "100%", padding: "6px 10px", borderRadius: 6,
+                border: "1px solid #1a6b9c", background: "#f8fbfd",
+                fontSize: 13, lineHeight: 1.5, color: "#1a2a3a",
+                resize: "vertical", minHeight: 40, outline: "none",
+                fontFamily: "inherit",
+              }}
+            />
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <button
+                onClick={handleSaveEdit}
+                disabled={savingEdit || !editText.trim()}
+                style={{
+                  padding: "3px 10px", borderRadius: 6, border: "none",
+                  background: "#1a6b9c", color: "white", fontSize: 11,
+                  fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Enregistrer
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                style={{
+                  padding: "3px 10px", borderRadius: 6, border: "1px solid #dce8f0",
+                  background: "white", color: "#5a6f80", fontSize: 11,
+                  fontWeight: 500, cursor: "pointer",
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        ) : isHtml ? (
           <div
             className="tiptap-content"
             dangerouslySetInnerHTML={{ __html: comment.content }}
