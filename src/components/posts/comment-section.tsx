@@ -179,7 +179,8 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     // Upload pending files
     const uploadedAttachments: { file_name: string; file_url: string; file_type: string }[] = [];
     for (const pf of files) {
-      const path = `comments/${Date.now()}_${pf.file.name}`;
+      const safeName = pf.file.name.normalize("NFC").replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `comments/${Date.now()}_${safeName}`;
       const { error } = await supabase.storage.from("post-attachments").upload(path, pf.file);
       if (!error) {
         const { data: urlData } = supabase.storage.from("post-attachments").getPublicUrl(path);
