@@ -76,8 +76,37 @@ export class AdvQuoteError extends Error {
   }
 }
 
-function isoDate(d: Date): string {
+export function isoDate(d: Date): string {
   return d.toISOString().split("T")[0];
+}
+
+/**
+ * Résout (idempotent) le customer B2B Pennylane depuis company/contact.
+ * external_reference = LCA-COMPANY-{company.id}. Partagé devis + facturation.
+ */
+export async function resolveCompanyCustomer(
+  company: QuoteCompanyInput,
+  contact: QuoteContactInput,
+  email: string,
+) {
+  const recipient = `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim();
+  return findOrCreateCompanyCustomer({
+    name: company.name ?? "Client",
+    emails: [email],
+    phone: contact.phone ?? undefined,
+    recipient: recipient || undefined,
+    regNo: company.siret ?? undefined,
+    externalReference: `LCA-COMPANY-${company.id}`,
+    billingLanguage: "fr_FR",
+    billingAddress: company.address
+      ? {
+          address: company.address,
+          postal_code: company.postal_code ?? "",
+          city: company.city ?? "",
+          country_alpha2: (company.country ?? "FR").toUpperCase(),
+        }
+      : undefined,
+  });
 }
 
 /**
@@ -101,26 +130,9 @@ export async function generateOfficialQuote(input: {
 
   const amount = parseFloat(String(deal.amount ?? "")) || 0;
   const trainingDays = parseFloat(String(deal.training_days ?? "")) || 1;
-  const recipient = `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim();
 
   // 1. Customer B2B (idempotent sur LCA-COMPANY-{companyId})
-  const customer = await findOrCreateCompanyCustomer({
-    name: company.name ?? "Client",
-    emails: [email],
-    phone: contact.phone ?? undefined,
-    recipient: recipient || undefined,
-    regNo: company.siret ?? undefined,
-    externalReference: `LCA-COMPANY-${company.id}`,
-    billingLanguage: "fr_FR",
-    billingAddress: company.address
-      ? {
-          address: company.address,
-          postal_code: company.postal_code ?? "",
-          city: company.city ?? "",
-          country_alpha2: (company.country ?? "FR").toUpperCase(),
-        }
-      : undefined,
-  });
+  const customer = await resolveCompanyCustomer(company, contact, email);
 
   // 2. Résolution des produits par reference
   const products = await listProducts();

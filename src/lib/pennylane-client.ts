@@ -413,14 +413,21 @@ export async function lookupInvoiceByExternalRef(
 
 /**
  * POST /v2/customer_invoices/{id}/send_by_email.
- * 204 = succès. 409 = PDF pas encore généré → retry 5×10s.
+ * 204 = succès. 409 = PDF pas encore généré → retry.
+ *
+ * `maxAttempts` : 5 par défaut (cron T8, le PDF invoice prend 1-5 min).
+ * Pour un endpoint synchrone Vercel Hobby (timeout 10s), passer `maxAttempts: 1`
+ * et catcher le 409 — le retry est délégué au cron.
  */
 export async function sendInvoiceByEmail(
   invoiceId: number,
   recipients: string[],
+  opts: { maxAttempts?: number; delayMs?: number } = {},
 ): Promise<void> {
+  const maxAttempts = opts.maxAttempts ?? SEND_EMAIL_RETRY_MAX;
+  const delayMs = opts.delayMs ?? SEND_EMAIL_RETRY_DELAY_MS;
   const endpoint = `/customer_invoices/${invoiceId}/send_by_email`;
-  for (let attempt = 1; attempt <= SEND_EMAIL_RETRY_MAX; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await pennylaneFetch<null>(endpoint, {
         method: "POST",
@@ -429,8 +436,8 @@ export async function sendInvoiceByEmail(
       return;
     } catch (e) {
       const is409 = e instanceof PennylaneError && e.status === 409;
-      if (is409 && attempt < SEND_EMAIL_RETRY_MAX) {
-        await new Promise((r) => setTimeout(r, SEND_EMAIL_RETRY_DELAY_MS));
+      if (is409 && attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, delayMs));
         continue;
       }
       throw e;
