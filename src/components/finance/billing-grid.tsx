@@ -69,6 +69,8 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
   a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider" },
 };
 
+const FACTURABLE_STATUSES: (BillingStatus | null)[] = ["non_fait", "en_cours", "planifie", "a_valider", null];
+
 const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
 
 const MONTH_LABELS: Record<number, string> = {
@@ -974,7 +976,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               <X className="h-3 w-3" />
             </button>
           </div>
-          {popoverCell.monthId && popoverCell.dealId && (["non_fait", "en_cours", "planifie", "a_valider", null] as (BillingStatus | null)[]).includes(popoverCell.status) && (
+          {popoverCell.monthId && popoverCell.dealId && FACTURABLE_STATUSES.includes(popoverCell.status) && (
             <button
               onClick={() => factureBillingMonth(popoverCell.monthId!, popoverCell.dealId, popoverCell.entryName)}
               disabled={facturing}
