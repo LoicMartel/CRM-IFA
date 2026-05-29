@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
-import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, Receipt } from "lucide-react";
+import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
+import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
 
 interface Deal {
   id: string;
@@ -140,31 +141,10 @@ export function DealsBoard({
     }
   }
 
-  async function handleInvoiceDeal(deal: Deal) {
-    if (triggeringAdv) return;
-    if (!confirm(`Déclencher la facturation Pennylane pour "${deal.name}" ?\n\nUne invoice va être créée et envoyée par email au client.`)) return;
-    setTriggeringAdv(deal.id);
-    try {
-      const res = await fetch("/api/invoices/create-from-deal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deal_id: deal.id }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        alert(`Échec : ${json.error ?? "erreur inconnue"}`);
-      } else {
-        alert(json.message ?? "Facturation Pennylane déclenchée.");
-      }
-    } catch (e) {
-      alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setTriggeringAdv(null);
-    }
-  }
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [planModalDeal, setPlanModalDeal] = useState<Deal | null>(null);
   const [cotationOpen, setCotationOpen] = useState(false);
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -581,12 +561,11 @@ export function DealsBoard({
                       )}
                       {(["quote_signed", "opco_deposit"].includes(deal.stage)) && canInvoiceDeal() && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleInvoiceDeal(deal); }}
-                          disabled={triggeringAdv === deal.id}
-                          title="Déclencher la facturation Pennylane"
-                          style={{ color: "#27ae60", background: "none", border: "none", cursor: triggeringAdv === deal.id ? "wait" : "pointer", padding: 1, opacity: triggeringAdv === deal.id ? 0.4 : 1 }}
+                          onClick={(e) => { e.stopPropagation(); setPlanModalDeal(deal); }}
+                          title="Programmer la facturation"
+                          style={{ color: "#27ae60", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                         >
-                          <Receipt style={{ width: 10, height: 10 }} />
+                          <CalendarClock style={{ width: 10, height: 10 }} />
                         </button>
                       )}
                       <button
@@ -975,6 +954,15 @@ export function DealsBoard({
                 </div>
 
                 {/* Actions */}
+                {(["quote_signed", "opco_deposit"].includes(selectedDeal.stage)) && canInvoiceDeal() && (
+                  <Button
+                    onClick={() => setPlanModalDeal(selectedDeal)}
+                    className="w-full"
+                    style={{ background: "#e8632b", color: "white" }}
+                  >
+                    <CalendarClock className="h-4 w-4 mr-2" /> Programmer la facturation
+                  </Button>
+                )}
                 <div className="flex gap-2">
                   <Button
                     onClick={() => { setSelectedDeal(null); openEditDeal(selectedDeal); }}
@@ -1022,6 +1010,17 @@ export function DealsBoard({
         editQuotation={cotationDealId ? { id: "", company_name: deals.find(d => d.id === cotationDealId)?.companies?.name ?? "", contact_name: "", nb_learners: 1, nb_rise_up: 0, deal_id: cotationDealId, months: null, tjm_lca: 2200, base_coeff: 1, travel_coeff: 0.25, prep_coeff: 0.25, cost_per_day_presentiel: 350, rise_up_cost_per_license: 690, vt_duration_hours: 1, presentiel_hours_per_day: 8, notes: null } : null}
         onSaved={() => router.refresh()}
       />
+
+      {planModalDeal && (
+        <BillingPlanModal
+          dealId={planModalDeal.id}
+          dealName={planModalDeal.name}
+          dealAmount={planModalDeal.amount != null ? Number(planModalDeal.amount) : null}
+          defaultClientName={planModalDeal.companies?.name ?? planModalDeal.name}
+          onClose={() => setPlanModalDeal(null)}
+          onDone={() => { setPlanModalDeal(null); router.refresh(); }}
+        />
+      )}
     </>
   );
 }
