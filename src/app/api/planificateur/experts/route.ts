@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireMember } from "@/lib/api-auth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +24,9 @@ const CITY_REGION: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
+
     const { expertise, city, budget, daysCount, planId } = await req.json();
 
     const { data: teamMembers } = await supabase
