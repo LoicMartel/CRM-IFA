@@ -81,6 +81,21 @@ export function isoDate(d: Date): string {
 }
 
 /**
+ * Mode test : si ADV_TEST_EMAIL_OVERRIDE est défini, redirige TOUS les envois
+ * (signature Firma, facture Pennylane, notifs) vers cette adresse — quel que soit
+ * le contact réel du deal. Garde-fou pour tester sur des deals sans spammer de
+ * vrais clients. Vide en prod => l'email réel du contact est utilisé.
+ */
+export function resolveRecipientEmail(realEmail: string): string {
+  return process.env.ADV_TEST_EMAIL_OVERRIDE?.trim() || realEmail;
+}
+
+/** True si le mode test email override est actif. */
+export function isTestEmailMode(): boolean {
+  return !!process.env.ADV_TEST_EMAIL_OVERRIDE?.trim();
+}
+
+/**
  * Résout (idempotent) le customer B2B Pennylane depuis company/contact.
  * external_reference = LCA-COMPANY-{company.id}. Partagé devis + facturation.
  */
@@ -224,7 +239,8 @@ export async function generateOfficialQuote(input: {
     recipient: {
       firstName: contact.first_name ?? "",
       lastName: contact.last_name ?? "",
-      email,
+      // mode test : redirige l'email de signature vers l'adresse de test
+      email: resolveRecipientEmail(email),
     },
   });
 

@@ -23,6 +23,7 @@ import {
 } from "@/lib/pennylane-client";
 import {
   resolveCompanyCustomer,
+  resolveRecipientEmail,
   isoDate,
   type QuoteDealInput,
   type QuoteContactInput,
@@ -95,7 +96,8 @@ async function createAndSendInvoice(args: {
 
   let emailSent = false;
   try {
-    await sendInvoiceByEmail(invoice.id, [email], { maxAttempts: 1 });
+    // mode test : redirige l'email de facture vers l'adresse de test
+    await sendInvoiceByEmail(invoice.id, [resolveRecipientEmail(email)], { maxAttempts: 1 });
     emailSent = true;
   } catch (e) {
     // 409 = PDF pas encore généré → le cron T8 réessaiera. Autre erreur → remonte.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseSignedWebhook, type FirmaSignedEvent } from "@/lib/firma-client";
+import { resolveRecipientEmail } from "@/lib/adv-quote";
 import { sendSessionEmail } from "@/lib/send-email";
 
 const supabase = createClient(
@@ -96,7 +97,8 @@ export async function POST(req: NextRequest) {
       });
     }
     await sendSessionEmail({
-      to: NAZNINE_EMAIL,
+      // mode test : redirige la notif vers l'adresse de test
+      to: resolveRecipientEmail(NAZNINE_EMAIL),
       subject: "Devis signé — démarrer la facturation",
       body: `Bonjour,\n\nLe devis du deal "${deal.name ?? dealId}" vient d'être signé par le client${signerName ? ` (${signerName})` : ""}.\n\nLa facturation peut être démarrée.\n\nCRM : https://crm-lca.vercel.app/deals/${dealId}`,
     });
