@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
+import { requireMember } from "@/lib/api-auth";
+
+// Garde-fou anti-boucle : nombre max d'allers-retours tool_use par requête.
+const MAX_TOOL_ITERATIONS = 8;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -309,17 +313,19 @@ async function executeTool(name: string, input: Record<string, any>): Promise<st
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, memberId } = await req.json();
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
 
-    // Get current user info
-    let memberInfo = "";
-    if (memberId) {
-      const { data: member } = await supabase.from("team_members")
-        .select("first_name, last_name, roles").eq("id", memberId).maybeSingle();
-      if (member) {
-        memberInfo = `\n\nUtilisateur connecté : ${member.first_name} ${member.last_name} (rôles: ${(member.roles as string[]).join(", ")})`;
-      }
-    }
+    const { messages } = await req.json();
+
+    // Member dérivé de la session (anti-spoofing : on ignore tout `memberId`
+    // du body, qui permettait d'usurper les rôles dans le system prompt).
+    // Nom sanitizé (longueur + suppression des retours ligne) avant injection.
+    const safeName = `${auth.firstName ?? ""} ${auth.lastName ?? ""}`
+      .trim()
+      .slice(0, 80)
+      .replace(/[\r\n]+/g, " ");
+    const memberInfo = `\n\nUtilisateur connecté : ${safeName} (rôles: ${auth.roles.join(", ")})`;
 
     let currentMessages = messages.map((m: any) => ({
       role: m.role as "user" | "assistant",
@@ -335,8 +341,10 @@ export async function POST(req: NextRequest) {
       messages: currentMessages,
     });
 
-    // Handle tool use in a loop
-    while (response.stop_reason === "tool_use") {
+    // Handle tool use in a loop (capped pour éviter l'abus de tool calls)
+    let toolIterations = 0;
+    while (response.stop_reason === "tool_use" && toolIterations < MAX_TOOL_ITERATIONS) {
+      toolIterations++;
       const toolUseBlocks = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
 

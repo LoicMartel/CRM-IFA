@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireMember } from "@/lib/api-auth";
 import { getCalendarEventsAllPages } from "@/lib/google-calendar";
 
 export const maxDuration = 30;
@@ -185,6 +186,9 @@ function generateTargetDates(
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
+
     const body = await req.json();
     const {
       planId, expertise, city, budget,

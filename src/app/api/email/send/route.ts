@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { requireMember } from "@/lib/api-auth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -28,6 +29,9 @@ function defaultSignature(member: { first_name: string; last_name: string; email
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
+
     const { to, subject, body, memberId, contactId } = await req.json();
 
     if (!to || !subject || !body || !memberId) {

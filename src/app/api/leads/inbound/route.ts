@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { sendSessionEmail } from "@/lib/send-email";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 
@@ -8,12 +9,25 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Allow CORS from Webflow
+// CORS : endpoint public par design (formulaires landing/Webflow). Le CORS ne
+// protège PAS des POST serveur-à-serveur — la vraie défense est la validation
+// Zod ci-dessous. ACAO restreignable via LEADS_ALLOWED_ORIGIN (sinon *).
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": process.env.LEADS_ALLOWED_ORIGIN ?? "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+
+// Validation stricte de l'input (anti-injection / payload bomb).
+const leadSchema = z.object({
+  firstName: z.string().trim().min(1).max(100),
+  lastName: z.string().trim().min(1).max(100),
+  email: z.string().trim().email().max(200),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  website: z.string().trim().max(300).optional().or(z.literal("")),
+  source: z.string().trim().max(100).optional().or(z.literal("")),
+  clientType: z.string().trim().max(100).optional().or(z.literal("")),
+});
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
@@ -21,12 +35,15 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { firstName, lastName, email, phone, website, source, clientType } = body;
-
-    if (!firstName || !lastName || !email) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: CORS_HEADERS });
+    const raw = await request.json();
+    const parsed = leadSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: parsed.error.flatten().fieldErrors },
+        { status: 400, headers: CORS_HEADERS },
+      );
     }
+    const { firstName, lastName, email, phone, website, source, clientType } = parsed.data;
 
     const wf = await loadWorkflow("landing-page-lead");
     if (wf && !wf.is_active) {

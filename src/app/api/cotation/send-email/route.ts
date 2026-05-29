@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
+import { requireMember } from "@/lib/api-auth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -27,6 +28,9 @@ function defaultSignature(member: { first_name: string; last_name: string; email
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
+
     const { to, contactFirstName, companyName, memberId, contactId, dealId, pdfBase64 } = await req.json();
 
     if (!memberId || !pdfBase64) {
@@ -57,7 +61,8 @@ export async function POST(req: NextRequest) {
       ? member.email
       : `${member.first_name.toLowerCase()}@closing-academie.com`;
 
-    const subject = `Proposition de formation — La Closing Académie® — ${companyName || ""}`.trim();
+    // QW-1 (demande Rafi/Loïc) : sujet court. À valider Loïc.
+    const subject = `Votre devis — La Closing Académie®`;
 
     const greeting = contactFirstName ? `Bonjour ${contactFirstName},` : "Bonjour,";
 
