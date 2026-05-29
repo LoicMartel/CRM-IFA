@@ -1,3 +1,5 @@
+// @deprecated Endpoint déprécié — la facturation passe désormais par le planificateur (billing-plan + cron).
+// Chemin intra-CRM désactivé (410). Conservé uniquement comme proxy n8n legacy via le kill switch USE_N8N_FALLBACK.
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canInvoice, getCurrentMember } from "@/lib/adv-permissions";
@@ -37,6 +39,15 @@ export async function POST(req: Request) {
   const dealId = body.deal_id?.trim();
   if (!dealId) {
     return NextResponse.json({ error: "deal_id manquant" }, { status: 400 });
+  }
+
+  // Déprécié : la facturation passe désormais par le planificateur (billing-plan + cron).
+  // Conservé uniquement comme proxy n8n legacy (kill switch). Chemin intra-CRM désactivé.
+  if (!USE_N8N_FALLBACK) {
+    return NextResponse.json(
+      { error: "Endpoint déprécié — utiliser « Programmer la facturation » (planificateur d'échéances)." },
+      { status: 410 },
+    );
   }
 
   if (body.invoice_amount !== undefined && (typeof body.invoice_amount !== "number" || body.invoice_amount <= 0)) {
