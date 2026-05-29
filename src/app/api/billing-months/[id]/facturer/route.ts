@@ -9,7 +9,7 @@ const serviceClient = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ELIGIBLE_STATUSES = ["non_fait", "en_cours", null] as const;
+const ELIGIBLE_STATUSES = ["non_fait", "en_cours", null, "planifie", "a_valider"] as const;
 
 // Kill switch : true => ancien proxy n8n (rollback instant), false => intra-CRM.
 const USE_N8N_FALLBACK = process.env.USE_N8N_FALLBACK === "true";
