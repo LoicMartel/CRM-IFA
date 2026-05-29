@@ -33,6 +33,17 @@ export function getFiscalYearKey(fyStart: number): string {
   return `${fyStart}-${fyStart + 1}`;
 }
 
+/**
+ * Returns the fiscal year key ("YYYY-YYYY") for a given month string.
+ * @param month A "YYYY-MM" or "YYYY-MM-DD" string. A month >= September (09)
+ *              belongs to the fiscal year starting that year; otherwise the previous year.
+ */
+export function getFiscalYearKeyForMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  const startYear = m >= 9 ? y : y - 1;
+  return getFiscalYearKey(startYear);
+}
+
 /** Returns the first day of the current fiscal year (e.g. "2025-09-01"). */
 export function getDefaultCustomFrom(): string {
   return getFiscalYearRange(getCurrentFiscalYearStart()).from;

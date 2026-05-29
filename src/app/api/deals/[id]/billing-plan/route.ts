@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canInvoice, getCurrentMember } from "@/lib/adv-permissions";
+import { getFiscalYearKeyForMonth } from "@/lib/fiscal-year";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,17 +25,7 @@ interface Body {
 const LOCKED_STATUSES = ["facture", "encaisse"];
 const REPLACEABLE_STATUSES = ["planifie", "non_fait", "a_valider"];
 
-/**
- * Année fiscale LCA (sept→août), format "YYYY-YYYY" — aligné sur billing-grid.tsx.
- * Un mois >= septembre appartient à l'exercice "année courante - année suivante".
- */
-function fiscalYearForMonth(month: string): string {
-  const [yearStr, monthStr] = month.split("-");
-  const year = Number(yearStr);
-  const m = Number(monthStr); // 1-12
-  const startYear = m >= 9 ? year : year - 1;
-  return `${startYear}-${startYear + 1}`;
-}
+const MONTH_RE = /^\d{4}-\d{2}-01$/;
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const member = await getCurrentMember();
@@ -69,7 +60,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         { status: 400 },
       );
     }
+    if (!MONTH_RE.test(l.month)) {
+      return NextResponse.json(
+        { error: "Format de mois invalide (attendu AAAA-MM-01)" },
+        { status: 400 },
+      );
+    }
   }
+
+  const months = body.lines.map((l) => l.month);
+  if (new Set(months).size !== months.length) {
+    return NextResponse.json({ error: "Mois en double dans le plan" }, { status: 400 });
+  }
+
+  // Un billing_entry porte UN seul fiscal_year ; le grid ne rend que les mois de
+  // sa fenêtre (sept→août). Refuser un plan qui chevauche deux exercices.
+  const fiscalKeys = new Set(months.map(getFiscalYearKeyForMonth));
+  if (fiscalKeys.size > 1) {
+    return NextResponse.json(
+      {
+        error:
+          "Le plan ne peut pas chevaucher deux exercices fiscaux (un plan = un exercice). Découpez en deux programmations.",
+      },
+      { status: 400 },
+    );
+  }
+  const fiscalYear = [...fiscalKeys][0];
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
@@ -95,17 +111,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     .eq("deal_id", dealId)
     .maybeSingle();
 
-  // Année fiscale dérivée de la 1re échéance (la plus ancienne).
-  const earliestMonth = body.lines
-    .map((l) => l.month)
-    .sort()[0];
-
   const entryPayload = {
     company_id: deal.company_id,
     deal_id: dealId,
     client_name: body.clientName?.trim() || company?.name || deal.name || "Client",
     funding_type: body.fundingType ?? "Direct",
-    fiscal_year: fiscalYearForMonth(earliestMonth),
+    fiscal_year: fiscalYear,
     updated_at: new Date().toISOString(),
   };
 
