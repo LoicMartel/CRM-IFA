@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
     .from("billing_months")
     .select("id, month, amount, billing_entry_id")
     .eq("status", "planifie")
+    .is("pennylane_invoice_id", null)
     .lte("month", today);
 
   // Awaits séquentiels par ligne VOLONTAIRES : la création d'invoice s'appuie sur la
