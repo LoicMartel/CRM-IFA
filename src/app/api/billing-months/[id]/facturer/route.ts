@@ -71,7 +71,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!ELIGIBLE_STATUSES.includes(bm.status as typeof ELIGIBLE_STATUSES[number])) {
     return NextResponse.json(
       {
-        error: `Statut "${bm.status}" non éligible (attendu: non_fait, en_cours, ou vide)`,
+        error: `Statut "${bm.status}" non éligible (attendu: non_fait, en_cours, planifié, à valider, ou vide)`,
         current_status: bm.status,
       },
       { status: 409 },
