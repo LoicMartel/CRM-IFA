@@ -30,7 +30,7 @@ export function BillingPlanModal({
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   }
 
-  async function submit(invoiceNow: boolean) {
+  async function submit() {
     setSaving(true);
     try {
       const res = await fetch(`/api/deals/${dealId}/billing-plan`, {
@@ -46,11 +46,7 @@ export function BillingPlanModal({
       });
       const json = await res.json();
       if (!res.ok) { alert(`Échec : ${json.error ?? "erreur"}`); return; }
-      if (invoiceNow) {
-        alert(`Plan programmé (${json.scheduled} échéance(s)). Facturation immédiate : utiliser « Facturer cette échéance » dans la grille pour la cellule du mois courant.`);
-      } else {
-        alert(`Plan de facturation programmé : ${json.scheduled} échéance(s).`);
-      }
+      alert(`Plan de facturation programmé : ${json.scheduled} échéance(s).`);
       onDone();
     } catch (e) {
       alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
@@ -95,7 +91,7 @@ export function BillingPlanModal({
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button onClick={onClose} style={{ padding: "8px 16px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", cursor: "pointer" }}>Annuler</button>
-          <button onClick={() => submit(false)} disabled={saving} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#e8632b", color: "white", cursor: "pointer" }}>
+          <button onClick={() => submit()} disabled={saving} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#e8632b", color: "white", cursor: "pointer" }}>
             {saving ? "..." : "Programmer"}
           </button>
         </div>
