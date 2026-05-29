@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "smoke:adv": "bash scripts/smoke-test-adv.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.81.0",
