@@ -6,6 +6,8 @@ import {
   PennylaneError,
 } from "@/lib/pennylane-client";
 import { resolveRecipientEmail } from "@/lib/adv-quote";
+import { billingAutoMode, isOpcoConventionSatisfied } from "@/lib/adv-billing-schedule";
+import { generateBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,7 +44,92 @@ export async function GET(req: NextRequest) {
   }
 
   const nowIso = new Date().toISOString();
-  const summary = { paidBillingMonths: 0, paidDeals: 0, emailsRetried: 0, errors: [] as string[] };
+  const summary = {
+    paidBillingMonths: 0,
+    paidDeals: 0,
+    emailsRetried: 0,
+    scheduledInvoiced: 0,
+    scheduledFlagged: 0,
+    scheduledSkippedOpco: 0,
+    errors: [] as string[],
+  };
+
+  // ─── 0. Scan des échéances planifiées dues ────────────────────────────────
+  const mode = billingAutoMode();
+  const today = isoDate(new Date()); // borne "mois <= aujourd'hui"
+  const { data: duePlanned } = await supabase
+    .from("billing_months")
+    .select("id, month, amount, billing_entry_id")
+    .eq("status", "planifie")
+    .lte("month", today);
+
+  for (const bm of duePlanned ?? []) {
+    try {
+      const { data: entry } = await supabase
+        .from("billing_entries")
+        .select("deal_id, funding_type, client_name")
+        .eq("id", bm.billing_entry_id)
+        .maybeSingle();
+      if (!entry?.deal_id) continue;
+
+      if (mode === "validate") {
+        await supabase
+          .from("billing_months")
+          .update({ status: "a_valider", updated_at: nowIso })
+          .eq("id", bm.id);
+        summary.scheduledFlagged++;
+        continue;
+      }
+
+      const { data: deal } = await supabase
+        .from("deals")
+        .select("id, name, contact_id, company_id, convention_signed_at")
+        .eq("id", entry.deal_id)
+        .maybeSingle();
+      if (!deal) continue;
+
+      if (!isOpcoConventionSatisfied(entry.funding_type, deal.convention_signed_at)) {
+        summary.scheduledSkippedOpco++;
+        continue;
+      }
+
+      const { data: contact } = await supabase
+        .from("contacts")
+        .select("first_name, last_name, email, phone")
+        .eq("id", deal.contact_id)
+        .maybeSingle();
+      const { data: company } = await supabase
+        .from("companies")
+        .select("id, name, siret, address, city, country")
+        .eq("id", deal.company_id)
+        .maybeSingle();
+      if (!contact || !company) {
+        summary.errors.push(`scan bm ${bm.id}: contact/company manquant`);
+        continue;
+      }
+
+      const result = await generateBillingMonthInvoice({
+        deal: { id: deal.id, name: deal.name, amount: bm.amount, training_days: null, notes: null },
+        contact,
+        company,
+        billingMonth: { id: bm.id, month: bm.month, amount: bm.amount },
+      });
+      await supabase
+        .from("billing_months")
+        .update({
+          status: "facture",
+          pennylane_invoice_id: String(result.pennylaneInvoiceId),
+          deal_id: deal.id,
+          invoice_email_sent: result.emailSent,
+          updated_at: nowIso,
+        })
+        .eq("id", bm.id);
+      summary.scheduledInvoiced++;
+    } catch (e) {
+      const msg = e instanceof AdvInvoiceError || e instanceof Error ? e.message : String(e);
+      summary.errors.push(`scan bm ${bm.id}: ${msg}`);
+    }
+  }
 
   // ─── 1. Sync des paiements ────────────────────────────────────────────────
   const since = new Date();
