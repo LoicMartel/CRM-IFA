@@ -15,9 +15,10 @@
 import {
   findOrCreateCompanyCustomer,
   createQuote,
-  lookupQuoteByExternalRef,
+  findQuoteByCustomerAndRef,
   listProducts,
   downloadPdfAsBase64,
+  PennylaneError,
   type QuoteLine,
 } from "@/lib/pennylane-client";
 import {
@@ -55,7 +56,8 @@ export interface QuoteCompanyInput {
   name: string | null;
   siret: string | null;
   address: string | null;
-  postal_code: string | null;
+  // `companies` n'a pas cette colonne — extraite de `address` (cf resolveCompanyCustomer)
+  postal_code?: string | null;
   city: string | null;
   country: string | null;
 }
@@ -105,6 +107,10 @@ export async function resolveCompanyCustomer(
   email: string,
 ) {
   const recipient = `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim();
+  // `companies` n'a pas de colonne postal_code → l'extraire de l'adresse libre
+  // (code postal FR = 5 chiffres), comme le faisait WF-005.
+  const postalCode =
+    company.postal_code ?? (company.address ?? "").match(/\b(\d{5})\b/)?.[1] ?? "";
   return findOrCreateCompanyCustomer({
     name: company.name ?? "Client",
     emails: [email],
@@ -116,7 +122,7 @@ export async function resolveCompanyCustomer(
     billingAddress: company.address
       ? {
           address: company.address,
-          postal_code: company.postal_code ?? "",
+          postal_code: postalCode,
           city: company.city ?? "",
           country_alpha2: (company.country ?? "FR").toUpperCase(),
         }
@@ -197,13 +203,16 @@ export async function generateOfficialQuote(input: {
     });
   }
 
-  // 3. Création du devis (idempotent : réutilise si LCA-DEAL-{id} existe déjà)
+  // 3. Création du devis.
+  // NB: pas de lookup par external_reference — /quotes ne filtre que sur
+  // id/customer_id/status. L'idempotency est gérée côté CRM (deal.pennylane_quote_id
+  // checké par l'endpoint avant appel). external_reference reste pour la traçabilité.
   const externalRef = `LCA-DEAL-${deal.id}`;
   const now = new Date();
   const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const quote =
-    (await lookupQuoteByExternalRef(externalRef)) ??
-    (await createQuote({
+  let quote;
+  try {
+    quote = await createQuote({
       date: isoDate(now),
       deadline: isoDate(deadline),
       customerId: customer.id,
@@ -211,7 +220,18 @@ export async function generateOfficialQuote(input: {
       pdfInvoiceSubject: formationType,
       pdfDescription: description,
       invoiceLines,
-    }));
+    });
+  } catch (e) {
+    // 422 = external_reference déjà pris (Pennylane enforce l'idempotency) →
+    // récupérer le devis existant via customer_id (filtre external_reference interdit).
+    if (e instanceof PennylaneError && e.status === 422) {
+      const existing = await findQuoteByCustomerAndRef(customer.id, externalRef);
+      if (!existing) throw e;
+      quote = existing;
+    } else {
+      throw e;
+    }
+  }
 
   if (!quote.public_file_url) {
     throw new AdvQuoteError(

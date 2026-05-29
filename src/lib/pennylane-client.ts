@@ -98,6 +98,7 @@ export interface PennylaneQuote {
   invoice_number?: string;
   public_file_url?: string;
   currency_amount?: string;
+  external_reference?: string;
   customer?: { id: number };
 }
 
@@ -125,6 +126,7 @@ export interface PennylaneInvoice {
   currency_amount?: string;
   currency_amount_before_tax?: string;
   currency_tax?: string;
+  external_reference?: string;
   customer?: { id: number };
 }
 
@@ -334,18 +336,23 @@ export async function createQuote(
   });
 }
 
-/** Lookup quote par external_reference (idempotency avant POST). */
-export async function lookupQuoteByExternalRef(
+/**
+ * Récupère un quote existant via customer_id (le seul filtre autorisé sur /quotes
+ * avec id/status) puis match sur external_reference côté code. Utilisé pour
+ * récupérer le devis après un POST 422 "External reference has already been taken".
+ */
+export async function findQuoteByCustomerAndRef(
+  customerId: number,
   externalRef: string,
 ): Promise<PennylaneQuote | null> {
   const query = buildFilterQuery([
-    { field: "external_reference", operator: "eq", value: externalRef },
+    { field: "customer_id", operator: "eq", value: customerId },
   ]);
   const res = await pennylaneFetch<PaginatedResponse<PennylaneQuote>>(
-    `/quotes?${query}`,
+    `/quotes?${query}&limit=100`,
     { method: "GET" },
   );
-  return res.items[0] ?? null;
+  return res.items.find((q) => q.external_reference === externalRef) ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,17 +405,22 @@ export async function createInvoice(
   });
 }
 
-export async function lookupInvoiceByExternalRef(
+/**
+ * Récupère une invoice existante via customer_id puis match external_reference
+ * côté code. Utilisé après un POST 422 "External reference has already been taken".
+ */
+export async function findInvoiceByCustomerAndRef(
+  customerId: number,
   externalRef: string,
 ): Promise<PennylaneInvoice | null> {
   const query = buildFilterQuery([
-    { field: "external_reference", operator: "eq", value: externalRef },
+    { field: "customer_id", operator: "eq", value: customerId },
   ]);
   const res = await pennylaneFetch<PaginatedResponse<PennylaneInvoice>>(
-    `/customer_invoices?${query}`,
+    `/customer_invoices?${query}&limit=100`,
     { method: "GET" },
   );
-  return res.items[0] ?? null;
+  return res.items.find((i) => i.external_reference === externalRef) ?? null;
 }
 
 /**

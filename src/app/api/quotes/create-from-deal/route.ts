@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, stage, amount, owner_id, contact_id, company_id, program_id, training_type_id, pennylane_quote_id")
+    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id")
     .eq("id", dealId)
     .maybeSingle();
 
@@ -73,8 +73,8 @@ export async function POST(req: Request) {
   }
 
   const nomenclatureWarning =
-    !deal.program_id || !deal.training_type_id
-      ? "Nomenclature incomplète (program_id ou training_type_id NULL)."
+    !deal.amount || Number(deal.amount) <= 0 || !deal.training_days
+      ? "Montant ou jours de formation manquant sur le deal."
       : null;
 
   // --- Chemin legacy : proxy n8n (kill switch) ---
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
   const { data: company } = await serviceClient
     .from("companies")
-    .select("id, name, siret, address, postal_code, city, country")
+    .select("id, name, siret, address, city, country")
     .eq("id", deal.company_id)
     .maybeSingle();
 
@@ -129,25 +129,48 @@ export async function POST(req: Request) {
         id: deal.id,
         name: deal.name,
         amount: deal.amount,
-        training_days: (deal as { training_days?: number | string | null }).training_days ?? null,
-        notes: (deal as { notes?: string | null }).notes ?? null,
+        training_days: deal.training_days,
+        notes: deal.notes,
       },
       contact,
       company,
     });
 
-    // Lock + stage update (idempotent : seulement si encore quote_to_send).
-    // TODO setup : si la colonne `deals.pennylane_quote_number` existe (migration),
-    // y stocker quoteResult.invoiceNumber. Retirée ici pour ne pas casser le lock
-    // si la colonne n'est pas encore créée.
+    // Lock + passage en "Devis envoyé". Les stages éligibles (opportunities /
+    // quote_to_send) ont déjà été vérifiés plus haut → on passe à quote_sent.
     await serviceClient
       .from("deals")
       .update({
         pennylane_quote_id: String(quoteResult.pennylaneQuoteId),
-        stage: deal.stage === "quote_to_send" ? "quote_sent" : deal.stage,
+        stage: "quote_sent",
         updated_at: new Date().toISOString(),
       })
       .eq("id", deal.id);
+
+    // Enregistrer le PDF du devis dans les documents du deal (best-effort)
+    try {
+      if (quoteResult.publicFileUrl) {
+        const pdfRes = await fetch(quoteResult.publicFileUrl);
+        if (pdfRes.ok) {
+          const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+          const filename = `Devis_${quoteResult.invoiceNumber ?? quoteResult.pennylaneQuoteId}.pdf`;
+          const storagePath = `${deal.id}/${filename}`;
+          await serviceClient.storage
+            .from("deal-documents")
+            .upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
+          await serviceClient.from("deal_documents").insert({
+            deal_id: deal.id,
+            name: filename,
+            file_path: storagePath,
+            file_size: pdfBuffer.length,
+            file_type: "application/pdf",
+            document_type: "devis",
+          });
+        }
+      }
+    } catch (docErr) {
+      console.error("Devis PDF -> deal_documents failed:", docErr);
+    }
 
     await serviceClient.from("activities").insert({
       type: "note",

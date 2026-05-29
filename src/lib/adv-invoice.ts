@@ -15,7 +15,7 @@
 
 import {
   createInvoice,
-  lookupInvoiceByExternalRef,
+  findInvoiceByCustomerAndRef,
   sendInvoiceByEmail,
   listProducts,
   PennylaneError,
@@ -80,9 +80,12 @@ async function createAndSendInvoice(args: {
 
   const now = new Date();
   const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const invoice =
-    (await lookupInvoiceByExternalRef(externalRef)) ??
-    (await createInvoice({
+  // /customer_invoices ne filtre que sur id/date/customer_id/invoice_number/draft/
+  // credit_note (pas external_reference). Sur 422 (external_reference déjà pris),
+  // on récupère l'invoice existante via customer_id.
+  let invoice;
+  try {
+    invoice = await createInvoice({
       date: isoDate(now),
       deadline: isoDate(deadline),
       customerId: customer.id,
@@ -92,7 +95,16 @@ async function createAndSendInvoice(args: {
       specialMention: SPECIAL_MENTION,
       invoiceLines,
       draft: false,
-    }));
+    });
+  } catch (e) {
+    if (e instanceof PennylaneError && e.status === 422) {
+      const existing = await findInvoiceByCustomerAndRef(customer.id, externalRef);
+      if (!existing) throw e;
+      invoice = existing;
+    } else {
+      throw e;
+    }
+  }
 
   let emailSent = false;
   try {

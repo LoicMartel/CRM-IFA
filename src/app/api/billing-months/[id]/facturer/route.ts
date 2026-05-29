@@ -141,7 +141,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const { data: company } = await serviceClient
     .from("companies")
-    .select("id, name, siret, address, postal_code, city, country")
+    .select("id, name, siret, address, city, country")
     .eq("id", deal.company_id)
     .maybeSingle();
 

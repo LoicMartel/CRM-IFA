@@ -24,7 +24,7 @@ export async function GET(
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
     .select(
-      "id, name, stage, amount, is_invoiced, is_paid, pennylane_quote_id, pennylane_invoice_id, contact_id, company_id, owner_id, training_days, program_id, training_type_id, created_at, updated_at",
+      "id, name, stage, amount, is_invoiced, is_paid, pennylane_quote_id, pennylane_invoice_id, contact_id, company_id, owner_id, training_days, created_at, updated_at",
     )
     .eq("id", dealId)
     .maybeSingle();
@@ -67,11 +67,6 @@ export async function GET(
       pennylane_invoice_id: deal.pennylane_invoice_id,
     },
     billing_months: billingMonths ?? [],
-    nomenclature: {
-      program_id: deal.program_id,
-      training_type_id: deal.training_type_id,
-      complete: !!deal.program_id && !!deal.training_type_id,
-    },
     updated_at: deal.updated_at,
   });
 }
