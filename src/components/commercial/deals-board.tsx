@@ -559,7 +559,7 @@ export function DealsBoard({
                           <FileText style={{ width: 10, height: 10 }} />
                         </button>
                       )}
-                      {(["quote_signed", "opco_deposit"].includes(deal.stage)) && canInvoiceDeal() && (
+                      {(["quote_signed", "opco_deposit", "closed_won"].includes(deal.stage)) && canInvoiceDeal() && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setPlanModalDeal(deal); }}
                           title="Programmer la facturation"
@@ -954,7 +954,7 @@ export function DealsBoard({
                 </div>
 
                 {/* Actions */}
-                {(["quote_signed", "opco_deposit"].includes(selectedDeal.stage)) && canInvoiceDeal() && (
+                {(["quote_signed", "opco_deposit", "closed_won"].includes(selectedDeal.stage)) && canInvoiceDeal() && (
                   <Button
                     onClick={() => setPlanModalDeal(selectedDeal)}
                     className="w-full"
