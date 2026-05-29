@@ -65,6 +65,8 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
   facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé" },
   en_cours: { bg: "#bdd7ee", text: "#1f4e79", label: "En cours" },
   non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait" },
+  planifie: { bg: "#e7e0ff", text: "#5b21b6", label: "Planifié" },
+  a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider" },
 };
 
 const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
@@ -972,7 +974,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               <X className="h-3 w-3" />
             </button>
           </div>
-          {popoverCell.monthId && popoverCell.dealId && (popoverCell.status === "non_fait" || popoverCell.status === "en_cours" || popoverCell.status === null) && (
+          {popoverCell.monthId && popoverCell.dealId && (["non_fait", "en_cours", "planifie", "a_valider", null] as (BillingStatus | null)[]).includes(popoverCell.status) && (
             <button
               onClick={() => factureBillingMonth(popoverCell.monthId!, popoverCell.dealId, popoverCell.entryName)}
               disabled={facturing}
@@ -985,7 +987,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               title="Génère une facture Pennylane via WF-005 pour cette échéance"
             >
               <Send className="h-3 w-3" />
-              {facturing ? "Facturation en cours…" : "Facturer cette échéance"}
+              {facturing ? "Facturation en cours…" : popoverCell.status === "a_valider" ? "Valider & facturer" : "Facturer cette échéance"}
             </button>
           )}
           {popoverCell.monthId && (
