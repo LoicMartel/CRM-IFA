@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canCreateQuote, getCurrentMember } from "@/lib/adv-permissions";
 import { triggerN8nWebhook } from "@/lib/n8n-client";
+import { generateOfficialQuote, AdvQuoteError } from "@/lib/adv-quote";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,9 @@ const serviceClient = createClient(
 );
 
 const ALLOWED_STAGES = ["opportunities", "quote_to_send"] as const;
+
+// Kill switch : true => ancien proxy n8n (rollback instant), false => intra-CRM.
+const USE_N8N_FALLBACK = process.env.USE_N8N_FALLBACK === "true";
 
 export async function POST(req: Request) {
   const member = await getCurrentMember();
@@ -70,32 +74,111 @@ export async function POST(req: Request) {
 
   const nomenclatureWarning =
     !deal.program_id || !deal.training_type_id
-      ? "Nomenclature incomplète (program_id ou training_type_id NULL) — le workflow va probablement skip via le node Notify Skip côté n8n."
+      ? "Nomenclature incomplète (program_id ou training_type_id NULL)."
       : null;
 
-  const result = await triggerN8nWebhook("lca-devis-a-envoyer", { dealId: deal.id });
+  // --- Chemin legacy : proxy n8n (kill switch) ---
+  if (USE_N8N_FALLBACK) {
+    const result = await triggerN8nWebhook("lca-devis-a-envoyer", { dealId: deal.id });
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: `n8n trigger failed: ${result.error}`, status: result.status },
+        { status: 502 },
+      );
+    }
+    await serviceClient.from("activities").insert({
+      type: "note",
+      title: "[ADV] Devis Pennylane déclenché (n8n)",
+      description: `Devis demandé via le bouton CRM (deal "${deal.name ?? deal.id}"). Workflow n8n WF-002b-firma déclenché.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      team_member_id: member.id,
+      created_at: new Date().toISOString(),
+    });
+    return NextResponse.json({
+      ok: true,
+      deal_id: deal.id,
+      message: "Devis Pennylane en cours via n8n (génération PDF 3-5 min, puis email signature Firma).",
+      warning: nomenclatureWarning ?? undefined,
+    });
+  }
 
-  if (!result.ok) {
+  // --- Chemin intra-CRM : Pennylane + Firma direct ---
+  const { data: contact } = await serviceClient
+    .from("contacts")
+    .select("first_name, last_name, email, phone")
+    .eq("id", deal.contact_id)
+    .maybeSingle();
+
+  const { data: company } = await serviceClient
+    .from("companies")
+    .select("id, name, siret, address, postal_code, city, country")
+    .eq("id", deal.company_id)
+    .maybeSingle();
+
+  if (!contact || !company) {
     return NextResponse.json(
-      { error: `n8n trigger failed: ${result.error}`, status: result.status },
-      { status: 502 },
+      { error: "Contact ou entreprise introuvable sur le deal" },
+      { status: 422 },
     );
   }
 
-  await serviceClient.from("activities").insert({
-    type: "note",
-    title: "[ADV] Devis Pennylane déclenché",
-    description: `Devis demandé via le bouton CRM (deal "${deal.name ?? deal.id}", montant ${deal.amount ?? "?"} €). Workflow n8n WF-002b-firma déclenché.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
-    contact_id: deal.contact_id,
-    company_id: deal.company_id,
-    team_member_id: member.id,
-    created_at: new Date().toISOString(),
-  });
+  try {
+    const quoteResult = await generateOfficialQuote({
+      deal: {
+        id: deal.id,
+        name: deal.name,
+        amount: deal.amount,
+        training_days: (deal as { training_days?: number | string | null }).training_days ?? null,
+        notes: (deal as { notes?: string | null }).notes ?? null,
+      },
+      contact,
+      company,
+    });
 
-  return NextResponse.json({
-    ok: true,
-    deal_id: deal.id,
-    message: "Devis Pennylane en cours (génération PDF 3-5 min, puis email signature Firma au client).",
-    warning: nomenclatureWarning ?? undefined,
-  });
+    // Lock + stage update (idempotent : seulement si encore quote_to_send).
+    // TODO setup : si la colonne `deals.pennylane_quote_number` existe (migration),
+    // y stocker quoteResult.invoiceNumber. Retirée ici pour ne pas casser le lock
+    // si la colonne n'est pas encore créée.
+    await serviceClient
+      .from("deals")
+      .update({
+        pennylane_quote_id: String(quoteResult.pennylaneQuoteId),
+        stage: deal.stage === "quote_to_send" ? "quote_sent" : deal.stage,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", deal.id);
+
+    await serviceClient.from("activities").insert({
+      type: "note",
+      title: "[ADV] Devis envoyé pour signature",
+      description: `Devis ${quoteResult.invoiceNumber ?? quoteResult.pennylaneQuoteId} créé (Pennylane) et envoyé pour signature (Firma) au contact.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      team_member_id: member.id,
+      created_at: new Date().toISOString(),
+    });
+
+    return NextResponse.json({
+      ok: true,
+      deal_id: deal.id,
+      pennylane_quote_id: quoteResult.pennylaneQuoteId,
+      invoice_number: quoteResult.invoiceNumber,
+      signing_link: quoteResult.signingLink,
+      message: "Devis créé et email de signature envoyé au client.",
+      warning: nomenclatureWarning ?? undefined,
+    });
+  } catch (err) {
+    const message = err instanceof AdvQuoteError || err instanceof Error ? err.message : String(err);
+    await serviceClient.from("activities").insert({
+      type: "note",
+      title: "[ADV] Échec génération devis",
+      description: `Erreur lors de la génération du devis intra-CRM : ${message}`,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      team_member_id: member.id,
+      created_at: new Date().toISOString(),
+    });
+    return NextResponse.json({ error: `Génération devis échouée : ${message}` }, { status: 502 });
+  }
 }
