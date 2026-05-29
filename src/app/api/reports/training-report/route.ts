@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireMember } from "@/lib/api-auth";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
@@ -270,6 +271,9 @@ function buildLearnerSections(
 /* ---- Route handler ---- */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireMember();
+    if (auth instanceof NextResponse) return auth;
+
     const { companyId, companyName, learnerIds, dateFrom, dateTo } = (await req.json()) as {
       companyId: string; companyName: string; learnerIds: string[];
       dateFrom?: string; dateTo?: string;
