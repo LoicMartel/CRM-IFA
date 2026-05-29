@@ -166,12 +166,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       billingMonth: { id: bm.id, month: bm.month, amount: bm.amount },
     });
 
-    // Lock : status facture + pennylane_invoice_id (l'invoice est créée)
+    // Lock : status facture + pennylane_invoice_id (l'invoice est créée).
+    // deal_id dénormalisé ici (snapshot) pour que le cron retry email retrouve
+    // le deal/contact sans rejoindre billing_entries.
     await serviceClient
       .from("billing_months")
       .update({
         status: "facture",
         pennylane_invoice_id: String(result.pennylaneInvoiceId),
+        deal_id: deal.id,
         invoice_email_sent: result.emailSent,
         updated_at: new Date().toISOString(),
       })
