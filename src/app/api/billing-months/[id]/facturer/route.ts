@@ -172,6 +172,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       .update({
         status: "facture",
         pennylane_invoice_id: String(result.pennylaneInvoiceId),
+        invoice_email_sent: result.emailSent,
         updated_at: new Date().toISOString(),
       })
       .eq("id", bm.id);
