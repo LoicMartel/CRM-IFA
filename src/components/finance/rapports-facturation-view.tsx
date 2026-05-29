@@ -47,6 +47,8 @@ const STATUS_META: Record<string, { label: string; bg: string; text: string; bar
   encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100", barColor: "#27ae60" },
   facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006", barColor: "#e74c3c" },
   en_cours: { label: "En cours", bg: "#bdd7ee", text: "#1f4e79", barColor: "#3498db" },
+  planifie: { label: "Planifié", bg: "#e7e0ff", text: "#5b21b6", barColor: "#8b5cf6" },
+  a_valider: { label: "À valider", bg: "#ffe8b3", text: "#92600a", barColor: "#f59e0b" },
   non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888888", barColor: "#bdc3c7" },
 };
 
@@ -104,15 +106,17 @@ export function RapportsFacturationView({ entries, companies }: {
     const encaisse = allMonths.filter((m) => m.status === "encaisse").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
     const facture = allMonths.filter((m) => m.status === "facture").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
     const en_cours = allMonths.filter((m) => m.status === "en_cours").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const planifie = allMonths.filter((m) => m.status === "planifie").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
+    const a_valider = allMonths.filter((m) => m.status === "a_valider").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
     const non_fait = allMonths.filter((m) => m.status === "non_fait").reduce((s, m) => s + Number(m.amount) / 1.2, 0);
-    return { total, encaisse, facture, en_cours, non_fait };
+    return { total, encaisse, facture, en_cours, planifie, a_valider, non_fait };
   }, [allMonths]);
 
   // ====== GLOBAL REPORT ======
   function renderGlobal() {
     // By month stacked data
     const byMonthStatus: Record<string, Record<string, number>> = {};
-    for (const mk of fiscalMonths) byMonthStatus[mk] = { encaisse: 0, facture: 0, en_cours: 0, non_fait: 0 };
+    for (const mk of fiscalMonths) byMonthStatus[mk] = { encaisse: 0, facture: 0, en_cours: 0, planifie: 0, a_valider: 0, non_fait: 0 };
     for (const m of allMonths) {
       if (byMonthStatus[m.month] && m.status) {
         byMonthStatus[m.month][m.status] += Number(m.amount) / 1.2;
@@ -154,6 +158,16 @@ export function RapportsFacturationView({ entries, companies }: {
         })
       : clientDataRaw;
 
+    // By status (pie)
+    const statusPieData = [
+      { name: "Encaissé", value: kpis.encaisse, fill: "#27ae60" },
+      { name: "Facturé", value: kpis.facture, fill: "#e74c3c" },
+      { name: "En cours", value: kpis.en_cours, fill: "#3498db" },
+      { name: "Planifié", value: kpis.planifie, fill: "#8b5cf6" },
+      { name: "À valider", value: kpis.a_valider, fill: "#f59e0b" },
+      { name: "Non fait", value: kpis.non_fait, fill: "#bdc3c7" },
+    ].filter(d => d.value > 0);
+
     return (
       <>
         {/* Stacked bar chart */}
@@ -170,6 +184,8 @@ export function RapportsFacturationView({ entries, companies }: {
                 <Bar dataKey="encaisse" name="Encaissé" stackId="a" fill="#27ae60" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="facture" name="Facturé" stackId="a" fill="#e74c3c" />
                 <Bar dataKey="en_cours" name="En cours" stackId="a" fill="#3498db" />
+                <Bar dataKey="planifie" name="Planifié" stackId="a" fill="#8b5cf6" />
+                <Bar dataKey="a_valider" name="À valider" stackId="a" fill="#f59e0b" />
                 <Bar dataKey="non_fait" name="Non fait" stackId="a" fill="#bdc3c7" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -208,20 +224,12 @@ export function RapportsFacturationView({ entries, companies }: {
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
-                      data={[
-                        { name: "Encaissé", value: kpis.encaisse },
-                        { name: "Facturé", value: kpis.facture },
-                        { name: "En cours", value: kpis.en_cours },
-                        { name: "Non fait", value: kpis.non_fait },
-                      ].filter(d => d.value > 0)}
+                      data={statusPieData}
                       dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}
                       label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                       labelLine={{ stroke: "#8399a9" }} style={{ fontSize: 11 }}
                     >
-                      <Cell fill="#27ae60" />
-                      <Cell fill="#e74c3c" />
-                      <Cell fill="#3498db" />
-                      <Cell fill="#bdc3c7" />
+                      {statusPieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
                     </Pie>
                     <Tooltip formatter={(v) => fmt(Number(v))} />
                   </PieChart>
@@ -435,18 +443,22 @@ export function RapportsFacturationView({ entries, companies }: {
     { key: "encaisse", label: "Encaissé", icon: <CreditCard className="h-4 w-4" /> },
     { key: "facture", label: "Facturé", icon: <Receipt className="h-4 w-4" /> },
     { key: "en_cours", label: "En cours", icon: <Clock className="h-4 w-4" /> },
+    { key: "planifie", label: "Planifié", icon: <Clock className="h-4 w-4" /> },
+    { key: "a_valider", label: "À valider", icon: <AlertTriangle className="h-4 w-4" /> },
     { key: "non_fait", label: "Non fait", icon: <AlertTriangle className="h-4 w-4" /> },
   ];
 
   return (
     <div className="space-y-6">
       {/* Global KPIs */}
-      <div className="grid gap-3 md:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-7">
         {[
           { label: "Total HT", value: kpis.total, color: "#1a2a3a" },
           { label: "Encaissé HT", value: kpis.encaisse, color: "#006100" },
           { label: "Facturé HT", value: kpis.facture, color: "#9c0006" },
           { label: "En cours HT", value: kpis.en_cours, color: "#1f4e79" },
+          { label: "Planifié HT", value: kpis.planifie, color: "#5b21b6" },
+          { label: "À valider HT", value: kpis.a_valider, color: "#92600a" },
           { label: "Non fait HT", value: kpis.non_fait, color: "#888888" },
         ].map((k) => (
           <div key={k.label} className="lca-card" style={{ padding: "10px 14px" }}>
@@ -494,6 +506,8 @@ export function RapportsFacturationView({ entries, companies }: {
       {selectedReport === "encaisse" && renderStatusReport("encaisse")}
       {selectedReport === "facture" && renderStatusReport("facture")}
       {selectedReport === "en_cours" && renderStatusReport("en_cours")}
+      {selectedReport === "planifie" && renderStatusReport("planifie")}
+      {selectedReport === "a_valider" && renderStatusReport("a_valider")}
       {selectedReport === "non_fait" && renderStatusReport("non_fait")}
     </div>
   );
