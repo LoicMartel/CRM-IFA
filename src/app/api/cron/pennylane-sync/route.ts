@@ -63,6 +63,9 @@ export async function GET(req: NextRequest) {
     .eq("status", "planifie")
     .lte("month", today);
 
+  // Awaits séquentiels par ligne VOLONTAIRES : la création d'invoice s'appuie sur la
+  // récupération idempotente Pennylane (422 external_reference) + politesse rate-limit.
+  // NE PAS paralléliser (Promise.all casserait l'idempotency et déclencherait du 429).
   for (const bm of duePlanned ?? []) {
     try {
       const { data: entry } = await supabase
@@ -70,7 +73,12 @@ export async function GET(req: NextRequest) {
         .select("deal_id, funding_type, client_name")
         .eq("id", bm.billing_entry_id)
         .maybeSingle();
-      if (!entry?.deal_id) continue;
+      if (!entry?.deal_id) {
+        summary.errors.push(
+          `scan bm ${bm.id} (${entry?.client_name ?? "client inconnu"}): billing_entry sans deal_id`,
+        );
+        continue;
+      }
 
       if (mode === "validate") {
         await supabase
@@ -86,7 +94,10 @@ export async function GET(req: NextRequest) {
         .select("id, name, contact_id, company_id, convention_signed_at")
         .eq("id", entry.deal_id)
         .maybeSingle();
-      if (!deal) continue;
+      if (!deal) {
+        summary.errors.push(`scan bm ${bm.id} (${entry.client_name ?? "?"}): deal ${entry.deal_id} introuvable`);
+        continue;
+      }
 
       if (!isOpcoConventionSatisfied(entry.funding_type, deal.convention_signed_at)) {
         summary.scheduledSkippedOpco++;
@@ -104,11 +115,15 @@ export async function GET(req: NextRequest) {
         .eq("id", deal.company_id)
         .maybeSingle();
       if (!contact || !company) {
-        summary.errors.push(`scan bm ${bm.id}: contact/company manquant`);
+        summary.errors.push(
+          `scan bm ${bm.id} (${entry.client_name ?? deal.name ?? "?"}): contact/company manquant`,
+        );
         continue;
       }
 
       const result = await generateBillingMonthInvoice({
+        // L'invoice line est dérivée de billingMonth.amount ; deal.amount n'est pas lu
+        // par generateBillingMonthInvoice mais QuoteDealInput l'exige → on y met bm.amount.
         deal: { id: deal.id, name: deal.name, amount: bm.amount, training_days: null, notes: null },
         contact,
         company,
@@ -125,6 +140,27 @@ export async function GET(req: NextRequest) {
         })
         .eq("id", bm.id);
       summary.scheduledInvoiced++;
+
+      // Audit trail (cron context : pas de membre connecté → team_member_id null).
+      // Un échec de log ne doit JAMAIS annuler une facture déjà créée → catch isolé.
+      try {
+        const monthLabel = bm.month
+          ? new Date(bm.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+          : "échéance";
+        await supabase.from("activities").insert({
+          type: "note",
+          title: "[ADV cron] Échéance facturée automatiquement",
+          description: `Facture ${result.invoiceNumber ?? result.pennylaneInvoiceId} créée automatiquement (cron ADV) pour l'échéance ${monthLabel} du deal "${deal.name ?? deal.id}" (${Number(bm.amount ?? 0).toFixed(2)} €).${result.emailSent ? " Email envoyé au client." : " ⚠️ Email pas encore envoyé (PDF en génération) — le cron réessaiera."}`,
+          contact_id: deal.contact_id,
+          company_id: company.id,
+          team_member_id: null,
+          created_at: nowIso,
+        });
+      } catch (logErr) {
+        summary.errors.push(
+          `scan bm ${bm.id} (${entry.client_name ?? deal.name ?? "?"}): facture OK mais log activity échoué — ${logErr instanceof Error ? logErr.message : String(logErr)}`,
+        );
+      }
     } catch (e) {
       const msg = e instanceof AdvInvoiceError || e instanceof Error ? e.message : String(e);
       summary.errors.push(`scan bm ${bm.id}: ${msg}`);
