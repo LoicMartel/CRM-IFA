@@ -970,6 +970,16 @@ export function DealsBoard({
                     </Button>
                   </div>
                 )}
+                {(["opportunities", "quote_to_send"].includes(selectedDeal.stage)) && canCreateQuoteFor(selectedDeal) && (
+                  <Button
+                    onClick={() => handleCreateQuote(selectedDeal)}
+                    disabled={triggeringAdv === selectedDeal.id}
+                    className="w-full"
+                    style={{ background: "#e8632b", color: "white" }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" /> {triggeringAdv === selectedDeal.id ? "Création..." : "Créer le devis Pennylane"}
+                  </Button>
+                )}
                 <div className="flex gap-2">
                   <Button
                     onClick={() => { setSelectedDeal(null); openEditDeal(selectedDeal); }}
