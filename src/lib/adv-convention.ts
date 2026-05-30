@@ -41,12 +41,6 @@ export interface ConventionFormInput {
   lieuSignature: string;
 }
 
-export interface ConventionResult {
-  pdf: Buffer;
-  signingRequestId: string;
-  signingLink: string | null;
-}
-
 export class AdvConventionError extends Error {
   constructor(message: string) { super(message); this.name = "AdvConventionError"; }
 }
@@ -84,24 +78,34 @@ export function buildConventionData(
   };
 }
 
-/** Génère le PDF + l'envoie en signature Firma (1 signataire = bénéficiaire). */
-export async function generateAndSendConvention(args: {
+/** Rend le PDF de convention (Carbone). Pas d'envoi. */
+export async function prepareConvention(args: {
   deal: ConventionDeal;
   company: ConventionCompany;
   contact: ConventionContact;
   form: ConventionFormInput;
-}): Promise<ConventionResult> {
+}): Promise<{ pdf: Buffer }> {
   const { deal, company, contact, form } = args;
+  const data = buildConventionData(deal, company, contact, form);
+  const pdf = await renderConventionPdf(data);
+  return { pdf };
+}
+
+/** Envoie un PDF de convention déjà rendu en signature Firma (1 signataire = bénéficiaire). */
+export async function sendConventionSignature(args: {
+  dealId: string;
+  companyName: string | null;
+  contact: ConventionContact;
+  pdfBase64: string;
+}): Promise<{ signingRequestId: string; signingLink: string | null }> {
+  const { dealId, companyName, contact, pdfBase64 } = args;
   const email = contact.email?.trim();
   if (!email) throw new AdvConventionError("Contact email manquant — impossible d'envoyer la convention.");
 
-  const data = buildConventionData(deal, company, contact, form);
-  const pdf = await renderConventionPdf(data);
-
   const sr = await createAndSendSigningRequest({
-    name: buildConventionName(company.name ?? "Client", deal.id),
+    name: buildConventionName(companyName ?? "Client", dealId),
     description: "Convention de formation professionnelle — La Closing Académie.",
-    documentBase64: pdf.toString("base64"),
+    documentBase64: pdfBase64,
     recipient: {
       firstName: contact.first_name ?? "Client",
       lastName: contact.last_name ?? "",
@@ -109,6 +113,5 @@ export async function generateAndSendConvention(args: {
     },
     anchorString: ANCHOR_CONVENTION,
   });
-
-  return { pdf, signingRequestId: sr.id, signingLink: sr.first_signer?.signing_link ?? null };
+  return { signingRequestId: sr.id, signingLink: sr.first_signer?.signing_link ?? null };
 }

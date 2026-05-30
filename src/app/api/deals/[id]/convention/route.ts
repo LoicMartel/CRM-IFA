@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canInvoice, getCurrentMember } from "@/lib/adv-permissions";
-import { generateAndSendConvention, AdvConventionError, type ConventionFormInput } from "@/lib/adv-convention";
+import { prepareConvention, AdvConventionError, type ConventionFormInput } from "@/lib/adv-convention";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,55 +49,65 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   try {
-    const result = await generateAndSendConvention({
+    const { pdf } = await prepareConvention({
       deal: { id: deal.id, name: deal.name, amount: deal.amount },
       company,
       contact,
       form,
     });
 
-    // Stockage PDF (best-effort, pattern devis)
+    // Stockage PDF (deal_documents)
+    let stored = false;
     try {
       const filename = `Convention_${deal.id}.pdf`;
       const storagePath = `${deal.id}/${filename}`;
       await serviceClient.storage
         .from("deal-documents")
-        .upload(storagePath, result.pdf, { contentType: "application/pdf", upsert: true });
+        .upload(storagePath, pdf, { contentType: "application/pdf", upsert: true });
       await serviceClient.from("deal_documents").insert({
         deal_id: deal.id,
         name: filename,
         file_path: storagePath,
-        file_size: result.pdf.length,
+        file_size: pdf.length,
         file_type: "application/pdf",
         document_type: "convention",
       });
+      stored = true;
     } catch (docErr) {
       console.error("Convention PDF -> deal_documents failed:", docErr);
     }
+    if (!stored) {
+      return NextResponse.json({ error: "Échec stockage du PDF de convention" }, { status: 502 });
+    }
+
+    await serviceClient.from("deals").update({
+      convention_status: "to_validate", updated_at: new Date().toISOString(),
+    }).eq("id", deal.id);
 
     await serviceClient.from("activities").insert({
       type: "note",
-      title: "[ADV] Convention envoyée pour signature",
-      description: `Convention de formation générée (Carbone) et envoyée en signature (Firma) pour "${deal.name ?? deal.id}".`,
+      title: "[ADV] Convention préparée — à valider",
+      description: `Convention de formation générée (Carbone) et en attente de validation pour "${deal.name ?? deal.id}".`,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       team_member_id: member.id,
       created_at: new Date().toISOString(),
     });
 
+    const { notifyPieceToValidate } = await import("@/lib/adv-notify");
+    await notifyPieceToValidate(serviceClient, { type: "convention", label: deal.name ?? deal.id, dealId: deal.id });
+
     return NextResponse.json({
       ok: true,
       deal_id: deal.id,
-      signing_request_id: result.signingRequestId,
-      signing_link: result.signingLink,
-      message: "Convention générée et envoyée en signature.",
+      message: "Convention préparée — à valider dans « Pièces à valider » avant envoi.",
     });
   } catch (err) {
     const message = err instanceof AdvConventionError || err instanceof Error ? err.message : String(err);
     await serviceClient.from("activities").insert({
       type: "note",
       title: "[ADV] Échec convention",
-      description: `Erreur génération/envoi convention : ${message}`,
+      description: `Erreur génération convention : ${message}`,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       team_member_id: member.id,
