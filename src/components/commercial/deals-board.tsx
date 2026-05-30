@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
-import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, CalendarClock } from "lucide-react";
+import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, CalendarClock, FileSignature } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -20,6 +20,7 @@ import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
 import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
+import { ConventionModal } from "@/components/finance/convention-modal";
 
 interface Deal {
   id: string;
@@ -145,6 +146,7 @@ export function DealsBoard({
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [planModalDeal, setPlanModalDeal] = useState<Deal | null>(null);
+  const [conventionDeal, setConventionDeal] = useState<Deal | null>(null);
   const [cotationOpen, setCotationOpen] = useState(false);
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -902,9 +904,6 @@ export function DealsBoard({
                         onChange={(e) => handleUploadDoc(e, selectedDeal.id)}
                       />
                     </label>
-                    <button style={{ height: 32, borderRadius: 6, background: "white", border: "1px solid #2ecc71", color: "#2e7d32", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      Pennylane
-                    </button>
                   </div>
 
                   {/* Document list */}
@@ -955,13 +954,21 @@ export function DealsBoard({
 
                 {/* Actions */}
                 {(["quote_signed", "opco_deposit", "closed_won"].includes(selectedDeal.stage)) && canInvoiceDeal() && (
-                  <Button
-                    onClick={() => setPlanModalDeal(selectedDeal)}
-                    className="w-full"
-                    style={{ background: "#e8632b", color: "white" }}
-                  >
-                    <CalendarClock className="h-4 w-4 mr-2" /> Programmer la facturation
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setPlanModalDeal(selectedDeal)}
+                      style={{ flex: 1, background: "#e8632b", color: "white" }}
+                    >
+                      <CalendarClock className="h-4 w-4 mr-2" /> Programmer la facturation
+                    </Button>
+                    <Button
+                      onClick={() => setConventionDeal(selectedDeal)}
+                      variant="outline"
+                      style={{ flex: 1, borderColor: "#e8632b", color: "#e8632b" }}
+                    >
+                      <FileSignature className="h-4 w-4 mr-2" /> Gérer la convention
+                    </Button>
+                  </div>
                 )}
                 <div className="flex gap-2">
                   <Button
@@ -1019,6 +1026,18 @@ export function DealsBoard({
           defaultClientName={planModalDeal.companies?.name ?? planModalDeal.name}
           onClose={() => setPlanModalDeal(null)}
           onDone={() => { setPlanModalDeal(null); router.refresh(); }}
+        />
+      )}
+      {conventionDeal && (
+        <ConventionModal
+          dealId={conventionDeal.id}
+          dealName={conventionDeal.name}
+          dealAmount={conventionDeal.amount != null ? Number(conventionDeal.amount) : null}
+          companyName={conventionDeal.companies?.name ?? "—"}
+          contactName={conventionDeal.contacts ? `${conventionDeal.contacts.first_name} ${conventionDeal.contacts.last_name}`.trim() : "—"}
+          trainingDays={conventionDeal.training_days != null ? Number(conventionDeal.training_days) : null}
+          onClose={() => setConventionDeal(null)}
+          onDone={() => { setConventionDeal(null); router.refresh(); }}
         />
       )}
     </>
