@@ -976,7 +976,12 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               <X className="h-3 w-3" />
             </button>
           </div>
-          {popoverCell.monthId && popoverCell.dealId && FACTURABLE_STATUSES.includes(popoverCell.status) && (
+          {popoverCell.monthId && popoverCell.status === "a_valider" && (
+            <a href="/a-valider" style={{ display: "block", padding: "8px 12px", background: "#16a34a", color: "white", borderRadius: 6, textDecoration: "none", textAlign: "center", marginBottom: 8 }}>
+              Prévisualiser &amp; valider →
+            </a>
+          )}
+          {popoverCell.monthId && popoverCell.dealId && popoverCell.status !== "a_valider" && FACTURABLE_STATUSES.includes(popoverCell.status) && (
             <button
               onClick={() => factureBillingMonth(popoverCell.monthId!, popoverCell.dealId, popoverCell.entryName)}
               disabled={facturing}
@@ -989,7 +994,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               title="Génère une facture Pennylane via WF-005 pour cette échéance"
             >
               <Send className="h-3 w-3" />
-              {facturing ? "Facturation en cours…" : popoverCell.status === "a_valider" ? "Valider & facturer" : "Facturer cette échéance"}
+              {facturing ? "Facturation en cours…" : "Facturer cette échéance"}
             </button>
           )}
           {popoverCell.monthId && (

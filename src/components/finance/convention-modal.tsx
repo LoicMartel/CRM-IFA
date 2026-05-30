@@ -45,7 +45,7 @@ export function ConventionModal({
       });
       const json = await res.json();
       if (!res.ok) { alert(`Échec : ${json.error ?? "erreur"}`); return; }
-      alert("Convention générée et envoyée en signature.");
+      alert("Convention préparée — à valider avant envoi.");
       onDone();
     } catch (e) {
       alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
@@ -126,7 +126,7 @@ export function ConventionModal({
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
           <button onClick={onClose} style={{ padding: "8px 16px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", cursor: "pointer" }}>Annuler</button>
           <button onClick={submit} disabled={saving} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#e8632b", color: "white", cursor: "pointer" }}>
-            {saving ? "..." : "Générer & envoyer"}
+            {saving ? "..." : "Générer pour validation"}
           </button>
         </div>
       </div>

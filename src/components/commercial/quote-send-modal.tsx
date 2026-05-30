@@ -57,14 +57,14 @@ export function QuoteSendModal({
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={onClose}>
       <div style={{ background: "white", borderRadius: 8, padding: 24, width: 460, maxHeight: "88vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 2 }}>Créer le devis</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 2 }}>Préparer le devis</h2>
         <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>{dealName}</p>
 
         <label style={{ ...radioRow, borderColor: mode === "now" ? "#e8632b" : "#cbd5e1" }}>
           <input type="radio" name="mode" checked={mode === "now"} onChange={() => setMode("now")} style={{ marginTop: 3 }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Envoyer maintenant</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Génère le devis Pennylane et envoie l’email de signature immédiatement.</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Préparer maintenant</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Génère le devis Pennylane et le place dans « Pièces à valider » (aucun envoi avant validation).</div>
           </div>
         </label>
 
@@ -73,7 +73,7 @@ export function QuoteSendModal({
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>Planifier l’envoi</div>
             <div style={{ fontSize: 12, color: "#64748b", marginBottom: mode === "scheduled" ? 8 : 0 }}>
-              Le devis sera généré et envoyé automatiquement le matin de la date choisie.
+              Le devis sera généré et placé en validation le matin de la date choisie.
             </div>
             {mode === "scheduled" && (
               <input
@@ -91,7 +91,7 @@ export function QuoteSendModal({
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
           <button onClick={onClose} style={{ padding: "8px 16px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", cursor: "pointer" }}>Annuler</button>
           <button onClick={submit} disabled={saving} style={{ padding: "8px 16px", border: "none", borderRadius: 6, background: "#e8632b", color: "white", cursor: "pointer" }}>
-            {saving ? "..." : mode === "scheduled" ? "Planifier" : "Envoyer"}
+            {saving ? "..." : mode === "scheduled" ? "Planifier" : "Préparer"}
           </button>
         </div>
       </div>
