@@ -34,11 +34,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: `event ${body.type}` });
   }
 
-  const { dealId, docType, signerName, signingRequestId } = parseSignedWebhook(body);
+  const parsed = parseSignedWebhook(body);
+  let dealId = parsed.dealId;
+  let docType = parsed.docType;
+  const { signerName, signingRequestId } = parsed;
+
+  // Primary: resolve by stored Firma signing id (clean names carry no tag).
+  // Deux lookups .eq() séparés : la valeur vient d'un endpoint PUBLIC (body webhook),
+  // .eq() encode la valeur côté supabase-js → pas de filter-injection PostgREST
+  // (contrairement à .or() interpolé).
+  if (parsed.signingRequestId) {
+    const { data: byDevis } = await supabase
+      .from("deals")
+      .select("id")
+      .eq("firma_devis_signing_id", parsed.signingRequestId)
+      .maybeSingle();
+    if (byDevis) {
+      dealId = byDevis.id as string;
+      docType = "devis";
+    } else {
+      const { data: byConv } = await supabase
+        .from("deals")
+        .select("id")
+        .eq("firma_convention_signing_id", parsed.signingRequestId)
+        .maybeSingle();
+      if (byConv) {
+        dealId = byConv.id as string;
+        docType = "convention";
+      }
+    }
+  }
+
   if (!dealId) {
     return NextResponse.json({
       ok: true,
-      skipped: "no LCA-DEAL-{id} in signing request name",
+      skipped: "signing request not mapped to any deal",
       signing_request_id: signingRequestId,
     });
   }

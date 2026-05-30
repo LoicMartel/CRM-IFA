@@ -93,17 +93,16 @@ export async function prepareConvention(args: {
 
 /** Envoie un PDF de convention déjà rendu en signature Firma (1 signataire = bénéficiaire). */
 export async function sendConventionSignature(args: {
-  dealId: string;
   companyName: string | null;
   contact: ConventionContact;
   pdfBase64: string;
 }): Promise<{ signingRequestId: string; signingLink: string | null }> {
-  const { dealId, companyName, contact, pdfBase64 } = args;
+  const { companyName, contact, pdfBase64 } = args;
   const email = contact.email?.trim();
   if (!email) throw new AdvConventionError("Contact email manquant — impossible d'envoyer la convention.");
 
   const sr = await createAndSendSigningRequest({
-    name: buildConventionName(companyName ?? "Client", dealId),
+    name: buildConventionName(companyName ?? "Client"),
     description: "Convention de formation professionnelle — La Closing Académie.",
     documentBase64: pdfBase64,
     recipient: {

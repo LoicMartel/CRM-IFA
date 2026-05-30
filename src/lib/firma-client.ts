@@ -8,8 +8,8 @@
  * Auth : header `Authorization: <workspace_api_key>` (workspace LCA isolé,
  * PAS la protected root key). Env var FIRMA_WORKSPACE_API_KEY.
  *
- * Traçabilité : pas de metadata field libre au niveau signing request →
- * on embed `LCA-DEAL-{deal_id}` dans le `name` (parse via regex côté webhook).
+ * Traçabilité : signing_request.id stocké sur deals.firma_*_signing_id au moment
+ * de l'envoi. Le webhook résout le deal via id lookup (name-regex en fallback).
  */
 
 const DEFAULT_BASE_URL = "https://api.firma.dev/functions/v1/signing-request-api";
@@ -38,7 +38,6 @@ export interface FirmaRecipient {
 }
 
 export interface CreateAndSendInput {
-  /** Doit embarquer "LCA-DEAL-{deal_id}" pour la traçabilité webhook. */
   name: string;
   description?: string;
   /** PDF encodé en base64 (max 20 MB). */
@@ -232,16 +231,18 @@ export function parseSignedWebhook(
   };
 }
 
-/** Construit un name traçable pour le devis. */
+/** Construit le name lisible pour le devis (sans UUID — traçabilité via firma_devis_signing_id). */
 export function buildDevisName(
-  invoiceNumber: string,
+  invoiceNumber: string | null,
   companyName: string,
-  dealId: string,
 ): string {
-  return `Devis ${invoiceNumber} - ${companyName} (LCA-DEAL-${dealId})`;
+  if (invoiceNumber) {
+    return `Devis ${invoiceNumber} — ${companyName}`;
+  }
+  return `Devis — ${companyName}`;
 }
 
-/** Construit un name traçable pour la convention de formation. */
-export function buildConventionName(companyName: string, dealId: string): string {
-  return `Convention de formation — ${companyName} (LCA-CONV-${dealId})`;
+/** Construit le name lisible pour la convention (sans UUID — traçabilité via firma_convention_signing_id). */
+export function buildConventionName(companyName: string): string {
+  return `Convention de formation — ${companyName}`;
 }

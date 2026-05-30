@@ -174,16 +174,16 @@ export async function sendValidatedQuote(opts: {
     }
 
     const r = await sendQuoteSignature({
-      dealId,
       publicFileUrl,
       invoiceNumber: null,
-      pennylaneQuoteId: Number(deal.pennylane_quote_id),
       companyName: company?.name ?? null,
       contact,
     });
 
     await serviceClient.from("deals").update({
-      stage: "quote_sent", updated_at: new Date().toISOString(),
+      stage: "quote_sent",
+      firma_devis_signing_id: r.firmaSigningId,
+      updated_at: new Date().toISOString(),
     }).eq("id", dealId);
 
     await serviceClient.from("activities").insert({

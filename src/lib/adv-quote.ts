@@ -219,14 +219,12 @@ export async function prepareOfficialQuote(input: {
  * public_file_url, vérifie le magic %PDF, crée la signing request atomic.
  */
 export async function sendQuoteSignature(input: {
-  dealId: string;
   publicFileUrl: string;
   invoiceNumber: string | null;
-  pennylaneQuoteId: number;
   companyName: string | null;
   contact: QuoteContactInput;
 }): Promise<{ firmaSigningId: string; signingLink: string | null }> {
-  const { dealId, publicFileUrl, invoiceNumber, pennylaneQuoteId, companyName, contact } = input;
+  const { publicFileUrl, invoiceNumber, companyName, contact } = input;
   const email = contact.email?.trim();
   if (!email) throw new AdvQuoteError("Contact email manquant — impossible d'envoyer la signature.");
 
@@ -239,8 +237,8 @@ export async function sendQuoteSignature(input: {
   }
 
   const signing = await createAndSendSigningRequest({
-    name: buildDevisName(invoiceNumber ?? `DEV-${pennylaneQuoteId}`, companyName ?? "Client", dealId),
-    description: `Devis ${invoiceNumber ?? pennylaneQuoteId} à signer — La Closing Académie®`,
+    name: buildDevisName(invoiceNumber, companyName ?? "Client"),
+    description: `Devis${invoiceNumber ? ` ${invoiceNumber}` : ""} à signer — La Closing Académie®`,
     documentBase64: pdfBase64,
     recipient: {
       firstName: contact.first_name ?? "",

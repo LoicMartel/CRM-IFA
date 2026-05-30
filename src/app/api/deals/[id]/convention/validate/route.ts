@@ -73,13 +73,14 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       return NextResponse.json({ error: `PDF convention invalide (magic="${magic}")` }, { status: 502 });
     }
     const r = await sendConventionSignature({
-      dealId,
       companyName: company?.name ?? null,
       contact,
       pdfBase64: pdfBuffer.toString("base64"),
     });
     await serviceClient.from("deals").update({
-      convention_status: "sent", updated_at: new Date().toISOString(),
+      convention_status: "sent",
+      firma_convention_signing_id: r.signingRequestId,
+      updated_at: new Date().toISOString(),
     }).eq("id", dealId);
     await serviceClient.from("activities").insert({
       type: "note",
