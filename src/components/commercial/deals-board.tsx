@@ -21,6 +21,7 @@ import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
 import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
 import { ConventionModal } from "@/components/finance/convention-modal";
+import { QuoteSendModal } from "./quote-send-modal";
 
 interface Deal {
   id: string;
@@ -113,40 +114,17 @@ export function DealsBoard({
   const router = useRouter();
   const currentMemberId = useCurrentMember();
   const { isRestrictedExterne, isReadOnly, isAdmin, roles } = useCurrentRoles();
-  const [triggeringAdv, setTriggeringAdv] = useState<string | null>(null);
 
   const canCreateQuoteFor = (deal: Deal) =>
     isAdmin || (currentMemberId !== null && deal.owner_id === currentMemberId);
   const canInvoiceDeal = () => isAdmin || roles.includes("Finance");
-
-  async function handleCreateQuote(deal: Deal) {
-    if (triggeringAdv) return;
-    if (!confirm(`Créer le devis Pennylane pour "${deal.name}" ?\n\nLe workflow va générer le devis et envoyer l'email signature au client.`)) return;
-    setTriggeringAdv(deal.id);
-    try {
-      const res = await fetch("/api/quotes/create-from-deal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deal_id: deal.id }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        alert(`Échec : ${json.error ?? "erreur inconnue"}`);
-      } else {
-        alert(json.message ?? "Devis Pennylane déclenché.");
-      }
-    } catch (e) {
-      alert(`Erreur réseau : ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setTriggeringAdv(null);
-    }
-  }
 
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [planModalDeal, setPlanModalDeal] = useState<Deal | null>(null);
   const [conventionDeal, setConventionDeal] = useState<Deal | null>(null);
+  const [quoteSendDeal, setQuoteSendDeal] = useState<Deal | null>(null);
   const [cotationOpen, setCotationOpen] = useState(false);
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -553,10 +531,9 @@ export function DealsBoard({
                     <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 0 }}>
                       {(["opportunities", "quote_to_send"].includes(deal.stage)) && canCreateQuoteFor(deal) && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleCreateQuote(deal); }}
-                          disabled={triggeringAdv === deal.id}
+                          onClick={(e) => { e.stopPropagation(); setQuoteSendDeal(deal); }}
                           title="Créer le devis Pennylane"
-                          style={{ color: "#e8632b", background: "none", border: "none", cursor: triggeringAdv === deal.id ? "wait" : "pointer", padding: 1, opacity: triggeringAdv === deal.id ? 0.4 : 1 }}
+                          style={{ color: "#e8632b", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                         >
                           <FileText style={{ width: 10, height: 10 }} />
                         </button>
@@ -972,12 +949,11 @@ export function DealsBoard({
                 )}
                 {(["opportunities", "quote_to_send"].includes(selectedDeal.stage)) && canCreateQuoteFor(selectedDeal) && (
                   <Button
-                    onClick={() => handleCreateQuote(selectedDeal)}
-                    disabled={triggeringAdv === selectedDeal.id}
+                    onClick={() => setQuoteSendDeal(selectedDeal)}
                     className="w-full"
                     style={{ background: "#e8632b", color: "white" }}
                   >
-                    <FileText className="h-4 w-4 mr-2" /> {triggeringAdv === selectedDeal.id ? "Création..." : "Créer le devis Pennylane"}
+                    <FileText className="h-4 w-4 mr-2" /> Créer le devis Pennylane
                   </Button>
                 )}
                 <div className="flex gap-2">
@@ -1048,6 +1024,14 @@ export function DealsBoard({
           trainingDays={conventionDeal.training_days != null ? Number(conventionDeal.training_days) : null}
           onClose={() => setConventionDeal(null)}
           onDone={() => { setConventionDeal(null); router.refresh(); }}
+        />
+      )}
+      {quoteSendDeal && (
+        <QuoteSendModal
+          dealId={quoteSendDeal.id}
+          dealName={quoteSendDeal.name}
+          onClose={() => setQuoteSendDeal(null)}
+          onDone={() => { setQuoteSendDeal(null); setSelectedDeal(null); router.refresh(); }}
         />
       )}
     </>

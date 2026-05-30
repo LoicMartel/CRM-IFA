@@ -8,6 +8,7 @@ import {
 import { resolveRecipientEmail } from "@/lib/adv-quote";
 import { billingAutoMode, isOpcoConventionSatisfied } from "@/lib/adv-billing-schedule";
 import { generateBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
+import { runDealQuote } from "@/lib/adv-quote-runner";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,6 +52,8 @@ export async function GET(req: NextRequest) {
     scheduledInvoiced: 0,
     scheduledFlagged: 0,
     scheduledSkippedOpco: 0,
+    scheduledQuotesSent: 0,
+    scheduledQuotesFailed: 0,
     errors: [] as string[],
   };
 
@@ -165,6 +168,32 @@ export async function GET(req: NextRequest) {
     } catch (e) {
       const msg = e instanceof AdvInvoiceError || e instanceof Error ? e.message : String(e);
       summary.errors.push(`scan bm ${bm.id}: ${msg}`);
+    }
+  }
+
+  // ─── 0bis. Scan des envois de devis planifiés dus ─────────────────────────
+  // Génère + envoie les devis dont la date planifiée est atteinte (granularité jour).
+  const { data: dueQuotes } = await supabase
+    .from("deals")
+    .select("id, name, amount, training_days, notes, contact_id, company_id")
+    .not("quote_scheduled_send_at", "is", null)
+    .lte("quote_scheduled_send_at", nowIso)
+    .is("pennylane_quote_id", null)
+    .in("stage", ["opportunities", "quote_to_send"]);
+
+  // Séquentiel (idempotency Pennylane + rate-limit), comme l'étape 0.
+  for (const d of dueQuotes ?? []) {
+    try {
+      const r = await runDealQuote({ serviceClient: supabase, deal: d, teamMemberId: null, via: "planifié" });
+      if (r.ok) {
+        summary.scheduledQuotesSent++;
+      } else {
+        summary.scheduledQuotesFailed++;
+        summary.errors.push(`scheduled quote deal ${d.id}: ${r.error}`);
+      }
+    } catch (e) {
+      summary.scheduledQuotesFailed++;
+      summary.errors.push(`scheduled quote deal ${d.id}: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 

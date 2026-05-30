@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canCreateQuote, getCurrentMember } from "@/lib/adv-permissions";
 import { triggerN8nWebhook } from "@/lib/n8n-client";
-import { generateOfficialQuote, AdvQuoteError } from "@/lib/adv-quote";
+import { runDealQuote } from "@/lib/adv-quote-runner";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { deal_id?: string };
+  let body: { deal_id?: string; scheduled_send_at?: string };
   try {
     body = await req.json();
   } catch {
@@ -77,6 +77,36 @@ export async function POST(req: Request) {
       ? "Montant ou jours de formation manquant sur le deal."
       : null;
 
+  // --- Planification : enregistre la date, le cron pennylane-sync génère + envoie le jour venu ---
+  const scheduledRaw = body.scheduled_send_at?.trim();
+  if (scheduledRaw) {
+    const when = new Date(scheduledRaw);
+    if (isNaN(when.getTime())) {
+      return NextResponse.json({ error: "scheduled_send_at invalide (date attendue)" }, { status: 400 });
+    }
+    await serviceClient
+      .from("deals")
+      .update({ quote_scheduled_send_at: when.toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", deal.id);
+    await serviceClient.from("activities").insert({
+      type: "note",
+      title: "[ADV] Envoi du devis planifié",
+      description: `Envoi du devis planifié pour le ${when.toLocaleDateString("fr-FR")} (deal "${deal.name ?? deal.id}"). Le devis sera généré et envoyé automatiquement ce jour-là.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
+      team_member_id: member.id,
+      created_at: new Date().toISOString(),
+    });
+    return NextResponse.json({
+      ok: true,
+      deal_id: deal.id,
+      scheduled: true,
+      scheduled_send_at: when.toISOString(),
+      message: `Envoi du devis planifié pour le ${when.toLocaleDateString("fr-FR")}.`,
+      warning: nomenclatureWarning ?? undefined,
+    });
+  }
+
   // --- Chemin legacy : proxy n8n (kill switch) ---
   if (USE_N8N_FALLBACK) {
     const result = await triggerN8nWebhook("lca-devis-a-envoyer", { dealId: deal.id });
@@ -103,105 +133,32 @@ export async function POST(req: Request) {
     });
   }
 
-  // --- Chemin intra-CRM : Pennylane + Firma direct ---
-  const { data: contact } = await serviceClient
-    .from("contacts")
-    .select("first_name, last_name, email, phone")
-    .eq("id", deal.contact_id)
-    .maybeSingle();
-
-  const { data: company } = await serviceClient
-    .from("companies")
-    .select("id, name, siret, address, city, country")
-    .eq("id", deal.company_id)
-    .maybeSingle();
-
-  if (!contact || !company) {
-    return NextResponse.json(
-      { error: "Contact ou entreprise introuvable sur le deal" },
-      { status: 422 },
-    );
-  }
-
-  try {
-    const quoteResult = await generateOfficialQuote({
-      deal: {
-        id: deal.id,
-        name: deal.name,
-        amount: deal.amount,
-        training_days: deal.training_days,
-        notes: deal.notes,
-      },
-      contact,
-      company,
-    });
-
-    // Lock + passage en "Devis envoyé". Les stages éligibles (opportunities /
-    // quote_to_send) ont déjà été vérifiés plus haut → on passe à quote_sent.
-    await serviceClient
-      .from("deals")
-      .update({
-        pennylane_quote_id: String(quoteResult.pennylaneQuoteId),
-        stage: "quote_sent",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", deal.id);
-
-    // Enregistrer le PDF du devis dans les documents du deal (best-effort)
-    try {
-      if (quoteResult.publicFileUrl) {
-        const pdfRes = await fetch(quoteResult.publicFileUrl);
-        if (pdfRes.ok) {
-          const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
-          const filename = `Devis_${quoteResult.invoiceNumber ?? quoteResult.pennylaneQuoteId}.pdf`;
-          const storagePath = `${deal.id}/${filename}`;
-          await serviceClient.storage
-            .from("deal-documents")
-            .upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
-          await serviceClient.from("deal_documents").insert({
-            deal_id: deal.id,
-            name: filename,
-            file_path: storagePath,
-            file_size: pdfBuffer.length,
-            file_type: "application/pdf",
-            document_type: "devis",
-          });
-        }
-      }
-    } catch (docErr) {
-      console.error("Devis PDF -> deal_documents failed:", docErr);
-    }
-
-    await serviceClient.from("activities").insert({
-      type: "note",
-      title: "[ADV] Devis envoyé pour signature",
-      description: `Devis ${quoteResult.invoiceNumber ?? quoteResult.pennylaneQuoteId} créé (Pennylane) et envoyé pour signature (Firma) au contact.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
+  // --- Chemin intra-CRM : Pennylane + Firma direct (runner partagé avec le cron) ---
+  const result = await runDealQuote({
+    serviceClient,
+    deal: {
+      id: deal.id,
+      name: deal.name,
+      amount: deal.amount,
+      training_days: deal.training_days,
+      notes: deal.notes,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
-      team_member_id: member.id,
-      created_at: new Date().toISOString(),
-    });
+    },
+    teamMemberId: member.id,
+  });
 
-    return NextResponse.json({
-      ok: true,
-      deal_id: deal.id,
-      pennylane_quote_id: quoteResult.pennylaneQuoteId,
-      invoice_number: quoteResult.invoiceNumber,
-      signing_link: quoteResult.signingLink,
-      message: "Devis créé et email de signature envoyé au client.",
-      warning: nomenclatureWarning ?? undefined,
-    });
-  } catch (err) {
-    const message = err instanceof AdvQuoteError || err instanceof Error ? err.message : String(err);
-    await serviceClient.from("activities").insert({
-      type: "note",
-      title: "[ADV] Échec génération devis",
-      description: `Erreur lors de la génération du devis intra-CRM : ${message}`,
-      contact_id: deal.contact_id,
-      company_id: deal.company_id,
-      team_member_id: member.id,
-      created_at: new Date().toISOString(),
-    });
-    return NextResponse.json({ error: `Génération devis échouée : ${message}` }, { status: 502 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
+
+  return NextResponse.json({
+    ok: true,
+    deal_id: deal.id,
+    pennylane_quote_id: result.pennylaneQuoteId,
+    invoice_number: result.invoiceNumber,
+    signing_link: result.signingLink,
+    message: "Devis créé et email de signature envoyé au client.",
+    warning: result.warning ?? undefined,
+  });
 }
