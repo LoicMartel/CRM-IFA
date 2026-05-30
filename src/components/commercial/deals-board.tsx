@@ -532,7 +532,7 @@ export function DealsBoard({
                       {(["opportunities", "quote_to_send"].includes(deal.stage)) && canCreateQuoteFor(deal) && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setQuoteSendDeal(deal); }}
-                          title="Créer le devis Pennylane"
+                          title="Préparer le devis"
                           style={{ color: "#e8632b", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                         >
                           <FileText style={{ width: 10, height: 10 }} />
@@ -697,7 +697,7 @@ export function DealsBoard({
 
       {/* Deal Detail Popup */}
       <Dialog open={!!selectedDeal} onOpenChange={(o) => { if (!o) setSelectedDeal(null); }}>
-        <DialogContent style={{ maxWidth: 600 }}>
+        <DialogContent style={{ maxWidth: 600, maxHeight: "90vh" }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 18, color: "#1a2a3a" }}>
               {selectedDeal?.name}
@@ -706,7 +706,7 @@ export function DealsBoard({
           {selectedDeal && (() => {
             const sc = stageColors[selectedDeal.stage] ?? { bg: "#f0f0f0", text: "#666", bar: "#999" };
             return (
-              <div className="space-y-4" style={{ marginTop: 8 }}>
+              <div className="space-y-4" style={{ marginTop: 8, maxHeight: "calc(90vh - 90px)", overflowY: "auto", paddingRight: 6 }}>
                 {/* Stage badge */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span style={{ background: sc.bg, color: sc.text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
@@ -953,7 +953,7 @@ export function DealsBoard({
                     className="w-full"
                     style={{ background: "#e8632b", color: "white" }}
                   >
-                    <FileText className="h-4 w-4 mr-2" /> Créer le devis Pennylane
+                    <FileText className="h-4 w-4 mr-2" /> Préparer le devis
                   </Button>
                 )}
                 <div className="flex gap-2">
