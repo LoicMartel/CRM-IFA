@@ -34,13 +34,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: `event ${body.type}` });
   }
 
-  const { dealId, signerName, signingRequestId } = parseSignedWebhook(body);
+  const { dealId, docType, signerName, signingRequestId } = parseSignedWebhook(body);
   if (!dealId) {
     return NextResponse.json({
       ok: true,
       skipped: "no LCA-DEAL-{id} in signing request name",
       signing_request_id: signingRequestId,
     });
+  }
+
+  // Branche convention : set convention_signed_at (débloque le gate OPCO du planificateur).
+  if (docType === "convention") {
+    const { data: cDeal } = await supabase
+      .from("deals")
+      .select("id, convention_signed_at, contact_id, company_id, name")
+      .eq("id", dealId)
+      .maybeSingle();
+    if (!cDeal) {
+      return NextResponse.json({ ok: true, skipped: `deal ${dealId} not found` });
+    }
+    if (cDeal.convention_signed_at) {
+      return NextResponse.json({ ok: true, skipped: "convention already signed", deal_id: dealId });
+    }
+    const { error: cErr } = await supabase
+      .from("deals")
+      .update({ convention_signed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", dealId);
+    if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 });
+    await supabase.from("activities").insert({
+      type: "note",
+      title: "[ADV] Convention signée",
+      description: `Convention de formation signée via Firma${signerName ? ` par ${signerName}` : ""}. La facturation OPCO est débloquée.`,
+      contact_id: cDeal.contact_id,
+      company_id: cDeal.company_id,
+      created_at: new Date().toISOString(),
+    });
+    return NextResponse.json({ ok: true, deal_id: dealId, convention_signed: true });
   }
 
   // Idempotency : ne ré-update que si pas déjà signé
