@@ -64,7 +64,14 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 
   try {
     const pdfRes = await fetch(signed.signedUrl);
+    if (!pdfRes.ok) {
+      return NextResponse.json({ error: `Téléchargement du PDF convention échoué (${pdfRes.status})` }, { status: 502 });
+    }
     const pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    const magic = pdfBuffer.subarray(0, 5).toString("ascii");
+    if (!magic.startsWith("%PDF-")) {
+      return NextResponse.json({ error: `PDF convention invalide (magic="${magic}")` }, { status: 502 });
+    }
     const r = await sendConventionSignature({
       dealId,
       companyName: company?.name ?? null,

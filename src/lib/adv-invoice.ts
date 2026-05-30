@@ -311,6 +311,11 @@ export async function finalizeAndSendBillingMonthInvoice(input: {
   recipientEmail: string;
 }): Promise<{ invoiceNumber: string | null; emailSent: boolean }> {
   const finalized = await finalizeInvoice(input.pennylaneInvoiceId);
+  if (finalized.draft !== false) {
+    throw new AdvInvoiceError(
+      `Facture ${input.pennylaneInvoiceId} toujours en draft après finalize (PUT draft:false non honoré par Pennylane) — fallback delete+recreate à implémenter (cf live-test).`,
+    );
+  }
   let emailSent = false;
   try {
     await sendInvoiceByEmail(input.pennylaneInvoiceId, [resolveRecipientEmail(input.recipientEmail)], {

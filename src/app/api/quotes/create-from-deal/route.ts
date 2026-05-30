@@ -9,7 +9,7 @@ const serviceClient = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ALLOWED_STAGES = ["opportunities", "quote_to_send"] as const;
+const ALLOWED_STAGES = ["opportunities", "quote_to_send", "quote_to_validate"] as const;
 
 // Kill switch : true => ancien proxy n8n (rollback instant), false => intra-CRM.
 const USE_N8N_FALLBACK = process.env.USE_N8N_FALLBACK === "true";
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (deal.pennylane_quote_id) {
+  if (deal.pennylane_quote_id && deal.stage !== "quote_to_validate") {
     return NextResponse.json(
       {
         error: "Un devis Pennylane existe déjà pour ce deal",
