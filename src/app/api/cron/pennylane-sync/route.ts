@@ -8,7 +8,7 @@ import {
 import { resolveRecipientEmail } from "@/lib/adv-quote";
 import { billingAutoMode, isOpcoConventionSatisfied } from "@/lib/adv-billing-schedule";
 import { generateBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
-import { runDealQuote } from "@/lib/adv-quote-runner";
+import { prepareDealQuote } from "@/lib/adv-quote-runner";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -172,7 +172,8 @@ export async function GET(req: NextRequest) {
   }
 
   // ─── 0bis. Scan des envois de devis planifiés dus ─────────────────────────
-  // Génère + envoie les devis dont la date planifiée est atteinte (granularité jour).
+  // Génère + place en validation les devis dont la date planifiée est atteinte.
+  // (L'envoi Firma réel est déclenché par la validation Naznine dans /a-valider.)
   const { data: dueQuotes } = await supabase
     .from("deals")
     .select("id, name, amount, training_days, notes, contact_id, company_id")
@@ -184,7 +185,7 @@ export async function GET(req: NextRequest) {
   // Séquentiel (idempotency Pennylane + rate-limit), comme l'étape 0.
   for (const d of dueQuotes ?? []) {
     try {
-      const r = await runDealQuote({ serviceClient: supabase, deal: d, teamMemberId: null, via: "planifié" });
+      const r = await prepareDealQuote({ serviceClient: supabase, deal: d, teamMemberId: null, via: "planifié" });
       if (r.ok) {
         summary.scheduledQuotesSent++;
       } else {

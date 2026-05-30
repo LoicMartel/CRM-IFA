@@ -15,10 +15,8 @@
 import {
   findOrCreateCompanyCustomer,
   createQuote,
-  findQuoteByCustomerAndRef,
   listProducts,
   downloadPdfAsBase64,
-  PennylaneError,
   type QuoteLine,
 } from "@/lib/pennylane-client";
 import {
@@ -131,40 +129,33 @@ export async function resolveCompanyCustomer(
 }
 
 /**
- * Génère le devis officiel : customer Pennylane → quote → PDF → signing Firma.
- * Idempotent côté customer (external_reference). À appeler APRÈS les checks
- * RBAC/stage/idempotency de l'endpoint, et entourer de l'early-lock du quote_id.
+ * Prépare le devis officiel SANS envoi : customer Pennylane → quote → public_file_url.
+ * Pas de Firma (le gate de validation s'en charge). Idempotent côté customer.
  */
-export async function generateOfficialQuote(input: {
+export async function prepareOfficialQuote(input: {
   deal: QuoteDealInput;
   contact: QuoteContactInput;
   company: QuoteCompanyInput;
-}): Promise<GenerateQuoteResult> {
+}): Promise<Omit<GenerateQuoteResult, "firmaSigningId" | "signingLink">> {
   const { deal, contact, company } = input;
 
   const email = contact.email?.trim();
   if (!email) {
-    throw new AdvQuoteError(
-      "Contact email manquant — impossible de créer le devis signable.",
-    );
+    throw new AdvQuoteError("Contact email manquant — impossible de créer le devis signable.");
   }
 
   const amount = parseFloat(String(deal.amount ?? "")) || 0;
   const trainingDays = parseFloat(String(deal.training_days ?? "")) || 1;
 
-  // 1. Customer B2B (idempotent sur LCA-COMPANY-{companyId})
   const customer = await resolveCompanyCustomer(company, contact, email);
 
-  // 2. Résolution des produits par reference
   const products = await listProducts();
   const mainProduct =
     products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
     products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
     products[0];
   const thrProduct = products.find((p) => p.reference === PRODUCT_REF_THR);
-  const fournituresProduct = products.find(
-    (p) => p.reference === PRODUCT_REF_FOURNITURES,
-  );
+  const fournituresProduct = products.find((p) => p.reference === PRODUCT_REF_FOURNITURES);
 
   const formationType = mainProduct?.label ?? "Formation Closing";
   const description = deal.notes ?? `Formation ${formationType}`;
@@ -182,94 +173,81 @@ export async function generateOfficialQuote(input: {
   ];
   if (thrProduct) {
     invoiceLines.push({
-      productId: thrProduct.id,
-      label: "Frais THR",
-      quantity: 1,
-      unit: "unité",
-      rawCurrencyUnitPrice: "0.00",
-      vatRate: "FR_200",
-      description: THR_DESCRIPTION,
+      productId: thrProduct.id, label: "Frais THR", quantity: 1, unit: "unité",
+      rawCurrencyUnitPrice: "0.00", vatRate: "FR_200", description: THR_DESCRIPTION,
     });
   }
   if (fournituresProduct) {
     invoiceLines.push({
-      productId: fournituresProduct.id,
-      label: "Fournitures",
-      quantity: 1,
-      unit: "unité",
-      rawCurrencyUnitPrice: "0.00",
-      vatRate: "FR_200",
-      description: FOURNITURES_DESCRIPTION,
+      productId: fournituresProduct.id, label: "Fournitures", quantity: 1, unit: "unité",
+      rawCurrencyUnitPrice: "0.00", vatRate: "FR_200", description: FOURNITURES_DESCRIPTION,
     });
   }
 
-  // 3. Création du devis.
-  // NB: pas de lookup par external_reference — /quotes ne filtre que sur
-  // id/customer_id/status. L'idempotency est gérée côté CRM (deal.pennylane_quote_id
-  // checké par l'endpoint avant appel). external_reference reste pour la traçabilité.
-  const externalRef = `LCA-DEAL-${deal.id}`;
+  // external_reference UNIQUE par préparation (token base36). Raison : un quote
+  // Pennylane n'est PAS supprimable (DELETE /quotes = 404). Si on gardait un ref
+  // stable LCA-DEAL-{id}, régénérer après un rejet retomberait sur le 422 → reuse
+  // de l'ancien quote (données périmées). Un ref unique → toujours un quote frais.
+  // Le webhook Firma lit le NAME (buildDevisName, id propre) → non impacté.
+  // L'idempotency normale reste assurée côté CRM par deal.pennylane_quote_id
+  // (l'endpoint 409 si déjà set ; le cron filtre .is("pennylane_quote_id", null)).
+  const externalRef = `LCA-DEAL-${deal.id}-${Date.now().toString(36)}`;
   const now = new Date();
   const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  let quote;
-  try {
-    quote = await createQuote({
-      date: isoDate(now),
-      deadline: isoDate(deadline),
-      customerId: customer.id,
-      externalReference: externalRef,
-      pdfInvoiceSubject: formationType,
-      pdfDescription: description,
-      invoiceLines,
-    });
-  } catch (e) {
-    // 422 = external_reference déjà pris (Pennylane enforce l'idempotency) →
-    // récupérer le devis existant via customer_id (filtre external_reference interdit).
-    if (e instanceof PennylaneError && e.status === 422) {
-      const existing = await findQuoteByCustomerAndRef(customer.id, externalRef);
-      if (!existing) throw e;
-      quote = existing;
-    } else {
-      throw e;
-    }
-  }
+  const quote = await createQuote({
+    date: isoDate(now), deadline: isoDate(deadline), customerId: customer.id,
+    externalReference: externalRef, pdfInvoiceSubject: formationType,
+    pdfDescription: description, invoiceLines,
+  });
 
   if (!quote.public_file_url) {
     throw new AdvQuoteError(
-      `Quote ${quote.id} créé mais public_file_url absent — impossible de générer le PDF à signer.`,
+      `Quote ${quote.id} créé mais public_file_url absent — impossible de générer le PDF.`,
     );
   }
-
-  // 4. Téléchargement du PDF + garde magic %PDF (anti-buffer corrompu)
-  const pdfBase64 = await downloadPdfAsBase64(quote.public_file_url);
-  const magic = Buffer.from(pdfBase64.slice(0, 16), "base64")
-    .slice(0, 5)
-    .toString("ascii");
-  if (!magic.startsWith("%PDF-")) {
-    throw new AdvQuoteError(
-      `PDF Pennylane invalide (magic="${magic}") — public_file_url a probablement renvoyé une erreur HTML/JSON.`,
-    );
-  }
-
-  // 5. Signing request Firma (atomic create-and-send)
-  const invoiceNumber = quote.invoice_number ?? null;
-  const signing = await createAndSendSigningRequest({
-    name: buildDevisName(invoiceNumber ?? `DEV-${quote.id}`, company.name ?? "Client", deal.id),
-    description: `Devis ${invoiceNumber ?? quote.id} à signer — La Closing Académie®`,
-    documentBase64: pdfBase64,
-    recipient: {
-      firstName: contact.first_name ?? "",
-      lastName: contact.last_name ?? "",
-      // mode test : redirige l'email de signature vers l'adresse de test
-      email: resolveRecipientEmail(email),
-    },
-  });
 
   return {
     customerId: customer.id,
     pennylaneQuoteId: quote.id,
-    invoiceNumber,
+    invoiceNumber: quote.invoice_number ?? null,
     publicFileUrl: quote.public_file_url,
-    firmaSigningId: signing.id,
-    signingLink: signing.first_signer?.signing_link ?? null,
   };
+}
+
+/**
+ * Envoie un devis déjà créé en signature Firma. Télécharge le PDF depuis
+ * public_file_url, vérifie le magic %PDF, crée la signing request atomic.
+ */
+export async function sendQuoteSignature(input: {
+  dealId: string;
+  publicFileUrl: string;
+  invoiceNumber: string | null;
+  pennylaneQuoteId: number;
+  companyName: string | null;
+  contact: QuoteContactInput;
+}): Promise<{ firmaSigningId: string; signingLink: string | null }> {
+  const { dealId, publicFileUrl, invoiceNumber, pennylaneQuoteId, companyName, contact } = input;
+  const email = contact.email?.trim();
+  if (!email) throw new AdvQuoteError("Contact email manquant — impossible d'envoyer la signature.");
+
+  const pdfBase64 = await downloadPdfAsBase64(publicFileUrl);
+  const magic = Buffer.from(pdfBase64.slice(0, 16), "base64").slice(0, 5).toString("ascii");
+  if (!magic.startsWith("%PDF-")) {
+    throw new AdvQuoteError(
+      `PDF Pennylane invalide (magic="${magic}") — public_file_url a renvoyé une erreur.`,
+    );
+  }
+
+  const signing = await createAndSendSigningRequest({
+    name: buildDevisName(invoiceNumber ?? `DEV-${pennylaneQuoteId}`, companyName ?? "Client", dealId),
+    description: `Devis ${invoiceNumber ?? pennylaneQuoteId} à signer — La Closing Académie®`,
+    documentBase64: pdfBase64,
+    recipient: {
+      firstName: contact.first_name ?? "",
+      lastName: contact.last_name ?? "",
+      email: resolveRecipientEmail(email),
+    },
+  });
+
+  return { firmaSigningId: signing.id, signingLink: signing.first_signer?.signing_link ?? null };
 }

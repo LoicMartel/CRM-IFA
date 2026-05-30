@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canCreateQuote, getCurrentMember } from "@/lib/adv-permissions";
 import { triggerN8nWebhook } from "@/lib/n8n-client";
-import { runDealQuote } from "@/lib/adv-quote-runner";
+import { prepareDealQuote } from "@/lib/adv-quote-runner";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     await serviceClient.from("activities").insert({
       type: "note",
       title: "[ADV] Envoi du devis planifié",
-      description: `Envoi du devis planifié pour le ${when.toLocaleDateString("fr-FR")} (deal "${deal.name ?? deal.id}"). Le devis sera généré et envoyé automatiquement ce jour-là.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
+      description: `Envoi du devis planifié pour le ${when.toLocaleDateString("fr-FR")} (deal "${deal.name ?? deal.id}"). Le devis sera généré et placé en validation ce jour-là.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
       team_member_id: member.id,
@@ -133,8 +133,8 @@ export async function POST(req: Request) {
     });
   }
 
-  // --- Chemin intra-CRM : Pennylane + Firma direct (runner partagé avec le cron) ---
-  const result = await runDealQuote({
+  // --- Chemin intra-CRM : Pennylane direct (runner partagé avec le cron) ---
+  const result = await prepareDealQuote({
     serviceClient,
     deal: {
       id: deal.id,
@@ -157,8 +157,7 @@ export async function POST(req: Request) {
     deal_id: deal.id,
     pennylane_quote_id: result.pennylaneQuoteId,
     invoice_number: result.invoiceNumber,
-    signing_link: result.signingLink,
-    message: "Devis créé et email de signature envoyé au client.",
+    message: "Devis préparé — à valider dans « Pièces à valider » avant envoi.",
     warning: result.warning ?? undefined,
   });
 }
