@@ -7,7 +7,7 @@ import {
 } from "@/lib/pennylane-client";
 import { resolveRecipientEmail } from "@/lib/adv-quote";
 import { billingAutoMode, isOpcoConventionSatisfied } from "@/lib/adv-billing-schedule";
-import { generateBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
+import { generateBillingMonthInvoice, prepareBillingMonthInvoiceDraft, monthLabelFr, AdvInvoiceError } from "@/lib/adv-invoice";
 import { prepareDealQuote } from "@/lib/adv-quote-runner";
 
 const supabase = createClient(
@@ -84,15 +84,6 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      if (mode === "validate") {
-        await supabase
-          .from("billing_months")
-          .update({ status: "a_valider", updated_at: nowIso })
-          .eq("id", bm.id);
-        summary.scheduledFlagged++;
-        continue;
-      }
-
       const { data: deal } = await supabase
         .from("deals")
         .select("id, name, contact_id, company_id, convention_signed_at")
@@ -125,6 +116,34 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
+      if (mode === "validate") {
+        // Gate : crée un DRAFT (aperçu) + flag a_valider, SANS envoi. Naznine valide dans /a-valider.
+        const draft = await prepareBillingMonthInvoiceDraft({
+          deal: { id: deal.id, name: deal.name, amount: bm.amount, training_days: null, notes: null },
+          contact,
+          company,
+          billingMonth: { id: bm.id, month: bm.month, amount: bm.amount },
+        });
+        await supabase
+          .from("billing_months")
+          .update({
+            status: "a_valider",
+            pennylane_invoice_id: String(draft.pennylaneInvoiceId),
+            deal_id: deal.id,
+            updated_at: nowIso,
+          })
+          .eq("id", bm.id);
+        summary.scheduledFlagged++;
+        const { notifyPieceToValidate } = await import("@/lib/adv-notify");
+        await notifyPieceToValidate(supabase, {
+          type: "facture",
+          label: `${entry.client_name ?? deal.name ?? deal.id} — ${monthLabelFr(bm.month)}`,
+          dealId: deal.id,
+        });
+        continue;
+      }
+
+      // mode auto (bypass délibéré) : facture directe + envoi.
       const result = await generateBillingMonthInvoice({
         // L'invoice line est dérivée de billingMonth.amount ; deal.amount n'est pas lu
         // par generateBillingMonthInvoice mais QuoteDealInput l'exige → on y met bm.amount.
@@ -148,9 +167,7 @@ export async function GET(req: NextRequest) {
       // Audit trail (cron context : pas de membre connecté → team_member_id null).
       // Un échec de log ne doit JAMAIS annuler une facture déjà créée → catch isolé.
       try {
-        const monthLabel = bm.month
-          ? new Date(bm.month).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
-          : "échéance";
+        const monthLabel = monthLabelFr(bm.month);
         await supabase.from("activities").insert({
           type: "note",
           title: "[ADV cron] Échéance facturée automatiquement",

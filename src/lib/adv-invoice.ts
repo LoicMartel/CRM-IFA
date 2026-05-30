@@ -17,6 +17,8 @@ import {
   createInvoice,
   findInvoiceByCustomerAndRef,
   sendInvoiceByEmail,
+  finalizeInvoice,
+  getInvoice,
   listProducts,
   PennylaneError,
   type QuoteLine,
@@ -53,7 +55,7 @@ export class AdvInvoiceError extends Error {
   }
 }
 
-function monthLabelFr(month: string | null): string {
+export function monthLabelFr(month: string | null): string {
   if (!month) return "échéance";
   return new Date(month).toLocaleDateString("fr-FR", {
     month: "long",
@@ -220,4 +222,109 @@ export async function generateDealInvoice(input: {
     pdfInvoiceSubject: `Facture — Formation Closing — ${company.name ?? "Client"}`,
     pdfDescription: `Deal LCA: ${deal.name ?? deal.id}\nFormation: ${trainingDays} jour(s)\nMontant total HT: ${amount.toFixed(2)} EUR`,
   });
+}
+
+/**
+ * Construit les invoice_lines d'une échéance (factorisé depuis generateBillingMonthInvoice).
+ */
+async function billingMonthLines(
+  deal: QuoteDealInput,
+  billingMonth: BillingMonthInput,
+): Promise<{
+  lines: QuoteLine[];
+  pdfInvoiceSubject: string;
+  pdfDescription: string;
+  externalRef: string;
+  label: string;
+}> {
+  const amount = Number(billingMonth.amount ?? 0);
+  if (!amount || amount <= 0)
+    throw new AdvInvoiceError(`Montant d'échéance invalide (${billingMonth.amount}).`);
+  const product = await resolveFormationProduct();
+  const label = monthLabelFr(billingMonth.month);
+  return {
+    label,
+    externalRef: `LCA-INV-${deal.id}-BM-${billingMonth.id}`,
+    lines: [
+      {
+        productId: product?.id,
+        label: `Échéance ${label} — ${deal.name ?? "Formation"}`,
+        quantity: 1,
+        unit: "forfait",
+        rawCurrencyUnitPrice: amount.toFixed(2),
+        vatRate: "FR_200",
+      },
+    ],
+    pdfInvoiceSubject: `Facture échéance ${label}`,
+    pdfDescription: `Échéance: ${label}\nMontant échéance HT: ${amount.toFixed(2)} EUR`,
+  };
+}
+
+/**
+ * Crée un DRAFT d'invoice pour l'échéance (aperçu avant validation). Idempotent
+ * sur LCA-INV-{dealId}-BM-{bmId}. Ne fait PAS d'envoi.
+ */
+export async function prepareBillingMonthInvoiceDraft(input: {
+  deal: QuoteDealInput;
+  contact: QuoteContactInput;
+  company: QuoteCompanyInput;
+  billingMonth: BillingMonthInput;
+}): Promise<{ pennylaneInvoiceId: number; invoiceNumber: string | null }> {
+  const { deal, contact, company, billingMonth } = input;
+  const email = requireEmail(contact);
+  const customer = await resolveCompanyCustomer(company, contact, email);
+  const built = await billingMonthLines(deal, billingMonth);
+
+  const now = new Date();
+  const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  let invoice;
+  try {
+    invoice = await createInvoice({
+      date: isoDate(now),
+      deadline: isoDate(deadline),
+      customerId: customer.id,
+      externalReference: built.externalRef,
+      pdfInvoiceSubject: built.pdfInvoiceSubject,
+      pdfDescription: built.pdfDescription,
+      specialMention: SPECIAL_MENTION,
+      invoiceLines: built.lines,
+      draft: true,
+    });
+  } catch (e) {
+    if (e instanceof PennylaneError && e.status === 422) {
+      const existing = await findInvoiceByCustomerAndRef(customer.id, built.externalRef);
+      if (!existing) throw e;
+      invoice = existing;
+    } else {
+      throw e;
+    }
+  }
+  return { pennylaneInvoiceId: invoice.id, invoiceNumber: invoice.invoice_number ?? null };
+}
+
+/**
+ * Finalise un draft + envoie l'email. Validation Naznine.
+ * Transition draft→finalized via PUT draft:false (à confirmer live-test).
+ */
+export async function finalizeAndSendBillingMonthInvoice(input: {
+  pennylaneInvoiceId: number;
+  recipientEmail: string;
+}): Promise<{ invoiceNumber: string | null; emailSent: boolean }> {
+  const finalized = await finalizeInvoice(input.pennylaneInvoiceId);
+  let emailSent = false;
+  try {
+    await sendInvoiceByEmail(input.pennylaneInvoiceId, [resolveRecipientEmail(input.recipientEmail)], {
+      maxAttempts: 1,
+    });
+    emailSent = true;
+  } catch (e) {
+    if (!(e instanceof PennylaneError)) throw e; // 409 PDF pas prêt → cron retry
+  }
+  return { invoiceNumber: finalized.invoice_number ?? null, emailSent };
+}
+
+/** Récupère le public_file_url du PDF d'un draft (pour l'aperçu inbox). null si pas prêt. */
+export async function getInvoicePdfUrl(invoiceId: number): Promise<string | null> {
+  const inv = await getInvoice(invoiceId);
+  return inv.public_file_url ?? null;
 }
