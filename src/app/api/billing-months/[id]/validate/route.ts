@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canValidateAdv, getCurrentMember } from "@/lib/adv-permissions";
-import { finalizeAndSendBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
+import { generateBillingMonthInvoice, AdvInvoiceError } from "@/lib/adv-invoice";
+import { deleteInvoice, PennylaneError } from "@/lib/pennylane-client";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +18,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 
   const { data: bm } = await serviceClient
     .from("billing_months")
-    .select("id, status, month, pennylane_invoice_id, deal_id, billing_entry_id")
+    .select("id, status, month, amount, pennylane_invoice_id, deal_id, billing_entry_id")
     .eq("id", bmId)
     .maybeSingle();
   if (!bm) return NextResponse.json({ error: `Échéance ${bmId} introuvable` }, { status: 404 });
@@ -27,14 +28,8 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       { status: 409 },
     );
   }
-  if (!bm.pennylane_invoice_id) {
-    return NextResponse.json(
-      { error: "Draft Pennylane absent — régénérer d'abord" },
-      { status: 422 },
-    );
-  }
 
-  // Email destinataire (deal -> contact)
+  // Résolution deal -> contact/company (pour recréer la facture finalisée).
   let dealId = bm.deal_id as string | null;
   if (!dealId) {
     const { data: entry } = await serviceClient
@@ -44,44 +39,68 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       .maybeSingle();
     dealId = entry?.deal_id ?? null;
   }
-  const { data: deal } = dealId
-    ? await serviceClient
-        .from("deals")
-        .select("contact_id, company_id, name")
-        .eq("id", dealId)
-        .maybeSingle()
-    : { data: null };
-  const { data: contact } = deal?.contact_id
-    ? await serviceClient
-        .from("contacts")
-        .select("email")
-        .eq("id", deal.contact_id)
-        .maybeSingle()
-    : { data: null };
-  const email = contact?.email;
-  if (!email)
-    return NextResponse.json({ error: "Email du contact introuvable" }, { status: 422 });
+  if (!dealId) return NextResponse.json({ error: "Deal introuvable pour l'échéance" }, { status: 422 });
+
+  const { data: deal } = await serviceClient
+    .from("deals")
+    .select("id, name, contact_id, company_id")
+    .eq("id", dealId)
+    .maybeSingle();
+  if (!deal) return NextResponse.json({ error: `Deal ${dealId} introuvable` }, { status: 404 });
+  const { data: contact } = await serviceClient
+    .from("contacts")
+    .select("first_name, last_name, email, phone")
+    .eq("id", deal.contact_id)
+    .maybeSingle();
+  const { data: company } = await serviceClient
+    .from("companies")
+    .select("id, name, siret, address, city, country")
+    .eq("id", deal.company_id)
+    .maybeSingle();
+  if (!contact || !company)
+    return NextResponse.json({ error: "Contact ou entreprise introuvable" }, { status: 422 });
+
+  // Pennylane n'autorise pas PUT draft:false (400 NotExistPropertyDefinition). On supprime
+  // donc le draft d'aperçu (draft = supprimable) puis on crée la facture FINALISÉE
+  // directement (createInvoice draft:false, chemin éprouvé E2E) + send_by_email.
+  if (bm.pennylane_invoice_id) {
+    try {
+      await deleteInvoice(Number(bm.pennylane_invoice_id));
+    } catch (e) {
+      // 422/404 = déjà supprimé / non draft → on continue (l'idempotency external_reference
+      // de generateBillingMonthInvoice récupèrera une éventuelle facture existante).
+      if (!(e instanceof PennylaneError && (e.status === 422 || e.status === 404))) {
+        return NextResponse.json(
+          { error: `Suppression du draft échouée : ${e instanceof Error ? e.message : String(e)}` },
+          { status: 502 },
+        );
+      }
+    }
+  }
 
   try {
-    const r = await finalizeAndSendBillingMonthInvoice({
-      pennylaneInvoiceId: Number(bm.pennylane_invoice_id),
-      recipientEmail: email,
+    const r = await generateBillingMonthInvoice({
+      deal: { id: deal.id, name: deal.name, amount: bm.amount, training_days: null, notes: null },
+      contact,
+      company,
+      billingMonth: { id: bm.id, month: bm.month, amount: bm.amount },
     });
     await serviceClient
       .from("billing_months")
       .update({
         status: "facture",
+        pennylane_invoice_id: String(r.pennylaneInvoiceId),
         invoice_email_sent: r.emailSent,
-        deal_id: dealId,
+        deal_id: deal.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", bmId);
     await serviceClient.from("activities").insert({
       type: "note",
       title: "[ADV] Facture validée et émise",
-      description: `Échéance validée par la Finance : facture ${r.invoiceNumber ?? bm.pennylane_invoice_id} finalisée${r.emailSent ? " + email envoyé" : " (email en attente, cron retry)"}.`,
-      contact_id: deal?.contact_id ?? null,
-      company_id: deal?.company_id ?? null,
+      description: `Échéance validée par la Finance : facture ${r.invoiceNumber ?? r.pennylaneInvoiceId} émise${r.emailSent ? " + email envoyé" : " (email en attente, cron retry)"}.`,
+      contact_id: deal.contact_id,
+      company_id: deal.company_id,
       team_member_id: member.id,
       created_at: new Date().toISOString(),
     });

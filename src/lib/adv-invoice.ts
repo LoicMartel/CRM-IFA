@@ -17,7 +17,6 @@ import {
   createInvoice,
   findInvoiceByCustomerAndRef,
   sendInvoiceByEmail,
-  finalizeInvoice,
   getInvoice,
   listProducts,
   PennylaneError,
@@ -303,30 +302,11 @@ export async function prepareBillingMonthInvoiceDraft(input: {
 }
 
 /**
- * Finalise un draft + envoie l'email. Validation Naznine.
- * Transition draft→finalized via PUT draft:false (à confirmer live-test).
+ * Validation facture (Naznine) = supprimer le draft d'aperçu + créer la facture
+ * FINALISÉE directement. Implémenté côté endpoint billing-months/[id]/validate
+ * (delete draft + generateBillingMonthInvoice) car Pennylane refuse PUT draft:false
+ * (400 NotExistPropertyDefinition) — la transition draft→finalized n'existe pas en v2.
  */
-export async function finalizeAndSendBillingMonthInvoice(input: {
-  pennylaneInvoiceId: number;
-  recipientEmail: string;
-}): Promise<{ invoiceNumber: string | null; emailSent: boolean }> {
-  const finalized = await finalizeInvoice(input.pennylaneInvoiceId);
-  if (finalized.draft !== false) {
-    throw new AdvInvoiceError(
-      `Facture ${input.pennylaneInvoiceId} toujours en draft après finalize (PUT draft:false non honoré par Pennylane) — fallback delete+recreate à implémenter (cf live-test).`,
-    );
-  }
-  let emailSent = false;
-  try {
-    await sendInvoiceByEmail(input.pennylaneInvoiceId, [resolveRecipientEmail(input.recipientEmail)], {
-      maxAttempts: 1,
-    });
-    emailSent = true;
-  } catch (e) {
-    if (!(e instanceof PennylaneError)) throw e; // 409 PDF pas prêt → cron retry
-  }
-  return { invoiceNumber: finalized.invoice_number ?? null, emailSent };
-}
 
 /** Récupère le public_file_url du PDF d'un draft (pour l'aperçu inbox). null si pas prêt. */
 export async function getInvoicePdfUrl(invoiceId: number): Promise<string | null> {
