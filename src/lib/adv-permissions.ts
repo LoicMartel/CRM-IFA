@@ -96,6 +96,14 @@ export function canInvoice(member: CurrentMember | null): boolean {
 }
 
 /**
+ * Peut valider/rejeter une pièce ADV dans l'inbox "Pièces à valider" ?
+ * Même périmètre que la facturation : Admin OU rôle "Finance" (Naznine).
+ */
+export function canValidateAdv(member: CurrentMember | null): boolean {
+  return canInvoice(member);
+}
+
+/**
  * Peut consulter le statut ADV (lecture seule) ?
  * Tout team_member authentifié.
  */

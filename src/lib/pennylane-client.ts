@@ -123,6 +123,7 @@ export interface PennylaneInvoice {
   draft?: boolean;
   paid?: boolean;
   date?: string;
+  public_file_url?: string;
   currency_amount?: string;
   currency_amount_before_tax?: string;
   currency_tax?: string;
@@ -421,6 +422,33 @@ export async function findInvoiceByCustomerAndRef(
     { method: "GET" },
   );
   return res.items.find((i) => i.external_reference === externalRef) ?? null;
+}
+
+/** GET /v2/customer_invoices/{id} — récupère une invoice (dont public_file_url du PDF). */
+export async function getInvoice(invoiceId: number): Promise<PennylaneInvoice> {
+  return pennylaneFetch<PennylaneInvoice>(`/customer_invoices/${invoiceId}`, {
+    method: "GET",
+  });
+}
+
+/**
+ * DELETE /v2/customer_invoices/{id} — supprime un DRAFT (draft only, cf rule §14).
+ * Sur une invoice finalisée → 422 "only applicable for draft invoices".
+ */
+export async function deleteInvoice(invoiceId: number): Promise<void> {
+  await pennylaneFetch<null>(`/customer_invoices/${invoiceId}`, { method: "DELETE" });
+}
+
+/**
+ * Finalise un draft : PUT /v2/customer_invoices/{id} draft:false.
+ * ⚠️ Transition draft→finalized à confirmer en live-test (cf plan, fallback
+ * delete+recreate si le PUT n'est pas supporté).
+ */
+export async function finalizeInvoice(invoiceId: number): Promise<PennylaneInvoice> {
+  return pennylaneFetch<PennylaneInvoice>(`/customer_invoices/${invoiceId}`, {
+    method: "PUT",
+    body: JSON.stringify({ draft: false }),
+  });
 }
 
 /**
