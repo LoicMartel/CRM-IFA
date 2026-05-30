@@ -203,6 +203,7 @@ export interface FirmaSignedEvent {
 export interface ParsedSignedWebhook {
   signingRequestId: string;
   dealId: string | null;
+  docType: "devis" | "convention" | null;
   signerName: string | null;
   signerEmail: string | null;
   completedAt: string | null;
@@ -217,11 +218,14 @@ export function parseSignedWebhook(
 ): ParsedSignedWebhook {
   const sr = body.data?.signing_request;
   const firstSigner = body.data?.recipients?.[0];
-  const dealId = sr?.name?.match(/LCA-DEAL-([a-zA-Z0-9-]+)/)?.[1] ?? null;
+  const match = sr?.name?.match(/LCA-(DEAL|CONV)-([a-zA-Z0-9-]+)/);
+  const docType = match ? (match[1] === "CONV" ? "convention" : "devis") : null;
+  const dealId = match?.[2] ?? null;
 
   return {
     signingRequestId: sr?.id ?? "",
     dealId,
+    docType,
     signerName: firstSigner?.name ?? null,
     signerEmail: firstSigner?.email ?? null,
     completedAt: sr?.completed_at ?? null,
@@ -235,4 +239,9 @@ export function buildDevisName(
   dealId: string,
 ): string {
   return `Devis ${invoiceNumber} - ${companyName} (LCA-DEAL-${dealId})`;
+}
+
+/** Construit un name traçable pour la convention de formation. */
+export function buildConventionName(companyName: string, dealId: string): string {
+  return `Convention de formation — ${companyName} (LCA-CONV-${dealId})`;
 }
