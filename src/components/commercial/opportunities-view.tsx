@@ -34,7 +34,7 @@ const stageColors: Record<string, { bg: string; text: string }> = {
 };
 
 const OPP_STAGES = ["opportunities"];
-const PIPE_STAGES = ["quote_to_send", "quote_sent", "opco_deposit", "quote_signed"];
+const PIPE_STAGES = ["quote_to_send", "quote_to_validate", "quote_sent", "opco_deposit", "quote_signed"];
 
 export function OpportunitiesView({ deals }: { deals: Deal[] }) {
   const router = useRouter();
@@ -76,7 +76,7 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
   const totalDays = filtered.reduce((s, d) => s + (Number(d.training_days) || 0), 0);
   const oppCount = filtered.filter(d => OPP_STAGES.includes(d.stage)).length;
   const pipeCount = filtered.filter(d => PIPE_STAGES.includes(d.stage)).length;
-  const devisCount = filtered.filter(d => d.stage === "quote_to_send" || d.stage === "quote_sent").length;
+  const devisCount = filtered.filter(d => d.stage === "quote_to_send" || d.stage === "quote_to_validate" || d.stage === "quote_sent").length;
 
   return (
     <div className="space-y-6">
