@@ -9,6 +9,7 @@ import {
   Calendar,
   CalendarCheck,
   CalendarDays,
+  ClipboardCheck,
   CreditCard,
   FolderOpen,
   GraduationCap,
@@ -68,6 +69,7 @@ const marketingItems = [
 ];
 
 const financeItems = [
+  { title: "Pièces à valider", href: "/a-valider", icon: ClipboardCheck },
   { title: "Facturation", href: "/invoices", icon: Receipt },
   { title: "Suivi Financier", href: "/suivi-financier", icon: TrendingUp },
   { title: "Rapports Facturation", href: "/rapports-facturation", icon: Target },

@@ -12,13 +12,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
-import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator } from "lucide-react";
+import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, CalendarClock, FileSignature } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
+import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
+import { ConventionModal } from "@/components/finance/convention-modal";
+import { QuoteSendModal } from "./quote-send-modal";
 
 interface Deal {
   id: string;
@@ -110,10 +113,18 @@ export function DealsBoard({
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
-  const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
+  const { isRestrictedExterne, isReadOnly, isAdmin, roles } = useCurrentRoles();
+
+  const canCreateQuoteFor = (deal: Deal) =>
+    isAdmin || (currentMemberId !== null && deal.owner_id === currentMemberId);
+  const canInvoiceDeal = () => isAdmin || roles.includes("Finance");
+
   const [open, setOpen] = useState(false);
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [planModalDeal, setPlanModalDeal] = useState<Deal | null>(null);
+  const [conventionDeal, setConventionDeal] = useState<Deal | null>(null);
+  const [quoteSendDeal, setQuoteSendDeal] = useState<Deal | null>(null);
   const [cotationOpen, setCotationOpen] = useState(false);
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -518,6 +529,24 @@ export function DealsBoard({
                     }}
                   >
                     <div style={{ position: "absolute", top: 4, right: 4, display: "flex", gap: 0 }}>
+                      {(["opportunities", "quote_to_send"].includes(deal.stage)) && canCreateQuoteFor(deal) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setQuoteSendDeal(deal); }}
+                          title="Préparer le devis"
+                          style={{ color: "#e8632b", background: "none", border: "none", cursor: "pointer", padding: 1 }}
+                        >
+                          <FileText style={{ width: 10, height: 10 }} />
+                        </button>
+                      )}
+                      {(["quote_signed", "opco_deposit", "closed_won"].includes(deal.stage)) && canInvoiceDeal() && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPlanModalDeal(deal); }}
+                          title="Programmer la facturation"
+                          style={{ color: "#27ae60", background: "none", border: "none", cursor: "pointer", padding: 1 }}
+                        >
+                          <CalendarClock style={{ width: 10, height: 10 }} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditDeal(deal); }}
                         style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 1 }}
@@ -668,7 +697,7 @@ export function DealsBoard({
 
       {/* Deal Detail Popup */}
       <Dialog open={!!selectedDeal} onOpenChange={(o) => { if (!o) setSelectedDeal(null); }}>
-        <DialogContent style={{ maxWidth: 600 }}>
+        <DialogContent style={{ maxWidth: 600, maxHeight: "90vh" }}>
           <DialogHeader>
             <DialogTitle style={{ fontSize: 18, color: "#1a2a3a" }}>
               {selectedDeal?.name}
@@ -677,7 +706,7 @@ export function DealsBoard({
           {selectedDeal && (() => {
             const sc = stageColors[selectedDeal.stage] ?? { bg: "#f0f0f0", text: "#666", bar: "#999" };
             return (
-              <div className="space-y-4" style={{ marginTop: 8 }}>
+              <div className="space-y-4" style={{ marginTop: 8, maxHeight: "calc(90vh - 90px)", overflowY: "auto", paddingRight: 6 }}>
                 {/* Stage badge */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span style={{ background: sc.bg, color: sc.text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
@@ -852,9 +881,6 @@ export function DealsBoard({
                         onChange={(e) => handleUploadDoc(e, selectedDeal.id)}
                       />
                     </label>
-                    <button style={{ height: 32, borderRadius: 6, background: "white", border: "1px solid #2ecc71", color: "#2e7d32", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      Pennylane
-                    </button>
                   </div>
 
                   {/* Document list */}
@@ -904,6 +930,32 @@ export function DealsBoard({
                 </div>
 
                 {/* Actions */}
+                {(["quote_signed", "opco_deposit", "closed_won"].includes(selectedDeal.stage)) && canInvoiceDeal() && (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setPlanModalDeal(selectedDeal)}
+                      style={{ flex: 1, background: "#e8632b", color: "white" }}
+                    >
+                      <CalendarClock className="h-4 w-4 mr-2" /> Programmer la facturation
+                    </Button>
+                    <Button
+                      onClick={() => setConventionDeal(selectedDeal)}
+                      variant="outline"
+                      style={{ flex: 1, borderColor: "#e8632b", color: "#e8632b" }}
+                    >
+                      <FileSignature className="h-4 w-4 mr-2" /> Gérer la convention
+                    </Button>
+                  </div>
+                )}
+                {(["opportunities", "quote_to_send"].includes(selectedDeal.stage)) && canCreateQuoteFor(selectedDeal) && (
+                  <Button
+                    onClick={() => setQuoteSendDeal(selectedDeal)}
+                    className="w-full"
+                    style={{ background: "#e8632b", color: "white" }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" /> Préparer le devis
+                  </Button>
+                )}
                 <div className="flex gap-2">
                   <Button
                     onClick={() => { setSelectedDeal(null); openEditDeal(selectedDeal); }}
@@ -951,6 +1003,37 @@ export function DealsBoard({
         editQuotation={cotationDealId ? { id: "", company_name: deals.find(d => d.id === cotationDealId)?.companies?.name ?? "", contact_name: "", nb_learners: 1, nb_rise_up: 0, deal_id: cotationDealId, months: null, tjm_lca: 2200, base_coeff: 1, travel_coeff: 0.25, prep_coeff: 0.25, cost_per_day_presentiel: 350, rise_up_cost_per_license: 690, vt_duration_hours: 1, presentiel_hours_per_day: 8, notes: null } : null}
         onSaved={() => router.refresh()}
       />
+
+      {planModalDeal && (
+        <BillingPlanModal
+          dealId={planModalDeal.id}
+          dealName={planModalDeal.name}
+          dealAmount={planModalDeal.amount != null ? Number(planModalDeal.amount) : null}
+          defaultClientName={planModalDeal.companies?.name ?? planModalDeal.name}
+          onClose={() => setPlanModalDeal(null)}
+          onDone={() => { setPlanModalDeal(null); router.refresh(); }}
+        />
+      )}
+      {conventionDeal && (
+        <ConventionModal
+          dealId={conventionDeal.id}
+          dealName={conventionDeal.name}
+          dealAmount={conventionDeal.amount != null ? Number(conventionDeal.amount) : null}
+          companyName={conventionDeal.companies?.name ?? "—"}
+          contactName={conventionDeal.contacts ? `${conventionDeal.contacts.first_name} ${conventionDeal.contacts.last_name}`.trim() : "—"}
+          trainingDays={conventionDeal.training_days != null ? Number(conventionDeal.training_days) : null}
+          onClose={() => setConventionDeal(null)}
+          onDone={() => { setConventionDeal(null); router.refresh(); }}
+        />
+      )}
+      {quoteSendDeal && (
+        <QuoteSendModal
+          dealId={quoteSendDeal.id}
+          dealName={quoteSendDeal.name}
+          onClose={() => setQuoteSendDeal(null)}
+          onDone={() => { setQuoteSendDeal(null); setSelectedDeal(null); router.refresh(); }}
+        />
+      )}
     </>
   );
 }

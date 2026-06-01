@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Search, Plus, Trash2, Receipt, CreditCard, Clock, AlertTriangle, X, Edit,
-  ExternalLink, Upload, Download, FileText, ArrowUpDown, GripVertical,
+  ExternalLink, Upload, Download, FileText, ArrowUpDown, GripVertical, Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -65,7 +65,11 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }>
   facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé" },
   en_cours: { bg: "#bdd7ee", text: "#1f4e79", label: "En cours" },
   non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait" },
+  planifie: { bg: "#e7e0ff", text: "#5b21b6", label: "Planifié" },
+  a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider" },
 };
+
+const FACTURABLE_STATUSES: (BillingStatus | null)[] = ["non_fait", "en_cours", "planifie", "a_valider", null];
 
 const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
 
@@ -129,7 +133,8 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [editEntry, setEditEntry] = useState<BillingEntryData | null>(null);
 
   // Cell popover state
-  const [popoverCell, setPopoverCell] = useState<{ entryId: string; monthKey: string; monthId: string | null; notes: string; rect: DOMRect } | null>(null);
+  const [popoverCell, setPopoverCell] = useState<{ entryId: string; monthKey: string; monthId: string | null; notes: string; rect: DOMRect; dealId: string | null; status: BillingStatus | null; entryName: string } | null>(null);
+  const [facturing, setFacturing] = useState(false);
   // Inline edit state
   const [editingCell, setEditingCell] = useState<{ entryId: string; monthKey: string } | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -260,6 +265,31 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     const supabase = createClient();
     await supabase.from("billing_months").update({ notes: notes || null, updated_at: new Date().toISOString() }).eq("id", monthId);
     router.refresh();
+  }
+
+  async function factureBillingMonth(monthId: string, dealId: string | null, entryName: string) {
+    if (!dealId) {
+      alert(`Impossible de facturer : aucun deal lié à "${entryName}". Modifier le plan pour le rattacher à un deal.`);
+      return;
+    }
+    if (!confirm(`Créer une facture Pennylane pour cette échéance ?\n\nClient: ${entryName}\n\nCette action déclenche le workflow WF-005 qui génère et envoie la facture automatiquement.`)) return;
+    setFacturing(true);
+    try {
+      const res = await fetch(`/api/billing-months/${monthId}/facturer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dealId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Échec de la facturation");
+      alert(`Facture en cours de génération côté Pennylane.\nLe statut passera en "Facturé" dans quelques secondes.`);
+      setPopoverCell(null);
+      setTimeout(() => router.refresh(), 3000);
+    } catch (err) {
+      alert(`Erreur : ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setFacturing(false);
+    }
   }
 
   async function updateCellAmount(entryId: string, monthKey: string, newAmount: number) {
@@ -786,7 +816,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                               if (isReadOnly || isEditing || !md) return;
                               e.stopPropagation();
                               const rect = e.currentTarget.getBoundingClientRect();
-                              setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, notes: md.notes ?? "", rect });
+                              setPopoverCell({ entryId: entry.id, monthKey: mk.key, monthId: md.id, notes: md.notes ?? "", rect, dealId: entry.deal_id, status: md.status, entryName: entry.client_name });
                             }}
                             onDoubleClick={() => {
                               if (isReadOnly) return;
@@ -946,6 +976,27 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               <X className="h-3 w-3" />
             </button>
           </div>
+          {popoverCell.monthId && popoverCell.status === "a_valider" && (
+            <a href="/a-valider" style={{ display: "block", padding: "8px 12px", background: "#16a34a", color: "white", borderRadius: 6, textDecoration: "none", textAlign: "center", marginBottom: 8 }}>
+              Prévisualiser &amp; valider →
+            </a>
+          )}
+          {popoverCell.monthId && popoverCell.dealId && popoverCell.status !== "a_valider" && FACTURABLE_STATUSES.includes(popoverCell.status) && (
+            <button
+              onClick={() => factureBillingMonth(popoverCell.monthId!, popoverCell.dealId, popoverCell.entryName)}
+              disabled={facturing}
+              style={{
+                background: "#e8632b", color: "white", border: "none", cursor: facturing ? "wait" : "pointer",
+                padding: "7px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                opacity: facturing ? 0.6 : 1,
+              }}
+              title="Génère une facture Pennylane via WF-005 pour cette échéance"
+            >
+              <Send className="h-3 w-3" />
+              {facturing ? "Facturation en cours…" : "Facturer cette échéance"}
+            </button>
+          )}
           {popoverCell.monthId && (
             <div style={{ display: "flex", gap: 4 }}>
               <input

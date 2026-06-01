@@ -30,6 +30,7 @@ export async function updateSession(request: NextRequest) {
     "/login", "/auth", "/reset-password",
     "/booking", "/landing-page", "/landing-book-financement", "/book-financement-vsl", "/vsl", "/confirmation-reservation", "/confirmation-decouverte", "/confirmation-achat-book-financement", "/embed-form",
     "/api/booking", "/api/leads", "/api/meetings/notify", "/api/webhooks", "/api/voice", "/api/book-download",
+    "/api/cron", // self-authed via CRON_SECRET / vercel-cron user-agent — must bypass the login redirect (sinon le cron Vercel sans cookie est redirigé)
   ];
   const isPublic = publicPrefixes.some((p) => request.nextUrl.pathname.startsWith(p));
 

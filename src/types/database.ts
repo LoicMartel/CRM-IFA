@@ -7,7 +7,7 @@ export type OpportunityStage = "opportunité" | "pipe" | "gagné" | "perdu";
 export type LearnerStatus = "ancien" | "actuel" | "futur";
 export type DeliveryMode = "présentiel" | "distanciel";
 export type FundingType = "UP FRONT" | "OPCO" | "CPF" | "autre";
-export type BillingStatus = "encaisse" | "facture" | "en_cours" | "non_fait";
+export type BillingStatus = "encaisse" | "facture" | "en_cours" | "non_fait" | "planifie" | "a_valider";
 export type ActivityType = "appel" | "email" | "réunion" | "note" | "tâche" | "relance";
 export type Department = "ADMIN" | "MARKETING" | "PÉDAGOGIE" | "VENTE" | "RH";
 
@@ -143,6 +143,7 @@ export interface Deal {
   expected_close_date: string | null;
   close_date: string | null;
   stage_changed_at: string | null;
+  convention_signed_at: string | null;
   lost_reason: string | null;
   notes: string | null;
   created_at: string;
