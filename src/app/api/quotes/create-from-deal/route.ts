@@ -64,16 +64,6 @@ export async function POST(req: Request) {
     );
   }
 
-  if (deal.pennylane_quote_id && deal.stage !== "quote_to_validate") {
-    return NextResponse.json(
-      {
-        error: "Un devis Pennylane existe déjà pour ce deal",
-        pennylane_quote_id: deal.pennylane_quote_id,
-      },
-      { status: 409 },
-    );
-  }
-
   // Persiste les lignes éditées (source de vérité CRM). Si le client n'envoie rien,
   // on garde l'existant (deal.quote_lines) — pas d'écrasement.
   if (Array.isArray(body.lines)) {
