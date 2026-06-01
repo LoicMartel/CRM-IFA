@@ -68,9 +68,30 @@ export async function POST(req: Request) {
     );
   }
 
+  if (deal.pennylane_quote_id && deal.stage !== "quote_to_validate") {
+    return NextResponse.json(
+      {
+        error: "Un devis Pennylane existe déjà pour ce deal",
+        pennylane_quote_id: deal.pennylane_quote_id,
+      },
+      { status: 409 },
+    );
+  }
+
   // Persiste les lignes éditées (source de vérité CRM). Si le client n'envoie rien,
   // on garde l'existant (deal.quote_lines) — pas d'écrasement.
   if (Array.isArray(body.lines)) {
+    if (body.lines.length === 0) {
+      return NextResponse.json({ error: "Au moins une ligne est requise" }, { status: 400 });
+    }
+    const VALID_VAT = ["FR_200", "FR_100", "FR_055", "exempt"];
+    for (const l of body.lines) {
+      if (!l.label?.trim()) return NextResponse.json({ error: "Chaque ligne doit avoir un libellé" }, { status: 400 });
+      if (typeof l.quantity !== "number" || l.quantity <= 0) return NextResponse.json({ error: "Quantité invalide (> 0 requis)" }, { status: 400 });
+      const price = parseFloat(l.unit_price);
+      if (isNaN(price) || price < 0) return NextResponse.json({ error: `Prix invalide : "${l.unit_price}"` }, { status: 400 });
+      if (!VALID_VAT.includes(l.vat_rate)) return NextResponse.json({ error: `Taux TVA invalide : "${l.vat_rate}"` }, { status: 400 });
+    }
     await serviceClient
       .from("deals")
       .update({
@@ -85,19 +106,9 @@ export async function POST(req: Request) {
     deal.quote_pdf_description = body.description ?? null;
   }
 
-  if (deal.pennylane_quote_id && deal.stage !== "quote_to_validate") {
-    return NextResponse.json(
-      {
-        error: "Un devis Pennylane existe déjà pour ce deal",
-        pennylane_quote_id: deal.pennylane_quote_id,
-      },
-      { status: 409 },
-    );
-  }
-
   const nomenclatureWarning =
-    !deal.amount || Number(deal.amount) <= 0 || !deal.training_days
-      ? "Montant ou jours de formation manquant sur le deal."
+    !deal.amount || Number(deal.amount) <= 0
+      ? "Montant manquant sur le deal."
       : null;
 
   // --- Planification : enregistre la date, le cron pennylane-sync génère + envoie le jour venu ---

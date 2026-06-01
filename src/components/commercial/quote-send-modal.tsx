@@ -81,6 +81,10 @@ export function QuoteSendModal({
       alert("Au moins une ligne est requise.");
       return;
     }
+    if (lines.some((l) => !l.label?.trim())) {
+      alert("Chaque ligne doit avoir un libellé.");
+      return;
+    }
     if (mode === "scheduled" && !date) {
       alert("Choisis une date d'envoi.");
       return;
@@ -145,10 +149,10 @@ export function QuoteSendModal({
               </thead>
               <tbody>
                 {lines.map((l, i) => (
-                  <tr key={i}>
+                  <tr key={`${l.kind}-${l.product_ref ?? "free"}-${i}`}>
                     <td style={cell}><input style={input} value={l.label} onChange={(e) => updateLine(i, { label: e.target.value })} /></td>
                     <td style={cell}><input style={input} type="number" min={0} value={l.quantity} onChange={(e) => updateLine(i, { quantity: Number(e.target.value) })} /></td>
-                    <td style={cell}><input style={input} value={l.unit_price} onChange={(e) => updateLine(i, { unit_price: e.target.value })} /></td>
+                    <td style={cell}><input style={input} type="number" step="0.01" min="0" value={l.unit_price} onChange={(e) => updateLine(i, { unit_price: e.target.value })} /></td>
                     <td style={cell}>
                       <select style={input} value={l.vat_rate} onChange={(e) => updateLine(i, { vat_rate: e.target.value as QuoteLineDraft["vat_rate"] })}>
                         <option value="FR_200">20%</option>
