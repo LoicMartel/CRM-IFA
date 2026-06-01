@@ -102,6 +102,13 @@ const stageColors: Record<string, { bg: string; text: string; bar: string }> = {
 
 const kanbanStages: DealStage[] = ["opportunities", "quote_to_send", "quote_sent", "quote_signed", "opco_deposit", "closed_won", "closed_lost"];
 
+// Le stage ADV "quote_to_validate" (devis préparé, en attente de validation Finance —
+// trust gate) n'a pas de colonne dédiée : on le range dans la colonne "Devis à envoyer"
+// (quote_to_send), dont il hérite libellé + couleur. Sans ça le deal disparaît du board.
+function columnForStage(stage: string): DealStage {
+  return stage === "quote_to_validate" ? "quote_to_send" : (stage as DealStage);
+}
+
 export function DealsBoard({
   deals, teamMembers, companies, contacts, sources,
 }: {
@@ -401,7 +408,7 @@ export function DealsBoard({
   const totalPipeline = openDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
   const opportunityDeals = displayDeals.filter(d => d.stage === "opportunities");
   const totalOpportunities = opportunityDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
-  const pipeDisplayDeals = displayDeals.filter(d => ["quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage));
+  const pipeDisplayDeals = displayDeals.filter(d => ["quote_to_send", "quote_to_validate", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage));
   const totalPipe = pipeDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
   const wonDisplayDeals = displayDeals.filter(d => d.stage === "closed_won");
   const totalWon = wonDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
@@ -480,7 +487,7 @@ export function DealsBoard({
       {/* Kanban Board */}
       <div style={{ display: "flex", gap: 12, minHeight: 400, overflowX: "auto", paddingBottom: 8 }}>
         {kanbanStages.map((stage) => {
-          const stageDeals = displayDeals.filter((d) => d.stage === stage);
+          const stageDeals = displayDeals.filter((d) => columnForStage(d.stage) === stage);
           const total = stageDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
           const colors = stageColors[stage];
           return (
@@ -704,13 +711,13 @@ export function DealsBoard({
             </DialogTitle>
           </DialogHeader>
           {selectedDeal && (() => {
-            const sc = stageColors[selectedDeal.stage] ?? { bg: "#f0f0f0", text: "#666", bar: "#999" };
+            const sc = stageColors[columnForStage(selectedDeal.stage)] ?? { bg: "#f0f0f0", text: "#666", bar: "#999" };
             return (
               <div className="space-y-4" style={{ marginTop: 8, maxHeight: "calc(90vh - 90px)", overflowY: "auto", paddingRight: 6 }}>
                 {/* Stage badge */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span style={{ background: sc.bg, color: sc.text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
-                    {DEAL_STAGE_LABELS[selectedDeal.stage as DealStage] ?? selectedDeal.stage}
+                    {DEAL_STAGE_LABELS[columnForStage(selectedDeal.stage)] ?? selectedDeal.stage}
                   </span>
                   <span style={{ fontSize: 12, color: "#8399a9" }}>{selectedDeal.probability}% de probabilité</span>
                   {selectedDeal.stage_changed_at && (
