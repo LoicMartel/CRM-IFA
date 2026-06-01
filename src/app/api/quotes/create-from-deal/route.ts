@@ -164,6 +164,7 @@ export async function POST(req: Request) {
     ok: true,
     deal_id: deal.id,
     pennylane_quote_id: result.pennylaneQuoteId,
+    quote_number: result.pennylaneQuoteId,
     invoice_number: result.invoiceNumber,
     message: "Devis préparé — à valider dans « Pièces à valider » avant envoi.",
     warning: result.warning ?? undefined,

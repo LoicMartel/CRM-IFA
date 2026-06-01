@@ -24,7 +24,7 @@ export async function GET(
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
     .select(
-      "id, name, stage, amount, is_invoiced, is_paid, pennylane_quote_id, pennylane_invoice_id, contact_id, company_id, owner_id, training_days, created_at, updated_at",
+      "id, name, stage, amount, is_invoiced, is_paid, pennylane_quote_id, pennylane_invoice_id, contact_id, company_id, owner_id, training_days, created_at, updated_at, quote_number, firma_devis_signing_id",
     )
     .eq("id", dealId)
     .maybeSingle();
@@ -42,7 +42,12 @@ export async function GET(
     .eq("deal_id", dealId)
     .order("month", { ascending: true });
 
-  const quoteStatus = deal.pennylane_quote_id ? "emitted" : "none";
+  const quoteEmitted =
+    deal.stage === "quote_sent" ||
+    deal.stage === "quote_signed" ||
+    deal.firma_devis_signing_id != null;
+  const quoteToValidate = deal.stage === "quote_to_validate";
+  const quoteStatus = quoteEmitted ? "emitted" : quoteToValidate ? "to_validate" : "none";
   const invoiceStatus = deal.is_paid
     ? "paid"
     : deal.is_invoiced
@@ -59,6 +64,7 @@ export async function GET(
     quote: {
       status: quoteStatus,
       pennylane_quote_id: deal.pennylane_quote_id,
+      quote_number: deal.quote_number,
     },
     invoice: {
       status: invoiceStatus,

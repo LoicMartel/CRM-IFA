@@ -55,6 +55,7 @@ export async function renderDevisDocx(data: Record<string, unknown>): Promise<Bu
 
 /** Convertit un .docx arbitraire (édité) en PDF : upload comme template puis render. */
 export async function convertDocxToPdf(docx: Buffer): Promise<Buffer> {
+  if (!docx || docx.length === 0) throw new CarboneError("Devis .docx vide — conversion PDF impossible");
   const key = apiKey();
   const form = new FormData();
   form.append("template", new Blob([new Uint8Array(docx)]), "devis.docx");

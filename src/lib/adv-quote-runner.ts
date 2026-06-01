@@ -94,12 +94,6 @@ export async function prepareDealQuote(opts: {
       },
     });
 
-    await serviceClient.from("deals").update({
-      stage: "quote_to_validate",
-      quote_scheduled_send_at: null,
-      updated_at: now.toISOString(),
-    }).eq("id", deal.id);
-
     // Remplace l'ancien .docx devis (un seul devis courant dans les pièces).
     const { data: oldDocs } = await serviceClient.from("deal_documents")
       .select("id, file_path").eq("deal_id", deal.id).eq("document_type", "devis");
@@ -116,6 +110,12 @@ export async function prepareDealQuote(opts: {
       deal_id: deal.id, name: filename, file_path: storagePath,
       file_size: docx.length, file_type: DOCX_MIME, document_type: "devis",
     });
+
+    await serviceClient.from("deals").update({
+      stage: "quote_to_validate",
+      quote_scheduled_send_at: null,
+      updated_at: now.toISOString(),
+    }).eq("id", deal.id);
 
     await serviceClient.from("activities").insert({
       type: "note",
