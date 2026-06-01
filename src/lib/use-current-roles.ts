@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getCurrentMember } from "@/lib/current-member";
 
 export interface MemberPermissions {
   canViewCommercial: boolean;
@@ -49,25 +49,13 @@ export function useCurrentRoles() {
   const [info, setInfo] = useState<MemberInfo | null>(null);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    let active = true;
 
-      const { data: member } = await supabase
-        .from("team_members")
-        .select("id, first_name, last_name, roles, permissions")
-        .eq("auth_user_id", user.id)
-        .single();
+    getCurrentMember()
+      .then((m) => {
+        if (!active || !m) return;
 
-      const m = member ?? (await supabase
-        .from("team_members")
-        .select("id, first_name, last_name, roles, permissions")
-        .eq("email", user.email)
-        .single()).data;
-
-      if (m) {
-        const roles = (m.roles as string[]) ?? [];
+        const roles = m.roles ?? [];
         const isAdmin = roles.includes("Admin");
         const isExterne = roles.includes("Externe");
         const dbPerms = m.permissions as Partial<MemberPermissions> | null;
@@ -87,13 +75,16 @@ export function useCurrentRoles() {
         setInfo({
           id: m.id,
           roles,
-          firstName: m.first_name,
-          lastName: m.last_name,
+          firstName: m.firstName,
+          lastName: m.lastName,
           permissions: perms,
         });
-      }
-    }
-    load();
+      })
+      .catch(() => { /* transient failure: leave state unset, next mount retries */ });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const isAdmin = info?.roles.includes("Admin") ?? false;

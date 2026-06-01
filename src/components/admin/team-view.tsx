@@ -9,6 +9,7 @@ import { RichNotes } from "@/components/ui/rich-notes";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone } from "@/lib/utils";
 import { useCurrentRoles, DEFAULT_PERMISSIONS, type MemberPermissions } from "@/lib/use-current-roles";
+import { clearCurrentMemberCache } from "@/lib/current-member";
 
 type R = Record<string, unknown>;
 
@@ -108,6 +109,7 @@ export function TeamView({ members }: { members: R[] }) {
     setSavingPerms(true);
     const supabase = createClient();
     await supabase.from("team_members").update({ permissions: permsForm }).eq("id", permsMember.id as string);
+    clearCurrentMemberCache();
     setSavingPerms(false);
     setPermsMember(null);
     router.refresh();
@@ -159,7 +161,7 @@ export function TeamView({ members }: { members: R[] }) {
   async function handleSave() {
     setSaving(true);
     const supabase = createClient();
-    const memberData: Record<string, any> = {
+    const memberData: Record<string, unknown> = {
       first_name: form.first_name.trim(),
       last_name: form.last_name.trim(),
       email: form.email.trim() || null,
@@ -183,6 +185,7 @@ export function TeamView({ members }: { members: R[] }) {
     };
     if (popup === "edit" && editId) {
       await supabase.from("team_members").update(memberData).eq("id", editId);
+      clearCurrentMemberCache();
     } else {
       // Create auth account if requested
       let authUserId: string | null = null;
