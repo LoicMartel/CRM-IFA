@@ -11,7 +11,7 @@ import { resolveRecipientEmail } from "@/lib/adv-quote";
 
 const ANCHOR_DEVIS = "Bon pour accord";
 
-export interface QuoteDocDeal { id: string; name: string | null; fundingType: string | null; }
+export interface QuoteDocDeal { id: string; name: string | null; }
 export interface QuoteDocCompany { name: string | null; address: string | null; city: string | null; siret: string | null; }
 export interface QuoteDocContact { first_name: string | null; last_name: string | null; email: string | null; }
 export interface QuoteDocHeader {
@@ -27,7 +27,6 @@ export class AdvQuoteDocError extends Error {
 }
 
 const VAT_FACTOR: Record<string, number> = { FR_200: 0.2, FR_100: 0.1, FR_055: 0.055, exempt: 0 };
-const FUNDING_LABEL: Record<string, string> = { OPCO: "OPCO", CPF: "CPF", "UP FRONT": "Comptant", autre: "Autre" };
 
 /** Construit le JSON data attendu par le template Carbone devis (tags confirmés render E2E). */
 export function buildQuoteData(
@@ -56,7 +55,6 @@ export function buildQuoteData(
   }, 0);
   const decisionnaire = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "—";
   const companyAddress = [company.address, company.city].filter(Boolean).join(", ") || "—";
-  const fundingType = deal.fundingType ? (FUNDING_LABEL[deal.fundingType] ?? deal.fundingType) : "—";
   return {
     quoteNumber: header.quoteNumber,
     date: header.date,
@@ -67,7 +65,6 @@ export function buildQuoteData(
     siret: company.siret ?? "—",
     companyAddress,
     decisionnaire,
-    fundingType,
     lines: rows,
     totalHT: totalHT.toFixed(2),
     totalTVA: totalTVA.toFixed(2),

@@ -32,7 +32,6 @@ export interface RunDealQuoteDeal {
   quote_lines: import("@/lib/adv-quote").QuoteLineDraft[] | null;
   quote_subject: string | null;
   quote_pdf_description: string | null;
-  funding_type: string | null;
   contact_id: string | null;
   company_id: string | null;
 }
@@ -81,7 +80,7 @@ export async function prepareDealQuote(opts: {
     const quoteNumber = await assignQuoteNumber(serviceClient, deal.id);
     const now = new Date();
     const { docx } = await prepareQuoteDoc({
-      deal: { id: deal.id, name: deal.name, fundingType: deal.funding_type },
+      deal: { id: deal.id, name: deal.name },
       company: { name: company.name, address: company.address, city: company.city, siret: company.siret },
       contact: { first_name: contact.first_name, last_name: contact.last_name, email: contact.email },
       lines: deal.quote_lines ?? [],
