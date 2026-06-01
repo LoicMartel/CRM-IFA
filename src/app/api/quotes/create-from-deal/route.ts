@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canCreateQuote, getCurrentMember } from "@/lib/adv-permissions";
-import { triggerN8nWebhook } from "@/lib/n8n-client";
 import { prepareDealQuote } from "@/lib/adv-quote-runner";
 
 const serviceClient = createClient(
@@ -10,9 +9,6 @@ const serviceClient = createClient(
 );
 
 const ALLOWED_STAGES = ["opportunities", "quote_to_send", "quote_to_validate"] as const;
-
-// Kill switch : true => ancien proxy n8n (rollback instant), false => intra-CRM.
-const USE_N8N_FALLBACK = process.env.USE_N8N_FALLBACK === "true";
 
 export async function POST(req: Request) {
   const member = await getCurrentMember();
@@ -137,32 +133,6 @@ export async function POST(req: Request) {
       scheduled: true,
       scheduled_send_at: when.toISOString(),
       message: `Envoi du devis planifié pour le ${when.toLocaleDateString("fr-FR")}.`,
-      warning: nomenclatureWarning ?? undefined,
-    });
-  }
-
-  // --- Chemin legacy : proxy n8n (kill switch) ---
-  if (USE_N8N_FALLBACK) {
-    const result = await triggerN8nWebhook("lca-devis-a-envoyer", { dealId: deal.id });
-    if (!result.ok) {
-      return NextResponse.json(
-        { error: `n8n trigger failed: ${result.error}`, status: result.status },
-        { status: 502 },
-      );
-    }
-    await serviceClient.from("activities").insert({
-      type: "note",
-      title: "[ADV] Devis Pennylane déclenché (n8n)",
-      description: `Devis demandé via le bouton CRM (deal "${deal.name ?? deal.id}"). Workflow n8n WF-002b-firma déclenché.${nomenclatureWarning ? `\n\n⚠️ ${nomenclatureWarning}` : ""}`,
-      contact_id: deal.contact_id,
-      company_id: deal.company_id,
-      team_member_id: member.id,
-      created_at: new Date().toISOString(),
-    });
-    return NextResponse.json({
-      ok: true,
-      deal_id: deal.id,
-      message: "Devis Pennylane en cours via n8n (génération PDF 3-5 min, puis email signature Firma).",
       warning: nomenclatureWarning ?? undefined,
     });
   }
