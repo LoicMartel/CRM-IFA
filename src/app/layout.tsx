@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Caveat } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -35,6 +36,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" style={{ fontFamily: "'Montserrat', system-ui, sans-serif" }}>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
