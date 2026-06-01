@@ -1,4 +1,5 @@
 // Types principaux du CRM Closing Académie
+import type { QuoteLineDraft } from "@/lib/adv-quote";
 
 export type TeamMemberRole = "admin" | "sales" | "trainer" | "account_manager" | "finance";
 export type LeadStepStatus = "pending" | "done" | "skipped";
@@ -146,6 +147,9 @@ export interface Deal {
   convention_signed_at: string | null;
   lost_reason: string | null;
   notes: string | null;
+  quote_lines: QuoteLineDraft[] | null;
+  quote_subject: string | null;
+  quote_pdf_description: string | null;
   created_at: string;
   updated_at: string;
 }
