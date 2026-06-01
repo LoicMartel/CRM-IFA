@@ -20,7 +20,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { deal_id?: string; scheduled_send_at?: string };
+  let body: {
+    deal_id?: string;
+    scheduled_send_at?: string;
+    lines?: import("@/lib/adv-quote").QuoteLineDraft[];
+    subject?: string;
+    description?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id")
+    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description")
     .eq("id", dealId)
     .maybeSingle();
 
@@ -60,6 +66,23 @@ export async function POST(req: Request) {
       },
       { status: 409 },
     );
+  }
+
+  // Persiste les lignes éditées (source de vérité CRM). Si le client n'envoie rien,
+  // on garde l'existant (deal.quote_lines) — pas d'écrasement.
+  if (Array.isArray(body.lines)) {
+    await serviceClient
+      .from("deals")
+      .update({
+        quote_lines: body.lines,
+        quote_subject: body.subject ?? null,
+        quote_pdf_description: body.description ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", deal.id);
+    deal.quote_lines = body.lines;
+    deal.quote_subject = body.subject ?? null;
+    deal.quote_pdf_description = body.description ?? null;
   }
 
   if (deal.pennylane_quote_id && deal.stage !== "quote_to_validate") {
@@ -144,6 +167,9 @@ export async function POST(req: Request) {
       notes: deal.notes,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
+      quote_lines: deal.quote_lines,
+      quote_subject: deal.quote_subject,
+      quote_pdf_description: deal.quote_pdf_description,
     },
     teamMemberId: member.id,
   });
