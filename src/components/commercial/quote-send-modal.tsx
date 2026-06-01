@@ -183,7 +183,7 @@ export function QuoteSendModal({
 
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: 12, border: `1px solid ${mode === "now" ? "#e8632b" : "#cbd5e1"}`, borderRadius: 8, marginBottom: 10, cursor: "pointer" }}>
               <input type="radio" name="mode" checked={mode === "now"} onChange={() => setMode("now")} style={{ marginTop: 3 }} />
-              <div><div style={{ fontSize: 14, fontWeight: 600 }}>Préparer maintenant</div><div style={{ fontSize: 12, color: "#64748b" }}>Génère le devis Pennylane et le place dans « Pièces à valider ».</div></div>
+              <div><div style={{ fontSize: 14, fontWeight: 600 }}>Préparer maintenant</div><div style={{ fontSize: 12, color: "#64748b" }}>Génère le devis et le place dans « Pièces à valider ».</div></div>
             </label>
             <label style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: 12, border: `1px solid ${mode === "scheduled" ? "#e8632b" : "#cbd5e1"}`, borderRadius: 8, marginBottom: 10, cursor: "pointer" }}>
               <input type="radio" name="mode" checked={mode === "scheduled"} onChange={() => setMode("scheduled")} style={{ marginTop: 3 }} />
