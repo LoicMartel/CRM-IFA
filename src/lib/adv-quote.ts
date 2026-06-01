@@ -18,6 +18,8 @@ import {
   listProducts,
   downloadPdfAsBase64,
   type QuoteLine,
+  type VatRate,
+  type PennylaneProduct,
 } from "@/lib/pennylane-client";
 import {
   createAndSendSigningRequest,
@@ -33,6 +35,18 @@ const THR_DESCRIPTION =
   "L'organisation, la réservation et l'ensemble des coûts liés au frais de transports, d'hébergement, de restauration des intervenants et des coûts liés aux salles de formations sont à la charge du client.";
 const FOURNITURES_DESCRIPTION =
   "L'organisation et la commande des fournitures et des impressions si besoin sont à la charge du client suite à la transmission des documents en version numérique.";
+
+/** Ligne de devis éditable, persistée dans deals.quote_lines (source de vérité CRM). */
+export interface QuoteLineDraft {
+  kind: "main" | "thr" | "fournitures" | "custom";
+  product_ref: string | null; // référence Pennylane stable, résolue en product_id à la génération
+  label: string;
+  quantity: number;
+  unit: string;
+  unit_price: string; // string format Pennylane, ex "15000.00"
+  vat_rate: VatRate;
+  description: string | null;
+}
 
 export interface QuoteDealInput {
   id: string;
@@ -96,6 +110,81 @@ export function isTestEmailMode(): boolean {
 }
 
 /**
+ * Lignes par défaut d'un devis (prérempli de l'éditeur, ou fallback 1er prepare).
+ * Main : quantité 1 × montant TOTAL (corrige l'ancien bug quantity=training_days).
+ * THR + Fournitures à 0 € avec leur mention (éditables ensuite).
+ */
+export function defaultQuoteLines(
+  deal: QuoteDealInput,
+  products: PennylaneProduct[],
+): QuoteLineDraft[] {
+  const amount = parseFloat(String(deal.amount ?? "")) || 0;
+  const mainProduct =
+    products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
+    products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
+    products[0];
+  const formationType = mainProduct?.label ?? "Formation Closing";
+  const description = deal.notes ?? `Formation ${formationType}`;
+
+  const lines: QuoteLineDraft[] = [
+    {
+      kind: "main",
+      product_ref: mainProduct?.reference ?? PRODUCT_REF_MAIN,
+      label: formationType,
+      quantity: 1,
+      unit: "unité",
+      unit_price: amount.toFixed(2),
+      vat_rate: "FR_200",
+      description,
+    },
+    {
+      kind: "thr",
+      product_ref: PRODUCT_REF_THR,
+      label: "Frais THR",
+      quantity: 1,
+      unit: "unité",
+      unit_price: "0.00",
+      vat_rate: "FR_200",
+      description: THR_DESCRIPTION,
+    },
+    {
+      kind: "fournitures",
+      product_ref: PRODUCT_REF_FOURNITURES,
+      label: "Fournitures",
+      quantity: 1,
+      unit: "unité",
+      unit_price: "0.00",
+      vat_rate: "FR_200",
+      description: FOURNITURES_DESCRIPTION,
+    },
+  ];
+  return lines;
+}
+
+/** Convertit une ligne éditable en ligne Pennylane. Erreur dure si le ref est inconnu. */
+function toPennylaneLine(line: QuoteLineDraft, products: PennylaneProduct[]): QuoteLine {
+  let productId: number | undefined;
+  if (line.product_ref) {
+    const found = products.find((p) => p.reference === line.product_ref);
+    if (!found) {
+      throw new AdvQuoteError(
+        `Produit Pennylane introuvable pour la référence "${line.product_ref}" (ligne "${line.label}").`,
+      );
+    }
+    productId = found.id;
+  }
+  return {
+    productId,
+    label: line.label,
+    quantity: line.quantity,
+    unit: line.unit,
+    rawCurrencyUnitPrice: line.unit_price,
+    vatRate: line.vat_rate,
+    description: line.description ?? undefined,
+  };
+}
+
+/**
  * Résout (idempotent) le customer B2B Pennylane depuis company/contact.
  * external_reference = LCA-COMPANY-{company.id}. Partagé devis + facturation.
  */
@@ -131,11 +220,15 @@ export async function resolveCompanyCustomer(
 /**
  * Prépare le devis officiel SANS envoi : customer Pennylane → quote → public_file_url.
  * Pas de Firma (le gate de validation s'en charge). Idempotent côté customer.
+ * Accepte des lignes explicites (éditeur CRM) ou génère les lignes par défaut.
  */
 export async function prepareOfficialQuote(input: {
   deal: QuoteDealInput;
   contact: QuoteContactInput;
   company: QuoteCompanyInput;
+  lines?: QuoteLineDraft[] | null;
+  subject?: string | null;
+  description?: string | null;
 }): Promise<Omit<GenerateQuoteResult, "firmaSigningId" | "signingLink">> {
   const { deal, contact, company } = input;
 
@@ -144,45 +237,20 @@ export async function prepareOfficialQuote(input: {
     throw new AdvQuoteError("Contact email manquant — impossible de créer le devis signable.");
   }
 
-  const amount = parseFloat(String(deal.amount ?? "")) || 0;
-  const trainingDays = parseFloat(String(deal.training_days ?? "")) || 1;
-
   const customer = await resolveCompanyCustomer(company, contact, email);
-
   const products = await listProducts();
+
+  const draftLines =
+    input.lines && input.lines.length > 0 ? input.lines : defaultQuoteLines(deal, products);
+  const invoiceLines: QuoteLine[] = draftLines.map((l) => toPennylaneLine(l, products));
+
   const mainProduct =
     products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
     products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
     products[0];
-  const thrProduct = products.find((p) => p.reference === PRODUCT_REF_THR);
-  const fournituresProduct = products.find((p) => p.reference === PRODUCT_REF_FOURNITURES);
-
   const formationType = mainProduct?.label ?? "Formation Closing";
-  const description = deal.notes ?? `Formation ${formationType}`;
-
-  const invoiceLines: QuoteLine[] = [
-    {
-      productId: mainProduct?.id,
-      label: formationType,
-      quantity: trainingDays,
-      unit: "unité",
-      rawCurrencyUnitPrice: amount.toFixed(2),
-      vatRate: "FR_200",
-      description,
-    },
-  ];
-  if (thrProduct) {
-    invoiceLines.push({
-      productId: thrProduct.id, label: "Frais THR", quantity: 1, unit: "unité",
-      rawCurrencyUnitPrice: "0.00", vatRate: "FR_200", description: THR_DESCRIPTION,
-    });
-  }
-  if (fournituresProduct) {
-    invoiceLines.push({
-      productId: fournituresProduct.id, label: "Fournitures", quantity: 1, unit: "unité",
-      rawCurrencyUnitPrice: "0.00", vatRate: "FR_200", description: FOURNITURES_DESCRIPTION,
-    });
-  }
+  const subject = input.subject?.trim() || formationType;
+  const description = input.description?.trim() || deal.notes || `Formation ${formationType}`;
 
   // external_reference UNIQUE par préparation (token base36). Raison : un quote
   // Pennylane n'est PAS supprimable (DELETE /quotes = 404). Si on gardait un ref
@@ -195,9 +263,13 @@ export async function prepareOfficialQuote(input: {
   const now = new Date();
   const deadline = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const quote = await createQuote({
-    date: isoDate(now), deadline: isoDate(deadline), customerId: customer.id,
-    externalReference: externalRef, pdfInvoiceSubject: formationType,
-    pdfDescription: description, invoiceLines,
+    date: isoDate(now),
+    deadline: isoDate(deadline),
+    customerId: customer.id,
+    externalReference: externalRef,
+    pdfInvoiceSubject: subject,
+    pdfDescription: description,
+    invoiceLines,
   });
 
   if (!quote.public_file_url) {
