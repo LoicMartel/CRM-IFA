@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Calculator, Save, FileDown, Mail, ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { X, Calculator, Save, FileDown, Mail, ChevronDown, ChevronUp, Loader2, Plus, Trash2, FileText } from "lucide-react";
 import { computeCotation, CotationRow, CotationResults, MONTH_KEYS, MONTH_LABELS, createRow, rowTotal } from "@/lib/cotation-engine";
 import { useCurrentMember } from "@/lib/use-current-member";
+import { QuoteSendModal } from "@/components/commercial/quote-send-modal";
 
 interface Deal {
   id: string;
@@ -88,6 +89,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
   const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const currentMemberId = useCurrentMember();
 
   const [form, setForm] = useState(() => initForm(editQuotation));
@@ -282,6 +284,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
   const monthTotal = (k: string) => form.rows.reduce((s, r) => s + (r.months[k] || 0), 0);
 
   return (
+    <>
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -583,6 +586,19 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
               {sendingEmail ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Mail style={{ width: 14, height: 14 }} />}
               {sendingEmail ? "Envoi..." : "Envoyer par email"}
             </button>
+            {(() => {
+              const canGenerate = !!(form.dealId && editQuotation?.id);
+              return (
+                <button
+                  onClick={() => setShowQuoteModal(true)}
+                  disabled={!canGenerate}
+                  title={canGenerate ? "Générer un devis depuis cette cotation" : "Enregistrez la cotation et liez un deal d'abord"}
+                  style={{ height: 40, borderRadius: 8, border: "1px solid #e8632b", background: "white", color: "#e8632b", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: canGenerate ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, opacity: canGenerate ? 1 : 0.4 }}
+                >
+                  <FileText style={{ width: 14, height: 14 }} /> Générer un devis
+                </button>
+              );
+            })()}
             <button onClick={handleSave} disabled={saving || results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "none", padding: "0 24px", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (saving || results.totalHt === 0) ? 0.5 : 1 }}>
               {saving ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Save style={{ width: 14, height: 14 }} />}
               {saving ? "Enregistrement..." : "Sauvegarder"}
@@ -592,6 +608,17 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
+
+    {showQuoteModal && form.dealId && editQuotation?.id && (
+      <QuoteSendModal
+        dealId={form.dealId}
+        dealName={deals.find((d) => d.id === form.dealId)?.companies?.name ?? form.companyName}
+        fromQuotation={editQuotation.id}
+        onClose={() => setShowQuoteModal(false)}
+        onDone={() => { setShowQuoteModal(false); onSaved?.(); }}
+      />
+    )}
+    </>
   );
 }
 
