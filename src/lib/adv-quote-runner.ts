@@ -21,6 +21,9 @@ export interface RunDealQuoteDeal {
   amount: number | string | null;
   training_days: number | string | null;
   notes: string | null;
+  quote_lines: import("@/lib/adv-quote").QuoteLineDraft[] | null;
+  quote_subject: string | null;
+  quote_pdf_description: string | null;
   contact_id: string | null;
   company_id: string | null;
 }
@@ -50,8 +53,8 @@ export async function prepareDealQuote(opts: {
   const { serviceClient, deal, teamMemberId, via } = opts;
 
   const nomenclatureWarning =
-    !deal.amount || Number(deal.amount) <= 0 || !deal.training_days
-      ? "Montant ou jours de formation manquant sur le deal."
+    !deal.amount || Number(deal.amount) <= 0
+      ? "Montant manquant sur le deal."
       : null;
 
   const { data: contact } = await serviceClient
@@ -67,7 +70,11 @@ export async function prepareDealQuote(opts: {
   try {
     const q = await prepareOfficialQuote({
       deal: { id: deal.id, name: deal.name, amount: deal.amount, training_days: deal.training_days, notes: deal.notes },
-      contact, company,
+      contact,
+      company,
+      lines: deal.quote_lines,
+      subject: deal.quote_subject,
+      description: deal.quote_pdf_description,
     });
 
     await serviceClient.from("deals").update({
