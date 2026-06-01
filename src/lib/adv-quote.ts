@@ -109,6 +109,15 @@ export function isTestEmailMode(): boolean {
   return !!process.env.ADV_TEST_EMAIL_OVERRIDE?.trim();
 }
 
+/** Résout le produit principal (formation) du catalogue Pennylane (3 paliers de fallback). */
+function resolveMainProduct(products: PennylaneProduct[]): PennylaneProduct | undefined {
+  return (
+    products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
+    products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
+    products[0]
+  );
+}
+
 /**
  * Lignes par défaut d'un devis (prérempli de l'éditeur, ou fallback 1er prepare).
  * Main : quantité 1 × montant TOTAL (corrige l'ancien bug quantity=training_days).
@@ -119,10 +128,7 @@ export function defaultQuoteLines(
   products: PennylaneProduct[],
 ): QuoteLineDraft[] {
   const amount = parseFloat(String(deal.amount ?? "")) || 0;
-  const mainProduct =
-    products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
-    products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
-    products[0];
+  const mainProduct = resolveMainProduct(products);
   const formationType = mainProduct?.label ?? "Formation Closing";
   const description = deal.notes ?? `Formation ${formationType}`;
 
@@ -244,10 +250,7 @@ export async function prepareOfficialQuote(input: {
     input.lines && input.lines.length > 0 ? input.lines : defaultQuoteLines(deal, products);
   const invoiceLines: QuoteLine[] = draftLines.map((l) => toPennylaneLine(l, products));
 
-  const mainProduct =
-    products.find((p) => p.reference === PRODUCT_REF_MAIN) ??
-    products.find((p) => (p.reference ?? "").startsWith("LCA_PERFORMANCE")) ??
-    products[0];
+  const mainProduct = resolveMainProduct(products);
   const formationType = mainProduct?.label ?? "Formation Closing";
   const subject = input.subject?.trim() || formationType;
   const description = input.description?.trim() || deal.notes || `Formation ${formationType}`;
