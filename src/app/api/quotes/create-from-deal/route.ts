@@ -20,7 +20,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { deal_id?: string; scheduled_send_at?: string };
+  let body: {
+    deal_id?: string;
+    scheduled_send_at?: string;
+    lines?: import("@/lib/adv-quote").QuoteLineDraft[];
+    subject?: string;
+    description?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id")
+    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description")
     .eq("id", dealId)
     .maybeSingle();
 
@@ -72,9 +78,37 @@ export async function POST(req: Request) {
     );
   }
 
+  // Persiste les lignes éditées (source de vérité CRM). Si le client n'envoie rien,
+  // on garde l'existant (deal.quote_lines) — pas d'écrasement.
+  if (Array.isArray(body.lines)) {
+    if (body.lines.length === 0) {
+      return NextResponse.json({ error: "Au moins une ligne est requise" }, { status: 400 });
+    }
+    const VALID_VAT = ["FR_200", "FR_100", "FR_055", "exempt"];
+    for (const l of body.lines) {
+      if (!l.label?.trim()) return NextResponse.json({ error: "Chaque ligne doit avoir un libellé" }, { status: 400 });
+      if (typeof l.quantity !== "number" || l.quantity <= 0) return NextResponse.json({ error: "Quantité invalide (> 0 requis)" }, { status: 400 });
+      const price = parseFloat(l.unit_price);
+      if (isNaN(price) || price < 0) return NextResponse.json({ error: `Prix invalide : "${l.unit_price}"` }, { status: 400 });
+      if (!VALID_VAT.includes(l.vat_rate)) return NextResponse.json({ error: `Taux TVA invalide : "${l.vat_rate}"` }, { status: 400 });
+    }
+    await serviceClient
+      .from("deals")
+      .update({
+        quote_lines: body.lines,
+        quote_subject: body.subject ?? null,
+        quote_pdf_description: body.description ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", deal.id);
+    deal.quote_lines = body.lines;
+    deal.quote_subject = body.subject ?? null;
+    deal.quote_pdf_description = body.description ?? null;
+  }
+
   const nomenclatureWarning =
-    !deal.amount || Number(deal.amount) <= 0 || !deal.training_days
-      ? "Montant ou jours de formation manquant sur le deal."
+    !deal.amount || Number(deal.amount) <= 0
+      ? "Montant manquant sur le deal."
       : null;
 
   // --- Planification : enregistre la date, le cron pennylane-sync génère + envoie le jour venu ---
@@ -144,6 +178,9 @@ export async function POST(req: Request) {
       notes: deal.notes,
       contact_id: deal.contact_id,
       company_id: deal.company_id,
+      quote_lines: deal.quote_lines,
+      quote_subject: deal.quote_subject,
+      quote_pdf_description: deal.quote_pdf_description,
     },
     teamMemberId: member.id,
   });
