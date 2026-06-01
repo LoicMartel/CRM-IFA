@@ -131,7 +131,13 @@ export function PiecesAValiderView() {
                   </div>
                 </div>
                 {selected.pdfUrl ? (
-                  <iframe title="Aperçu PDF" src={selected.pdfUrl} style={{ width: "100%", height: 560, border: "1px solid #e2e8f0", borderRadius: 6 }} />
+                  <iframe
+                    title="Aperçu PDF"
+                    src={selected.type === "devis" && selected.dealId
+                      ? `/api/deals/${selected.dealId}/quote/preview-pdf`
+                      : selected.pdfUrl}
+                    style={{ width: "100%", height: 560, border: "1px solid #e2e8f0", borderRadius: 6 }}
+                  />
                 ) : (
                   <p style={{ color: "#92600a" }}>📄 PDF en cours de génération (facture : 1-5 min après préparation). Recharge dans quelques minutes.</p>
                 )}
