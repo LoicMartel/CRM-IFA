@@ -28,6 +28,11 @@ export class AdvQuoteDocError extends Error {
 
 const VAT_FACTOR: Record<string, number> = { FR_200: 0.2, FR_100: 0.1, FR_055: 0.055, exempt: 0 };
 
+/** Montant en format français : "15 000,00" (séparateur de milliers + virgule décimale). Le template ajoute " €". */
+function fmtEUR(n: number): string {
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 /** Construit le JSON data attendu par le template Carbone devis (tags confirmés render E2E). */
 export function buildQuoteData(
   deal: QuoteDocDeal,
@@ -44,8 +49,8 @@ export function buildQuoteData(
       description: l.description ?? "",
       quantity: l.quantity,
       unit: l.unit,
-      unitPrice: pu.toFixed(2),
-      totalHT: ht.toFixed(2),
+      unitPrice: fmtEUR(pu),
+      totalHT: fmtEUR(ht),
     };
   });
   const totalHT = lines.reduce((s, l) => s + (parseFloat(l.unit_price) || 0) * (l.quantity || 0), 0);
@@ -66,9 +71,9 @@ export function buildQuoteData(
     companyAddress,
     decisionnaire,
     lines: rows,
-    totalHT: totalHT.toFixed(2),
-    totalTVA: totalTVA.toFixed(2),
-    totalTTC: (totalHT + totalTVA).toFixed(2),
+    totalHT: fmtEUR(totalHT),
+    totalTVA: fmtEUR(totalTVA),
+    totalTTC: fmtEUR(totalHT + totalTVA),
   };
 }
 
