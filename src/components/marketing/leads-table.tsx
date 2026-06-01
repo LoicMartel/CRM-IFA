@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ExportButton } from "@/components/ui/export-button";
@@ -119,8 +119,36 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
     }
   }
 
+  const marketingCount = filtered.length;
+  const tunnelBookCount = filtered.filter((l) => getName(l.lead_sources) === "Meta ads - tunnel book").length;
+  const tunnelCommercialCount = filtered.filter((l) => getName(l.lead_sources) === "Meta ads - tunnel commercial").length;
+
   return (
     <>
+      <div className="grid gap-3 md:grid-cols-3" style={{ maxWidth: 700 }}>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Leads Marketing</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#e65100" }}>{marketingCount}</div>
+          </div>
+          <UserPlus style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Meta Ads — Tunnel Book</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{tunnelBookCount}</div>
+          </div>
+          <BookOpen style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+        <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Meta Ads — Tunnel Commercial</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#2e7d32" }}>{tunnelCommercialCount}</div>
+          </div>
+          <Megaphone style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex gap-3 items-center flex-wrap">
           <div className="relative">
