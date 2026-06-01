@@ -16,11 +16,13 @@ export function QuoteSendModal({
   dealName,
   onClose,
   onDone,
+  fromQuotation,
 }: {
   dealId: string;
   dealName: string;
   onClose: () => void;
   onDone: () => void;
+  fromQuotation?: string;
 }) {
   const [loading, setLoading] = useState(true);
   const [lines, setLines] = useState<QuoteLineDraft[]>([]);
@@ -35,7 +37,10 @@ export function QuoteSendModal({
     let active = true;
     (async () => {
       try {
-        const res = await fetch(`/api/quotes/draft/${dealId}`);
+        const url = fromQuotation
+          ? `/api/quotes/draft/${dealId}?fromQuotation=${fromQuotation}`
+          : `/api/quotes/draft/${dealId}`;
+        const res = await fetch(url);
         const json = await res.json();
         if (!active) return;
         if (res.ok) {
@@ -53,7 +58,7 @@ export function QuoteSendModal({
     return () => {
       active = false;
     };
-  }, [dealId]);
+  }, [dealId, fromQuotation]);
 
   function updateLine(i: number, patch: Partial<QuoteLineDraft>) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));

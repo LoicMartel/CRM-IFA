@@ -10,7 +10,7 @@ const serviceClient = createClient(
 );
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ dealId: string }> },
 ) {
   const member = await getCurrentMember();
@@ -39,6 +39,23 @@ export async function GET(
   const catalog = products
     .filter((p) => p.reference)
     .map((p) => ({ ref: p.reference as string, label: p.label ?? p.reference, id: p.id }));
+
+  // Mode "depuis cotation" : pré-remplit le total (total_ht) en une seule ligne principale
+  // (le détail/coeffs internes de la cotation ne sont pas exposés au client). Éditable ensuite.
+  const fromQuotation = new URL(req.url).searchParams.get("fromQuotation");
+  if (fromQuotation) {
+    const { data: q } = await serviceClient
+      .from("quotations").select("total_ht, nb_learners").eq("id", fromQuotation).maybeSingle();
+    if (q) {
+      const total = Number(q.total_ht ?? 0);
+      const mainLine: QuoteLineDraft = {
+        kind: "main", product_ref: null,
+        label: `Formation — ${q.nb_learners ?? 1} apprenant(s)`,
+        quantity: 1, unit: "unité", unit_price: total.toFixed(2), vat_rate: "FR_200", description: null,
+      };
+      return NextResponse.json({ lines: [mainLine], subject: null, description: null, catalog });
+    }
+  }
 
   return NextResponse.json({
     lines,

@@ -99,6 +99,35 @@ export function PiecesAValiderView() {
                       style={{ padding: "8px 16px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", cursor: "pointer" }}>Modifier</button>
                     <button onClick={() => act(selected, "reject")} disabled={acting}
                       style={{ padding: "8px 16px", border: "1px solid #ef4444", borderRadius: 6, background: "white", color: "#ef4444", cursor: "pointer" }}>Rejeter</button>
+                    {selected.type === "devis" && selected.dealId && (
+                      <>
+                        <button
+                          disabled={acting}
+                          onClick={async () => {
+                            const res = await fetch(`/api/deals/${selected.dealId}/quote/docx`);
+                            const j = await res.json();
+                            if (!res.ok) { alert(`Échec : ${j.error ?? "erreur"}`); return; }
+                            window.open(j.url, "_blank");
+                          }}
+                          style={{ padding: "8px 16px", border: "1px solid #1a6b9c", borderRadius: 6, background: "white", color: "#1a6b9c", cursor: "pointer" }}
+                        >
+                          Télécharger le Word
+                        </button>
+                        <label style={{ padding: "8px 16px", border: "1px solid #8399a9", borderRadius: 6, background: "white", color: "#1a2a3a", cursor: acting ? "not-allowed" : "pointer", opacity: acting ? 0.5 : 1 }}>
+                          Remplacer le Word
+                          <input type="file" accept=".docx" style={{ display: "none" }} disabled={acting}
+                            onChange={async (e) => {
+                              const f = e.target.files?.[0]; if (!f || !selected?.dealId) return;
+                              setActing(true);
+                              const fd = new FormData(); fd.append("file", f);
+                              const res = await fetch(`/api/deals/${selected.dealId}/quote/replace-docx`, { method: "POST", body: fd });
+                              const j = await res.json();
+                              if (!res.ok) alert(`Échec : ${j.error ?? "erreur"}`); else { alert(j.message); load(); }
+                              setActing(false); e.target.value = "";
+                            }} />
+                        </label>
+                      </>
+                    )}
                   </div>
                 </div>
                 {selected.pdfUrl ? (

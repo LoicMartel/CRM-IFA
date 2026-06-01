@@ -150,6 +150,7 @@ export interface Deal {
   quote_lines: QuoteLineDraft[] | null;
   quote_subject: string | null;
   quote_pdf_description: string | null;
+  quote_number: string | null;
   created_at: string;
   updated_at: string;
 }
