@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { getCurrentMember } from "@/lib/current-member";
 
 export interface MemberPermissions {
   canViewCommercial: boolean;
@@ -49,51 +49,40 @@ export function useCurrentRoles() {
   const [info, setInfo] = useState<MemberInfo | null>(null);
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    let active = true;
 
-      const { data: member } = await supabase
-        .from("team_members")
-        .select("id, first_name, last_name, roles, permissions")
-        .eq("auth_user_id", user.id)
-        .single();
+    getCurrentMember().then((m) => {
+      if (!active || !m) return;
 
-      const m = member ?? (await supabase
-        .from("team_members")
-        .select("id, first_name, last_name, roles, permissions")
-        .eq("email", user.email)
-        .single()).data;
+      const roles = m.roles ?? [];
+      const isAdmin = roles.includes("Admin");
+      const isExterne = roles.includes("Externe");
+      const dbPerms = m.permissions as Partial<MemberPermissions> | null;
 
-      if (m) {
-        const roles = (m.roles as string[]) ?? [];
-        const isAdmin = roles.includes("Admin");
-        const isExterne = roles.includes("Externe");
-        const dbPerms = m.permissions as Partial<MemberPermissions> | null;
-
-        // Resolve permissions: DB > defaults based on role
-        let perms: MemberPermissions;
-        if (isAdmin) {
-          perms = { ...DEFAULT_PERMISSIONS };
-        } else if (dbPerms && Object.keys(dbPerms).length > 0) {
-          perms = { ...DEFAULT_PERMISSIONS, ...dbPerms };
-        } else if (isExterne) {
-          perms = { ...RESTRICTED_EXTERNE_PERMISSIONS };
-        } else {
-          perms = { ...DEFAULT_PERMISSIONS };
-        }
-
-        setInfo({
-          id: m.id,
-          roles,
-          firstName: m.first_name,
-          lastName: m.last_name,
-          permissions: perms,
-        });
+      // Resolve permissions: DB > defaults based on role
+      let perms: MemberPermissions;
+      if (isAdmin) {
+        perms = { ...DEFAULT_PERMISSIONS };
+      } else if (dbPerms && Object.keys(dbPerms).length > 0) {
+        perms = { ...DEFAULT_PERMISSIONS, ...dbPerms };
+      } else if (isExterne) {
+        perms = { ...RESTRICTED_EXTERNE_PERMISSIONS };
+      } else {
+        perms = { ...DEFAULT_PERMISSIONS };
       }
-    }
-    load();
+
+      setInfo({
+        id: m.id,
+        roles,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        permissions: perms,
+      });
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const isAdmin = info?.roles.includes("Admin") ?? false;
