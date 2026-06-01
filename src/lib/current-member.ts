@@ -67,11 +67,18 @@ async function fetchCurrentMember(): Promise<CurrentMember | null> {
   };
 }
 
+/** Clear the cached member — call after a team_members write that may change the current user's row. */
+export function clearCurrentMemberCache(): void {
+  cached = null;
+}
+
 export function getCurrentMember(): Promise<CurrentMember | null> {
   // Bind the auth listener on first call (browser-only, safe — createClient
   // is a no-op in environments that don't have window).
   bindAuthListener();
 
+  // A resolved null (no authenticated user or no matching member row) is intentionally
+  // cached to avoid redundant fetches during the unauthenticated / loading state.
   if (!cached) {
     cached = fetchCurrentMember().catch((err) => {
       cached = null; // allow retry on next call after a transient failure
