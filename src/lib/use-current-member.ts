@@ -9,9 +9,9 @@ export function useCurrentMember() {
   useEffect(() => {
     let active = true;
 
-    getCurrentMember().then((m) => {
-      if (active) setMemberId(m?.id ?? null);
-    });
+    getCurrentMember()
+      .then((m) => { if (active) setMemberId(m?.id ?? null); })
+      .catch(() => { /* transient failure: leave state unset, next mount retries */ });
 
     return () => {
       active = false;

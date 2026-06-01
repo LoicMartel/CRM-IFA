@@ -73,7 +73,10 @@ export function getCurrentMember(): Promise<CurrentMember | null> {
   bindAuthListener();
 
   if (!cached) {
-    cached = fetchCurrentMember();
+    cached = fetchCurrentMember().catch((err) => {
+      cached = null; // allow retry on next call after a transient failure
+      throw err;
+    });
   }
   return cached;
 }

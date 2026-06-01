@@ -51,34 +51,36 @@ export function useCurrentRoles() {
   useEffect(() => {
     let active = true;
 
-    getCurrentMember().then((m) => {
-      if (!active || !m) return;
+    getCurrentMember()
+      .then((m) => {
+        if (!active || !m) return;
 
-      const roles = m.roles ?? [];
-      const isAdmin = roles.includes("Admin");
-      const isExterne = roles.includes("Externe");
-      const dbPerms = m.permissions as Partial<MemberPermissions> | null;
+        const roles = m.roles ?? [];
+        const isAdmin = roles.includes("Admin");
+        const isExterne = roles.includes("Externe");
+        const dbPerms = m.permissions as Partial<MemberPermissions> | null;
 
-      // Resolve permissions: DB > defaults based on role
-      let perms: MemberPermissions;
-      if (isAdmin) {
-        perms = { ...DEFAULT_PERMISSIONS };
-      } else if (dbPerms && Object.keys(dbPerms).length > 0) {
-        perms = { ...DEFAULT_PERMISSIONS, ...dbPerms };
-      } else if (isExterne) {
-        perms = { ...RESTRICTED_EXTERNE_PERMISSIONS };
-      } else {
-        perms = { ...DEFAULT_PERMISSIONS };
-      }
+        // Resolve permissions: DB > defaults based on role
+        let perms: MemberPermissions;
+        if (isAdmin) {
+          perms = { ...DEFAULT_PERMISSIONS };
+        } else if (dbPerms && Object.keys(dbPerms).length > 0) {
+          perms = { ...DEFAULT_PERMISSIONS, ...dbPerms };
+        } else if (isExterne) {
+          perms = { ...RESTRICTED_EXTERNE_PERMISSIONS };
+        } else {
+          perms = { ...DEFAULT_PERMISSIONS };
+        }
 
-      setInfo({
-        id: m.id,
-        roles,
-        firstName: m.firstName,
-        lastName: m.lastName,
-        permissions: perms,
-      });
-    });
+        setInfo({
+          id: m.id,
+          roles,
+          firstName: m.firstName,
+          lastName: m.lastName,
+          permissions: perms,
+        });
+      })
+      .catch(() => { /* transient failure: leave state unset, next mount retries */ });
 
     return () => {
       active = false;
