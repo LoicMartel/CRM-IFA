@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description, funding_type")
+    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description")
     .eq("id", dealId)
     .maybeSingle();
 
@@ -151,7 +151,6 @@ export async function POST(req: Request) {
       quote_lines: deal.quote_lines,
       quote_subject: deal.quote_subject,
       quote_pdf_description: deal.quote_pdf_description,
-      funding_type: deal.funding_type,
     },
     teamMemberId: member.id,
   });
