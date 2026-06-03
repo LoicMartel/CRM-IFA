@@ -222,6 +222,29 @@ export async function POST(request: Request) {
       }
     }
 
+    // Inbox agent pipeline: a web-form lead becomes a conversation the agent can handle.
+    try {
+      const { ingestIncoming, svc } = await import("@/lib/inbox/ingest");
+      const { classifyConversation } = await import("@/lib/inbox/classify");
+      const { evaluateEligibility } = await import("@/lib/inbox/eligibility");
+      const { runAgentTurn } = await import("@/lib/inbox/agent");
+      const body = `Nouveau lead via formulaire (${parsed.data.source || "site"}).`;
+      const result = await ingestIncoming({
+        channel: "web_form", direction: "inbound", accountId: null, externalChatId: null,
+        externalMessageId: `webform-${parsed.data.email}-${Date.now()}`,
+        senderName: `${parsed.data.firstName} ${parsed.data.lastName}`,
+        senderHandle: parsed.data.email, body, subject: "Lead formulaire web",
+      });
+      if (result && result.direction === "inbound") {
+        await classifyConversation(result.conversationId).catch(() => {});
+        const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
+        if (v.eligible) {
+          await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
+          await runAgentTurn(result.conversationId).catch(() => {});
+        }
+      }
+    } catch (e) { console.error("[leads/inbound] inbox pipeline failed:", e); }
+
     return NextResponse.json({ success: true, contactId }, { headers: CORS_HEADERS });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500, headers: CORS_HEADERS });

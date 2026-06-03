@@ -14,6 +14,7 @@ import {
   FolderOpen,
   GraduationCap,
   Handshake,
+  Inbox,
   LayoutDashboard,
   Mail,
   Megaphone,
@@ -41,6 +42,7 @@ import {
 
 const commercialItems = [
   { title: "Agenda Commercial", href: "/agenda-commercial", icon: CalendarCheck },
+  { title: "Inbox", href: "/inbox", icon: Inbox },
   { title: "Contacts", href: "/contacts", icon: User },
   { title: "Entreprises", href: "/companies", icon: Building2 },
   { title: "Ressources", href: "/ressources-commercial", icon: Calculator },
