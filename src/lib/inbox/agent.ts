@@ -79,7 +79,17 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     text = (tool.input as { text: string }).text;
   }
 
-  if (!unipileConfigured() && conv.channel !== "web_form") {
+  // Anti-race lock: only send if the conversation is STILL active after the (multi-second) LLM call.
+  // A human takeover or an anti-collision outbound during the call flips the status; this conditional
+  // update both detects that and stamps the action time atomically — closes the double-send window.
+  const { data: lock } = await sb.from("conversations")
+    .update({ agent_last_acted_at: new Date().toISOString() })
+    .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
+  if (!lock) return; // taken over / paused / booked while we were thinking — do not send.
+
+  // web_form has no Unipile chat/email account wired yet (delivery via Resend is a follow-up):
+  // deliver() will throw for web_form and the catch escalates it to a human — no phantom "sent".
+  if (!unipileConfigured()) {
     console.warn("[inbox.agent] Unipile not configured — turn skipped (would have sent).");
     return;
   }
@@ -87,13 +97,12 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   try {
     const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
     const to = (contact as { email: string | null } | null)?.email ?? null;
-    const ext = conv.channel === "web_form" ? { id: `webform-out-${Date.now()}` } : await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text);
+    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text);
     await sb.from("messages").insert({
       conversation_id: conversationId, direction: "outbound", sent_by: "agent", body: text,
       external_message_id: ext.id, status: "sent", sent_at: new Date().toISOString(),
     });
     await sb.from("conversations").update({
-      agent_last_acted_at: new Date().toISOString(),
       agent_turn_count: (conv.agent_turn_count ?? 0) + 1,
     }).eq("id", conversationId);
   } catch (e) {

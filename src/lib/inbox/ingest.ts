@@ -98,9 +98,18 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
       owner_id: ownerId,
       unread: true,
     }).select("id").single();
-    if (error || !data) { console.error("[inbox.ingest] conversation insert failed:", error?.message); return null; }
-    conversationId = data.id;
-    isNewConversation = true;
+    if (error?.code === "23505" && msg.externalChatId) {
+      // Concurrent first-message delivery created the conversation first — adopt the winner.
+      const { data: winner } = await sb.from("conversations").select("id")
+        .eq("channel", msg.channel).eq("external_chat_id", msg.externalChatId).maybeSingle();
+      conversationId = winner?.id ?? null;
+      if (!conversationId) { console.error("[inbox.ingest] conversation insert race unresolved"); return null; }
+    } else if (error || !data) {
+      console.error("[inbox.ingest] conversation insert failed:", error?.message); return null;
+    } else {
+      conversationId = data.id;
+      isNewConversation = true;
+    }
   } else if (msg.direction === "inbound") {
     await sb.from("conversations").update({ unread: true, last_message_at: new Date().toISOString() }).eq("id", conversationId);
   }
@@ -118,7 +127,7 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     status: msg.direction === "inbound" ? "received" : "sent",
     sent_at: msg.direction === "outbound" ? new Date().toISOString() : null,
   });
-  if (msgErr && !msgErr.message.includes("duplicate")) console.error("[inbox.ingest] message insert failed:", msgErr.message);
+  if (msgErr && msgErr.code !== "23505") console.error("[inbox.ingest] message insert failed:", msgErr.message);
 
   return { conversationId, isNewConversation, isExistingContact, direction: msg.direction };
 }

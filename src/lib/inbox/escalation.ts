@@ -52,5 +52,9 @@ export async function escalateConversation(
       relatedEntityType: "conversation",
       relatedEntityId: conversationId,
     });
+  } else {
+    // Fail loud: without an owner the escalation produces no feed post and no bell — it would
+    // otherwise vanish silently (only discoverable by manually opening /inbox).
+    console.error(`[inbox.escalation] no owner resolved for conversation ${conversationId} (reason=${reason}) — NO feed post / bell sent. Check INBOX_DEFAULT_OWNER_EMAIL.`);
   }
 }

@@ -14,7 +14,9 @@ export async function GET(req: NextRequest) {
   const { data: stale } = await sb.from("conversations")
     .select("id, agent_turn_count")
     .eq("agent_status", "active")
-    .lt("agent_last_acted_at", cutoff);
+    // include never-acted convs (NULL): in Postgres `NULL < cutoff` is unknown, so a bare `.lt`
+    // would leave them stuck active forever (never relaunched, never dormant).
+    .or(`agent_last_acted_at.is.null,agent_last_acted_at.lt.${cutoff}`);
 
   let relaunched = 0, dormant = 0;
   for (const c of stale ?? []) {

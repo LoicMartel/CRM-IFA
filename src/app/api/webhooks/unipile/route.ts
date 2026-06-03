@@ -48,6 +48,13 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
 }
 
 export async function POST(req: NextRequest) {
+  // Optional shared-secret gate. This is a side-effecting public route (spends AI tokens, sends real
+  // outbound messages, and a forged `is_sender:true` can pause the agent), so enforce a secret when set.
+  const secret = process.env.UNIPILE_WEBHOOK_SECRET;
+  if (secret) {
+    const provided = req.headers.get("x-webhook-secret") ?? req.nextUrl.searchParams.get("secret");
+    if (provided !== secret) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   let parsed;
   try { parsed = payloadSchema.safeParse(await req.json()); }
   catch { return NextResponse.json({ ok: false, error: "invalid json" }, { status: 400 }); }

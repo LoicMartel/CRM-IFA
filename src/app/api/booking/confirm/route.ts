@@ -161,7 +161,7 @@ export async function POST(request: Request) {
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
     if (contact?.id) {
       await sb.from("conversations").update({ agent_status: "booked" })
-        .eq("contact_id", contact.id).in("agent_status", ["active", "escalated", "dormant"]);
+        .eq("contact_id", contact.id).in("agent_status", ["active", "escalated", "dormant", "human"]);
     }
   } catch (e) { console.error("[booking.confirm] mark conversation booked failed:", e); }
 
