@@ -155,6 +155,16 @@ export async function POST(request: Request) {
     });
   }
 
+  // Stop the inbound agent for this lead: a RDV was booked.
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
+    if (contact?.id) {
+      await sb.from("conversations").update({ agent_status: "booked" })
+        .eq("contact_id", contact.id).in("agent_status", ["active", "escalated", "dormant"]);
+    }
+  } catch (e) { console.error("[booking.confirm] mark conversation booked failed:", e); }
+
   return NextResponse.json({
     success: true,
     contactId: contact?.id,
