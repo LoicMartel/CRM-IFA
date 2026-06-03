@@ -50,6 +50,11 @@ export async function POST(req: NextRequest) {
       subject: "On s'est manqués !",
       body: htmlBody,
       isHtml: true,
+      logActivity: {
+        title: "Email no-show envoyé",
+        description: `Email de relance « On s'est manqués » envoyé à ${contact.email}.`,
+        contact_id: contact.id,
+      },
     });
 
     if (!result.success) {

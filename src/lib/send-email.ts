@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let resendClient: Resend | null = null;
 
@@ -8,6 +9,32 @@ function getResend() {
   if (!key) return null;
   resendClient = new Resend(key);
   return resendClient;
+}
+
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabase() {
+  if (supabaseClient) return supabaseClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  supabaseClient = createClient(url, key);
+  return supabaseClient;
+}
+
+/**
+ * Trace optionnelle d'un email CLIENT en activité sur la fiche (follow-up demandé
+ * par Loïc). À ne passer QUE pour les emails réellement adressés au client/apprenant
+ * — jamais pour les notifs internes (équipe/formateurs), sinon la fiche se pollue.
+ */
+export interface EmailActivityLog {
+  title: string;
+  description?: string;
+  type?: string;
+  company_id?: string | null;
+  contact_id?: string | null;
+  deal_id?: string | null;
+  team_member_id?: string | null;
 }
 
 // Rate limiting: max 4 emails/sec to stay under Resend's 5/sec limit
@@ -30,6 +57,7 @@ export async function sendSessionEmail({
   attachments,
   bcc,
   isHtml = false,
+  logActivity,
 }: {
   to: string;
   subject: string;
@@ -37,6 +65,7 @@ export async function sendSessionEmail({
   attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
   bcc?: string[];
   isHtml?: boolean;
+  logActivity?: EmailActivityLog;
 }): Promise<{ success: boolean; error?: string }> {
   const resend = getResend();
   if (!resend) return { success: false, error: "Resend not configured" };
@@ -87,6 +116,28 @@ export async function sendSessionEmail({
     const { error } = await resend.emails.send(emailPayload);
 
     if (error) return { success: false, error: error.message };
+
+    // Trace best-effort de l'email client en activité (ne fait jamais échouer l'envoi).
+    if (logActivity && (logActivity.company_id || logActivity.contact_id || logActivity.deal_id)) {
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          await supabase.from("activities").insert({
+            type: logActivity.type ?? "email",
+            title: logActivity.title,
+            description: logActivity.description ?? null,
+            company_id: logActivity.company_id ?? null,
+            contact_id: logActivity.contact_id ?? null,
+            deal_id: logActivity.deal_id ?? null,
+            team_member_id: logActivity.team_member_id ?? null,
+            created_at: new Date().toISOString(),
+          });
+        } catch (logErr) {
+          console.error("[sendSessionEmail] logActivity insert failed:", logErr);
+        }
+      }
+    }
+
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
