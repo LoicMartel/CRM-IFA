@@ -26,13 +26,77 @@ const TOOLS: Anthropic.Tool[] = [
     }, required: ["reason", "summary"] } },
 ];
 
-async function deliver(channel: Channel, accountId: string | null, chatId: string | null, to: string | null, text: string): Promise<{ id: string }> {
-  if (channel === "email") {
+const EMAIL_SUBJECT = "Votre demande — La Closing Académie";
+
+// email + web_form (leads "fiche" sans chat d'origine) partent en EMAIL via Unipile.
+// Quand la conversation n'a pas de compte d'origine (web_form), on retombe sur le
+// compte email généraliste (UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID, posé au cutover token).
+async function deliver(channel: Channel, accountId: string | null, chatId: string | null, to: string | null, text: string, subject = EMAIL_SUBJECT): Promise<{ id: string }> {
+  if (channel === "email" || channel === "web_form") {
     if (!to) throw new Error("no recipient email");
-    return sendEmail(accountId!, to, "Votre demande — La Closing Académie", text);
+    const account = accountId ?? process.env.UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID ?? null;
+    if (!account) throw new Error("no email account (set UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID)");
+    return sendEmail(account, to, subject, text);
   }
   if (!chatId) throw new Error("no chat id");
   return sendChatMessage(chatId, text);
+}
+
+/** Message d'accueil fixe signé Rafi (lead "fiche"). Speed-to-lead: contact immédiat + lien RDV, sans latence IA. */
+function buildGreeting(firstName: string): string {
+  const hello = firstName ? `Bonjour ${firstName},` : "Bonjour,";
+  return [
+    hello,
+    "",
+    "Enchanté !",
+    "Je viens de prendre connaissance de votre demande de renseignements.",
+    "Comment puis-je vous aider ?",
+    "",
+    "Rafi, Expert La Closing Académie",
+    `Mon agenda : ${resolveBookingLink()}`,
+  ].join("\n");
+}
+
+/**
+ * 1er contact d'un lead "fiche" (formulaire/agence). Envoie un message d'accueil
+ * déterministe signé Rafi AVANT tout tour d'agent dynamique. L'agent (runAgentTurn)
+ * prend le relais quand le lead répond. Même verrou anti-race que runAgentTurn.
+ */
+export async function sendGreeting(conversationId: string): Promise<void> {
+  const sb = svc();
+  const { data: conv } = await sb.from("conversations")
+    .select("channel, account_id, external_chat_id, agent_status, contacts(first_name, email)")
+    .eq("id", conversationId).maybeSingle();
+  if (!conv || conv.agent_status !== "active") return;
+
+  const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
+  const firstName = ((contact as { first_name: string | null } | null)?.first_name ?? "").trim();
+  const to = (contact as { email: string | null } | null)?.email ?? null;
+  const text = buildGreeting(firstName);
+
+  // Verrou anti-double-envoi : on n'envoie que si la conversation est TOUJOURS active
+  // (une prise de main humaine / un outbound anti-collision a pu la flipper entre-temps).
+  const { data: lock } = await sb.from("conversations")
+    .update({ agent_last_acted_at: new Date().toISOString() })
+    .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
+  if (!lock) return;
+
+  if (!unipileConfigured()) {
+    console.warn("[inbox.agent] Unipile not configured — greeting skipped (would have sent).");
+    return;
+  }
+
+  try {
+    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text);
+    await sb.from("messages").insert({
+      conversation_id: conversationId, direction: "outbound", sent_by: "agent", body: text,
+      external_message_id: ext.id, status: "sent", sent_at: new Date().toISOString(),
+    });
+    await sb.from("conversations").update({ agent_turn_count: 1 }).eq("id", conversationId);
+  } catch (e) {
+    console.error("[inbox.agent] greeting send failed:", e);
+    await escalateConversation(conversationId, "low_confidence", "Échec d'envoi du message d'accueil.");
+  }
 }
 
 /** Un tour d'agent. isFollowup=true => relance (pas de nouveau message inbound). */

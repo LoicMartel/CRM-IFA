@@ -15,8 +15,26 @@ const supabase = createClient(
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": process.env.LEADS_ALLOWED_ORIGIN ?? "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, X-Webhook-Secret",
 };
+
+// Authentification par agence (traçabilité + révocation), sans migration :
+// LEADS_INBOUND_SECRETS = JSON { "agence-slug": "secret", ... }.
+// - header X-Webhook-Secret présent → doit matcher un secret connu, sinon 401 ;
+//   le slug d'agence matché devient le tag de source (mesure du ROI par agence).
+// - header absent → chemin public legacy (Meta embed-forms / landing) inchangé.
+function matchAgencySecret(secret: string | null): { slug: string } | null | "invalid" {
+  if (!secret) return null; // legacy public path
+  let map: Record<string, string> = {};
+  try {
+    const parsed = JSON.parse(process.env.LEADS_INBOUND_SECRETS ?? "{}");
+    if (parsed && typeof parsed === "object") map = parsed;
+  } catch {
+    map = {};
+  }
+  const entry = Object.entries(map).find(([, v]) => v === secret);
+  return entry ? { slug: entry[0] } : "invalid";
+}
 
 // Validation stricte de l'input (anti-injection / payload bomb).
 const leadSchema = z.object({
@@ -35,6 +53,12 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
+    const agency = matchAgencySecret(request.headers.get("x-webhook-secret"));
+    if (agency === "invalid") {
+      return NextResponse.json({ error: "Invalid webhook secret" }, { status: 401, headers: CORS_HEADERS });
+    }
+    const agencySlug = agency?.slug ?? null;
+
     const raw = await request.json();
     const parsed = leadSchema.safeParse(raw);
     if (!parsed.success) {
@@ -44,6 +68,8 @@ export async function POST(request: Request) {
       );
     }
     const { firstName, lastName, email, phone, website, source, clientType } = parsed.data;
+    // Source effective : l'agence authentifiée prime sur le champ `source` du payload.
+    const effectiveSource = agencySlug ?? source ?? "";
 
     const wf = await loadWorkflow("landing-page-lead");
     if (wf && !wf.is_active) {
@@ -90,11 +116,25 @@ export async function POST(request: Request) {
       .ilike("email", email)
       .maybeSingle();
 
-    const resolvedSourceId = source === "embed-form"
+    let resolvedSourceId = source === "embed-form"
       ? "59ab5fc4-e4f6-43c4-b327-61a90001ae16"   // Meta ads - tunnel commercial
       : source === "embed-form-book"
       ? "15e8fa54-6540-43e5-902a-3231e1522e44"    // Meta ads - tunnel book
       : null;
+
+    // Lead provenant d'une agence authentifiée : rattacher à la lead_source du même nom
+    // (à créer côté CRM par Loïc) pour mesurer le ROI par agence. Si aucune ligne ne matche,
+    // le slug reste tracé via notes/source string (pas de blocage).
+    if (!resolvedSourceId && agencySlug) {
+      const { data: ls } = await supabase.from("lead_sources").select("id").ilike("name", agencySlug).maybeSingle();
+      resolvedSourceId = ls?.id ?? null;
+    }
+
+    const sourceLabel = agencySlug
+      ? `Agence : ${agencySlug}`
+      : source === "embed-form" ? "Meta ads - tunnel commercial"
+      : source === "embed-form-book" ? "Meta ads - tunnel book"
+      : source || "Landing Page";
 
     if (existingContact) {
       // Update existing contact (including name in case it changed on re-submission)
@@ -123,7 +163,7 @@ export async function POST(request: Request) {
           was_lead_marketing: true,
           lead_status: "lead",
           source_id: resolvedSourceId,
-          notes: `Source: ${source === "embed-form" ? "Meta ads - tunnel commercial" : source === "embed-form-book" ? "Meta ads - tunnel book" : source || "Landing Page"}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
+          notes: `Source: ${sourceLabel}\nType: ${clientType || "—"}\nSite web: ${website || "—"}`,
         })
         .select("id")
         .single();
@@ -145,7 +185,7 @@ export async function POST(request: Request) {
       `✉️ ${email}`,
       phone ? `📞 ${phone}` : "",
       website ? `🌐 ${website}` : "",
-      `📣 Source : ${source === "embed-form" ? "Meta ads - tunnel commercial" : source === "embed-form-book" ? "Meta ads - tunnel book" : "Landing Page (Publicité)"}`,
+      `📣 Source : ${sourceLabel}`,
       "",
       `Le contact a été créé automatiquement dans le CRM avec le statut "Lead Marketing".`,
       "",
@@ -163,12 +203,7 @@ export async function POST(request: Request) {
       .select("id, email")
       .in("email", LEAD_NOTIFY_EMAILS);
     if (notifTargets && notifTargets.length > 0) {
-      const sourceLabel = source === "embed-form"
-        ? "Meta ads - tunnel commercial"
-        : source === "embed-form-book"
-        ? "Meta ads - tunnel book"
-        : "Landing Page";
-      const notifRows = notifTargets.map((m: any) => ({
+      const notifRows = notifTargets.map((m: { id: string; email: string }) => ({
         recipient_id: m.id,
         type: "new_lead",
         title: `Nouveau lead : ${firstName} ${lastName}`,
@@ -222,31 +257,41 @@ export async function POST(request: Request) {
       }
     }
 
-    // Inbox agent pipeline: a web-form lead becomes a conversation the agent can handle.
+    // Inbox agent pipeline: a web-form lead becomes a conversation the agent contacts.
+    // Speed-to-lead: on un lead "fiche" éligible, on envoie un message d'accueil fixe
+    // signé Rafi (avec lien RDV) immédiatement — pas de tour LLM (0 latence). L'agent
+    // dynamique (runAgentTurn) prend le relais quand le lead répond.
     try {
       const { ingestIncoming, svc } = await import("@/lib/inbox/ingest");
       const { classifyConversation } = await import("@/lib/inbox/classify");
       const { evaluateEligibility } = await import("@/lib/inbox/eligibility");
-      const { runAgentTurn } = await import("@/lib/inbox/agent");
-      const body = `Nouveau lead via formulaire (${parsed.data.source || "site"}).`;
+      const { sendGreeting } = await import("@/lib/inbox/agent");
+      const body = `Nouveau lead via formulaire (${effectiveSource || "site"}).`;
+      // external_chat_id déterministe par email → une re-soumission du même lead réutilise
+      // la conversation existante (au lieu d'en recréer une) ; l'index unique partiel
+      // conversations_chat_uniq + le handling 23505 dédupent aussi les soumissions concurrentes.
+      const webformChatId = `webform-${parsed.data.email.trim().toLowerCase()}`;
       const result = await ingestIncoming({
-        channel: "web_form", direction: "inbound", accountId: null, externalChatId: null,
-        externalMessageId: `webform-${parsed.data.email}-${Date.now()}`,
+        channel: "web_form", direction: "inbound", accountId: null, externalChatId: webformChatId,
+        externalMessageId: `webform-${parsed.data.email.trim().toLowerCase()}-${Date.now()}`,
         senderName: `${parsed.data.firstName} ${parsed.data.lastName}`,
         senderHandle: parsed.data.email, body, subject: "Lead formulaire web",
       });
-      if (result && result.direction === "inbound") {
+      // Greeting UNIQUEMENT sur une conversation neuve → un seul message d'accueil par lead,
+      // jamais de doublon sur re-submit / double-clic / retry / rejeu webhook.
+      if (result && result.direction === "inbound" && result.isNewConversation) {
         await classifyConversation(result.conversationId).catch(() => {});
         const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
         if (v.eligible) {
           await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
-          await runAgentTurn(result.conversationId).catch(() => {});
+          await sendGreeting(result.conversationId).catch(() => {});
         }
       }
     } catch (e) { console.error("[leads/inbound] inbox pipeline failed:", e); }
 
     return NextResponse.json({ success: true, contactId }, { headers: CORS_HEADERS });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500, headers: CORS_HEADERS });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500, headers: CORS_HEADERS });
   }
 }
