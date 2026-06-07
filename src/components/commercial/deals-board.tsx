@@ -19,6 +19,7 @@ import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
+import { WF009CollectorBlock } from "./wf009-collector-block";
 import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
 import { ConventionModal } from "@/components/finance/convention-modal";
 import { QuoteSendModal } from "./quote-send-modal";
@@ -174,10 +175,14 @@ export function DealsBoard({
       .from("billing_entries")
       .select("client_name, billing_months(id, amount, month, status)")
       .eq("deal_id", dealId);
-    const months = (entries ?? []).flatMap((e: any) =>
-      ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, client_name: e.client_name }))
+    type BillingMonthRow = { id: string; amount: number | string | null; month: string; status: string | null };
+    type EntryRow = { client_name: string | null; billing_months: BillingMonthRow[] | null };
+    const months = ((entries ?? []) as unknown as EntryRow[]).flatMap((e) =>
+      (e.billing_months ?? []).map((m) => ({
+        id: m.id, amount: Number(m.amount) || 0, month: m.month, status: m.status, client_name: e.client_name ?? "",
+      }))
     );
-    months.sort((a: any, b: any) => a.month.localeCompare(b.month));
+    months.sort((a, b) => a.month.localeCompare(b.month));
     setDealBillingMonths(months);
     setLoadingDocs(false);
   }
@@ -867,6 +872,9 @@ export function DealsBoard({
                     <p style={{ fontSize: 13, color: "#1a2a3a", whiteSpace: "pre-wrap" }}>{selectedDeal.notes}</p>
                   </div>
                 )}
+
+                {/* Collector suggestion formateur (WF-009) */}
+                <WF009CollectorBlock dealId={selectedDeal.id} />
 
                 {/* Documents */}
                 <div>
