@@ -151,8 +151,9 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
   if (!lock) return; // taken over / paused / booked while we were thinking — do not send.
 
-  // web_form has no Unipile chat/email account wired yet (delivery via Resend is a follow-up):
-  // deliver() will throw for web_form and the catch escalates it to a human — no phantom "sent".
+  // web_form/email are delivered via Unipile, falling back to the default account
+  // (UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID) in deliver(). Without Unipile configured we skip the
+  // turn entirely rather than emit a phantom "sent" message.
   if (!unipileConfigured()) {
     console.warn("[inbox.agent] Unipile not configured — turn skipped (would have sent).");
     return;

@@ -18,10 +18,33 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export function InboxClient({ initial }: { initial: Conv[] }) {
-  const [convs] = useState<Conv[]>(initial);
+  const [convs, setConvs] = useState<Conv[]>(initial);
   const [selected, setSelected] = useState<string | null>(null);
   const [channel, setChannel] = useState("");
   const [attention, setAttention] = useState(true); // filtre par défaut
+
+  // Rafraîchissement auto de la liste (~25s) : nouveaux messages / escalades remontent sans reload.
+  // Le filtrage reste client-side (channel/attention) ; on re-fetch les 200 dernières conversations.
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      try {
+        const r = await fetch("/api/inbox");
+        if (!r.ok) return;
+        const j = await r.json();
+        const rows = (j.conversations ?? []) as Array<Omit<Conv, "contacts"> & { contacts: Conv["contacts"] | Conv["contacts"][] }>;
+        const next: Conv[] = rows.map((c) => ({
+          ...c,
+          contacts: Array.isArray(c.contacts) ? (c.contacts[0] ?? null) : c.contacts,
+        }));
+        if (active) setConvs(next);
+      } catch {
+        // erreur réseau transitoire → on garde la liste courante
+      }
+    };
+    const interval = setInterval(refresh, 25_000);
+    return () => { active = false; clearInterval(interval); };
+  }, []);
 
   const filtered = convs.filter((c) =>
     (!channel || c.channel === channel) &&
