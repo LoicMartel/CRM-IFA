@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, X, Video, Building2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Video, Building2, Copy, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -127,11 +127,26 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
 
   const [sessionStatus, setSessionStatus] = useState("planned");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [copiedAddress, setCopiedAddress] = useState(false);
+  const initialNotesRef = useRef("");
+
+  function hasUnsavedChanges() {
+    return notesText !== initialNotesRef.current || (selectedSession && sessionStatus !== (statusOverrides[selectedSession.id] ?? selectedSession.status));
+  }
+
+  function safeClosePopup() {
+    if (hasUnsavedChanges() && !window.confirm("Vous avez des modifications non enregistrées. Fermer quand même ?")) return;
+    stopRecording();
+    setSelectedSession(null);
+    setCopiedAddress(false);
+  }
 
   function openSession(s: AgendaSession) {
     setSelectedSession(s);
     setNotesText(s.notes ?? "");
+    initialNotesRef.current = s.notes ?? "";
     setSessionStatus(statusOverrides[s.id] ?? s.status);
+    setCopiedAddress(false);
   }
 
   async function handleSaveSession() {
@@ -193,6 +208,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
     } catch {}
     setSavingNotes(false);
     setSelectedSession(null);
+    setCopiedAddress(false);
     stopRecording();
     router.refresh();
   }
@@ -262,7 +278,14 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           </div>
         )}
         {!isVT && s.session_location && (
-          <div style={{ fontSize: 9, color: "#5a6f80", marginTop: 2 }}>📍 {s.session_location}</div>
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(s.session_location!);
+            }}
+            title="Cliquer pour copier l'adresse"
+            style={{ fontSize: 9, color: "#5a6f80", marginTop: 2, cursor: "copy" }}
+          >📍 {s.session_location}</div>
         )}
         {!s.is_billable && <span style={{ fontSize: 9, fontWeight: 600, padding: "0 5px", borderRadius: 6, background: "#f5f5f5", color: "#999" }}>NF</span>}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
@@ -452,7 +475,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         return (
           <div
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
-            onMouseDown={(e) => { if (e.target === e.currentTarget) { stopRecording(); setSelectedSession(null); } }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) safeClosePopup(); }}
           >
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 560, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
               {/* Header */}
@@ -463,7 +486,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                   </h3>
                   <div style={{ fontSize: 13, color: "#5a6f80", marginTop: 2 }}>{company}{program ? ` · ${program}` : ""}</div>
                 </div>
-                <button onClick={() => { stopRecording(); setSelectedSession(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
+                <button onClick={safeClosePopup} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -511,6 +534,50 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                           {l!.first_name} {l!.last_name}
                         </span>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Address (journée only) */}
+                {s.session_type === "journee" && s.session_location && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Adresse</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f5f7fa", borderRadius: 8, padding: "8px 12px" }}>
+                      <span style={{ fontSize: 13, color: "#1a2a3a", flex: 1, userSelect: "text" }}>📍 {s.session_location}</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(s.session_location!);
+                          setCopiedAddress(true);
+                          setTimeout(() => setCopiedAddress(false), 2000);
+                        }}
+                        style={{ background: "none", border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: copiedAddress ? "#2e7d32" : "#5a6f80", flexShrink: 0 }}
+                        title="Copier l'adresse"
+                      >
+                        {copiedAddress ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        {copiedAddress ? "Copié" : "Copier"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Zoom link (VT only) */}
+                {s.session_type === "vt" && s.session_location && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Lien visio</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f5f7fa", borderRadius: 8, padding: "8px 12px" }}>
+                      <a href={s.session_location} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.session_location}</a>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(s.session_location!);
+                          setCopiedAddress(true);
+                          setTimeout(() => setCopiedAddress(false), 2000);
+                        }}
+                        style={{ background: "none", border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer", padding: "4px 8px", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: copiedAddress ? "#2e7d32" : "#5a6f80", flexShrink: 0 }}
+                        title="Copier le lien"
+                      >
+                        {copiedAddress ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                        {copiedAddress ? "Copié" : "Copier"}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -563,7 +630,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                 </button>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button
-                    onClick={() => { stopRecording(); setSelectedSession(null); }}
+                    onClick={safeClosePopup}
                     style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}
                   >
                     Annuler
