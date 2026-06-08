@@ -263,7 +263,7 @@ export function CompanyDetail({
 
   const DOC_TYPE_LABELS: Record<string, string> = { devis: "Devis", convention: "Convention", programme: "Programme", convocation: "Convocation", facture: "Facture", emargements: "Émargements", bilan_initial: "Bilan initial", bilan_intermediaire: "Bilan intermédiaire", bilan_final: "Bilan final", autre: "Autre" };
   const DOC_TYPE_COLORS: Record<string, { bg: string; text: string }> = { devis: { bg: "#fff3e0", text: "#e65100" }, convention: { bg: "#e8f0fe", text: "#0d4f7a" }, programme: { bg: "#e8f5e9", text: "#2e7d32" }, convocation: { bg: "#f3e5f5", text: "#6a1b9a" }, facture: { bg: "#fce4ec", text: "#c62828" }, emargements: { bg: "#e0f2f1", text: "#00695c" }, bilan_initial: { bg: "#e3f2fd", text: "#1565c0" }, bilan_intermediaire: { bg: "#fff8e1", text: "#f57f17" }, bilan_final: { bg: "#fce4ec", text: "#ad1457" }, autre: { bg: "#f5f5f5", text: "#555" } };
-  const INVOICE_STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = { encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" }, facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006" }, en_cours: { label: "En cours", bg: "#bdd7ee", text: "#1f4e79" }, non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888" } };
+  const INVOICE_STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = { a_valider: { label: "À valider", bg: "#ffe8b3", text: "#92600a" }, planifie: { label: "Planifié", bg: "#e7e0ff", text: "#5b21b6" }, a_facturer: { label: "À facturer", bg: "#bdd7ee", text: "#1f4e79" }, facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006" }, encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" }, non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888" } };
 
   async function openDealPopup(deal: Record<string, unknown>) {
     setSelectedDeal(deal);
@@ -385,7 +385,7 @@ export function CompanyDetail({
   const allBillingMonths = billingEntries.flatMap((e) => (e.billing_months as any[]) ?? []);
   const billingEncaisse = allBillingMonths.filter((m) => m.status === "encaisse").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
   const billingFacture = allBillingMonths.filter((m) => m.status === "facture").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
-  const billingEnCours = allBillingMonths.filter((m) => m.status === "en_cours").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
+  const billingAFacturer = allBillingMonths.filter((m) => m.status === "a_facturer").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
   const billingNonFait = allBillingMonths.filter((m) => m.status === "non_fait").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
   const totalBilling = allBillingMonths.reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
   const totalSessions = sessions.length;
@@ -615,17 +615,17 @@ export function CompanyDetail({
                       <Receipt style={{ width: 16, height: 16, color: "#6a1b9a" }} /> Facturation
                     </h3>
                     <div className="grid grid-cols-4 gap-3">
-                      <div style={{ background: "#c6efce", borderRadius: 8, padding: 10 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#006100" }}>Encaissé</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: "#006100", marginTop: 2 }}>{fmt(billingEncaisse)}</div>
+                      <div style={{ background: "#bdd7ee", borderRadius: 8, padding: 10 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1f4e79" }}>À facturer</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#1f4e79", marginTop: 2 }}>{fmt(billingAFacturer)}</div>
                       </div>
                       <div style={{ background: "#ffc7ce", borderRadius: 8, padding: 10 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9c0006" }}>Facturé</div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "#9c0006", marginTop: 2 }}>{fmt(billingFacture)}</div>
                       </div>
-                      <div style={{ background: "#bdd7ee", borderRadius: 8, padding: 10 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1f4e79" }}>En cours</div>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: "#1f4e79", marginTop: 2 }}>{fmt(billingEnCours)}</div>
+                      <div style={{ background: "#c6efce", borderRadius: 8, padding: 10 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#006100" }}>Encaissé</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#006100", marginTop: 2 }}>{fmt(billingEncaisse)}</div>
                       </div>
                       <div style={{ background: "#f5f5f5", borderRadius: 8, padding: 10 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#888" }}>Non fait</div>
@@ -880,9 +880,9 @@ export function CompanyDetail({
                             <TableHead>Raison sociale</TableHead>
                             <TableHead>Financement</TableHead>
                             <TableHead className="text-right">Total</TableHead>
-                            <TableHead className="text-right">Encaissé</TableHead>
+                            <TableHead className="text-right">À facturer</TableHead>
                             <TableHead className="text-right">Facturé</TableHead>
-                            <TableHead className="text-right">En cours</TableHead>
+                            <TableHead className="text-right">Encaissé</TableHead>
                             <TableHead className="text-right">Non fait</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -892,16 +892,16 @@ export function CompanyDetail({
                             const eTotal = months.reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
                             const eEncaisse = months.filter((m: any) => m.status === "encaisse").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
                             const eFacture = months.filter((m: any) => m.status === "facture").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
-                            const eEnCours = months.filter((m: any) => m.status === "en_cours").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
+                            const eAFacturer = months.filter((m: any) => m.status === "a_facturer").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
                             const eNonFait = months.filter((m: any) => m.status === "non_fait").reduce((a: number, m: any) => a + (Number(m.amount) || 0), 0);
                             return (
                               <TableRow key={s(entry.id)}>
                                 <TableCell className="font-semibold">{s(entry.client_name)}</TableCell>
                                 <TableCell>{s(entry.funding_type) ? <Badge bg="#eef1f6" text="#1b2a4a" label={s(entry.funding_type)} /> : "—"}</TableCell>
                                 <TableCell className="text-right font-semibold">{fmt(eTotal)}</TableCell>
-                                <TableCell className="text-right" style={{ color: "#006100" }}>{eEncaisse > 0 ? fmt(eEncaisse) : "—"}</TableCell>
+                                <TableCell className="text-right" style={{ color: "#1f4e79" }}>{eAFacturer > 0 ? fmt(eAFacturer) : "—"}</TableCell>
                                 <TableCell className="text-right" style={{ color: "#9c0006" }}>{eFacture > 0 ? fmt(eFacture) : "—"}</TableCell>
-                                <TableCell className="text-right" style={{ color: "#1f4e79" }}>{eEnCours > 0 ? fmt(eEnCours) : "—"}</TableCell>
+                                <TableCell className="text-right" style={{ color: "#006100" }}>{eEncaisse > 0 ? fmt(eEncaisse) : "—"}</TableCell>
                                 <TableCell className="text-right" style={{ color: "#888" }}>{eNonFait > 0 ? fmt(eNonFait) : "—"}</TableCell>
                               </TableRow>
                             );

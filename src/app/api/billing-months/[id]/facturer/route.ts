@@ -9,7 +9,7 @@ const serviceClient = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ELIGIBLE_STATUSES = ["non_fait", "en_cours", null, "planifie", "a_valider"] as const;
+const ELIGIBLE_STATUSES = ["non_fait", "a_facturer", null, "planifie", "a_valider"] as const;
 
 // Kill switch : true => ancien proxy n8n (rollback instant), false => intra-CRM.
 const USE_N8N_FALLBACK = process.env.USE_N8N_FALLBACK === "true";
@@ -71,7 +71,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!ELIGIBLE_STATUSES.includes(bm.status as typeof ELIGIBLE_STATUSES[number])) {
     return NextResponse.json(
       {
-        error: `Statut "${bm.status}" non éligible (attendu: non_fait, en_cours, planifié, à valider, ou vide)`,
+        error: `Statut "${bm.status}" non éligible (attendu: non_fait, à facturer, planifié, à valider, ou vide)`,
         current_status: bm.status,
       },
       { status: 409 },

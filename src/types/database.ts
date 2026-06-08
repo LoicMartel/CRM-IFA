@@ -8,7 +8,18 @@ export type OpportunityStage = "opportunité" | "pipe" | "gagné" | "perdu";
 export type LearnerStatus = "ancien" | "actuel" | "futur";
 export type DeliveryMode = "présentiel" | "distanciel";
 export type FundingType = "UP FRONT" | "OPCO" | "CPF" | "autre";
-export type BillingStatus = "encaisse" | "facture" | "en_cours" | "non_fait" | "planifie" | "a_valider";
+// Cycle de vie d'une échéance de facturation (modèle cadré avec Loïc, 04/06) :
+//   a_valider → planifie → a_facturer → facture → encaisse
+//   - a_valider  : plan créé, en attente de validation Naznine (tout le plan en 1 fois)
+//   - planifie   : plan validé, échéance programmée jusqu'à sa date
+//   - a_facturer : échéance à terme, facture à émettre. NB : posé manuellement via l'UI
+//                  aujourd'hui — le cron va directement planifie → facture (auto) ou
+//                  planifie → a_valider (validation), il ne pose pas a_facturer lui-même.
+//   - facture    : facture émise (Pennylane), en attente de paiement
+//   - encaisse   : facture payée — état final
+//   - non_fait   : échéance saisie hors cycle auto (état neutre, en dehors du cycle)
+// Garde-fou : plan modifié/annulé → échéances futures non émises repassent en a_valider.
+export type BillingStatus = "a_valider" | "planifie" | "a_facturer" | "facture" | "encaisse" | "non_fait";
 export type ActivityType = "appel" | "email" | "réunion" | "note" | "tâche" | "relance";
 export type Department = "ADMIN" | "MARKETING" | "PÉDAGOGIE" | "VENTE" | "RH";
 
