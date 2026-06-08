@@ -30,11 +30,10 @@ export interface IncomingMessage {
   channel: Channel;
   direction: "inbound" | "outbound"; // outbound = message émis hors CRM (anti-collision)
   accountId: string | null;
+  // email: thread_id · chat: chat_id · web_form: webform-<email>
   externalChatId: string | null;
+  // email: provider_id (Gmail/provider msg id, also the reply_to target) · chat: message_id
   externalMessageId: string | null;
-  // Email threading only: Unipile id of the parent email (in_reply_to.id) so a reply
-  // is grouped into the existing conversation instead of spawning a new one.
-  inReplyToExternalId?: string | null;
   senderName: string | null;
   senderHandle: string | null; // email / linkedin url / phone
   body: string;
