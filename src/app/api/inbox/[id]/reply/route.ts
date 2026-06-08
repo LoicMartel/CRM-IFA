@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { svc } from "@/lib/inbox/ingest";
+import { resolveEmailReply } from "@/lib/inbox/threading";
 import { SAFE_REPLY_CHANNELS, type Channel } from "@/lib/inbox/types";
-import { sendChatMessage, sendEmail, unipileConfigured } from "@/lib/unipile/client";
+import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
 
 const bodySchema = z.object({ body: z.string().trim().min(1).max(8000) });
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const sb = svc();
   const { data: conv } = await sb.from("conversations")
-    .select("channel, account_id, external_chat_id, contacts(email)").eq("id", id).maybeSingle();
+    .select("channel, account_id, external_chat_id, subject, contacts(first_name, last_name, email)").eq("id", id).maybeSingle();
   if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const channel = conv.channel as Channel;
   if (!SAFE_REPLY_CHANNELS.includes(channel)) return NextResponse.json({ error: "channel not replyable from CRM (open natively)" }, { status: 422 });
@@ -31,12 +32,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }).select("id").single();
 
   try {
-    let ext: { id: string };
+    let ext: UnipileSendResult;
     if (channel === "email") {
       const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
-      const to = (contact as { email: string | null } | null)?.email;
+      const c = contact as { first_name: string | null; last_name: string | null; email: string | null } | null;
+      const to = c?.email;
       if (!to) throw new Error("no recipient email");
-      ext = await sendEmail(conv.account_id!, to, "Re:", parsed.data.body);
+      const account = conv.account_id ?? process.env.UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID ?? null;
+      if (!account) throw new Error("no email account (set UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID)");
+      const thread = await resolveEmailReply(sb, id);
+      const toName = `${c?.first_name ?? ""} ${c?.last_name ?? ""}`.trim() || null;
+      ext = await sendEmail({ accountId: account, to, toName, subject: thread.subject ?? "Re: votre demande — La Closing Académie", body: parsed.data.body, replyTo: thread.replyTo });
     } else {
       if (!conv.external_chat_id) throw new Error("no chat id");
       ext = await sendChatMessage(conv.external_chat_id, parsed.data.body);

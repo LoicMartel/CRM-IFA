@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { IncomingMessage } from "./types";
+import { normalizeSubject } from "./threading";
 
 export function svc() {
   return createClient(
@@ -58,6 +59,39 @@ async function createContact(sb: ReturnType<typeof svc>, msg: IncomingMessage, o
   return data.id;
 }
 
+// Email has no native thread_id. We thread via Unipile ids: a reply carries in_reply_to.id
+// (= parent email's Unipile id), and we stored that id as the parent message's external_message_id.
+async function resolveEmailConversation(
+  sb: ReturnType<typeof svc>,
+  msg: IncomingMessage,
+  contactId: string | null
+): Promise<string | null> {
+  // 1) Direct parent link via Unipile id.
+  if (msg.inReplyToExternalId) {
+    const { data: parent } = await sb.from("messages").select("conversation_id")
+      .eq("external_message_id", msg.inReplyToExternalId).maybeSingle();
+    if (parent?.conversation_id) return parent.conversation_id as string;
+  }
+  // 2) Fallback: same contact + same normalized subject. Email threads only (never web_form,
+  //    whose subject is generic and would wrongly merge distinct emails) and non-empty subject.
+  if (contactId && msg.subject) {
+    const target = normalizeSubject(msg.subject);
+    if (target) {
+      const { data: candidates } = await sb.from("conversations")
+        .select("id, subject")
+        .eq("contact_id", contactId)
+        .eq("channel", "email")
+        .order("last_message_at", { ascending: false })
+        .limit(20);
+      const hit = (candidates ?? []).find(
+        (c) => c.subject && normalizeSubject(c.subject as string) === target
+      );
+      if (hit) return hit.id as string;
+    }
+  }
+  return null;
+}
+
 export interface IngestResult {
   conversationId: string;
   isNewConversation: boolean;
@@ -77,31 +111,40 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   const ownerId = await resolveOwnerId(sb);
   let conversationId: string | null = null;
   let isNewConversation = false;
-  let isExistingContact = false;
 
-  if (msg.externalChatId) {
+  // Resolve a contact match once (used for grouping fallbacks and conversation creation).
+  const matched = await matchContact(sb, msg);
+  const isExistingContact = matched.isExisting;
+
+  if (msg.channel === "email") {
+    conversationId = await resolveEmailConversation(sb, msg, matched.contactId);
+  } else if (msg.externalChatId) {
     const { data: existing } = await sb.from("conversations").select("id")
       .eq("channel", msg.channel).eq("external_chat_id", msg.externalChatId).maybeSingle();
     conversationId = existing?.id ?? null;
   }
 
+  // Don't materialize a conversation (and a self-contact) for an untracked outbound message;
+  // anti-collision only applies to threads we already follow.
+  if (!conversationId && msg.direction === "outbound") return null;
+
   if (!conversationId) {
-    const matched = await matchContact(sb, msg);
-    isExistingContact = matched.isExisting;
     const contactId = matched.contactId ?? (await createContact(sb, msg, ownerId));
+    // Email threads are keyed by the root email's own Unipile id; chat by the provider chat id.
+    const externalChatId = msg.channel === "email" ? msg.externalMessageId : msg.externalChatId;
     const { data, error } = await sb.from("conversations").insert({
       contact_id: contactId,
       channel: msg.channel,
       account_id: msg.accountId,
-      external_chat_id: msg.externalChatId,
+      external_chat_id: externalChatId,
       subject: msg.subject ?? null,
       owner_id: ownerId,
       unread: true,
     }).select("id").single();
-    if (error?.code === "23505" && msg.externalChatId) {
+    if (error?.code === "23505" && externalChatId) {
       // Concurrent first-message delivery created the conversation first — adopt the winner.
       const { data: winner } = await sb.from("conversations").select("id")
-        .eq("channel", msg.channel).eq("external_chat_id", msg.externalChatId).maybeSingle();
+        .eq("channel", msg.channel).eq("external_chat_id", externalChatId).maybeSingle();
       conversationId = winner?.id ?? null;
       if (!conversationId) { console.error("[inbox.ingest] conversation insert race unresolved"); return null; }
     } else if (error || !data) {
@@ -115,6 +158,17 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   }
 
   if (!conversationId) return null; // narrow: both branches above set it or returned early
+
+  // Echo guard: Unipile mirrors our own agent/CRM sends back as outbound webhooks. Without a
+  // guaranteed id match we'd double-insert and self-pause the agent, so an identical recent
+  // outbound in the same conversation is treated as that echo (deduped).
+  if (msg.direction === "outbound") {
+    const since = new Date(Date.now() - 5 * 60_000).toISOString();
+    const { data: echo } = await sb.from("messages").select("id")
+      .eq("conversation_id", conversationId).eq("direction", "outbound")
+      .eq("body", msg.body).gte("created_at", since).limit(1).maybeSingle();
+    if (echo) return null;
+  }
 
   const { error: msgErr } = await sb.from("messages").insert({
     conversation_id: conversationId,

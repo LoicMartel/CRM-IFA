@@ -2,7 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { svc } from "./ingest";
 import { escalateConversation } from "./escalation";
 import { resolveBookingLink } from "./booking-links";
-import { sendChatMessage, sendEmail, unipileConfigured } from "@/lib/unipile/client";
+import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
+import { resolveEmailReply } from "./threading";
 import { type Channel } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -28,15 +29,21 @@ const TOOLS: Anthropic.Tool[] = [
 
 const EMAIL_SUBJECT = "Votre demande — La Closing Académie";
 
+interface DeliverOpts {
+  toName?: string | null;
+  subject?: string;
+  replyTo?: string | null;
+}
+
 // email + web_form (leads "fiche" sans chat d'origine) partent en EMAIL via Unipile.
 // Quand la conversation n'a pas de compte d'origine (web_form), on retombe sur le
 // compte email généraliste (UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID, posé au cutover token).
-async function deliver(channel: Channel, accountId: string | null, chatId: string | null, to: string | null, text: string, subject = EMAIL_SUBJECT): Promise<{ id: string }> {
+async function deliver(channel: Channel, accountId: string | null, chatId: string | null, to: string | null, text: string, opts: DeliverOpts = {}): Promise<UnipileSendResult> {
   if (channel === "email" || channel === "web_form") {
     if (!to) throw new Error("no recipient email");
     const account = accountId ?? process.env.UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID ?? null;
     if (!account) throw new Error("no email account (set UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID)");
-    return sendEmail(account, to, subject, text);
+    return sendEmail({ accountId: account, to, toName: opts.toName ?? null, subject: opts.subject ?? EMAIL_SUBJECT, body: text, replyTo: opts.replyTo ?? null });
   }
   if (!chatId) throw new Error("no chat id");
   return sendChatMessage(chatId, text);
@@ -162,7 +169,16 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   try {
     const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
     const to = (contact as { email: string | null } | null)?.email ?? null;
-    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text);
+    let opts: DeliverOpts = {};
+    if (conv.channel === "email" || conv.channel === "web_form") {
+      const thread = await resolveEmailReply(sb, conversationId);
+      // Only thread (Re: subject + reply_to) when replying to a real prior email; a fresh
+      // web_form lead has no Unipile parent → keep the generic subject, no reply_to.
+      opts = thread.replyTo
+        ? { subject: thread.subject ?? EMAIL_SUBJECT, replyTo: thread.replyTo }
+        : { subject: EMAIL_SUBJECT };
+    }
+    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text, opts);
     await sb.from("messages").insert({
       conversation_id: conversationId, direction: "outbound", sent_by: "agent", body: text,
       external_message_id: ext.id, status: "sent", sent_at: new Date().toISOString(),

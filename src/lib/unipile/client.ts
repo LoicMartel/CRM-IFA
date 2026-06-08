@@ -1,26 +1,55 @@
+// Unipile unified-messaging client.
+// Schema verified against developer.unipile.com docs (2026-06-08); response bodies of the
+// POST endpoints are undocumented, so they are parsed defensively. Real E2E pending the
+// Unipile token. UNIPILE_DSN is the DSN root (e.g. https://{sub}.unipile.com:{port}) WITHOUT
+// the /api/v1 suffix — the client adds it. Send endpoints expect multipart/form-data.
 const BASE = process.env.UNIPILE_DSN ?? "";
 const KEY = process.env.UNIPILE_API_KEY ?? "";
+
+export interface UnipileSendResult {
+  id: string | null;
+}
 
 export function unipileConfigured(): boolean {
   return Boolean(BASE && KEY);
 }
 
-async function unipileFetch(path: string, init: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { "X-API-KEY": KEY, "Content-Type": "application/json", accept: "application/json", ...(init.headers ?? {}) },
-  });
-  if (!res.ok) throw new Error(`Unipile ${path} → ${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
-export async function sendChatMessage(chatId: string, text: string): Promise<{ id: string }> {
-  return unipileFetch(`/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ text }) });
-}
-
-export async function sendEmail(accountId: string, to: string, subject: string, body: string): Promise<{ id: string }> {
-  return unipileFetch(`/emails`, {
+async function unipilePost(path: string, form: FormData): Promise<UnipileSendResult> {
+  // No Content-Type header: fetch derives the multipart boundary from the FormData body.
+  const res = await fetch(`${BASE}/api/v1${path}`, {
     method: "POST",
-    body: JSON.stringify({ account_id: accountId, to: [{ identifier: to }], subject, body }),
+    headers: { "X-API-KEY": KEY, accept: "application/json" },
+    body: form,
   });
+  if (!res.ok) throw new Error(`Unipile ${path} → ${res.status}: ${(await res.text()).slice(0, 500)}`);
+  const j = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  const id = (j.id ?? j.message_id ?? j.email_id ?? null) as string | null;
+  if (!id) console.warn(`[unipile] ${path} returned no id — dedup/threading will degrade for this message`);
+  return { id };
+}
+
+export async function sendChatMessage(chatId: string, text: string): Promise<UnipileSendResult> {
+  const form = new FormData();
+  form.append("text", text);
+  return unipilePost(`/chats/${chatId}/messages`, form);
+}
+
+export interface SendEmailParams {
+  accountId: string;
+  to: string;
+  toName?: string | null;
+  subject: string;
+  body: string;
+  // Unipile id of the email being replied to → keeps the reply in the same thread.
+  replyTo?: string | null;
+}
+
+export async function sendEmail(params: SendEmailParams): Promise<UnipileSendResult> {
+  const form = new FormData();
+  form.append("account_id", params.accountId);
+  form.append("subject", params.subject);
+  form.append("body", params.body);
+  form.append("to", JSON.stringify([{ display_name: params.toName ?? undefined, identifier: params.to }]));
+  if (params.replyTo) form.append("reply_to", params.replyTo);
+  return unipilePost(`/emails`, form);
 }

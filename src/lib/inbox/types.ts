@@ -32,6 +32,9 @@ export interface IncomingMessage {
   accountId: string | null;
   externalChatId: string | null;
   externalMessageId: string | null;
+  // Email threading only: Unipile id of the parent email (in_reply_to.id) so a reply
+  // is grouped into the existing conversation instead of spawning a new one.
+  inReplyToExternalId?: string | null;
   senderName: string | null;
   senderHandle: string | null; // email / linkedin url / phone
   body: string;
