@@ -3,9 +3,10 @@ import { z } from "zod";
 import { ingestIncoming, svc } from "@/lib/inbox/ingest";
 import { classifyConversation } from "@/lib/inbox/classify";
 import { evaluateEligibility } from "@/lib/inbox/eligibility";
-import { escalateConversation } from "@/lib/inbox/escalation";
+import { escalateConversation, promoteConversation } from "@/lib/inbox/escalation";
 import { runAgentTurn } from "@/lib/inbox/agent";
 import { resolveInboxAccount } from "@/lib/inbox/routing";
+import { shouldSkipScoring } from "@/lib/inbox/upstream-filter";
 import type { Channel, IncomingMessage } from "@/lib/inbox/types";
 
 // Unipile sends TWO distinct flat webhooks.
@@ -133,16 +134,32 @@ function mapMessaging(p: z.infer<typeof messagingSchema>): Mapped {
   };
 }
 
-async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string, accountId: string | null) {
+async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string, accountId: string | null, senderHandle: string | null, subject: string | null) {
   // Routage account_id (socle F+C). The mode decides what the engine may do on this box.
   const account = await resolveInboxAccount(accountId);
+  const sb = svc();
 
-  // Non-agent accounts (copilot / classify) NEVER auto-reply — the 09/06 "loaded box" security
-  // guarantee. The socle just pins agent_status='human' (no eligibility, no agent turn, no greeting);
-  // mailbox labelling (chantier C, classifyMailbox) and copilote scoring/promotion (chantier F)
-  // graft onto this branch later.
-  if (account.mode !== "agent") {
-    await svc().from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
+  // mode=copilot (chantier F P1, copilote Rafi): score → feed/CRM, ZÉRO réponse. The conversation
+  // is pinned 'human' so neither the agent nor the followup cron ever sends. An upstream filter
+  // drops obvious noise without an LLM call; above the interest threshold we promote to the feed.
+  if (account.mode === "copilot") {
+    await sb.from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
+    if (shouldSkipScoring(senderHandle, subject, body)) return; // no-reply/internal/newsletter → no LLM, no feed
+    const scored = await classifyConversation(result.conversationId).catch((e) => { console.error("[unipile] classify:", e); return null; });
+    if (!scored || scored.intent === "spam") return; // spam / failure → labelled, not promoted
+    const threshold = Number(process.env.INBOX_INTEREST_THRESHOLD ?? 60);
+    if (scored.interest_score >= threshold) {
+      await promoteConversation(result.conversationId, scored.score_reason || `Lead intéressant (score ${scored.interest_score}/100)`);
+    } else {
+      console.log(`[unipile] copilot below threshold (${scored.interest_score} < ${threshold}) — stored, not promoted.`);
+    }
+    return;
+  }
+
+  // mode=classify (chantier C, tri courrier Rafi): mailbox labelling (classifyMailbox) lands with C.
+  // Socle/F: pin 'human' (NEVER reply), no labelling yet.
+  if (account.mode === "classify") {
+    await sb.from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
     return;
   }
 
@@ -160,7 +177,6 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
   }
 
   const verdict = await evaluateEligibility(result.conversationId, result.isExistingContact, channel, body);
-  const sb = svc();
   if (verdict.eligible) {
     await sb.from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
     await runAgentTurn(result.conversationId).catch((e) => console.error("[unipile] agent:", e));
@@ -213,7 +229,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, humanTakeover: true });
     }
 
-    await processInbound(result, mapped.channel, mapped.body, mapped.accountId);
+    await processInbound(result, mapped.channel, mapped.body, mapped.accountId, mapped.senderHandle, mapped.subject ?? null);
     return NextResponse.json({ ok: true, conversationId: result.conversationId });
   } catch (e) {
     console.error("[webhooks/unipile] error:", e);
