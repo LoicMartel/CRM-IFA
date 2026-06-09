@@ -13,9 +13,13 @@ import type { Channel, IncomingMessage } from "@/lib/inbox/types";
 //    mail_sent). Group by thread_id; provider_id = dedup key + reply_to target.
 //    ⚠️ Default webhook events for source "email" = mail_received ONLY → at cutover also subscribe
 //    mail_sent (anti-collision: human sends from the native client) when creating the webhook.
-//  - messaging (LinkedIn/WhatsApp/Instagram/Messenger): account_type, chat_id, message (text),
-//    sender.attendee_provider_id, account_info.user_id (== sender => self/outbound). Doc-based,
-//    NOT yet E2E-validated (needs a connected chat account). A separate "messaging" webhook is required.
+//  - messaging (LinkedIn/WhatsApp/Instagram/Messenger): E2E-validated 2026-06-09 against a real
+//    WhatsApp account. Flat fields incl. account_type, chat_id, message (text), message_id,
+//    sender{attendee_name, attendee_provider_id ("<digits>@lid"), attendee_public_identifier
+//    ("<phone>@s.whatsapp.net"), attendee_specifics.phone_number}, and a top-level `is_sender`
+//    boolean (true => the connected account sent it => self/outbound). ⚠️ There is NO
+//    account_info.user_id (earlier doc-based assumption was wrong — caused self-sends to be
+//    ingested as inbound leads). A separate "messaging" webhook is required.
 
 function mapAccountType(t: string | undefined): Channel | null {
   switch ((t ?? "").toUpperCase()) {
@@ -58,11 +62,13 @@ const messagingSchema = z.object({
   chat_id: z.string().optional().nullable(),
   message_id: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  account_info: z.object({ user_id: z.string().optional().nullable() }).optional().nullable(),
+  is_sender: z.union([z.boolean(), z.number()]).optional().nullable(), // true/1 => connected account sent it (self/outbound)
   sender: z.object({
     attendee_name: z.string().optional().nullable(),
     attendee_provider_id: z.string().optional().nullable(),
     attendee_profile_url: z.string().optional().nullable(),
+    attendee_public_identifier: z.string().optional().nullable(), // "<phone>@s.whatsapp.net" (phone-bearing)
+    attendee_specifics: z.object({ phone_number: z.string().optional().nullable() }).passthrough().optional().nullable(),
   }).optional().nullable(),
 }).passthrough();
 
@@ -99,22 +105,27 @@ function mapMessaging(p: z.infer<typeof messagingSchema>): Mapped {
   if (!channel) return { ignore: "account_type" };
   const ev = p.event ?? "message_received";
   if (ev !== "message_received") return { ignore: ev }; // reactions/read/edited/deleted/delivered
-  // No is_sender flag: a message is self-sent (another device or our API) when the connected
-  // account's user_id equals the sender's provider id. Our own API sends are then deduped by
-  // external_message_id; a human's own-device send is the real anti-collision takeover.
-  const selfId = p.account_info?.user_id ?? null;
-  const senderId = p.sender?.attendee_provider_id ?? null;
-  const isOutbound = Boolean(selfId && senderId && selfId === senderId);
+  // `is_sender` true => the connected account sent the message (another device or our own API) =>
+  // outbound/self. Our own API sends are then deduped by external_message_id; a human's own-device
+  // send is the real anti-collision takeover. (Validated E2E 2026-06-09 — the old account_info.user_id
+  // comparison never matched, so self-sends were wrongly ingested as inbound leads.)
+  const isOutbound = p.is_sender === true || p.is_sender === 1;
+  const sender = p.sender;
+  // For phone channels, match on the phone-bearing identifier, not the "<digits>@lid" provider id.
+  const phoneHandle = sender?.attendee_specifics?.phone_number
+    ?? sender?.attendee_public_identifier
+    ?? sender?.attendee_provider_id
+    ?? null;
   const handle = channel === "linkedin"
-    ? (p.sender?.attendee_profile_url ?? p.sender?.attendee_provider_id ?? null)
-    : (p.sender?.attendee_provider_id ?? null);
+    ? (sender?.attendee_profile_url ?? sender?.attendee_provider_id ?? null)
+    : phoneHandle;
   return {
     channel,
     direction: isOutbound ? "outbound" : "inbound",
     accountId: p.account_id ?? null,
     externalChatId: p.chat_id ?? null,
     externalMessageId: p.message_id ?? null,
-    senderName: p.sender?.attendee_name ?? null,
+    senderName: sender?.attendee_name ?? null,
     senderHandle: handle,
     body: p.message ?? "",
     subject: null,
