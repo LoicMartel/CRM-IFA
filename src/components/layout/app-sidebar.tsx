@@ -81,6 +81,7 @@ const generalItems = [
 
 const adminItems = [
   { title: "Équipe", href: "/team", icon: Users },
+  { title: "Journal Emails", href: "/emails", icon: Mail },
 ];
 
 function NavSection({
@@ -126,6 +127,8 @@ export function AppSidebar() {
     : productionItemsList;
   const visibleMarketingItems = canViewMarketing ? marketingItems : [];
   const visibleFinanceItems = canViewFinance ? financeItems : [];
+  // Le journal d'emails contient du contenu client (preuve Qualiopi) → masqué aux externes restreints.
+  const visibleAdminItems = isRestrictedExterne ? adminItems.filter((i) => i.href !== "/emails") : adminItems;
 
   return (
     <Sidebar>
@@ -160,7 +163,7 @@ export function AppSidebar() {
         {visibleCommercialItems.length > 0 && <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />}
         <NavSection label="Production" items={visibleProductionItems} pathname={pathname} />
         {visibleFinanceItems.length > 0 && <NavSection label="Finance" items={visibleFinanceItems} pathname={pathname} />}
-        <NavSection label="Admin" items={adminItems} pathname={pathname} />
+        <NavSection label="Admin" items={visibleAdminItems} pathname={pathname} />
       </SidebarContent>
     </Sidebar>
   );

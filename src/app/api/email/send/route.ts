@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { requireMember } from "@/lib/api-auth";
+import { logEmail } from "@/lib/send-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -72,6 +73,18 @@ export async function POST(req: NextRequest) {
       `,
     });
 
+    await logEmail({
+      recipient: to,
+      subject,
+      body,
+      transporter: "resend",
+      status: error ? "failed" : "sent",
+      error: error?.message,
+      relatedEntityType: contactId ? "contact" : undefined,
+      relatedEntityId: contactId ?? undefined,
+      source: "email/send",
+    });
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -96,8 +109,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, emailId: emailData?.id });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Email send error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
