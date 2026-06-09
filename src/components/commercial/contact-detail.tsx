@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
+import { activityTypeLabels, activityTypeColors, formatActivityTitle } from "@/lib/activity-display";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
@@ -141,23 +142,8 @@ const meetingStatusColors: Record<string, { bg: string; text: string; label: str
   cancelled: { bg: "#f0f0f0", text: "#666", label: "Annulé" },
 };
 
-const activityTypeLabels: Record<string, string> = {
-  appel: "Appel",
-  email: "Email",
-  "réunion": "Réunion",
-  note: "Note",
-  "tâche": "Tâche",
-  relance: "Relance",
-};
-
-const activityTypeColors: Record<string, { bg: string; text: string }> = {
-  appel: { bg: "#e3f2fd", text: "#1565c0" },
-  email: { bg: "#fff3e0", text: "#e65100" },
-  "réunion": { bg: "#f3e5f5", text: "#6a1b9a" },
-  note: { bg: "#e8f5e9", text: "#2e7d32" },
-  "tâche": { bg: "#fce4ec", text: "#c62828" },
-  relance: { bg: "#fff8e1", text: "#f57c00" },
-};
+// activityTypeLabels / activityTypeColors / formatActivityTitle : module partagé
+// `@/lib/activity-display` (mutualisé avec la fiche entreprise — zéro divergence).
 
 const callResultBadges: { match: string; label: string; bg: string; text: string }[] = [
   { match: "Contacté → Booké", label: "Booké", bg: "#e8f5e9", text: "#2e7d32" },
@@ -1279,7 +1265,7 @@ export function ContactDetail({
                                   </span>
                                 ) : null;
                               })()}
-                              <span style={{ fontSize: 12, color: "#1a2a3a" }}>{a.title}</span>
+                              <span style={{ fontSize: 12, color: "#1a2a3a" }}>{formatActivityTitle(a.title)}</span>
                             </div>
                           );
                         })}
@@ -1483,10 +1469,10 @@ export function ContactDetail({
                             {a.type === "email" ? (
                               <p className="text-sm font-medium" style={{ color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                                 onClick={() => setEmailPreview({ title: a.title, description: a.description ?? "" })}>
-                                {a.title}
+                                {formatActivityTitle(a.title)}
                               </p>
                             ) : (
-                              <p className="text-sm font-medium">{a.title}</p>
+                              <p className="text-sm font-medium">{formatActivityTitle(a.title)}</p>
                             )}
                             {a.description && a.type !== "email" && <TruncatedText text={a.description} style={{ fontSize: 14, color: "#64748b", marginTop: 4 }} />}
                             {a.description && a.type === "email" && (
@@ -1767,7 +1753,7 @@ export function ContactDetail({
                               <div style={{ flex: 1 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                                   <span style={{ fontWeight: 700, fontSize: 14, color: a.is_completed ? "#8399a9" : "#1a2a3a", textDecoration: a.is_completed ? "line-through" : "none" }}>
-                                    {a.title}
+                                    {formatActivityTitle(a.title)}
                                   </span>
                                   {a.is_completed && (
                                     <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "#e8f5e9", color: "#2e7d32" }}>Terminée</span>

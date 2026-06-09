@@ -16,8 +16,8 @@ function getResend() {
 // que soit le transporteur. Best-effort : un échec de log NE BLOQUE JAMAIS l'envoi
 // (et dégrade proprement si la table n'est pas encore créée côté DB).
 
-// Annoté `SupabaseClient` (générique Database par défaut = any) pour que `.from("email_log")`
-// reste souple : la table est neuve et n'est pas encore dans les types générés.
+// Annoté `SupabaseClient` (générique Database par défaut = any) pour que `.from(...)`
+// reste souple : les tables neuves ne sont pas encore dans les types générés.
 let logClient: SupabaseClient | null = null;
 function getLogClient() {
   if (logClient) return logClient;
@@ -76,6 +76,21 @@ export function ionosConfigured(): boolean {
   return Boolean(process.env.IONOS_SMTP_HOST && process.env.IONOS_SMTP_USER && process.env.IONOS_SMTP_PASS);
 }
 
+/**
+ * Trace optionnelle d'un email CLIENT en activité sur la fiche (follow-up demandé
+ * par Loïc). À ne passer QUE pour les emails réellement adressés au client/apprenant
+ * — jamais pour les notifs internes (équipe/formateurs), sinon la fiche se pollue.
+ */
+export interface EmailActivityLog {
+  title: string;
+  description?: string;
+  type?: string;
+  company_id?: string | null;
+  contact_id?: string | null;
+  deal_id?: string | null;
+  team_member_id?: string | null;
+}
+
 // Rate limiting: max 4 emails/sec to stay under Resend's 5/sec limit
 let lastSendTime = 0;
 const MIN_INTERVAL_MS = 300;
@@ -96,6 +111,7 @@ export async function sendSessionEmail({
   attachments,
   bcc,
   isHtml = false,
+  logActivity,
   relatedEntityType,
   relatedEntityId,
   source,
@@ -106,6 +122,7 @@ export async function sendSessionEmail({
   attachments?: { filename: string; content: string | Buffer; contentType?: string }[];
   bcc?: string[];
   isHtml?: boolean;
+  logActivity?: EmailActivityLog;
   // Contexte optionnel pour le journal d'audit (rétrocompat : les appelants existants n'y touchent pas).
   relatedEntityType?: string;
   relatedEntityId?: string;
@@ -187,6 +204,28 @@ export async function sendSessionEmail({
       return { success: false, error: error.message };
     }
     await logEmail({ ...logCtx, status: "sent" });
+
+    // Trace best-effort de l'email client en activité (ne fait jamais échouer l'envoi).
+    if (logActivity && (logActivity.company_id || logActivity.contact_id || logActivity.deal_id)) {
+      const supabase = getLogClient();
+      if (supabase) {
+        try {
+          await supabase.from("activities").insert({
+            type: logActivity.type ?? "email",
+            title: logActivity.title,
+            description: logActivity.description ?? null,
+            company_id: logActivity.company_id ?? null,
+            contact_id: logActivity.contact_id ?? null,
+            deal_id: logActivity.deal_id ?? null,
+            team_member_id: logActivity.team_member_id ?? null,
+            created_at: new Date().toISOString(),
+          });
+        } catch (logErr) {
+          console.error("[sendSessionEmail] logActivity insert failed:", logErr);
+        }
+      }
+    }
+
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
