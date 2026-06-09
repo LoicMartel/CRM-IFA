@@ -79,16 +79,22 @@ export async function resolveInboxAccount(accountId: string | null): Promise<Res
     const { data, error } = await sb.from("inbox_accounts")
       .select("mode, owner_id, reply_mode, display_name, signature, voice_profile, booking_link, active")
       .eq("account_id", accountId).maybeSingle();
-    if (!error && data && data.active === true) {
+    if (!error && data) {
       const row = data as AccountRow;
-      const mode = (row.mode === "agent" || row.mode === "copilot" || row.mode === "classify") ? row.mode : "classify";
-      const replyMode = (row.reply_mode === "off" || row.reply_mode === "draft" || row.reply_mode === "auto") ? row.reply_mode : "off";
-      return {
-        mode,
-        ownerId: row.owner_id ?? (await resolveOwnerId(sb)),
-        replyMode,
-        persona: buildPersona(row),
-      };
+      if (row.active === true) {
+        const mode = (row.mode === "agent" || row.mode === "copilot" || row.mode === "classify") ? row.mode : "classify";
+        const replyMode = (row.reply_mode === "off" || row.reply_mode === "draft" || row.reply_mode === "auto") ? row.reply_mode : "off";
+        return {
+          mode,
+          ownerId: row.owner_id ?? (await resolveOwnerId(sb)),
+          replyMode,
+          persona: buildPersona(row),
+        };
+      }
+      // Row exists but DEACTIVATED → fail-safe classify, and do NOT let the env fallback re-activate
+      // it (a box turned off in the table must stay off, whatever INBOX_ACCOUNT_ROUTING says).
+      console.warn(`[inbox.routing] account ${accountId} is deactivated (inbox_accounts.active=false) → 'classify' (env ignored).`);
+      return { mode: "classify", ownerId: row.owner_id ?? (await resolveOwnerId(sb)), replyMode: "off", persona: buildPersona(row) };
     }
   } catch (e) {
     console.error("[inbox.routing] inbox_accounts lookup failed (table missing? falling back to env):", e);
