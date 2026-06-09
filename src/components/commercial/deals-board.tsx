@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
-import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearLabel, getFiscalYearOptions } from "@/lib/fiscal-year";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ import { confirmDelete } from "@/lib/confirm-delete";
 import { DEAL_STAGE_LABELS, DEAL_STAGE_PROBABILITY } from "@/types/database";
 import type { DealStage } from "@/types/database";
 import { CotationModal } from "./cotation-modal";
+import { WF009CollectorBlock } from "./wf009-collector-block";
 import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
 import { ConventionModal } from "@/components/finance/convention-modal";
 import { QuoteSendModal } from "./quote-send-modal";
@@ -136,6 +137,7 @@ export function DealsBoard({
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -174,10 +176,14 @@ export function DealsBoard({
       .from("billing_entries")
       .select("client_name, billing_months(id, amount, month, status)")
       .eq("deal_id", dealId);
-    const months = (entries ?? []).flatMap((e: any) =>
-      ((e.billing_months as any[]) ?? []).map((m: any) => ({ ...m, client_name: e.client_name }))
+    type BillingMonthRow = { id: string; amount: number | string | null; month: string; status: string | null };
+    type EntryRow = { client_name: string | null; billing_months: BillingMonthRow[] | null };
+    const months = ((entries ?? []) as unknown as EntryRow[]).flatMap((e) =>
+      (e.billing_months ?? []).map((m) => ({
+        id: m.id, amount: Number(m.amount) || 0, month: m.month, status: m.status, client_name: e.client_name ?? "",
+      }))
     );
-    months.sort((a: any, b: any) => a.month.localeCompare(b.month));
+    months.sort((a, b) => a.month.localeCompare(b.month));
     setDealBillingMonths(months);
     setLoadingDocs(false);
   }
@@ -388,7 +394,7 @@ export function DealsBoard({
 
   // Period filter logic
   const periodRange = (() => {
-    if (periodMode === "fiscal") return getCurrentFiscalYearRange();
+    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY);
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -413,7 +419,7 @@ export function DealsBoard({
   const wonDisplayDeals = displayDeals.filter(d => d.stage === "closed_won");
   const totalWon = wonDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-  const periodLabel = periodMode === "fiscal" ? `Année fiscale ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
+  const periodLabel = periodMode === "fiscal" ? `Année fiscale ${getFiscalYearLabel(selectedFY)}`
     : periodMode === "month" ? new Date(filterMonth + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
     : `${new Date(customFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} — ${new Date(customTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
@@ -432,6 +438,17 @@ export function DealsBoard({
               <option value="month">Par mois</option>
               <option value="custom">Période personnalisée</option>
             </select>
+            {periodMode === "fiscal" && (
+              <select
+                value={selectedFY}
+                onChange={(e) => setSelectedFY(Number(e.target.value))}
+                style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 12px", fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}
+              >
+                {getFiscalYearOptions(5).map(o => (
+                  <option key={o.startYear} value={o.startYear}>{o.label}</option>
+                ))}
+              </select>
+            )}
             {periodMode === "month" && (
               <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a" }} />
             )}
@@ -867,6 +884,9 @@ export function DealsBoard({
                     <p style={{ fontSize: 13, color: "#1a2a3a", whiteSpace: "pre-wrap" }}>{selectedDeal.notes}</p>
                   </div>
                 )}
+
+                {/* Collector suggestion formateur (WF-009) */}
+                <WF009CollectorBlock dealId={selectedDeal.id} />
 
                 {/* Documents */}
                 <div>

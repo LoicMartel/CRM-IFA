@@ -8,6 +8,7 @@ import {
 import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getCurrentFiscalYearStart, getFiscalYearOptions as getFYOptions, isInFiscalYear } from "@/lib/fiscal-year";
 
 interface DeliverySession {
   id: string;
@@ -36,25 +37,17 @@ function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-function getFiscalYearOptions() {
-  const now = new Date();
-  const currentFY = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+function getDeliveryFYOptions() {
+  const options = getFYOptions(5);
   return [
-    { value: `${currentFY}`, label: `${currentFY}/${currentFY + 1}` },
-    { value: `${currentFY - 1}`, label: `${currentFY - 1}/${currentFY}` },
-    { value: "", label: "Toutes les années" },
+    ...options.map(o => ({ value: String(o.startYear), label: o.label })),
+    { value: "", label: "Toutes les ann\u00e9es" },
   ];
-}
-
-function inFiscalYear(dateStr: string, fyStart: number): boolean {
-  return dateStr >= `${fyStart}-09-01` && dateStr <= `${fyStart + 1}-08-31`;
 }
 
 export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
   const router = useRouter();
-  const now = new Date();
-  const defaultFY = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-  const [fiscalYear, setFiscalYear] = useState<string>(String(defaultFY));
+  const [fiscalYear, setFiscalYear] = useState<string>(String(getCurrentFiscalYearStart()));
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
@@ -84,11 +77,11 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
     return "vt";
   }
 
-  const fyOptions = getFiscalYearOptions();
+  const fyOptions = getDeliveryFYOptions();
 
   const filtered = sessions.filter(s => {
     // Fiscal year filter
-    if (fiscalYear && !inFiscalYear(s.session_date, parseInt(fiscalYear))) return false;
+    if (fiscalYear && !isInFiscalYear(s.session_date, parseInt(fiscalYear))) return false;
 
     const sessionType = getSessionType(s);
     if (filterType && sessionType !== filterType) return false;

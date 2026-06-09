@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { logEmail } from "@/lib/send-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -54,11 +55,21 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
+    const subject = "Bienvenue sur votre espace CRM — La Closing Académie";
     const { error } = await resend.emails.send({
       from: "La Closing Académie <noreply@closing-academie.com>",
       to: [email],
-      subject: "Bienvenue sur votre espace CRM — La Closing Académie",
+      subject,
       html,
+    });
+
+    await logEmail({
+      recipient: email,
+      subject,
+      transporter: "resend",
+      status: error ? "failed" : "sent",
+      error: error?.message,
+      source: "admin/welcome-email",
     });
 
     if (error) {
@@ -66,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

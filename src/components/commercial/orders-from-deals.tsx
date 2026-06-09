@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getDefaultCustomFrom } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearOptions } from "@/lib/fiscal-year";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -50,6 +50,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
   const [filterOwner, setFilterOwner] = useState("");
   const [filterSource, setFilterSource] = useState("");
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -219,9 +220,8 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
     // Period filter on close_date
     const closeDate = d.close_date ?? d.created_at?.split("T")[0] ?? "";
     if (periodMode === "fiscal") {
-      const now = new Date();
-      const y = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-      if (closeDate < `${y}-09-01` || closeDate > `${y + 1}-08-31`) return false;
+      const { from: fyFrom, to: fyTo } = getFiscalYearRange(selectedFY);
+      if (closeDate < fyFrom || closeDate > fyTo) return false;
     } else if (periodMode === "month") {
       if (!closeDate.startsWith(filterMonth)) return false;
     } else if (periodMode === "custom") {
@@ -283,6 +283,17 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
           <option value="month">Mois</option>
           <option value="custom">Personnalisé</option>
         </select>
+        {periodMode === "fiscal" && (
+          <select
+            value={selectedFY}
+            onChange={(e) => setSelectedFY(Number(e.target.value))}
+            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}
+          >
+            {getFiscalYearOptions(5).map(o => (
+              <option key={o.startYear} value={o.startYear}>{o.label}</option>
+            ))}
+          </select>
+        )}
         {periodMode === "month" && (
           <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, color: "#1a2a3a" }} />
         )}

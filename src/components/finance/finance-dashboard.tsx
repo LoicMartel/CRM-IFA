@@ -5,6 +5,7 @@ import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearLabel } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
@@ -25,8 +26,7 @@ function pct(n: number) {
 export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [], deliverySessions = [] }: {
   wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[]; deliverySessions?: R[];
 }) {
-  const now = new Date();
-  const fyYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart());
 
   const chargeMap: Record<string, R> = {};
   monthlyCharges.forEach((c: R) => { chargeMap[c.month as string] = c; });
@@ -189,6 +189,20 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
 
   return (
     <div className="space-y-5">
+      {/* Fiscal year selector */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#8399a9", textTransform: "uppercase" }}>Année fiscale :</span>
+        <select
+          value={fyYear}
+          onChange={(e) => setFyYear(Number(e.target.value))}
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
+        >
+          {getFiscalYearOptions(5).map(o => (
+            <option key={o.startYear} value={o.startYear}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
       {/* 6 KPI Cards */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
