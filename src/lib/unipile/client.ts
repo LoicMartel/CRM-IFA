@@ -48,11 +48,39 @@ export interface SendEmailParams {
   replyTo?: string | null;
 }
 
+const HTML_ESCAPE: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" };
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => HTML_ESCAPE[c]);
+}
+
+// Unipile renders the email `body` as HTML by default (sending plain text would require a
+// `Content-Type: text/plain` custom header). A plain-text body therefore has its line breaks
+// collapsed by the recipient's client — the formatting bug observed E2E (the agent's bullet
+// lines arrived stuck together). We escape the agent's text, turn bare URLs into real anchors
+// (the booking link is the speed-to-lead CTA → must stay clickable), then map newlines to <br>
+// so the lead sees the same layout the agent wrote. The stored message body stays plain text.
+function textToEmailHtml(text: string): string {
+  const urlRe = /https?:\/\/[^\s<]+/g;
+  let html = "";
+  let last = 0;
+  for (const m of text.matchAll(urlRe)) {
+    const start = m.index ?? 0;
+    // Don't swallow trailing sentence punctuation into the link.
+    const url = m[0].replace(/[.,;:!?)]+$/, "");
+    html += escapeHtml(text.slice(last, start));
+    const safe = escapeHtml(url);
+    html += `<a href="${safe}">${safe}</a>`;
+    last = start + url.length;
+  }
+  html += escapeHtml(text.slice(last));
+  return html.replace(/\r?\n/g, "<br>\n");
+}
+
 export async function sendEmail(params: SendEmailParams): Promise<UnipileSendResult> {
   const form = new FormData();
   form.append("account_id", params.accountId);
   form.append("subject", params.subject);
-  form.append("body", params.body);
+  form.append("body", textToEmailHtml(params.body));
   form.append("to", JSON.stringify([{ display_name: params.toName ?? undefined, identifier: params.to }]));
   if (params.replyTo) form.append("reply_to", params.replyTo);
   return unipilePost(`/emails`, form);

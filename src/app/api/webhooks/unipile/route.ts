@@ -134,7 +134,17 @@ function mapMessaging(p: z.infer<typeof messagingSchema>): Mapped {
 
 async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string) {
   // classification best-effort
-  await classifyConversation(result.conversationId).catch((e) => console.error("[unipile] classify:", e));
+  const cls = await classifyConversation(result.conversationId).catch((e) => { console.error("[unipile] classify:", e); return null; });
+
+  // Spam gate (cost): a message classified spam never warrants an agent turn. Escalate directly,
+  // skipping the wasted LLM turn that used to precede it — the validated outcome is preserved
+  // (a spam like France Travail was correctly escalated E2E). Finer newsletter-noise filtering is
+  // the upstream deterministic filter (chantier F), out of scope here.
+  if (cls?.intent === "spam") {
+    await escalateConversation(result.conversationId, "off_script", "Message classé spam à la réception (escalade sans tour agent).");
+    return;
+  }
+
   const verdict = await evaluateEligibility(result.conversationId, result.isExistingContact, channel, body);
   const sb = svc();
   if (verdict.eligible) {

@@ -18,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const transcript = msgs.reverse().map((m) => `[${m.sent_by}] ${m.body}`).join("\n");
 
   const res = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514", max_tokens: 500,
+    model: "claude-sonnet-4-6", max_tokens: 500,
     system: `Rédige au nom de Rafi (La Closing Académie) une réponse courte, pro et chaleureuse en français. Signe "Rafi — La Closing Académie".`,
     messages: [{ role: "user", content: `Échange:\n${transcript}\n\nRédige la réponse.` }],
   });

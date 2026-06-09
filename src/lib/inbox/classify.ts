@@ -32,7 +32,7 @@ export async function classifyConversation(conversationId: string): Promise<{ ca
 
   const transcript = msgs.reverse().map((m) => `[${m.direction}] ${m.body}`).join("\n");
   const res = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 256,
     tool_choice: { type: "tool", name: "classify" },
     tools: [TOOL],

@@ -124,7 +124,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   let decision;
   try {
     decision = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514", max_tokens: 600, system: SYSTEM, tools: TOOLS,
+      model: "claude-sonnet-4-6", max_tokens: 600, system: SYSTEM, tools: TOOLS,
       tool_choice: { type: "any" }, messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {
