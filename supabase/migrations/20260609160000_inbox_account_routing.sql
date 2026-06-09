@@ -35,6 +35,9 @@ ALTER TABLE inbox_accounts ENABLE ROW LEVEL SECURITY;
 
 -- RLS admin check mirrors the repo's hardened precedent (20260529000000_harden_engagements_rls.sql):
 -- team_members.roles is a text[] array, admin value is capitalized => `'Admin' = ANY(roles)`.
+-- DROP-before-CREATE keeps this re-runnable from the Supabase SQL editor (self-service).
+DROP POLICY IF EXISTS "inbox_accounts_select_authenticated" ON inbox_accounts;
+DROP POLICY IF EXISTS "inbox_accounts_write_admin" ON inbox_accounts;
 CREATE POLICY "inbox_accounts_select_authenticated" ON inbox_accounts FOR SELECT TO authenticated USING (true);
 CREATE POLICY "inbox_accounts_write_admin" ON inbox_accounts FOR ALL TO authenticated
   USING (EXISTS (SELECT 1 FROM team_members WHERE auth_user_id = auth.uid() AND 'Admin' = ANY(roles)))
