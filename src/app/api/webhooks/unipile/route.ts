@@ -5,6 +5,7 @@ import { classifyConversation } from "@/lib/inbox/classify";
 import { evaluateEligibility } from "@/lib/inbox/eligibility";
 import { escalateConversation } from "@/lib/inbox/escalation";
 import { runAgentTurn } from "@/lib/inbox/agent";
+import { resolveInboxAccount } from "@/lib/inbox/routing";
 import type { Channel, IncomingMessage } from "@/lib/inbox/types";
 
 // Unipile sends TWO distinct flat webhooks.
@@ -132,7 +133,20 @@ function mapMessaging(p: z.infer<typeof messagingSchema>): Mapped {
   };
 }
 
-async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string) {
+async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string, accountId: string | null) {
+  // Routage account_id (socle F+C). The mode decides what the engine may do on this box.
+  const account = await resolveInboxAccount(accountId);
+
+  // Non-agent accounts (copilot / classify) NEVER auto-reply — the 09/06 "loaded box" security
+  // guarantee. The socle just pins agent_status='human' (no eligibility, no agent turn, no greeting);
+  // mailbox labelling (chantier C, classifyMailbox) and copilote scoring/promotion (chantier F)
+  // graft onto this branch later.
+  if (account.mode !== "agent") {
+    await svc().from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
+    return;
+  }
+
+  // mode=agent: the proven leads pipeline (unchanged).
   // classification best-effort
   const cls = await classifyConversation(result.conversationId).catch((e) => { console.error("[unipile] classify:", e); return null; });
 
@@ -199,7 +213,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, humanTakeover: true });
     }
 
-    await processInbound(result, mapped.channel, mapped.body);
+    await processInbound(result, mapped.channel, mapped.body, mapped.accountId);
     return NextResponse.json({ ok: true, conversationId: result.conversationId });
   } catch (e) {
     console.error("[webhooks/unipile] error:", e);

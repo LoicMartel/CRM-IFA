@@ -58,3 +58,42 @@ export async function escalateConversation(
     console.error(`[inbox.escalation] no owner resolved for conversation ${conversationId} (reason=${reason}) — NO feed post / bell sent. Check INBOX_DEFAULT_OWNER_EMAIL.`);
   }
 }
+
+/**
+ * Promote a conversation that scored above the interest threshold (chantier F P1, copilote Rafi).
+ * Unlike escalateConversation, this is a POSITIVE "worth Rafi's attention" signal, not a hand-off:
+ * it does NOT flip agent_status to 'escalated' nor set escalation_reason. Posts to the team feed
+ * (lead_gen) + rings the owner's bell, leaving agent_status untouched. `scoreReason` is supplied by
+ * the caller (the classify+score step) so this stays decoupled from the score columns themselves.
+ * Sibling of escalateConversation; used by F, not by the routing socle.
+ */
+export async function promoteConversation(conversationId: string, scoreReason: string): Promise<void> {
+  const sb = svc();
+  const { data: conv } = await sb.from("conversations")
+    .select("channel, owner_id, contacts(first_name,last_name)").eq("id", conversationId).maybeSingle();
+  if (!conv) return;
+
+  const who = (Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts) as { first_name?: string; last_name?: string } | null;
+  const leadName = `${who?.first_name ?? ""} ${who?.last_name ?? ""}`.trim() || "un lead";
+  const title = `🟢 Lead intéressant — ${leadName} (${conv.channel})`;
+
+  if (conv.owner_id) {
+    await sb.from("posts").insert({
+      author_id: conv.owner_id,
+      title,
+      content: scoreReason,
+      category: ESCALATION_POST_CATEGORY,
+    });
+    await createNotification({
+      recipientId: conv.owner_id,
+      type: "new_lead",
+      title,
+      body: scoreReason,
+      linkUrl: `/inbox/${conversationId}`,
+      relatedEntityType: "conversation",
+      relatedEntityId: conversationId,
+    });
+  } else {
+    console.error(`[inbox.escalation] no owner resolved for conversation ${conversationId} (promote) — NO feed post / bell sent. Check INBOX_DEFAULT_OWNER_EMAIL.`);
+  }
+}

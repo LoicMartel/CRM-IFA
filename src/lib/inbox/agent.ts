@@ -1,19 +1,27 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { svc } from "./ingest";
 import { escalateConversation } from "./escalation";
-import { resolveBookingLink } from "./booking-links";
 import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
 import { resolveEmailReply } from "./threading";
 import { type Channel } from "./types";
+import { resolvePersona, type InboxPersona } from "./routing";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM = `Tu es l'assistant commercial de La Closing Académie. Tu converses avec un NOUVEAU lead entrant.
+const SYSTEM_BASE = `Tu es l'assistant commercial de La Closing Académie. Tu converses avec un NOUVEAU lead entrant.
 Objectif: comprendre brièvement son besoin (1-2 questions max) puis l'amener à réserver un rendez-vous via le lien de réservation.
 Style: français, court, professionnel et chaleureux. Pas de promesse d'horaire ferme (le lien gère les créneaux).
 Règles d'escalade — utilise l'outil "escalate" si: le lead a un signal d'achat fort / forte valeur (reason "high_value"),
 demande explicitement un humain ("explicit_human"), exprime mécontentement/refus ("negative"), pose une question hors de ton périmètre ("off_script"),
 ou si tu n'es pas sûr de ta réponse ("low_confidence"). Sinon "reply" pour avancer, "send_booking_link" quand le lead est prêt à prendre RDV.`;
+
+// System prompt is persona-aware: a voice profile (chantier F P2) is appended when present.
+// Default persona (LCA leads) has no voice profile → byte-identical to the original SYSTEM.
+function buildSystemPrompt(persona: InboxPersona): string {
+  return persona.voiceProfile
+    ? `${SYSTEM_BASE}\n\nVOICE PROFILE — rédige en respectant ce style:\n${persona.voiceProfile}`
+    : SYSTEM_BASE;
+}
 
 const TOOLS: Anthropic.Tool[] = [
   { name: "reply", description: "Répondre au lead pour avancer la conversation.",
@@ -49,8 +57,12 @@ async function deliver(channel: Channel, accountId: string | null, chatId: strin
   return sendChatMessage(chatId, text);
 }
 
-/** Message d'accueil fixe signé Rafi (lead "fiche"). Speed-to-lead: contact immédiat + lien RDV, sans latence IA. */
-function buildGreeting(firstName: string): string {
+/**
+ * Message d'accueil fixe (lead "fiche"). Speed-to-lead: contact immédiat + lien RDV, sans latence IA.
+ * Persona-driven (signature + booking link résolus par owner/compte). Aligné sur le modèle de
+ * greeting de référence fourni par l'équipe (09/06). Défaut LCA = "Rafi, Expert La Closing Académie".
+ */
+function buildGreeting(firstName: string, persona: InboxPersona): string {
   const hello = firstName ? `Bonjour ${firstName},` : "Bonjour,";
   return [
     hello,
@@ -59,8 +71,8 @@ function buildGreeting(firstName: string): string {
     "Je viens de prendre connaissance de votre demande de renseignements.",
     "Comment puis-je vous aider ?",
     "",
-    "Rafi, Expert La Closing Académie",
-    `Mon agenda : ${resolveBookingLink()}`,
+    persona.signature,
+    `Mon agenda : ${persona.bookingLink}`,
   ].join("\n");
 }
 
@@ -79,7 +91,8 @@ export async function sendGreeting(conversationId: string): Promise<void> {
   const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
   const firstName = ((contact as { first_name: string | null } | null)?.first_name ?? "").trim();
   const to = (contact as { email: string | null } | null)?.email ?? null;
-  const text = buildGreeting(firstName);
+  const persona = await resolvePersona(conv.account_id);
+  const text = buildGreeting(firstName, persona);
 
   // Verrou anti-double-envoi : on n'envoie que si la conversation est TOUJOURS active
   // (une prise de main humaine / un outbound anti-collision a pu la flipper entre-temps).
@@ -121,10 +134,12 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     ? `Échange jusqu'ici:\n${transcript}\n\nLe lead n'a pas répondu. Rédige UNE relance courte et non insistante (outil reply) ou propose le lien si pertinent.`
     : `Canal: ${conv.channel}\nIntent: ${conv.intent ?? "autre"}\nÉchange:\n${transcript}\n\nChoisis l'action.`;
 
+  const persona = await resolvePersona(conv.account_id);
+
   let decision;
   try {
     decision = await anthropic.messages.create({
-      model: "claude-sonnet-4-6", max_tokens: 600, system: SYSTEM, tools: TOOLS,
+      model: "claude-sonnet-4-6", max_tokens: 600, system: buildSystemPrompt(persona), tools: TOOLS,
       tool_choice: { type: "any" }, messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {
@@ -145,7 +160,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   let text: string;
   if (tool.name === "send_booking_link") {
     const { intro } = tool.input as { intro: string };
-    text = `${intro}\n\nRéservez votre créneau ici : ${resolveBookingLink()}`;
+    text = `${intro}\n\nRéservez votre créneau ici : ${persona.bookingLink}`;
   } else {
     text = (tool.input as { text: string }).text;
   }

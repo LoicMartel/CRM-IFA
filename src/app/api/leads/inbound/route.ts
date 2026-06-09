@@ -266,6 +266,7 @@ export async function POST(request: Request) {
       const { classifyConversation } = await import("@/lib/inbox/classify");
       const { evaluateEligibility } = await import("@/lib/inbox/eligibility");
       const { sendGreeting } = await import("@/lib/inbox/agent");
+      const { resolveInboxAccount } = await import("@/lib/inbox/routing");
       const body = `Nouveau lead via formulaire (${effectiveSource || "site"}).`;
       // external_chat_id déterministe par email → une re-soumission du même lead réutilise
       // la conversation existante (au lieu d'en recréer une) ; l'index unique partiel
@@ -280,11 +281,17 @@ export async function POST(request: Request) {
       // Greeting UNIQUEMENT sur une conversation neuve → un seul message d'accueil par lead,
       // jamais de doublon sur re-submit / double-clic / retry / rejeu webhook.
       if (result && result.direction === "inbound" && result.isNewConversation) {
-        await classifyConversation(result.conversationId).catch(() => {});
-        const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
-        if (v.eligible) {
-          await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
-          await sendGreeting(result.conversationId).catch(() => {});
+        // Routage account_id (socle F+C) : un web_form n'a pas d'account_id → mode 'agent' (chantier D).
+        // On résout explicitement pour ne jamais répondre depuis un mode non-agent si ce endpoint
+        // venait à porter un account_id un jour (sécurité = même invariant qu'au webhook Unipile).
+        const { mode } = await resolveInboxAccount(null);
+        if (mode === "agent") {
+          await classifyConversation(result.conversationId).catch(() => {});
+          const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
+          if (v.eligible) {
+            await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
+            await sendGreeting(result.conversationId).catch(() => {});
+          }
         }
       }
     } catch (e) { console.error("[leads/inbound] inbox pipeline failed:", e); }
