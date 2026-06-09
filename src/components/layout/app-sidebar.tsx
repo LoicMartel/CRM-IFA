@@ -57,6 +57,7 @@ const productionItemsList = [
   { title: "Delivery", href: "/delivery", icon: GraduationCap },
   { title: "Ressources", href: "/ressources", icon: FolderOpen },
   { title: "Rapports Production", href: "/rapports-production", icon: Target },
+  { title: "Rapport Formateurs", href: "/rapports-formateurs", icon: GraduationCap },
 ];
 
 
