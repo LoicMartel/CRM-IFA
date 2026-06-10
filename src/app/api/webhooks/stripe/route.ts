@@ -210,6 +210,12 @@ export async function POST(req: NextRequest) {
         subject: "Votre Book Financements est prêt !",
         body: buyerEmailBody,
         isHtml: true,
+        logActivity: {
+          title: "Email post-achat envoyé (Book Financements)",
+          description: `Email de confirmation d'achat + Book Financements envoyé à ${customerEmail}.`,
+          contact_id: contactId,
+          deal_id: deal?.id ?? null,
+        },
       });
 
       if (!buyerResult.success) {

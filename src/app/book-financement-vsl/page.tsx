@@ -103,7 +103,7 @@ function BookFinancementTypContent() {
         </div>
 
         <a
-          href="/booking-pauline"
+          href="/booking"
           style={{
             display: "inline-block", padding: "14px 28px", borderRadius: 8,
             background: "#2e7ab5", color: "white", fontSize: 14, fontWeight: 700,

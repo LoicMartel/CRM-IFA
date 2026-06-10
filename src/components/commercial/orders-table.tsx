@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getDefaultCustomFrom, getCurrentFiscalYearRange } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearOptions } from "@/lib/fiscal-year";
 import {
   Table,
   TableBody,
@@ -85,6 +85,7 @@ export function OrdersTable({
   const [filterManager, setFilterManager] = useState("");
   const [filterInvoiced, setFilterInvoiced] = useState("all");
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -110,7 +111,7 @@ export function OrdersTable({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const periodRange = (() => {
-    if (periodMode === "fiscal") return getCurrentFiscalYearRange();
+    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY);
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -174,6 +175,17 @@ export function OrdersTable({
           <option value="month">Par mois</option>
           <option value="custom">Période personnalisée</option>
         </select>
+        {periodMode === "fiscal" && (
+          <select
+            value={selectedFY}
+            onChange={(e) => setSelectedFY(Number(e.target.value))}
+            style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 10px", fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}
+          >
+            {getFiscalYearOptions(5).map(o => (
+              <option key={o.startYear} value={o.startYear}>{o.label}</option>
+            ))}
+          </select>
+        )}
         {periodMode === "month" && (
           <input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, color: "#1a2a3a" }} />
         )}

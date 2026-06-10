@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from "recharts";
+import { getCurrentFiscalYearStart, getFiscalYearOptions } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
@@ -36,12 +37,8 @@ function fmtJ(h: number) {
 }
 
 // Fiscal year: Sept Y to Aug Y+1
-function getFiscalYear() {
-  const now = new Date();
-  const m = now.getMonth(); // 0-indexed
-  const y = now.getFullYear();
-  if (m >= 8) return { start: `${y}-09-01`, end: `${y + 1}-08-31`, label: `${y % 100}/${(y + 1) % 100}` };
-  return { start: `${y - 1}-09-01`, end: `${y}-08-31`, label: `${(y - 1) % 100}/${y % 100}` };
+function getFiscalYearFromStart(y: number) {
+  return { start: `${y}-09-01`, end: `${y + 1}-08-31`, label: `${y % 100}/${(y + 1) % 100}` };
 }
 
 function getQuarters(fy: { start: string }) {
@@ -65,7 +62,8 @@ function getMonths(fy: { start: string }) {
 
 export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames, deliverySessions }: { sessions: R[]; servicePlans: R[]; deals: R[]; expertNames?: string[]; deliverySessions?: R[] }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
-  const fy = getFiscalYear();
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
+  const fy = useMemo(() => getFiscalYearFromStart(selectedFY), [selectedFY]);
   const [detailPeriod, setDetailPeriod] = useState("year");
   const [detailIdx, setDetailIdx] = useState(0);
   const [cmdPeriod, setCmdPeriod] = useState("year");
@@ -334,6 +332,20 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   return (
     <div className="space-y-6">
+      {/* Fiscal year selector */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#8399a9", textTransform: "uppercase" }}>Année fiscale :</span>
+        <select
+          value={selectedFY}
+          onChange={(e) => setSelectedFY(Number(e.target.value))}
+          style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
+        >
+          {getFiscalYearOptions(5).map(o => (
+            <option key={o.startYear} value={o.startYear}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+
       {/* KPIs */}
       <div className="grid gap-3 md:grid-cols-6">
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>

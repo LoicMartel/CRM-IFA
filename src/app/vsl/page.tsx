@@ -78,7 +78,7 @@ function VSLContent() {
             {/* Embedded booking - compact card */}
             <div className="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
               <iframe
-                src={`/booking-pauline-commercial${clientType ? `?type=${clientType}` : ""}`}
+                src={`/booking${clientType ? `?type=${clientType}` : ""}`}
                 className="w-full border-0"
                 style={{ height: "700px" }}
                 title="Réserver un appel découverte"

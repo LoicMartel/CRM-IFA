@@ -151,6 +151,27 @@ export function defaultQuoteLines(
 }
 
 /**
+ * Normalise un identifiant légal en SIREN (9 chiffres) attendu par Pennylane (`reg_no`).
+ * Les fiches `companies` stockent souvent un SIRET (14) — Pennylane veut le SIREN
+ * (= 9 premiers chiffres du SIRET). Tolère espaces/points. Retourne undefined si
+ * l'identifiant n'est ni un SIREN ni un SIRET valide (on n'envoie pas un id douteux).
+ */
+export function normalizeSiren(siret: string | null | undefined): string | undefined {
+  const digits = (siret ?? "").replace(/\D/g, "");
+  if (digits.length === 14) return digits.slice(0, 9);
+  if (digits.length === 9) return digits;
+  return undefined;
+}
+
+/**
+ * Extrait un code postal FR (5 chiffres) d'une adresse libre, sans matcher 5 chiffres
+ * au milieu d'un nombre plus long (ex: un SIRET présent dans l'adresse).
+ */
+export function extractPostalCode(address: string | null | undefined): string {
+  return (address ?? "").match(/(?<!\d)(\d{5})(?!\d)/)?.[1] ?? "";
+}
+
+/**
  * Résout (idempotent) le customer B2B Pennylane depuis company/contact.
  * external_reference = LCA-COMPANY-{company.id}. Partagé devis + facturation.
  */
@@ -162,14 +183,21 @@ export async function resolveCompanyCustomer(
   const recipient = `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim();
   // `companies` n'a pas de colonne postal_code → l'extraire de l'adresse libre
   // (code postal FR = 5 chiffres), comme le faisait WF-005.
-  const postalCode =
-    company.postal_code ?? (company.address ?? "").match(/\b(\d{5})\b/)?.[1] ?? "";
+  const postalCode = company.postal_code || extractPostalCode(company.address);
+  const regNo = normalizeSiren(company.siret);
+  // Saisie SIRET/SIREN non vide mais invalide (≠ 9/14 chiffres) → reg_no omis chez
+  // Pennylane : on le signale pour correction de la fiche (sinon perte silencieuse).
+  if (!regNo && (company.siret ?? "").replace(/\D/g, "").length > 0) {
+    console.warn(
+      `[resolveCompanyCustomer] SIRET/SIREN invalide pour company ${company.id} ("${company.siret}") — reg_no omis chez Pennylane, à corriger sur la fiche.`,
+    );
+  }
   return findOrCreateCompanyCustomer({
     name: company.name ?? "Client",
     emails: [email],
     phone: contact.phone ?? undefined,
     recipient: recipient || undefined,
-    regNo: company.siret ?? undefined,
+    regNo,
     externalReference: `LCA-COMPANY-${company.id}`,
     billingLanguage: "fr_FR",
     billingAddress: company.address

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@supabase/supabase-js";
 import { requireMember } from "@/lib/api-auth";
+import { logEmail } from "@/lib/send-email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -92,6 +93,19 @@ export async function POST(req: NextRequest) {
       ],
     });
 
+    await logEmail({
+      recipient: recipientEmail,
+      subject,
+      transporter: "resend",
+      status: error ? "failed" : "sent",
+      error: error?.message,
+      hasAttachments: true,
+      attachmentCount: 1,
+      relatedEntityType: dealId ? "deal" : contactId ? "contact" : undefined,
+      relatedEntityId: dealId ?? contactId ?? undefined,
+      source: "cotation/send-email",
+    });
+
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -133,8 +147,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, emailId: emailData?.id });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Cotation email error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
