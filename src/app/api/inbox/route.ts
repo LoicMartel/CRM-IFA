@@ -10,14 +10,23 @@ export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status"); // agent_status filter
   const attention = req.nextUrl.searchParams.get("attention"); // "true" => escalated + human unread
 
-  let q = sb.from("conversations")
-    .select("id, channel, category, intent, agent_status, escalation_reason, unread, subject, last_message_at, contact_id, contacts(first_name,last_name,email)")
-    .order("last_message_at", { ascending: false }).limit(200);
-  if (channel) q = q.eq("channel", channel);
-  if (status) q = q.eq("agent_status", status);
-  if (attention === "true") q = q.in("agent_status", ["escalated", "human"]).eq("unread", true);
+  const BASE_COLS = "id, channel, category, intent, agent_status, escalation_reason, unread, subject, last_message_at, contact_id, contacts(first_name,last_name,email)";
 
-  const { data, error } = await q;
+  const build = (cols: string) => {
+    let q = sb.from("conversations").select(cols)
+      .order("last_message_at", { ascending: false }).limit(200);
+    if (channel) q = q.eq("channel", channel);
+    if (status) q = q.eq("agent_status", status);
+    if (attention === "true") q = q.in("agent_status", ["escalated", "human"]).eq("unread", true);
+    return q;
+  };
+
+  // interest_score/score_reason (scoring copilote F P1) n'existent qu'après leur migration →
+  // fallback sans ces colonnes si elle n'est pas encore appliquée (undefined column = 42703).
+  let { data, error } = await build(`${BASE_COLS}, interest_score, score_reason`);
+  if (error && (error.code === "42703" || /interest_score|score_reason/.test(error.message ?? ""))) {
+    ({ data, error } = await build(BASE_COLS));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ conversations: data ?? [] });
 }
