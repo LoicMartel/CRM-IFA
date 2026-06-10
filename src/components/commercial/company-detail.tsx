@@ -24,6 +24,7 @@ import { RichNotes } from "@/components/ui/rich-notes";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { PlanPopup } from "@/components/production/plan-popup";
+import { ActivityTimeline, type ActivityItem } from "@/components/commercial/activity-timeline";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -534,6 +535,7 @@ export function CompanyDetail({
           <Tabs defaultValue="overview">
             <TabsList className="flex-wrap">
               <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
+              <TabsTrigger value="activity">Activité ({activities.length})</TabsTrigger>
               <TabsTrigger value="contacts">Contacts ({contacts.length})</TabsTrigger>
               <TabsTrigger value="deals">Deals ({deals.length})</TabsTrigger>
               {quotations.length > 0 && <TabsTrigger value="quotations">Cotations ({quotations.length})</TabsTrigger>}
@@ -1261,6 +1263,19 @@ export function CompanyDetail({
                       </TableBody>
                     </Table>
                   )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* --- Activité (lecture seule, vue 360) --- */}
+            <TabsContent value="activity" className="mt-4">
+              <div className="lca-card">
+                <div style={{ height: 4, background: "#e65100" }} />
+                <div style={{ padding: 16 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>
+                    Historique des activités
+                  </h3>
+                  <ActivityTimeline activities={activities as ActivityItem[]} />
                 </div>
               </div>
             </TabsContent>

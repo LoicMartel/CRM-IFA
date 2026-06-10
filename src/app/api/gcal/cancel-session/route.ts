@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
     const learners = ((session.training_session_learners ?? []) as any[])
       .map(sl => sl.learners).filter(Boolean);
 
+    let learnerEmailsSent = 0;
     for (const learner of learners) {
       if (!learner.email) continue;
 
@@ -134,7 +135,24 @@ export async function POST(req: NextRequest) {
         body: emailBody,
       });
       console.log("[cancel-session] Email to", learner.email, ":", emailRes.success ? "sent" : emailRes.error);
+      if (emailRes.success) learnerEmailsSent++;
       results.push({ trainer: `${learner.first_name} ${learner.last_name}`, email: emailRes.success ? "sent" : emailRes.error } as any);
+    }
+
+    // Une SEULE activité company-level pour l'annulation (pas une par apprenant).
+    const companyId = (plan?.company_id as string | undefined) ?? null;
+    if (companyId && learnerEmailsSent > 0) {
+      try {
+        await supabase.from("activities").insert({
+          type: "email",
+          title: "Session annulée — apprenants prévenus",
+          description: `${typeLabel} du ${sessionDateFr} annulée. ${learnerEmailsSent} apprenant(s) prévenu(s) par email.`,
+          company_id: companyId,
+          created_at: new Date().toISOString(),
+        });
+      } catch (logErr) {
+        console.error("[cancel-session] activity log failed:", logErr);
+      }
     }
 
     console.log("[cancel-session] Done. Results:", JSON.stringify(results));
