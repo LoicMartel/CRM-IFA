@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { svc } from "@/lib/inbox/ingest";
 import { resolveEmailReply } from "@/lib/inbox/threading";
+import { logMessageActivity } from "@/lib/inbox/activity";
 import { SAFE_REPLY_CHANNELS, type Channel } from "@/lib/inbox/types";
 import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
 
@@ -48,6 +49,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ext = await sendChatMessage(conv.external_chat_id, parsed.data.body);
     }
     await sb.from("messages").update({ status: "sent", sent_at: new Date().toISOString(), external_message_id: ext.id }).eq("id", msg!.id);
+    // Trace la réponse humaine émise depuis le CRM dans la timeline d'activités (auteur = membre courant).
+    const { data: member } = await sb.from("team_members").select("id").eq("auth_user_id", user.id).maybeSingle();
+    await logMessageActivity(sb, id, { direction: "outbound", channel, sentBy: "human", body: parsed.data.body, teamMemberId: member?.id ?? null });
     return NextResponse.json({ ok: true });
   } catch (e) {
     await sb.from("messages").update({ status: "failed" }).eq("id", msg!.id);

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { IncomingMessage } from "./types";
+import { logMessageActivity } from "./activity";
 
 export function svc() {
   return createClient(
@@ -144,6 +145,18 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     sent_at: msg.direction === "outbound" ? new Date().toISOString() : null,
   });
   if (msgErr && msgErr.code !== "23505") console.error("[inbox.ingest] message insert failed:", msgErr.message);
+
+  // Trace l'échange dans la timeline d'activités de la fiche (best-effort, jamais bloquant).
+  // Uniquement si le message a réellement été inséré (pas un doublon 23505) — les retries et
+  // échos sont déjà filtrés en amont (external_message_id + echo guard).
+  if (!msgErr) {
+    await logMessageActivity(sb, conversationId, {
+      direction: msg.direction,
+      channel: msg.channel,
+      sentBy: msg.direction === "inbound" ? "lead" : "human",
+      body: msg.body,
+    });
+  }
 
   return { conversationId, isNewConversation, isExistingContact, direction: msg.direction };
 }

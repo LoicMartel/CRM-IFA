@@ -5,6 +5,7 @@ import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult }
 import { resolveEmailReply } from "./threading";
 import { type Channel } from "./types";
 import { resolvePersona, type InboxPersona } from "./routing";
+import { logMessageActivity } from "./activity";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -113,6 +114,7 @@ export async function sendGreeting(conversationId: string): Promise<void> {
       external_message_id: ext.id, status: "sent", sent_at: new Date().toISOString(),
     });
     await sb.from("conversations").update({ agent_turn_count: 1 }).eq("id", conversationId);
+    await logMessageActivity(sb, conversationId, { direction: "outbound", channel: conv.channel as Channel, sentBy: "agent", body: text });
   } catch (e) {
     console.error("[inbox.agent] greeting send failed:", e);
     await escalateConversation(conversationId, "low_confidence", "Échec d'envoi du message d'accueil.");
@@ -201,6 +203,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     await sb.from("conversations").update({
       agent_turn_count: (conv.agent_turn_count ?? 0) + 1,
     }).eq("id", conversationId);
+    await logMessageActivity(sb, conversationId, { direction: "outbound", channel: conv.channel as Channel, sentBy: "agent", body: text });
   } catch (e) {
     console.error("[inbox.agent] send failed:", e);
     await escalateConversation(conversationId, "low_confidence", "Échec d'envoi de la réponse de l'agent.");
