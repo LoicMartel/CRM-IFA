@@ -35,12 +35,14 @@ export async function updateSession(request: NextRequest) {
   const isPublic = publicPrefixes.some((p) => request.nextUrl.pathname.startsWith(p));
 
   if (!isPublic) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Validate the session by verifying the JWT locally (asymmetric ES256 keys) instead of
+    // calling getUser(), which makes a network round-trip to Supabase Auth on EVERY request
+    // (including each RSC prefetch — ~26 per dashboard load). getClaims() verifies the signature
+    // against the cached JWKS public key and only hits the network to refresh an expired token.
+    const { data: claims } = await supabase.auth.getClaims();
 
-    // Only redirect if no user AND no Supabase auth cookies present (avoids flash on token refresh)
-    if (!user) {
+    // Only redirect if no valid session AND no Supabase auth cookies present (avoids flash on token refresh)
+    if (!claims) {
       const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
       if (!hasAuthCookie) {
         const url = request.nextUrl.clone();
