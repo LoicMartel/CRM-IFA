@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { svc } from "@/lib/inbox/ingest";
+import { listClassifyAccountIds, classifyExclusionOr } from "@/lib/inbox/routing";
 import { createNotification } from "@/lib/notifications";
 import { sendSessionEmail } from "@/lib/send-email";
 
@@ -10,10 +11,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const sb = svc();
-  const { data } = await sb.from("conversations")
+  // Isolation : le digest leads ne doit PAS inclure le courrier classify de Rafi (human + unread)
+  // — sinon ses mails polluent son récap leads. On exclut les comptes en mode `classify`.
+  const exclusionOr = classifyExclusionOr(await listClassifyAccountIds());
+  let dq = sb.from("conversations")
     .select("channel, agent_status, intent, contacts(first_name,last_name)")
     .in("agent_status", ["escalated", "human"]).eq("unread", true)
     .order("agent_status", { ascending: true });
+  if (exclusionOr) dq = dq.or(exclusionOr);
+  const { data } = await dq;
 
   const lines = (data ?? []).map((c) => {
     const who = (Array.isArray(c.contacts) ? c.contacts[0] : c.contacts) as { first_name?: string; last_name?: string } | null;

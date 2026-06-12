@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { listClassifyAccountIds, classifyExclusionOr } from "@/lib/inbox/routing";
 
 export async function GET(req: NextRequest) {
   const sb = await createClient();
@@ -10,11 +11,16 @@ export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status"); // agent_status filter
   const attention = req.nextUrl.searchParams.get("attention"); // "true" => escalated + human unread
 
+  // Isolation : l'inbox leads EXCLUT les comptes en mode `classify` (le courrier de Rafi vit dans
+  // /tri-courrier, jamais ici — sinon il fuite dans la liste leads).
+  const exclusionOr = classifyExclusionOr(await listClassifyAccountIds());
+
   const BASE_COLS = "id, channel, category, intent, agent_status, escalation_reason, unread, subject, last_message_at, contact_id, contacts(first_name,last_name,email)";
 
   const build = (cols: string) => {
     let q = sb.from("conversations").select(cols)
       .order("last_message_at", { ascending: false }).limit(200);
+    if (exclusionOr) q = q.or(exclusionOr);
     if (channel) q = q.eq("channel", channel);
     if (status) q = q.eq("agent_status", status);
     if (attention === "true") q = q.in("agent_status", ["escalated", "human"]).eq("unread", true);

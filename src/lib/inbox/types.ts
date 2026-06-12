@@ -58,6 +58,16 @@ export interface ConversationRow {
   owner_id: string | null;
   created_at: string;
   updated_at: string;
+  // Scoring copilote (chantier F P1) — nullable tant que la migration interest_score n'est pas appliquée.
+  interest_score?: number | null;
+  score_reason?: string | null;
+  // Tri courrier (chantier C) — nullable, seul le chemin classify les écrit.
+  triage_folder?: string | null;
+  triage_action_required?: boolean | null;
+  triage_assignee?: string | null;
+  triage_assignee_source?: string | null;
+  triage_folder_reason?: string | null;
+  triage_folder_source?: string | null;
 }
 
 export interface MessageRow {

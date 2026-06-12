@@ -7,11 +7,12 @@
 // ⚠️ The Unipile email webhook is FLAT (no mail headers) → no List-Unsubscribe. We filter on the
 // sender identifier + subject/body text only (cf. spec F finding).
 
-// Automated / non-lead sender local-parts (the bit before @).
-const NOISE_LOCAL = /^(no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounce|newsletter|notifications?|mailing|marketing)\b/i;
+// Automated / non-lead sender local-parts (the bit before @). Exported: the mailbox triage (chantier C)
+// reuses the same noise heuristics (source unique) for its deterministic upstream.
+export const NOISE_LOCAL = /^(no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounce|newsletter|notifications?|mailing|marketing)\b/i;
 const INTERNAL_DOMAIN = "@closing-academie.com";
 // Newsletter/marketing body footers (conservative content heuristic).
-const NEWSLETTER_BODY = /se d[ée]sinscrire|unsubscribe|voir (?:cet?|ce) (?:e?-?mail|message) dans (?:votre|le) navigateur|ne plus recevoir (?:nos|ces|cet)/i;
+export const NEWSLETTER_BODY = /se d[ée]sinscrire|unsubscribe|voir (?:cet?|ce) (?:e?-?mail|message) dans (?:votre|le) navigateur|ne plus recevoir (?:nos|ces|cet)/i;
 
 /**
  * True ⇒ this inbound is noise: skip scoring (no LLM call) and never promote it to the feed.

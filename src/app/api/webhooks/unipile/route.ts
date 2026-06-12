@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ingestIncoming, svc } from "@/lib/inbox/ingest";
 import { classifyConversation } from "@/lib/inbox/classify";
+import { classifyMailbox } from "@/lib/inbox/classify-mailbox";
 import { evaluateEligibility } from "@/lib/inbox/eligibility";
 import { escalateConversation, promoteConversation } from "@/lib/inbox/escalation";
 import { runAgentTurn } from "@/lib/inbox/agent";
@@ -156,10 +157,12 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
     return;
   }
 
-  // mode=classify (chantier C, tri courrier Rafi): mailbox labelling (classifyMailbox) lands with C.
-  // Socle/F: pin 'human' (NEVER reply), no labelling yet.
+  // mode=classify (chantier C, tri courrier Rafi): pin 'human' (NEVER reply, jamais 'active', jamais
+  // de tour agent ni de relance cron), puis ÉTIQUETER seulement (dossier + flag à traiter + dispatch).
+  // Pas de classifyConversation (a/b/c leads), pas d'evaluateEligibility, pas de runAgentTurn.
   if (account.mode === "classify") {
     await sb.from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
+    await classifyMailbox(result.conversationId).catch((e) => console.error("[unipile] classify-mailbox:", e));
     return;
   }
 

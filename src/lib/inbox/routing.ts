@@ -115,3 +115,32 @@ export async function resolveInboxAccount(accountId: string | null): Promise<Res
 export async function resolvePersona(accountId: string | null): Promise<InboxPersona> {
   return (await resolveInboxAccount(accountId)).persona;
 }
+
+/**
+ * Account ids handled in `classify` mode (mailbox triage — chantier C).
+ * Used to INCLUDE them in /tri-courrier and EXCLUDE them from the leads inbox/digest.
+ * NOTE: no `active` filter — a classify box left deactivated still resolves to `classify` (fail-safe,
+ * its inbound is pinned 'human' + labelled), so its mail must stay out of the leads views too.
+ * Best-effort: returns [] if the table is missing (no isolation rather than a crash).
+ */
+export async function listClassifyAccountIds(): Promise<string[]> {
+  const sb = svc();
+  try {
+    const { data, error } = await sb.from("inbox_accounts").select("account_id").eq("mode", "classify");
+    if (error || !data) return [];
+    return data.map((r) => r.account_id as string).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * PostgREST `.or(...)` predicate that EXCLUDES the given account ids while KEEPING rows with a null
+ * account_id (web_form leads — `NOT IN` would drop NULLs). Returns null when there is nothing to
+ * exclude so the caller can skip the filter entirely.
+ */
+export function classifyExclusionOr(ids: string[]): string | null {
+  if (!ids.length) return null;
+  const list = ids.map((id) => `"${id.replace(/["(),]/g, "")}"`).join(",");
+  return `account_id.is.null,account_id.not.in.(${list})`;
+}

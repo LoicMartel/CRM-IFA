@@ -5,6 +5,7 @@ import { svc } from "@/lib/inbox/ingest";
 import { resolveEmailReply } from "@/lib/inbox/threading";
 import { logMessageActivity } from "@/lib/inbox/activity";
 import { SAFE_REPLY_CHANNELS, type Channel } from "@/lib/inbox/types";
+import { resolveInboxAccount } from "@/lib/inbox/routing";
 import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
 
 const bodySchema = z.object({ body: z.string().trim().min(1).max(8000) });
@@ -22,6 +23,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { data: conv } = await sb.from("conversations")
     .select("channel, account_id, external_chat_id, subject, contacts(first_name, last_name, email)").eq("id", id).maybeSingle();
   if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Garde-fou serveur (ceinture + bretelles) : une boîte en mode `classify` (tri courrier de Rafi)
+  // ne doit JAMAIS envoyer, même via un POST direct sur cette route. La vue /tri-courrier est déjà
+  // lecture seule côté UI ; ce contrôle ferme le chemin d'envoi côté serveur.
+  const { mode } = await resolveInboxAccount(conv.account_id ?? null);
+  if (mode === "classify") return NextResponse.json({ error: "Réponse interdite : boîte en mode tri (classify)" }, { status: 403 });
   const channel = conv.channel as Channel;
   if (!SAFE_REPLY_CHANNELS.includes(channel)) return NextResponse.json({ error: "channel not replyable from CRM (open natively)" }, { status: 422 });
   if (!unipileConfigured()) return NextResponse.json({ error: "Unipile not configured" }, { status: 503 });
