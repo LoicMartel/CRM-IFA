@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { svc } from "./ingest";
 import { createNotification } from "@/lib/notifications";
+import { moveEmailToFolder } from "@/lib/unipile/client";
 import { NOISE_LOCAL, NEWSLETTER_BODY } from "./upstream-filter";
 import {
   TRIAGE_FOLDER_SLUGS, ASSIGNEES, ASSIGNEE_EMAILS, FOLDER_GRID, SPLIT_RULES, KNOWN_SAAS_SENDERS,
-  deterministicAssignee, isValidFolder, isValidAssignee, folderMeta,
+  FOLDER_IMAP_NAME, deterministicAssignee, isValidFolder, isValidAssignee, folderMeta,
   type TriageFolderSlug, type AssigneeSlug,
 } from "./triage-config";
 
@@ -154,6 +155,24 @@ async function persistAndDispatch(
     await dispatchNotify(sb, conversationId, result, contactId);
   }
   return result;
+}
+
+// P2 — auto-classement IMAP. Gated DEUX FOIS : (1) au call site, seulement si account.autoFile=true ;
+// (2) dans moveEmailToFolder, no-op si Unipile non configuré. Déplace le DERNIER message inbound dans
+// le dossier IMAP correspondant au triage_folder PERSISTÉ (respecte donc un re-classement humain).
+// Email uniquement (IMAP folders ≠ chat). Best-effort : le call site catch toute erreur.
+export async function autoFileMail(conversationId: string): Promise<void> {
+  const sb = svc();
+  const { data: conv } = await sb.from("conversations")
+    .select("account_id, channel, triage_folder").eq("id", conversationId).maybeSingle();
+  if (!conv || conv.channel !== "email" || !conv.account_id || !conv.triage_folder) return;
+  const folderName = FOLDER_IMAP_NAME[conv.triage_folder as TriageFolderSlug];
+  if (!folderName) return;
+  const { data: msg } = await sb.from("messages").select("external_message_id")
+    .eq("conversation_id", conversationId).eq("direction", "inbound")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (!msg?.external_message_id) return;
+  await moveEmailToFolder(conv.account_id as string, msg.external_message_id as string, folderName);
 }
 
 // Dispatch P1 = NOTIFICATION uniquement (zéro écriture sur la boîte). On notifie le destinataire

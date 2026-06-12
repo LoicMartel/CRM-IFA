@@ -90,3 +90,21 @@ export const KNOWN_SAAS_SENDERS = [
   "systeme.io", "docusign", "calendly", "notion.so", "slack.com", "zoom.us",
   "stripe.com", "hubspot", "mailchimp", "pennylane", "firma.dev",
 ];
+
+// P2 (auto-classement IMAP via Unipile) — slug → NOM EXACT du dossier IMAP côté boîte de Rafi.
+// ⚠️ PENDING_VALIDATION : ces noms DOIVENT correspondre exactement (casse, accents, espaces) aux
+// dossiers que Rafi crée dans Ionos (doc Architecture_Emails_Rafi, section 4). Si Unipile ne trouve
+// pas le dossier, il le CRÉE — donc un nom erroné créerait un doublon de dossier. À vérifier via
+// GET /api/v1/folders?account_id=… au moment de l'activation P2. "00 À traiter" n'est PAS ici (= flag,
+// pas un dossier de classement thématique).
+export const FOLDER_IMAP_NAME: Record<TriageFolderSlug, string> = {
+  clients: "01 · CLIENTS",
+  prospects_leads: "02 · PROSPECTS & LEADS",
+  commercial: "03 · COMMERCIAL",
+  partenariats: "04 · PARTENARIATS",
+  admin_finance: "05 · ADMIN & FINANCE",
+  reseau_institutionnel: "06 · RÉSEAU & INSTITUTIONNEL",
+  outils_abonnements: "07 · OUTILS & ABONNEMENTS",
+  veille_newsletters: "08 · VEILLE & NEWSLETTERS",
+  personnel: "09 · PERSONNEL",
+};

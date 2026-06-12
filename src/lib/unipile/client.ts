@@ -85,3 +85,20 @@ export async function sendEmail(params: SendEmailParams): Promise<UnipileSendRes
   if (params.replyTo) form.append("reply_to", params.replyTo);
   return unipilePost(`/emails`, form);
 }
+
+// P2 chantier C — déplacer un email dans un dossier IMAP (auto-classement, mode classify).
+// Unipile: PUT /api/v1/emails/{email_id} body {folders:[name]}. IMAP (IONOS) n'accepte QU'UN dossier
+// et le crée s'il n'existe pas. On cible le message par son provider_id (= notre external_message_id)
+// + account_id en query (disambiguation). ⚠️ PENDING_VALIDATION E2E : le path accepte email_id Unipile
+// en priorité ; l'usage du provider_id dans le path est l'option documentée mais non encore validée
+// avec un vrai token. No-op si Unipile non configuré (gated : reste inerte sans token).
+export async function moveEmailToFolder(accountId: string, providerId: string, folderName: string): Promise<void> {
+  if (!unipileConfigured()) return; // gated: sans token, le P2 ne fait rien
+  const url = `${BASE}/api/v1/emails/${encodeURIComponent(providerId)}?account_id=${encodeURIComponent(accountId)}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "X-API-KEY": KEY, "Content-Type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ folders: [folderName] }),
+  });
+  if (!res.ok) throw new Error(`Unipile move email → ${res.status}: ${(await res.text()).slice(0, 300)}`);
+}

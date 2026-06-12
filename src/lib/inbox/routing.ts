@@ -25,6 +25,7 @@ export interface ResolvedAccount {
   ownerId: string | null;
   replyMode: ReplyMode;
   persona: InboxPersona;
+  autoFile: boolean; // P2 classify : déplacer le mail dans le dossier IMAP après étiquetage (défaut false)
 }
 
 interface AccountRow {
@@ -36,6 +37,7 @@ interface AccountRow {
   voice_profile?: string | null;
   booking_link?: string | null;
   active?: boolean | null;
+  auto_file?: boolean | null;
 }
 
 // LCA default persona — keeps the leads agent (mode=agent) byte-for-byte unchanged.
@@ -71,13 +73,13 @@ export async function resolveInboxAccount(accountId: string | null): Promise<Res
 
   // web_form / legacy: no Unipile account → the leads agent. Persona = LCA default.
   if (!accountId) {
-    return { mode: "agent", ownerId: await resolveOwnerId(sb), replyMode: "auto", persona: buildPersona(null) };
+    return { mode: "agent", ownerId: await resolveOwnerId(sb), replyMode: "auto", persona: buildPersona(null), autoFile: false };
   }
 
   // Table is source of truth (only an active row counts; a deactivated box must not keep replying).
   try {
     const { data, error } = await sb.from("inbox_accounts")
-      .select("mode, owner_id, reply_mode, display_name, signature, voice_profile, booking_link, active")
+      .select("mode, owner_id, reply_mode, display_name, signature, voice_profile, booking_link, active, auto_file")
       .eq("account_id", accountId).maybeSingle();
     if (!error && data) {
       const row = data as AccountRow;
@@ -89,12 +91,13 @@ export async function resolveInboxAccount(accountId: string | null): Promise<Res
           ownerId: row.owner_id ?? (await resolveOwnerId(sb)),
           replyMode,
           persona: buildPersona(row),
+          autoFile: mode === "classify" && row.auto_file === true, // P2 : auto-classement only en mode classify
         };
       }
       // Row exists but DEACTIVATED → fail-safe classify, and do NOT let the env fallback re-activate
       // it (a box turned off in the table must stay off, whatever INBOX_ACCOUNT_ROUTING says).
       console.warn(`[inbox.routing] account ${accountId} is deactivated (inbox_accounts.active=false) → 'classify' (env ignored).`);
-      return { mode: "classify", ownerId: row.owner_id ?? (await resolveOwnerId(sb)), replyMode: "off", persona: buildPersona(row) };
+      return { mode: "classify", ownerId: row.owner_id ?? (await resolveOwnerId(sb)), replyMode: "off", persona: buildPersona(row), autoFile: false };
     }
   } catch (e) {
     console.error("[inbox.routing] inbox_accounts lookup failed (table missing? falling back to env):", e);
@@ -103,12 +106,12 @@ export async function resolveInboxAccount(accountId: string | null): Promise<Res
   // Env fallback (mode only).
   const envMode = readEnvMode(accountId);
   if (envMode) {
-    return { mode: envMode, ownerId: await resolveOwnerId(sb), replyMode: "off", persona: buildPersona(null) };
+    return { mode: envMode, ownerId: await resolveOwnerId(sb), replyMode: "off", persona: buildPersona(null), autoFile: false };
   }
 
   // Fail-safe: an unconfigured connected account never auto-replies.
   console.warn(`[inbox.routing] account ${accountId} not configured (inbox_accounts / INBOX_ACCOUNT_ROUTING) → 'classify' fail-safe (agent won't reply). List it as mode='agent' to enable the leads agent on this box.`);
-  return { mode: "classify", ownerId: await resolveOwnerId(sb), replyMode: "off", persona: buildPersona(null) };
+  return { mode: "classify", ownerId: await resolveOwnerId(sb), replyMode: "off", persona: buildPersona(null), autoFile: false };
 }
 
 /** Convenience: persona only (resolved from account_id; LCA default when null/unconfigured). */
