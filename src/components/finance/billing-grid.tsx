@@ -60,16 +60,18 @@ interface Props {
 
 /* ---- Constants ---- */
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  encaisse: { bg: "#c6efce", text: "#006100", label: "Encaissé" },
-  facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé" },
-  en_cours: { bg: "#bdd7ee", text: "#1f4e79", label: "En cours" },
-  non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait" },
-  planifie: { bg: "#e7e0ff", text: "#5b21b6", label: "Planifié" },
-  a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider" },
+// Ordre = cycle de vie de l'échéance (cf. BillingStatus dans database.ts).
+// La légende et le popover de statut suivent cet ordre d'insertion.
+const STATUS_COLORS: Record<string, { bg: string; text: string; label: string; definition: string }> = {
+  a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider", definition: "Plan créé, en attente de validation par Naznine (tout le plan en une fois)." },
+  planifie: { bg: "#e7e0ff", text: "#5b21b6", label: "Planifié", definition: "Plan validé, échéance programmée jusqu'à sa date d'émission." },
+  a_facturer: { bg: "#bdd7ee", text: "#1f4e79", label: "À facturer", definition: "Échéance arrivée à terme, facture à émettre (bascule automatique le jour J)." },
+  facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé", definition: "Facture émise (Pennylane), en attente de paiement." },
+  encaisse: { bg: "#c6efce", text: "#006100", label: "Encaissé", definition: "Facture payée par le client — état final." },
+  non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait", definition: "Échéance saisie hors du cycle automatique (état neutre)." },
 };
 
-const FACTURABLE_STATUSES: (BillingStatus | null)[] = ["non_fait", "en_cours", "planifie", "a_valider", null];
+const FACTURABLE_STATUSES: (BillingStatus | null)[] = ["non_fait", "a_facturer", "planifie", "a_valider", null];
 
 const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
 
@@ -195,9 +197,11 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     const allMonths = filtered.flatMap((e) => e.billing_months);
     return {
       total: allMonths.reduce((s, m) => s + Number(m.amount), 0),
-      encaisse: allMonths.filter((m) => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0),
+      a_valider: allMonths.filter((m) => m.status === "a_valider").reduce((s, m) => s + Number(m.amount), 0),
+      planifie: allMonths.filter((m) => m.status === "planifie").reduce((s, m) => s + Number(m.amount), 0),
+      a_facturer: allMonths.filter((m) => m.status === "a_facturer").reduce((s, m) => s + Number(m.amount), 0),
       facture: allMonths.filter((m) => m.status === "facture").reduce((s, m) => s + Number(m.amount), 0),
-      en_cours: allMonths.filter((m) => m.status === "en_cours").reduce((s, m) => s + Number(m.amount), 0),
+      encaisse: allMonths.filter((m) => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0),
       non_fait: allMonths.filter((m) => m.status === "non_fait").reduce((s, m) => s + Number(m.amount), 0),
     };
   }, [filtered]);
@@ -606,13 +610,15 @@ export function BillingGrid({ entries, companies, deals }: Props) {
         }
       `}</style>
 
-      {/* KPIs */}
-      <div className="grid gap-3 md:grid-cols-5">
+      {/* KPIs — ordre = cycle de vie de l'échéance */}
+      <div className="grid gap-3 md:grid-cols-4 lg:grid-cols-7">
         {[
           { label: "Total HT", value: kpis.total / 1.2, icon: <Receipt className="h-4 w-4" />, color: "#1a2a3a" },
-          { label: "Encaissé HT", value: kpis.encaisse / 1.2, icon: <CreditCard className="h-4 w-4" />, color: "#006100" },
+          { label: "À valider HT", value: kpis.a_valider / 1.2, icon: <AlertTriangle className="h-4 w-4" />, color: "#92600a" },
+          { label: "Planifié HT", value: kpis.planifie / 1.2, icon: <Clock className="h-4 w-4" />, color: "#5b21b6" },
+          { label: "À facturer HT", value: kpis.a_facturer / 1.2, icon: <Clock className="h-4 w-4" />, color: "#1f4e79" },
           { label: "Facturé HT", value: kpis.facture / 1.2, icon: <Receipt className="h-4 w-4" />, color: "#9c0006" },
-          { label: "En cours HT", value: kpis.en_cours / 1.2, icon: <Clock className="h-4 w-4" />, color: "#1f4e79" },
+          { label: "Encaissé HT", value: kpis.encaisse / 1.2, icon: <CreditCard className="h-4 w-4" />, color: "#006100" },
           { label: "Non fait HT", value: kpis.non_fait / 1.2, icon: <AlertTriangle className="h-4 w-4" />, color: "#888888" },
         ].map((kpi) => (
           <div key={kpi.label} className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -654,9 +660,10 @@ export function BillingGrid({ entries, companies, deals }: Props) {
         {/* Legend */}
         <div className="flex gap-2 items-center flex-wrap">
           {Object.entries(STATUS_COLORS).map(([key, sc]) => (
-            <span key={key} style={{
+            <span key={key} title={sc.definition} style={{
               background: sc.bg, color: sc.text, padding: "2px 10px", borderRadius: 4,
-              fontSize: 11, fontWeight: 600,
+              fontSize: 11, fontWeight: 600, cursor: "help",
+              border: key === "non_fait" ? "1px solid #e0e0e0" : "none",
             }}>
               {sc.label}
             </span>
@@ -951,16 +958,17 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             minWidth: 280,
           }}
         >
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             {Object.entries(STATUS_COLORS).map(([key, sc]) => (
               <button
                 key={key}
                 onClick={() => updateCellStatus(popoverCell.entryId, popoverCell.monthKey, popoverCell.monthId, key as BillingStatus)}
                 style={{
-                  background: sc.bg, color: sc.text, border: "none", cursor: "pointer",
+                  background: sc.bg, color: sc.text, cursor: "pointer",
+                  border: key === "non_fait" ? "1px solid #e0e0e0" : "none",
                   padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                 }}
-                title={sc.label}
+                title={`${sc.label} — ${sc.definition}`}
               >
                 {sc.label}
               </button>
@@ -1171,9 +1179,11 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                       }))}
                     >
                       <option value="">— Statut —</option>
-                      <option value="encaisse">Encaissé</option>
+                      <option value="a_valider">À valider</option>
+                      <option value="planifie">Planifié</option>
+                      <option value="a_facturer">À facturer</option>
                       <option value="facture">Facturé</option>
-                      <option value="en_cours">En cours</option>
+                      <option value="encaisse">Encaissé</option>
                       <option value="non_fait">Non fait</option>
                     </select>
                   </div>
@@ -1253,23 +1263,23 @@ export function BillingGrid({ entries, companies, deals }: Props) {
               {(() => {
                 const months = detailEntry.billing_months;
                 const total = months.reduce((s, m) => s + Number(m.amount), 0);
-                const enc = months.filter(m => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0);
+                const af = months.filter(m => m.status === "a_facturer").reduce((s, m) => s + Number(m.amount), 0);
                 const fac = months.filter(m => m.status === "facture").reduce((s, m) => s + Number(m.amount), 0);
-                const ec = months.filter(m => m.status === "en_cours").reduce((s, m) => s + Number(m.amount), 0);
+                const enc = months.filter(m => m.status === "encaisse").reduce((s, m) => s + Number(m.amount), 0);
                 const nf = months.filter(m => m.status === "non_fait").reduce((s, m) => s + Number(m.amount), 0);
                 return (
                   <div className="grid grid-cols-4 gap-2">
-                    <div style={{ background: "#c6efce", borderRadius: 8, padding: "8px 10px" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#006100" }}>ENCAISSÉ</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#006100" }}>{fmtCompact(enc)}</div>
+                    <div style={{ background: "#bdd7ee", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#1f4e79" }}>À FACTURER</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#1f4e79" }}>{fmtCompact(af)}</div>
                     </div>
                     <div style={{ background: "#ffc7ce", borderRadius: 8, padding: "8px 10px" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#9c0006" }}>FACTURÉ</div>
                       <div style={{ fontSize: 15, fontWeight: 800, color: "#9c0006" }}>{fmtCompact(fac)}</div>
                     </div>
-                    <div style={{ background: "#bdd7ee", borderRadius: 8, padding: "8px 10px" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#1f4e79" }}>EN COURS</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "#1f4e79" }}>{fmtCompact(ec)}</div>
+                    <div style={{ background: "#c6efce", borderRadius: 8, padding: "8px 10px" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: "#006100" }}>ENCAISSÉ</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: "#006100" }}>{fmtCompact(enc)}</div>
                     </div>
                     <div style={{ background: "#f5f5f5", borderRadius: 8, padding: "8px 10px" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>NON FAIT</div>

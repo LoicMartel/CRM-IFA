@@ -826,9 +826,11 @@ export function DealsBoard({
                           : { label: "Non facturé", bg: "#f5f5f5", text: "#888", bar: "#bdc3c7" };
 
                     const BILLING_STATUS_COLORS: Record<string, { label: string; bg: string; text: string }> = {
-                      encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" },
+                      a_valider: { label: "À valider", bg: "#ffe8b3", text: "#92600a" },
+                      planifie: { label: "Planifié", bg: "#e7e0ff", text: "#5b21b6" },
+                      a_facturer: { label: "À facturer", bg: "#bdd7ee", text: "#1f4e79" },
                       facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006" },
-                      en_cours: { label: "En cours", bg: "#bdd7ee", text: "#1f4e79" },
+                      encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" },
                       non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888" },
                     };
 
