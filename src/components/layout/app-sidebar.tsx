@@ -14,8 +14,10 @@ import {
   FolderOpen,
   GraduationCap,
   Handshake,
+  Inbox,
   LayoutDashboard,
   Mail,
+  MailOpen,
   Megaphone,
   Receipt,
   Target,
@@ -41,6 +43,8 @@ import {
 
 const commercialItems = [
   { title: "Agenda Commercial", href: "/agenda-commercial", icon: CalendarCheck },
+  { title: "Inbox", href: "/inbox", icon: Inbox },
+  { title: "Tri courrier", href: "/tri-courrier", icon: MailOpen },
   { title: "Contacts", href: "/contacts", icon: User },
   { title: "Entreprises", href: "/companies", icon: Building2 },
   { title: "Ressources", href: "/ressources-commercial", icon: Calculator },

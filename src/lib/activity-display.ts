@@ -11,6 +11,7 @@ export const activityTypeLabels: Record<string, string> = {
   note: "Note",
   "tâche": "Tâche",
   relance: "Relance",
+  message: "Message",
 };
 
 export const activityTypeColors: Record<string, { bg: string; text: string }> = {
@@ -20,6 +21,7 @@ export const activityTypeColors: Record<string, { bg: string; text: string }> = 
   note: { bg: "#e8f5e9", text: "#2e7d32" },
   "tâche": { bg: "#fce4ec", text: "#c62828" },
   relance: { bg: "#fff8e1", text: "#f57c00" },
+  message: { bg: "#e8eaf6", text: "#3949ab" },
 };
 
 export function activityTypeBadge(type: string | null | undefined): { label: string; bg: string; text: string } {
