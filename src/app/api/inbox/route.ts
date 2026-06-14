@@ -11,8 +11,8 @@ export async function GET(req: NextRequest) {
   const status = req.nextUrl.searchParams.get("status"); // agent_status filter
   const attention = req.nextUrl.searchParams.get("attention"); // "true" => escalated + human unread
 
-  // Isolation : l'inbox leads EXCLUT les comptes en mode `classify` (le courrier de Rafi vit dans
-  // /tri-courrier, jamais ici — sinon il fuite dans la liste leads).
+  // Isolation : l'inbox leads EXCLUT les comptes en mode `classify` (le courrier de Rafi est rangé
+  // dans sa boîte via IMAP, jamais affiché ici — sinon il fuite dans la liste leads).
   const exclusionOr = classifyExclusionOr(await listClassifyAccountIds());
 
   const BASE_COLS = "id, channel, category, intent, agent_status, escalation_reason, unread, subject, last_message_at, contact_id, contacts(first_name,last_name,email)";

@@ -158,13 +158,14 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
   }
 
   // mode=classify (chantier C, tri courrier Rafi): pin 'human' (NEVER reply, jamais 'active', jamais
-  // de tour agent ni de relance cron), puis ÉTIQUETER seulement (dossier + flag à traiter + dispatch).
+  // de tour agent ni de relance cron), puis ÉTIQUETER seulement (dossier + flag à traiter). V1 = rangement
+  // thématique DANS la boîte de Rafi (move IMAP), pas de page CRM ni de dispatch (décision 14/06).
   // Pas de classifyConversation (a/b/c leads), pas d'evaluateEligibility, pas de runAgentTurn.
   if (account.mode === "classify") {
     await sb.from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
     await classifyMailbox(result.conversationId).catch((e) => console.error("[unipile] classify-mailbox:", e));
-    // P2 (gated par account.autoFile) : ranger le mail dans le dossier IMAP correspondant. Après
-    // classifyMailbox (le folder persisté est lu par autoFileMail). Best-effort, n'impacte jamais le tri.
+    // Gated par account.autoFile : ranger le mail dans le dossier IMAP correspondant au folder persisté
+    // (lu par autoFileMail). Best-effort, n'impacte jamais l'étiquetage. C'EST le "tri dans la boîte".
     if (account.autoFile) {
       await autoFileMail(result.conversationId).catch((e) => console.error("[unipile] auto-file:", e));
     }

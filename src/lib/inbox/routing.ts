@@ -121,7 +121,8 @@ export async function resolvePersona(accountId: string | null): Promise<InboxPer
 
 /**
  * Account ids handled in `classify` mode (mailbox triage — chantier C).
- * Used to INCLUDE them in /tri-courrier and EXCLUDE them from the leads inbox/digest.
+ * Used to EXCLUDE them from the leads inbox/digest (Rafi's mail is sorted into his own mailbox via
+ * IMAP, never surfaced in the CRM leads views).
  * NOTE: no `active` filter — a classify box left deactivated still resolves to `classify` (fail-safe,
  * its inbound is pinned 'human' + labelled), so its mail must stay out of the leads views too.
  * Best-effort: returns [] if the table is missing (no isolation rather than a crash).

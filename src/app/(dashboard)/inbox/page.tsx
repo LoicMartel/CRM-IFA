@@ -4,7 +4,7 @@ import { InboxClient, type Conv } from "./inbox-client";
 
 export default async function InboxPage() {
   const sb = await createClient();
-  // Isolation : exclure les comptes en mode `classify` (courrier de Rafi → /tri-courrier, pas ici).
+  // Isolation : exclure les comptes en mode `classify` (courrier de Rafi rangé dans sa boîte, pas ici).
   const exclusionOr = classifyExclusionOr(await listClassifyAccountIds());
   let q = sb.from("conversations")
     .select("id, channel, category, intent, agent_status, escalation_reason, unread, subject, last_message_at, contacts(first_name,last_name,email)")

@@ -24,8 +24,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .select("channel, account_id, external_chat_id, subject, contacts(first_name, last_name, email)").eq("id", id).maybeSingle();
   if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
   // Garde-fou serveur (ceinture + bretelles) : une boîte en mode `classify` (tri courrier de Rafi)
-  // ne doit JAMAIS envoyer, même via un POST direct sur cette route. La vue /tri-courrier est déjà
-  // lecture seule côté UI ; ce contrôle ferme le chemin d'envoi côté serveur.
+  // ne doit JAMAIS envoyer, même via un POST direct sur cette route — le tri n'étiquette/range que
+  // dans sa boîte, il ne répond pas. Ce contrôle ferme le chemin d'envoi côté serveur.
   const { mode } = await resolveInboxAccount(conv.account_id ?? null);
   if (mode === "classify") return NextResponse.json({ error: "Réponse interdite : boîte en mode tri (classify)" }, { status: 403 });
   const channel = conv.channel as Channel;
