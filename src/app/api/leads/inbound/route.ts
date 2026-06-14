@@ -277,6 +277,7 @@ export async function POST(request: Request) {
         externalMessageId: `webform-${parsed.data.email.trim().toLowerCase()}-${Date.now()}`,
         senderName: `${parsed.data.firstName} ${parsed.data.lastName}`,
         senderHandle: parsed.data.email, body, subject: "Lead formulaire web",
+        contactId,
       });
       // Greeting UNIQUEMENT sur une conversation neuve → un seul message d'accueil par lead,
       // jamais de doublon sur re-submit / double-clic / retry / rejeu webhook.

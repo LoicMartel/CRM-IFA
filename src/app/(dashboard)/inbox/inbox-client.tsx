@@ -7,7 +7,7 @@ export type Conv = {
   subject: string | null; last_message_at: string;
   // optionnels : absents des réponses API tant que la migration interest_score n'est pas appliquée
   interest_score?: number | null; score_reason?: string | null;
-  contacts: { first_name: string | null; last_name: string | null; email: string | null } | null;
+  contacts: { first_name: string | null; last_name: string | null; email: string | null; phone?: string | null; source_id?: string | null } | null;
 };
 type Msg = { id: string; sent_by: string; body: string; created_at: string };
 
@@ -117,7 +117,7 @@ export function InboxClient({ initial }: { initial: Conv[] }) {
 }
 
 function Thread({ id }: { id: string }) {
-  const [data, setData] = useState<{ conversation: Conv; messages: Msg[] } | null>(null);
+  const [data, setData] = useState<{ conversation: Conv; messages: Msg[]; source_label?: string | null } | null>(null);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -165,6 +165,16 @@ function Thread({ id }: { id: string }) {
         </span>
         {c.agent_status === "active" && <button onClick={takeover} disabled={busy} className="border rounded px-3 py-1 text-sm">Reprendre la main</button>}
       </div>
+      {c.contacts && (
+        <div className="border-b px-3 py-2 text-xs flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span className="font-medium text-sm">
+            {`${c.contacts.first_name ?? ""} ${c.contacts.last_name ?? ""}`.trim() || "Contact"}
+          </span>
+          {c.contacts.email && <a href={`mailto:${c.contacts.email}`} className="underline">{c.contacts.email}</a>}
+          {c.contacts.phone && <a href={`tel:${c.contacts.phone}`} className="text-muted-foreground">{c.contacts.phone}</a>}
+          {data.source_label && <span className="text-muted-foreground">📣 {data.source_label}</span>}
+        </div>
+      )}
       {c.interest_score != null && c.score_reason && (
         <div className="border-b px-3 py-1.5 text-xs text-muted-foreground bg-muted/50">
           Score d&apos;intérêt {c.interest_score}/100 — {c.score_reason}

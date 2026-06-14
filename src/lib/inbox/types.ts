@@ -36,6 +36,9 @@ export interface IncomingMessage {
   externalMessageId: string | null;
   senderName: string | null;
   senderHandle: string | null; // email / linkedin url / phone
+  // Contact déjà résolu par l'appelant (ex: /api/leads/inbound) → lier la conversation à CE contact
+  // au lieu de laisser ingest matcher/créer (évite le doublon de contact sur les leads web_form).
+  contactId?: string | null;
   body: string;
   subject?: string | null;
 }

@@ -16,6 +16,13 @@ export async function resolveOwnerId(sb: ReturnType<typeof svc>): Promise<string
   return data?.id ?? null;
 }
 
+// Un contact "qui n'est pas un nouveau lead" = il a au moins un deal rattaché → l'agent ne doit
+// PAS le traiter en auto. Partagé entre le match par handle et le contactId pré-résolu.
+async function contactHasDeal(sb: ReturnType<typeof svc>, contactId: string): Promise<boolean> {
+  const { count } = await sb.from("deals").select("id", { count: "exact", head: true }).eq("contact_id", contactId);
+  return (count ?? 0) > 0;
+}
+
 // Returns { contactId, isExisting }. isExisting=true means the sender matched a contact that
 // already has a deal (=> not a "new lead", agent must NOT auto-handle).
 async function matchContact(
@@ -25,7 +32,9 @@ async function matchContact(
   const handle = msg.senderHandle?.trim();
   if (!handle) return { contactId: null, isExisting: false };
   let contactId: string | null = null;
-  if (msg.channel === "email" && handle.includes("@")) {
+  // web_form porte l'email du lead dans le handle → matcher par email comme un canal email (sinon
+  // ingest ne retrouve pas le contact riche créé par /api/leads/inbound et crée un doublon vide).
+  if ((msg.channel === "email" || msg.channel === "web_form") && handle.includes("@")) {
     const { data } = await sb.from("contacts").select("id").ilike("email", handle).maybeSingle();
     contactId = data?.id ?? null;
   } else if (msg.channel === "linkedin" && handle.startsWith("http")) {
@@ -36,9 +45,7 @@ async function matchContact(
     contactId = data?.id ?? null;
   }
   if (!contactId) return { contactId: null, isExisting: false };
-  // Existing contact "qui n'est pas un nouveau lead" = a au moins un deal rattaché
-  const { count } = await sb.from("deals").select("id", { count: "exact", head: true }).eq("contact_id", contactId);
-  return { contactId, isExisting: (count ?? 0) > 0 };
+  return { contactId, isExisting: await contactHasDeal(sb, contactId) };
 }
 
 async function createContact(sb: ReturnType<typeof svc>, msg: IncomingMessage, ownerId: string | null): Promise<string | null> {
@@ -51,7 +58,7 @@ async function createContact(sb: ReturnType<typeof svc>, msg: IncomingMessage, o
     owner_id: ownerId,
     notes: `Créé automatiquement depuis l'inbox (${msg.channel}).`,
   };
-  if (msg.channel === "email" && msg.senderHandle?.includes("@")) insert.email = msg.senderHandle;
+  if ((msg.channel === "email" || msg.channel === "web_form") && msg.senderHandle?.includes("@")) insert.email = msg.senderHandle;
   if (msg.channel === "linkedin" && msg.senderHandle?.startsWith("http")) insert.linkedin_url = msg.senderHandle;
   if (["whatsapp", "sms"].includes(msg.channel) && msg.senderHandle) insert.phone = msg.senderHandle;
   const { data, error } = await sb.from("contacts").insert(insert).select("id").single();
@@ -92,9 +99,16 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   if (!conversationId && msg.direction === "outbound") return null;
 
   if (!conversationId) {
-    const matched = await matchContact(sb, msg);
-    isExistingContact = matched.isExisting;
-    const contactId = matched.contactId ?? (await createContact(sb, msg, ownerId));
+    // Contact pré-résolu par l'appelant → on le lie directement (ni match ni create = pas de doublon).
+    let contactId: string | null;
+    if (msg.contactId) {
+      contactId = msg.contactId;
+      isExistingContact = await contactHasDeal(sb, msg.contactId);
+    } else {
+      const matched = await matchContact(sb, msg);
+      isExistingContact = matched.isExisting;
+      contactId = matched.contactId ?? (await createContact(sb, msg, ownerId));
+    }
     const { data, error } = await sb.from("conversations").insert({
       contact_id: contactId,
       channel: msg.channel,
