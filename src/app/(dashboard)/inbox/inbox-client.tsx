@@ -7,9 +7,36 @@ export type Conv = {
   subject: string | null; last_message_at: string;
   // optionnels : absents des réponses API tant que la migration interest_score n'est pas appliquée
   interest_score?: number | null; score_reason?: string | null;
-  contacts: { first_name: string | null; last_name: string | null; email: string | null; phone?: string | null; source_id?: string | null } | null;
+  contacts: { id?: string; first_name: string | null; last_name: string | null; email: string | null; phone?: string | null; source_id?: string | null } | null;
 };
 type Msg = { id: string; sent_by: string; body: string; created_at: string };
+type ContactDetail = {
+  created_at: string | null;
+  lifecycle_stage: string | null;
+  lead_status: string | null;
+  company_name: string | null;
+  owner_name: string | null;
+  deals: Array<{ id: string; name: string | null; stage: string | null; amount: number | null }>;
+};
+
+// Libellés des statuts du cycle de vie (alignés sur la fiche contact). Le badge n'apparaît que si connu.
+const LIFECYCLE_LABEL: Record<string, string> = {
+  prospect: "Prospect", lead_marketing: "Lead Marketing", customer: "Client", former_customer: "Ancien client",
+};
+
+// Ancienneté du lead, format FR compact (réutilise la même logique que la cloche de notifications).
+function timeAgo(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `il y a ${d}j`;
+  return new Date(dateStr).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
 
 const CHANNEL_LABEL: Record<string, string> = {
   linkedin: "LinkedIn", email: "Email", whatsapp: "WhatsApp", instagram: "Instagram",
@@ -117,7 +144,7 @@ export function InboxClient({ initial }: { initial: Conv[] }) {
 }
 
 function Thread({ id }: { id: string }) {
-  const [data, setData] = useState<{ conversation: Conv; messages: Msg[]; source_label?: string | null } | null>(null);
+  const [data, setData] = useState<{ conversation: Conv; messages: Msg[]; source_label?: string | null; contact_detail?: ContactDetail | null } | null>(null);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -151,6 +178,7 @@ function Thread({ id }: { id: string }) {
 
   if (!data) return <p className="p-6 text-muted-foreground">Chargement…</p>;
   const c = data.conversation;
+  const d = data.contact_detail;
   const replyable = ["email", "whatsapp", "instagram", "messenger"].includes(c.channel);
   const SENDER_STYLE: Record<string, string> = {
     lead: "bg-muted", agent: "bg-blue-100 ml-auto", human: "bg-primary text-primary-foreground ml-auto",
@@ -166,13 +194,38 @@ function Thread({ id }: { id: string }) {
         {c.agent_status === "active" && <button onClick={takeover} disabled={busy} className="border rounded px-3 py-1 text-sm">Reprendre la main</button>}
       </div>
       {c.contacts && (
-        <div className="border-b px-3 py-2 text-xs flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="font-medium text-sm">
-            {`${c.contacts.first_name ?? ""} ${c.contacts.last_name ?? ""}`.trim() || "Contact"}
-          </span>
-          {c.contacts.email && <a href={`mailto:${c.contacts.email}`} className="underline">{c.contacts.email}</a>}
-          {c.contacts.phone && <a href={`tel:${c.contacts.phone}`} className="text-muted-foreground">{c.contacts.phone}</a>}
-          {data.source_label && <span className="text-muted-foreground">📣 {data.source_label}</span>}
+        <div className="border-b px-3 py-2 text-xs space-y-1">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="font-medium text-sm">
+              {`${c.contacts.first_name ?? ""} ${c.contacts.last_name ?? ""}`.trim() || "Contact"}
+            </span>
+            {c.contacts.email && <a href={`mailto:${c.contacts.email}`} className="underline">✉ {c.contacts.email}</a>}
+            {c.contacts.phone && <a href={`tel:${c.contacts.phone}`} className="text-muted-foreground">☎ {c.contacts.phone}</a>}
+            {c.contacts.id && (
+              <a href={`/contacts/${c.contacts.id}`} className="ml-auto border rounded px-2 py-0.5 hover:bg-muted whitespace-nowrap">
+                Voir la fiche →
+              </a>
+            )}
+          </div>
+          {(d?.company_name || d?.owner_name || d?.lifecycle_stage || d?.created_at || data.source_label || d) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+              {d?.company_name && <span>🏢 {d.company_name}</span>}
+              {d?.owner_name && <span>👤 Assigné : {d.owner_name}</span>}
+              {d?.lifecycle_stage && LIFECYCLE_LABEL[d.lifecycle_stage] && (
+                <span className="rounded px-1.5 py-0.5" style={{ background: "#eef2ff", color: "#3730a3" }}>
+                  🏷 {LIFECYCLE_LABEL[d.lifecycle_stage]}
+                </span>
+              )}
+              {timeAgo(d?.created_at ?? null) && <span>◷ Lead {timeAgo(d!.created_at)}</span>}
+              {data.source_label && <span>📣 {data.source_label}</span>}
+              {d && (
+                <span>
+                  💼 {d.deals.length} deal{d.deals.length > 1 ? "s" : ""} lié{d.deals.length > 1 ? "s" : ""}
+                  {d.deals.length > 0 && d.deals[0].name ? ` · ${d.deals[0].name}` : ""}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
       {c.interest_score != null && c.score_reason && (
