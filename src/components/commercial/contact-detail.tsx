@@ -232,6 +232,10 @@ export function ContactDetail({
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
+  const sortedActivities = [...activities].sort((a, b) =>
+    (b.due_date ?? b.created_at).localeCompare(a.due_date ?? a.created_at),
+  );
+
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1100,7 +1104,7 @@ export function ContactDetail({
                 <Briefcase className="h-4 w-4 mr-1" /> Deals ({deals.length + companyDeals.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
-                <PhoneCall className="h-4 w-4 mr-1" /> Activités ({activities.length})
+                <PhoneCall className="h-4 w-4 mr-1" /> Activités ({sortedActivities.length})
               </TabsTrigger>
               <TabsTrigger value="meetings">
                 <Calendar className="h-4 w-4 mr-1" /> RDV ({meetings.length})
@@ -1116,7 +1120,7 @@ export function ContactDetail({
                 </TabsTrigger>
               )}
               <TabsTrigger value="tasks">
-                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
               </TabsTrigger>
             </TabsList>
 
@@ -1245,11 +1249,11 @@ export function ContactDetail({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {activities.length === 0 ? (
+                    {sortedActivities.length === 0 ? (
                       <p style={{ fontSize: 13, color: "#8399a9" }}>Aucune activité</p>
                     ) : (
                       <div className="space-y-2">
-                        {activities.slice(0, 3).map((a) => {
+                        {sortedActivities.slice(0, 3).map((a) => {
                           const atc = activityTypeColors[a.type] ?? { bg: "#f0f0f0", text: "#666" };
                           return (
                             <div key={a.id} className="flex items-center gap-3" style={{ padding: "6px 0", borderBottom: "1px solid #e6f0f7" }}>
@@ -1406,11 +1410,11 @@ export function ContactDetail({
             <TabsContent value="activities" className="mt-4">
               <Card>
                 <CardContent className="pt-6">
-                  {activities.length === 0 ? (
+                  {sortedActivities.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Aucune activité</p>
                   ) : (
                     <div className="space-y-4">
-                      {activities.map((a) => (
+                      {sortedActivities.map((a) => (
                         <div key={a.id} className="flex gap-4 pb-4 border-b last:border-0">
                           <div className="flex-shrink-0 w-28">
                             <span className="text-xs text-muted-foreground">{formatDate(a.due_date || a.created_at)}</span>
@@ -1733,18 +1737,18 @@ export function ContactDetail({
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center gap-2" style={{ fontSize: 15 }}>
-                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
                   </CardTitle>
                   <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "tâche", title: "", description: "", due_date: "", task_deadline: "", call_result: "", call_outcome: "", rdv_date: "" }); setActivityOpen(true); }}>
                     <PlusCircle className="h-4 w-4 mr-1" /> Nouvelle tâche
                   </Button>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  {activities.filter(a => a.type === "tâche").length === 0 ? (
+                  {sortedActivities.filter(a => a.type === "tâche").length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Aucune tâche</p>
                   ) : (
                     <div className="space-y-3">
-                      {activities.filter(a => a.type === "tâche").map((a) => {
+                      {sortedActivities.filter(a => a.type === "tâche").map((a) => {
                         const deadline = (a as any).task_deadline as string | null;
                         const isOverdue = deadline && !a.is_completed && new Date(deadline) < new Date();
                         return (
