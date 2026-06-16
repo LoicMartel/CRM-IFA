@@ -4,10 +4,10 @@ client: La Closing Académie (CRM custom — Rafi & Naznine, Loïc)
 via: LDG / La Dinguerie (Younes/Balla)
 phase: Prod live (ADV/CRM), inbox en attente activation
 avancement: 85%
-bloquant: Abo Unipile non renouvelé (Naznine)
+bloquant: Unipile ré-activé 15/06 (accès API restauré) ; inbox attend connexion boîtes réelles (contact@ leads / boîte Rafi gated RGPD) + visio cadrage dispatch
 next: Animer visio cadrage tri/dispatch
 group: build
-last-update: 2026-06-15
+last-update: 2026-06-16
 next-review: 2026-07-01
 ---
 
@@ -19,7 +19,7 @@ CRM sur mesure (Next.js 16 + Supabase, déployé `crm-lca.vercel.app`) pour La C
 > **Même client que `closing-academy`** (`ldg-hub/projets/closing-academy.md`). `closing-academy` porte le pilotage + la liste complète des bloquants/inputs client (`ops/bloquants-client.md`, `ops/state.md`). Ici = état technique du CRM.
 
 ## Bloquant actuel
-Activation de l'inbox bloquée par le renouvellement de l'abo Unipile (~49€/mois, Naznine) — seul verrou technique, tout le code attend. Le dispatch (cœur des « 10h/sem ») attend une visio de cadrage Rafi + Loïc (mapping destinataires, seuil lead, autonomie).
+Abo Unipile ré-activé le 15/06 (accès API restauré, cf `closing-academy/ops/state.md`) — verrou n°1 levé. L'activation de l'inbox attend la connexion des vraies boîtes (contact@ leads = actionnable / boîte pro Rafi = gated RGPD écrit) + une visio de cadrage Rafi + Loïc (mapping destinataires, seuil lead, autonomie).
 
 <!-- INPUTS:START -->
 ## Inputs clients en attente
