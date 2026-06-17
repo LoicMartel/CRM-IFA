@@ -803,7 +803,7 @@ export function ContactDetail({
     return new Date(local).toISOString();
   }
 
-  function openEditMeeting(m: MeetingData) {
+  async function openEditMeeting(m: MeetingData) {
     setEditingMeetingId(m.id);
     setRdvForm({
       meeting_type: m.meeting_type,
@@ -816,6 +816,18 @@ export function ContactDetail({
       rdv_result: "",
       action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     });
+
+    // Load existing participants from junction tables
+    const supabase = createClient();
+    const [{ data: mc }, { data: mm }] = await Promise.all([
+      supabase.from("meeting_contacts").select("contact_id").eq("meeting_id", m.id),
+      supabase.from("meeting_managers").select("team_member_id").eq("meeting_id", m.id),
+    ]);
+    const cIds = mc?.map(r => r.contact_id) ?? [];
+    const mIds = mm?.map(r => r.team_member_id) ?? [];
+    setSelectedContactIds(cIds.length > 0 ? cIds : [contact.id]);
+    setSelectedManagerIds(mIds.length > 0 ? mIds : (currentMemberId ? [currentMemberId] : []));
+
     setRdvOpen(true);
   }
 
