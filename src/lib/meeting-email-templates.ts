@@ -13,6 +13,7 @@ interface ProspectEmailParams {
   zoomLink?: string;
   location?: string;
   managerNames: string[]; // All account manager names for this meeting
+  isReschedule?: boolean;
 }
 
 function buildInfoBlock(p: ProspectEmailParams): string {
@@ -118,9 +119,26 @@ const introByType: Record<string, (name: string) => string> = {
 };
 
 export function getProspectEmailBody(p: ProspectEmailParams): string {
+  const info = buildInfoBlock(p);
+
+  if (p.isReschedule) {
+    return [
+      `Bonjour ${p.contactFirstName},`,
+      "",
+      "Nous vous informons que votre rendez-vous a été modifié. Voici les nouveaux détails :",
+      "",
+      info,
+      "",
+      "Vous trouverez en pièce jointe une invitation calendrier (.ics) mise à jour à ajouter à votre agenda.",
+      "",
+      "À très bientôt,",
+      "",
+      "L'équipe La Closing Académie",
+    ].join("\n");
+  }
+
   const introFn = introByType[p.meetingType] ?? introByType["R1"];
   const intro = introFn(p.contactFirstName);
-  const info = buildInfoBlock(p);
   const testimonial = getTestimonial(p.meetingType);
   const testimonialBlock = buildTestimonialBlock(testimonial);
 
@@ -129,24 +147,25 @@ export function getProspectEmailBody(p: ProspectEmailParams): string {
     "",
     info,
     "",
-    "Vous trouverez en pi\u00e8ce jointe une invitation calendrier (.ics) \u00e0 ajouter \u00e0 votre agenda.",
+    "Vous trouverez en pièce jointe une invitation calendrier (.ics) à ajouter à votre agenda.",
     testimonialBlock,
     "",
-    "\u00c0 tr\u00e8s bient\u00f4t,",
+    "À très bientôt,",
     "",
-    "L'\u00e9quipe La Closing Acad\u00e9mie",
+    "L'équipe La Closing Académie",
   ].join("\n");
 }
 
-export function getProspectEmailSubject(meetingType: string, contactName: string, companyName?: string): string {
+export function getProspectEmailSubject(meetingType: string, contactName: string, companyName?: string, isReschedule?: boolean): string {
   const suffix = companyName ? ` (${companyName})` : "";
   const labels: Record<string, string> = {
-    R0: "Premier \u00e9change",
-    "R0+R1": "D\u00e9couverte",
-    R1: "D\u00e9couverte",
-    R2: "Pr\u00e9sentation solution",
+    R0: "Premier échange",
+    "R0+R1": "Découverte",
+    R1: "Découverte",
+    R2: "Présentation solution",
     R3: "Finalisation",
   };
   const label = labels[meetingType] ?? meetingType;
-  return `${label} \u2014 ${contactName}${suffix}`;
+  const prefix = isReschedule ? "Modification" : label;
+  return `${prefix} — ${contactName}${suffix}`;
 }

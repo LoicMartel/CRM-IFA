@@ -4,13 +4,13 @@ import { processMeetingNotifications } from "@/lib/process-meeting-notifications
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { meetingId, contactIds, managerIds } = body;
+    const { meetingId, contactIds, managerIds, isReschedule } = body;
 
     if (!meetingId) {
       return NextResponse.json({ error: "meetingId required" }, { status: 400 });
     }
 
-    const result = await processMeetingNotifications({ meetingId, contactIds, managerIds });
+    const result = await processMeetingNotifications({ meetingId, contactIds, managerIds, isReschedule: !!isReschedule });
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 404 });

@@ -686,6 +686,25 @@ export function ContactDetail({
       await supabase.from("meeting_contacts").delete().eq("meeting_id", editingMeetingId);
       await supabase.from("meeting_managers").delete().eq("meeting_id", editingMeetingId);
       await insertParticipants(editingMeetingId);
+
+      // Reschedule notifications: Google Calendar update + Slack + email
+      try {
+        const notifyRes = await fetch("/api/meetings/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            meetingId: editingMeetingId,
+            contactIds: selectedContactIds,
+            managerIds: selectedManagerIds,
+            isReschedule: true,
+          }),
+        });
+        const notifyData = await notifyRes.json();
+        if (notifyData.results?.length > 0) {
+          const summary = notifyData.results.map((r: any) => `${r.action}: ${r.status}`).join(", ");
+          alert(`RDV modifié ✅\n\nSync: ${summary}`);
+        }
+      } catch {}
     } else {
       // New meeting creation
       const { data: newMeeting, error } = await supabase.from("meetings").insert({

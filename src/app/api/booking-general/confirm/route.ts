@@ -67,6 +67,7 @@ export async function POST(request: Request) {
         company_id: companyId,
         lead_status: "booked",
         lifecycle_stage: "prospect",
+        was_lead_marketing: true,
         owner_id: assignedTo,
         notes: source ? `Source: ${source}` : null,
       }).eq("id", existingContact.id);
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
           company_id: companyId,
           contact_type: "inbound",
           lifecycle_stage: "prospect",
+          was_lead_marketing: true,
           lead_status: "booked",
           owner_id: assignedTo,
           notes: source ? `Source: ${source}` : null,

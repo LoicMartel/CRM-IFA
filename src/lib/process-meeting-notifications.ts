@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { createCalendarEvent } from "@/lib/google-calendar";
+import { upsertCalendarEvent } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { toParisDateTime } from "@/lib/timezone";
@@ -23,8 +23,9 @@ export async function processMeetingNotifications(params: {
   meetingId: string;
   contactIds?: string[];
   managerIds?: string[];
+  isReschedule?: boolean;
 }): Promise<NotificationResult> {
-  const { meetingId, contactIds, managerIds } = params;
+  const { meetingId, contactIds, managerIds, isReschedule = false } = params;
 
   // Fetch meeting
   const { data: meeting } = await supabase
@@ -136,6 +137,12 @@ export async function processMeetingNotifications(params: {
 
   const primaryManager = allManagers[0];
 
+  // Existing GCal event IDs (for upsert on reschedule)
+  const existingEventIds: Record<string, string> = (meeting.gcal_event_ids as Record<string, string>) ?? {};
+  const updatedEventIds: Record<string, string> = { ...existingEventIds };
+
+  const notifPrefix = isReschedule ? "Modifie" : "Nouveau";
+
   // ============================================================
   // LOOP OVER MANAGERS
   // ============================================================
@@ -151,14 +158,14 @@ export async function processMeetingNotifications(params: {
     await createNotification({
       recipientId: manager.id,
       type: "meeting_assigned",
-      title: `Nouveau ${meeting.meeting_type} : ${contactsListDisplay}`,
+      title: `${notifPrefix} ${meeting.meeting_type} : ${contactsListDisplay}`,
       body: `${dateDisplay} a ${timeStr}${companyName ? ` — ${companyName}` : ""}`,
       linkUrl: `/contacts/${primaryContact?.id ?? ""}`,
       relatedEntityType: "meeting",
       relatedEntityId: meetingId,
     });
 
-    // 1. Google Calendar
+    // 1. Google Calendar (upsert: update existing event or create new one)
     const commercialCalId = manager.google_calendar_id_commercial || manager.google_calendar_id;
     if (commercialCalId && isStepActive(wf, "google-calendar").active) {
       try {
@@ -176,8 +183,9 @@ export async function processMeetingNotifications(params: {
           meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
         ].filter(Boolean).join("\n");
 
-        const gcalResult = await createCalendarEvent({
+        const gcalResult = await upsertCalendarEvent({
           calendarId: commercialCalId,
+          existingEventId: existingEventIds[manager.first_name] ?? null,
           summary: title,
           description,
           location,
@@ -185,7 +193,14 @@ export async function processMeetingNotifications(params: {
           endDateTime: endDT,
         });
 
-        results.push({ action: `Google Calendar (${manager.first_name})`, status: gcalResult.success ? "Ajoute" : gcalResult.error ?? "Erreur" });
+        if (gcalResult.success && gcalResult.eventId) {
+          updatedEventIds[manager.first_name] = gcalResult.eventId;
+        }
+
+        const statusLabel = gcalResult.success
+          ? (gcalResult.status === "updated" ? "Mis a jour" : "Ajoute")
+          : (gcalResult.error ?? "Erreur");
+        results.push({ action: `Google Calendar (${manager.first_name})`, status: statusLabel });
       } catch (e: any) {
         results.push({ action: `Google Calendar (${manager.first_name})`, status: `Erreur: ${e.message}` });
       }
@@ -193,10 +208,16 @@ export async function processMeetingNotifications(params: {
 
     // 2. Slack DM
     if (manager.slack_user_id && slackToken && isStepActive(wf, "slack-dm").active) {
+      const slackHeading = isReschedule
+        ? `🔄 *RDV commercial modifie*`
+        : `📅 *Nouveau RDV commercial planifie*`;
+      const gcalNote = isReschedule
+        ? (commercialCalId ? `✅ L'evenement a ete mis a jour dans ton agenda Google.` : "")
+        : (commercialCalId ? `✅ L'evenement a ete ajoute a ton agenda Google.` : "");
       const slackMsg = [
         `Bonjour ${manager.first_name},`,
         "",
-        `📅 *Nouveau RDV commercial planifie*`,
+        slackHeading,
         "",
         `*${title}*`,
         `📋 ${typeLabel}`,
@@ -209,7 +230,7 @@ export async function processMeetingNotifications(params: {
         meeting.location ? `📍 ${meeting.location}` : "",
         allManagers.length > 1 ? `\n👥 Managers : ${allManagerNames.join(", ")}` : "",
         "",
-        commercialCalId ? `✅ L'evenement a ete ajoute a ton agenda Google.` : "",
+        gcalNote,
       ].filter(Boolean).join("\n");
 
       try {
@@ -252,7 +273,9 @@ export async function processMeetingNotifications(params: {
         const emailBody = [
           `Bonjour ${manager.first_name},`,
           "",
-          "Un rendez-vous commercial vient d'etre planifie :",
+          isReschedule
+            ? "Un rendez-vous commercial a ete modifie :"
+            : "Un rendez-vous commercial vient d'etre planifie :",
           "",
           `📋 ${typeLabel}`,
           `👤 Contacts : ${contactsListDisplay}`,
@@ -272,7 +295,7 @@ export async function processMeetingNotifications(params: {
 
         const emailResult = await sendSessionEmail({
           to: manager.email,
-          subject: `Nouveau RDV — ${title}`,
+          subject: `${isReschedule ? "RDV modifie" : "Nouveau RDV"} — ${title}`,
           body: emailBody,
           attachments: [{ filename: "invitation.ics", content: icsContentExt }],
         });
@@ -329,9 +352,10 @@ export async function processMeetingNotifications(params: {
           zoomLink: meeting.meeting_mode === "visio" ? zoomLinkForProspect : undefined,
           location: meeting.location ?? undefined,
           managerNames: allManagerNames,
+          isReschedule,
         });
 
-        const emailSubject = getProspectEmailSubject(meeting.meeting_type, ctName, companyName);
+        const emailSubject = getProspectEmailSubject(meeting.meeting_type, ctName, companyName, isReschedule);
 
         // BCC all managers so they have a copy
         const managerEmails = allManagers.map(m => m.email).filter(Boolean) as string[];
@@ -348,6 +372,11 @@ export async function processMeetingNotifications(params: {
         results.push({ action: `Email prospect (${ct.first_name})`, status: `Erreur: ${e.message}` });
       }
     }
+  }
+
+  // Persist GCal event IDs back to the meeting for future upserts
+  if (Object.keys(updatedEventIds).length > 0) {
+    await supabase.from("meetings").update({ gcal_event_ids: updatedEventIds }).eq("id", meetingId);
   }
 
   return { success: true, title, results };
