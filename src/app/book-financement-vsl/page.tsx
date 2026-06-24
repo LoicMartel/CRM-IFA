@@ -69,7 +69,7 @@ function BookFinancementTypContent() {
           Acc&eacute;dez d&egrave;s aujourd&apos;hui au book complet pour seulement <span style={{ color: "white", fontSize: 18, fontWeight: 800 }}>49&nbsp;&euro;</span>
         </p>
         <a
-          href="https://buy.stripe.com/bJedR8dso89x6vd2MqfYY07"
+          href="https://buy.stripe.com/14A28qgEA89xf1J9aOfYY06"
           target="_blank"
           rel="noopener noreferrer"
           style={{

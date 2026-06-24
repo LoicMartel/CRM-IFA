@@ -242,7 +242,7 @@ export async function POST(request: Request) {
             "Ce book a été conçu pour les dirigeants d'organismes de formation et les responsables commerciaux qui souhaitent aider leurs clients à s'offrir leurs formations.",
             "",
             "Pour aller plus loin et accéder à la version complète avec tous les dispositifs (OPCO, FAF, CPF, France Travail...), une méthode claire et une stratégie commerciale fondée sur les financements :",
-            "https://buy.stripe.com/bJedR8dso89x6vd2MqfYY07",
+            "https://buy.stripe.com/14A28qgEA89xf1J9aOfYY06",
             "",
             "Si vous avez la moindre question, n'hésitez pas à nous répondre directement.",
             "",
