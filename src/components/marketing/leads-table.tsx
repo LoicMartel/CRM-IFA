@@ -279,7 +279,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 >
                   <TableCell className="p-0" style={{ fontSize: 11, color: "#5a6f80", overflow: "hidden" }}>
                     <Link href={href} className="block px-2 py-2 text-inherit no-underline truncate">
-                      {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—"}
+                      {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                     </Link>
                   </TableCell>
                   <TableCell className="p-0" style={{ overflow: "hidden" }}>
