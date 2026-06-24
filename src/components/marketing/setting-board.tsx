@@ -111,6 +111,7 @@ export function SettingBoard({
   const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [filterOwner, setFilterOwner] = useState("");
+  const [filterType, setFilterType] = useState("");
 
   // Group activities by contact
   const activitiesByContact = useMemo(() => {
@@ -136,9 +137,9 @@ export function SettingBoard({
       booked: [],
     };
 
-    const filtered = filterOwner
-      ? leads.filter((l) => getOwnerName(l) === filterOwner)
-      : leads;
+    let filtered = leads;
+    if (filterOwner) filtered = filtered.filter((l) => getOwnerName(l) === filterOwner);
+    if (filterType) filtered = filtered.filter((l) => getName(l.lead_sources) === filterType);
 
     for (const lead of filtered) {
       const col = classifyLead(lead, activitiesByContact);
@@ -159,7 +160,7 @@ export function SettingBoard({
     }
 
     return result;
-  }, [leads, activitiesByContact, filterOwner]);
+  }, [leads, activitiesByContact, filterOwner, filterType]);
 
   const totalLeads = Object.values(columnLeads).reduce((s, arr) => s + arr.length, 0);
 
@@ -179,7 +180,7 @@ export function SettingBoard({
         ))}
       </div>
 
-      {/* Filter */}
+      {/* Filters */}
       <div className="flex gap-3 items-center">
         <select
           className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
@@ -190,6 +191,15 @@ export function SettingBoard({
           {ownerNames.map((n) => (
             <option key={n} value={n}>{n}</option>
           ))}
+        </select>
+        <select
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+        >
+          <option value="">Tous les types</option>
+          <option value="Meta ads - tunnel book">Tunnel Book</option>
+          <option value="Meta ads - tunnel commercial">Tunnel Commercial</option>
         </select>
       </div>
 
