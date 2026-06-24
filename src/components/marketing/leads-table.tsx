@@ -7,11 +7,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone } from "lucide-react";
+import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone, PhoneCall } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { ActivityModal } from "@/components/commercial/activity-modal";
 
 interface Lead {
   id: string;
@@ -61,6 +62,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
+  const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
   const PAGE_SIZE = 25;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
@@ -243,12 +245,13 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
               <TableHead className="cursor-pointer" onClick={() => toggleSort("company")}>
                 <span className="flex items-center gap-1">Entreprise <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
@@ -282,6 +285,22 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.email ?? "—"}</Link></TableCell>
                   <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{formatPhone(l.phone)}</Link></TableCell>
                   <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{getName(l.companies) ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0 px-2">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setActivityLeadId(l.id); }}
+                      title="Nouvelle activité"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "4px 10px", borderRadius: 6, border: "1px solid #dce8f0",
+                        background: "white", color: "#1a6b9c", fontSize: 11, fontWeight: 600,
+                        cursor: "pointer", whiteSpace: "nowrap",
+                      }}
+                    >
+                      <PhoneCall style={{ width: 13, height: 13 }} />
+                      Actions
+                    </button>
+                  </TableCell>
                 </TableRow>
                 );
               })
@@ -290,6 +309,21 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         </Table>
         <TablePagination currentPage={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
+
+      {/* Activity modal for quick log from leads list */}
+      {activityLeadId && (() => {
+        const lead = leads.find((l) => l.id === activityLeadId);
+        if (!lead) return null;
+        return (
+          <ActivityModal
+            contactId={lead.id}
+            companyId={lead.company_id}
+            contactName={`${lead.first_name} ${lead.last_name}`}
+            open={true}
+            onOpenChange={(open) => { if (!open) setActivityLeadId(null); }}
+          />
+        );
+      })()}
     </>
   );
 }
