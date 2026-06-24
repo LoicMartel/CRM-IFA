@@ -52,19 +52,10 @@ function getOwnerName(lead: Lead): string | null {
   return m ? `${m.first_name} ${m.last_name}` : null;
 }
 
-/** Returns true if lead hasn't been called in the last 48 hours */
-function isStale48h(lead: Lead, activitiesByContact: Map<string, Activity[]>): boolean {
-  const acts = activitiesByContact.get(lead.id);
-
-  // Find last call activity (type appel with a result in the description)
-  const lastCall = acts?.find((a) => {
-    const desc = a.description ?? "";
-    return desc.startsWith("Pas de réponse") || desc.startsWith("Message vocal laissé") || desc.startsWith("Contacté") || desc.startsWith("Pas intéressé");
-  });
-
-  // If no call was ever made, use lead creation date
-  const refDate = lastCall ? new Date(lastCall.created_at).getTime() : new Date(lead.created_at).getTime();
-  return Date.now() - refDate > 48 * 60 * 60 * 1000;
+/** Returns true if lead hasn't been contacted in the last 48 hours */
+function isStale48h(lead: Lead): boolean {
+  const refStr = lead.last_contacted_at || lead.created_at;
+  return Date.now() - new Date(refStr).getTime() > 48 * 60 * 60 * 1000;
 }
 
 function classifyLead(
@@ -152,8 +143,8 @@ export function SettingBoard({
     for (const key of Object.keys(result) as SettingColumn[]) {
       result[key].sort((a, b) => {
         if (key === "new" || key === "not_reached") {
-          const aStale = isStale48h(a, activitiesByContact);
-          const bStale = isStale48h(b, activitiesByContact);
+          const aStale = isStale48h(a);
+          const bStale = isStale48h(b);
           if (aStale && !bStale) return -1;
           if (!aStale && bStale) return 1;
         }
@@ -232,7 +223,7 @@ export function SettingBoard({
               {/* Cards */}
               <div className="space-y-2">
                 {leadsInCol.map((lead) => {
-                  const showWarning = (col.key === "new" || col.key === "not_reached") && isStale48h(lead, activitiesByContact);
+                  const showWarning = (col.key === "new" || col.key === "not_reached") && isStale48h(lead);
                   return (
                     <div
                       key={lead.id}
@@ -314,7 +305,7 @@ export function SettingBoard({
         const lead = leads.find((l) => l.id === selectedLeadId);
         if (!lead) return null;
         const leadCol = classifyLead(lead, activitiesByContact);
-        const stale = (leadCol === "new" || leadCol === "not_reached") && isStale48h(lead, activitiesByContact);
+        const stale = (leadCol === "new" || leadCol === "not_reached") && isStale48h(lead);
         const acts = activitiesByContact.get(lead.id);
         const lastAct = acts?.[0] ?? null;
         // Extract issue from last activity description
