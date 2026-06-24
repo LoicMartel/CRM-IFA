@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Phone, AlertTriangle, PhoneCall } from "lucide-react";
+import { AlertTriangle, PhoneCall, X } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 import { ActivityModal } from "@/components/commercial/activity-modal";
 
@@ -109,8 +108,8 @@ export function SettingBoard({
   leads: Lead[];
   activities: Activity[];
 }) {
-  const router = useRouter();
   const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [filterOwner, setFilterOwner] = useState("");
 
   // Group activities by contact
@@ -146,13 +145,15 @@ export function SettingBoard({
       result[col].push(lead);
     }
 
-    // Sort each column: 48h+ stale leads on top, then by created_at desc
+    // Sort each column: 48h+ stale leads on top (only for new & not_reached), then by created_at desc
     for (const key of Object.keys(result) as SettingColumn[]) {
       result[key].sort((a, b) => {
-        const aStale = isStale48h(a, activitiesByContact);
-        const bStale = isStale48h(b, activitiesByContact);
-        if (aStale && !bStale) return -1;
-        if (!aStale && bStale) return 1;
+        if (key === "new" || key === "not_reached") {
+          const aStale = isStale48h(a, activitiesByContact);
+          const bStale = isStale48h(b, activitiesByContact);
+          if (aStale && !bStale) return -1;
+          if (!aStale && bStale) return 1;
+        }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
     }
@@ -219,12 +220,12 @@ export function SettingBoard({
               {/* Cards */}
               <div className="space-y-2">
                 {leadsInCol.map((lead) => {
-                  const stale = isStale48h(lead, activitiesByContact);
-                  const href = `/contacts/${lead.id}?from=setting`;
+                  const showWarning = (col.key === "new" || col.key === "not_reached") && isStale48h(lead, activitiesByContact);
                   return (
                     <div
                       key={lead.id}
                       className="lca-card"
+                      onClick={() => setSelectedLeadId(lead.id)}
                       style={{
                         padding: "8px 10px",
                         borderLeft: `3px solid ${col.bar}`,
@@ -233,19 +234,19 @@ export function SettingBoard({
                       }}
                     >
                       {/* 48h Warning */}
-                      {stale && (
+                      {showWarning && (
                         <div style={{
                           display: "flex", alignItems: "center", gap: 4,
                           background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 4,
                           padding: "2px 6px", marginBottom: 6, width: "fit-content",
                         }}>
                           <AlertTriangle style={{ width: 11, height: 11, color: "#e67e00" }} />
-                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e67e00" }}>48h!</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#e67e00" }}>+48h</span>
                         </div>
                       )}
 
                       {/* Action button (top right) */}
-                      <div style={{ position: "absolute", top: stale ? 30 : 4, right: 4 }}>
+                      <div style={{ position: "absolute", top: showWarning ? 30 : 4, right: 4 }}>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setActivityLeadId(lead.id); }}
@@ -263,27 +264,25 @@ export function SettingBoard({
                       </div>
 
                       {/* Lead info */}
-                      <Link href={href} className="no-underline" style={{ color: "inherit" }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: "#1b2a4a", paddingRight: 55, lineHeight: 1.3 }}>
-                          {lead.first_name} {lead.last_name}
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#1b2a4a", paddingRight: 55, lineHeight: 1.3 }}>
+                        {lead.first_name} {lead.last_name}
+                      </div>
+                      {getName(lead.companies) && (
+                        <div style={{ fontSize: 10, color: "#1a6b9c", marginTop: 1 }}>
+                          {getName(lead.companies)}
                         </div>
-                        {getName(lead.companies) && (
-                          <div style={{ fontSize: 10, color: "#1a6b9c", marginTop: 1 }}>
-                            {getName(lead.companies)}
-                          </div>
-                        )}
-                        <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 3 }}>
-                          {lead.phone ? formatPhone(lead.phone) : lead.email ?? "—"}
-                        </div>
-                        <div className="flex items-center justify-between" style={{ marginTop: 3 }}>
-                          <span style={{ fontSize: 9, color: "#8399a9" }}>
-                            {getName(lead.lead_sources) ?? "—"}
-                          </span>
-                          <span style={{ fontSize: 9, color: "#8399a9" }}>
-                            {new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                          </span>
-                        </div>
-                      </Link>
+                      )}
+                      <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 3 }}>
+                        {lead.phone ? formatPhone(lead.phone) : lead.email ?? "—"}
+                      </div>
+                      <div className="flex items-center justify-between" style={{ marginTop: 3 }}>
+                        <span style={{ fontSize: 9, color: "#8399a9" }}>
+                          {getName(lead.lead_sources) ?? "—"}
+                        </span>
+                        <span style={{ fontSize: 9, color: "#8399a9" }}>
+                          {new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -297,6 +296,109 @@ export function SettingBoard({
           );
         })}
       </div>
+
+      {/* Lead Detail Popup */}
+      {selectedLeadId && (() => {
+        const lead = leads.find((l) => l.id === selectedLeadId);
+        if (!lead) return null;
+        const leadCol = classifyLead(lead, activitiesByContact);
+        const stale = (leadCol === "new" || leadCol === "not_reached") && isStale48h(lead, activitiesByContact);
+        const acts = activitiesByContact.get(lead.id);
+        const lastAct = acts?.[0] ?? null;
+        // Extract issue from last activity description
+        let lastIssue = "—";
+        if (lastAct?.description) {
+          const desc = lastAct.description;
+          if (desc.startsWith("Contacté → Booké")) lastIssue = "Contacté → Booké";
+          else if (desc.startsWith("Contacté → Non booké")) lastIssue = "Contacté → Non booké";
+          else if (desc.startsWith("Pas de réponse")) lastIssue = "Pas de réponse";
+          else if (desc.startsWith("Message vocal laissé")) lastIssue = "Message vocal laissé";
+          else if (desc.startsWith("Pas intéressé")) lastIssue = "Pas intéressé";
+          else if (desc.startsWith("Contacté")) lastIssue = "Contacté";
+        }
+
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={() => setSelectedLeadId(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "white", borderRadius: 12, padding: "24px 28px", maxWidth: 420, width: "90%", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setSelectedLeadId(null)}
+                style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", cursor: "pointer", color: "#8399a9" }}
+              >
+                <X style={{ width: 18, height: 18 }} />
+              </button>
+
+              {/* 48h Warning */}
+              {stale && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: "#fff3cd", border: "1px solid #ffc107", borderRadius: 6,
+                  padding: "8px 12px", marginBottom: 16,
+                }}>
+                  <AlertTriangle style={{ width: 16, height: 16, color: "#e67e00", flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#e67e00" }}>N&apos;a pas été appelé depuis +48h!</span>
+                </div>
+              )}
+
+              {/* Name (clickable → contact page) */}
+              <Link
+                href={`/contacts/${lead.id}?from=setting`}
+                style={{ fontSize: 18, fontWeight: 700, color: "#1a6b9c", textDecoration: "underline", textUnderlineOffset: 2 }}
+              >
+                {lead.first_name} {lead.last_name}
+              </Link>
+
+              {/* Info grid */}
+              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                {getName(lead.companies) && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9", letterSpacing: "0.05em" }}>Entreprise</div>
+                    <div style={{ fontSize: 14, color: "#1b2a4a" }}>{getName(lead.companies)}</div>
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9", letterSpacing: "0.05em" }}>Téléphone</div>
+                  <div style={{ fontSize: 14, color: "#1b2a4a" }}>{lead.phone ? formatPhone(lead.phone) : "—"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9", letterSpacing: "0.05em" }}>Email</div>
+                  <div style={{ fontSize: 14, color: "#1b2a4a" }}>{lead.email ?? "—"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9", letterSpacing: "0.05em" }}>Dernière action</div>
+                  <div style={{ fontSize: 14, color: "#1b2a4a" }}>
+                    {lastAct
+                      ? `${new Date(lastAct.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} — ${lastIssue}`
+                      : "Aucune action"
+                    }
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions button */}
+              <button
+                type="button"
+                onClick={() => { setSelectedLeadId(null); setActivityLeadId(lead.id); }}
+                style={{
+                  marginTop: 20, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  padding: "10px 0", borderRadius: 8, border: "none",
+                  background: "#FF6B35", color: "white", fontSize: 14, fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                <PhoneCall style={{ width: 15, height: 15 }} />
+                Nouvelle activité
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Activity Modal */}
       {activityLeadId && (() => {
