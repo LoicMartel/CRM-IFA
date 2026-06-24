@@ -52,17 +52,19 @@ function getOwnerName(lead: Lead): string | null {
   return m ? `${m.first_name} ${m.last_name}` : null;
 }
 
-/** Returns true if lead hasn't been contacted in the last 48 hours */
+/** Returns true if lead hasn't been called in the last 48 hours */
 function isStale48h(lead: Lead, activitiesByContact: Map<string, Activity[]>): boolean {
   const acts = activitiesByContact.get(lead.id);
-  if (!acts || acts.length === 0) {
-    // No activity: check if lead was created > 48h ago
-    const created = new Date(lead.created_at).getTime();
-    return Date.now() - created > 48 * 60 * 60 * 1000;
-  }
-  // Check last activity date
-  const lastActivity = new Date(acts[0].created_at).getTime(); // already sorted desc
-  return Date.now() - lastActivity > 48 * 60 * 60 * 1000;
+
+  // Find last call activity (type appel with a result in the description)
+  const lastCall = acts?.find((a) => {
+    const desc = a.description ?? "";
+    return desc.startsWith("Pas de réponse") || desc.startsWith("Message vocal laissé") || desc.startsWith("Contacté") || desc.startsWith("Pas intéressé");
+  });
+
+  // If no call was ever made, use lead creation date
+  const refDate = lastCall ? new Date(lastCall.created_at).getTime() : new Date(lead.created_at).getTime();
+  return Date.now() - refDate > 48 * 60 * 60 * 1000;
 }
 
 function classifyLead(
