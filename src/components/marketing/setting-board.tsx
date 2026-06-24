@@ -139,9 +139,17 @@ export function SettingBoard({
       result[col].push(lead);
     }
 
-    // Sort each column: most recent first (created_at desc)
+    // Sort: +48h leads first (most recent to oldest), then non-warning leads (most recent to oldest)
     for (const key of Object.keys(result) as SettingColumn[]) {
-      result[key].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      result[key].sort((a, b) => {
+        if (key === "new" || key === "not_reached") {
+          const aStale = isStale48h(a);
+          const bStale = isStale48h(b);
+          if (aStale && !bStale) return -1;
+          if (!aStale && bStale) return 1;
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
     }
 
     return result;
