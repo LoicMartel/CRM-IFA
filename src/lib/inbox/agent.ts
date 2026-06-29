@@ -6,6 +6,7 @@ import { resolveEmailReply } from "./threading";
 import { type Channel } from "./types";
 import { resolvePersona, type InboxPersona } from "./routing";
 import { logMessageActivity } from "./activity";
+import { LCA_CONTEXT } from "./lca-context";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -16,12 +17,14 @@ Règles d'escalade — utilise l'outil "escalate" si: le lead a un signal d'acha
 demande explicitement un humain ("explicit_human"), exprime mécontentement/refus ("negative"), pose une question hors de ton périmètre ("off_script"),
 ou si tu n'es pas sûr de ta réponse ("low_confidence"). Sinon "reply" pour avancer, "send_booking_link" quand le lead est prêt à prendre RDV.`;
 
-// System prompt is persona-aware: a voice profile (chantier F P2) is appended when present.
-// Default persona (LCA leads) has no voice profile → byte-identical to the original SYSTEM.
+// System prompt = base rules + LCA grounding context (positioning + offer catalogue, so the
+// agent stops hallucinating a generic B2C pitch). A voice profile (chantier F P2) is appended
+// when present.
 function buildSystemPrompt(persona: InboxPersona): string {
+  const base = `${SYSTEM_BASE}\n\n${LCA_CONTEXT}`;
   return persona.voiceProfile
-    ? `${SYSTEM_BASE}\n\nVOICE PROFILE — rédige en respectant ce style:\n${persona.voiceProfile}`
-    : SYSTEM_BASE;
+    ? `${base}\n\nVOICE PROFILE — rédige en respectant ce style:\n${persona.voiceProfile}`
+    : base;
 }
 
 const TOOLS: Anthropic.Tool[] = [
