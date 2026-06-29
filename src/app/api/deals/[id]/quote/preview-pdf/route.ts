@@ -36,7 +36,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "inline; filename=\"devis-preview.pdf\"",
-        "Cache-Control": "private, max-age=30",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (err) {
