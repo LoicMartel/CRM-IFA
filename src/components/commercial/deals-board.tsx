@@ -13,6 +13,7 @@ import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { RichNotes } from "@/components/ui/rich-notes";
 import { Plus, Trash2, Edit, Building2, User, Calendar, Upload, FileText, Download, Calculator, CalendarClock, FileSignature } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
@@ -631,20 +632,24 @@ export function DealsBoard({
             </div>
             <div className="space-y-2">
               <Label>Entreprise</Label>
-              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value, contact_id: "" })}>
-                <option value="">Sélectionner</option>
-                {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.company_id}
+                onChange={(v) => setForm({ ...form, company_id: v, contact_id: "" })}
+                placeholder="Sélectionner"
+                options={companies.map((c) => ({ value: c.id, label: c.name ?? "" }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>Contact</Label>
-              <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" value={form.contact_id} onChange={(e) => {
-                const selectedContact = contacts.find((c) => c.id === e.target.value);
-                setForm({ ...form, contact_id: e.target.value, company_id: selectedContact?.company_id ?? form.company_id });
-              }}>
-                <option value="">Sélectionner</option>
-                {contacts.filter((c) => !form.company_id || c.company_id === form.company_id).map((c) => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
-              </select>
+              <SearchableSelect
+                value={form.contact_id}
+                onChange={(v) => {
+                  const selectedContact = contacts.find((c) => c.id === v);
+                  setForm({ ...form, contact_id: v, company_id: selectedContact?.company_id ?? form.company_id });
+                }}
+                placeholder="Sélectionner"
+                options={contacts.filter((c) => !form.company_id || c.company_id === form.company_id).map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }))}
+              />
             </div>
             <div className="space-y-2">
               <Label>Propriétaire</Label>
