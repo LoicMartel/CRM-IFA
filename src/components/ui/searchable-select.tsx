@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 interface Option {
@@ -8,25 +8,57 @@ interface Option {
   label: string;
 }
 
-interface SearchableSelectProps {
-  options: Option[];
+interface BaseProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  /** Label to display for the currently selected value (needed for async mode) */
+  selectedLabel?: string;
 }
 
-export function SearchableSelect({ options, value, onChange, placeholder = "Sélectionner", className }: SearchableSelectProps) {
+interface SyncProps extends BaseProps {
+  options: Option[];
+  fetchOptions?: never;
+}
+
+interface AsyncProps extends BaseProps {
+  options?: never;
+  /** Fetch options from server given a search query */
+  fetchOptions: (query: string) => Promise<Option[]>;
+}
+
+type SearchableSelectProps = SyncProps | AsyncProps;
+
+export function SearchableSelect({ options, value, onChange, placeholder = "Sélectionner", className, selectedLabel: selectedLabelProp, fetchOptions }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [asyncResults, setAsyncResults] = useState<Option[]>([]);
+  const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+  const isAsync = !!fetchOptions;
 
-  const filtered = search
-    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
-    : options;
+  const displayLabel = selectedLabelProp ?? options?.find((o) => o.value === value)?.label ?? "";
+
+  const filtered = isAsync
+    ? asyncResults
+    : search
+      ? (options ?? []).filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+      : (options ?? []);
+
+  const doFetch = useCallback(async (q: string) => {
+    if (!fetchOptions) return;
+    setLoading(true);
+    try {
+      const results = await fetchOptions(q);
+      setAsyncResults(results);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchOptions]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -36,15 +68,32 @@ export function SearchableSelect({ options, value, onChange, placeholder = "Sél
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  function handleSearchChange(q: string) {
+    setSearch(q);
+    if (isAsync) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => doFetch(q), 250);
+    }
+  }
+
+  function handleOpen() {
+    setOpen(!open);
+    setSearch("");
+    if (!open && isAsync) {
+      doFetch("");
+    }
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
   return (
     <div ref={ref} className={cn("relative", className)}>
       <button
         type="button"
         className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm text-left"
-        onClick={() => { setOpen(!open); setSearch(""); setTimeout(() => inputRef.current?.focus(), 0); }}
+        onClick={handleOpen}
       >
         <span className={cn("flex-1 truncate", !value && "text-muted-foreground")}>
-          {selectedLabel || placeholder}
+          {displayLabel || placeholder}
         </span>
         <svg className="ml-2 h-4 w-4 shrink-0 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
@@ -56,7 +105,7 @@ export function SearchableSelect({ options, value, onChange, placeholder = "Sél
               className="w-full rounded border border-input bg-transparent px-2 py-1 text-sm outline-none focus:border-ring"
               placeholder="Rechercher..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           <div className="max-h-52 overflow-y-auto">
@@ -67,21 +116,27 @@ export function SearchableSelect({ options, value, onChange, placeholder = "Sél
             >
               {placeholder}
             </button>
-            {filtered.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                className={cn(
-                  "w-full px-3 py-1.5 text-left text-sm hover:bg-accent",
-                  o.value === value && "bg-accent font-medium"
+            {loading ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">Chargement...</div>
+            ) : (
+              <>
+                {filtered.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={cn(
+                      "w-full px-3 py-1.5 text-left text-sm hover:bg-accent",
+                      o.value === value && "bg-accent font-medium"
+                    )}
+                    onClick={() => { onChange(o.value); setOpen(false); setSearch(""); }}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">Aucun résultat</div>
                 )}
-                onClick={() => { onChange(o.value); setOpen(false); setSearch(""); }}
-              >
-                {o.label}
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">Aucun résultat</div>
+              </>
             )}
           </div>
         </div>

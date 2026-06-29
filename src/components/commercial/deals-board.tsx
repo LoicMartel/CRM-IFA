@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearLabel, getFiscalYearOptions } from "@/lib/fiscal-year";
@@ -155,6 +155,19 @@ export function DealsBoard({
     expected_close_date: "", close_date: "", notes: "",
   });
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
+  const [contactLabel, setContactLabel] = useState("");
+
+  const lastFetchedContacts = useRef<{ id: string; first_name: string; last_name: string; company_id: string | null }[]>([]);
+
+  const fetchContacts = useCallback(async (q: string) => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (form.company_id) params.set("company_id", form.company_id);
+    const res = await fetch(`/api/contacts/search?${params}`);
+    const data: { id: string; first_name: string; last_name: string; company_id: string | null }[] = await res.json();
+    lastFetchedContacts.current = data;
+    return data.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }));
+  }, [form.company_id]);
 
   // Documents state
   const [documents, setDocuments] = useState<DealDocument[]>([]);
@@ -256,6 +269,7 @@ export function DealsBoard({
       close_date: deal.close_date ?? "",
       notes: deal.notes ?? "",
     });
+    setContactLabel(deal.contacts ? `${deal.contacts.first_name} ${deal.contacts.last_name}` : "");
     setOpen(true);
   }
 
@@ -464,7 +478,7 @@ export function DealsBoard({
             <span style={{ fontSize: 12, color: "#8399a9", fontStyle: "italic" }}>{periodLabel}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
+            <Button onClick={() => { setEditingDealId(null); setContactLabel(""); setForm({ name: "", company_id: "", contact_id: "", owner_id: currentMemberId ?? "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); setOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
               <Plus className="h-4 w-4 mr-2" /> Nouveau deal
             </Button>
             <Button onClick={() => { setCotationDealId(null); setCotationOpen(true); }} style={{ background: "#e8632b", color: "white" }}>
@@ -620,7 +634,7 @@ export function DealsBoard({
       </div>
 
       {/* New Deal Sheet */}
-      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); } }}>
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingDealId(null); setContactLabel(""); setForm({ name: "", company_id: "", contact_id: "", owner_id: "", source_id: "", stage: "opportunities", amount: "", training_days: "", training_days_presentiel: "", training_days_distanciel: "", expected_close_date: "", close_date: "", notes: "" }); } }}>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{editingDealId ? "Modifier le deal" : "Nouveau deal"}</SheetTitle>
@@ -643,12 +657,14 @@ export function DealsBoard({
               <Label>Contact</Label>
               <SearchableSelect
                 value={form.contact_id}
+                selectedLabel={contactLabel}
                 onChange={(v) => {
-                  const selectedContact = contacts.find((c) => c.id === v);
-                  setForm({ ...form, contact_id: v, company_id: selectedContact?.company_id ?? form.company_id });
+                  const match = lastFetchedContacts.current.find((c) => c.id === v);
+                  setContactLabel(match ? `${match.first_name} ${match.last_name}` : "");
+                  setForm({ ...form, contact_id: v, company_id: match?.company_id ?? form.company_id });
                 }}
                 placeholder="Sélectionner"
-                options={contacts.filter((c) => !form.company_id || c.company_id === form.company_id).map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }))}
+                fetchOptions={fetchContacts}
               />
             </div>
             <div className="space-y-2">
