@@ -298,21 +298,30 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   });
 
   // Period selector component
+  const fyOptions = getFiscalYearOptions(5);
   function PeriodSelector({ mode, setMode, idx, setIdx }: { mode: string; setMode: (v: string) => void; idx: number; setIdx: (v: number) => void }) {
-    const options = mode === "year" ? [{ label: `Année complète ${fy.label}` }] : mode === "quarter" ? quarters : months;
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: "#8399a9", textTransform: "uppercase" }}>Période :</span>
         <select
-          value={mode === "year" ? "year_0" : `${mode}_${idx}`}
+          value={mode === "year" ? `fy_${selectedFY}` : `${mode}_${idx}`}
           onChange={(e) => {
-            const [m, i] = e.target.value.split("_");
-            setMode(m);
-            setIdx(parseInt(i));
+            const val = e.target.value;
+            if (val.startsWith("fy_")) {
+              setSelectedFY(Number(val.split("_")[1]));
+              setMode("year");
+              setIdx(0);
+            } else {
+              const [m, i] = val.split("_");
+              setMode(m);
+              setIdx(parseInt(i));
+            }
           }}
           style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 12, fontWeight: 600, color: "#1a2a3a", cursor: "pointer" }}
         >
-          <option value="year_0">Année complète {fy.label}</option>
+          <optgroup label="Année fiscale">
+            {fyOptions.map(o => <option key={o.startYear} value={`fy_${o.startYear}`}>Année complète {o.label}</option>)}
+          </optgroup>
           <optgroup label="Trimestriel">
             {quarters.map((q, i) => <option key={`q${i}`} value={`quarter_${i}`}>{q.label}</option>)}
           </optgroup>
