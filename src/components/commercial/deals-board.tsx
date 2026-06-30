@@ -211,21 +211,19 @@ export function DealsBoard({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingDoc(true);
-    const supabase = createClient();
-    const ext = file.name.split(".").pop();
-    const path = `${dealId}/${Date.now()}_${file.name}`;
-
-    const { error: uploadError } = await supabase.storage.from("deal-documents").upload(path, file);
-    if (!uploadError) {
-      await supabase.from("deal_documents").insert({
-        deal_id: dealId,
-        name: file.name,
-        file_path: path,
-        file_size: file.size,
-        file_type: file.type,
-        document_type: docType,
-      });
-      await loadDocuments(dealId);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("document_type", docType);
+      const res = await fetch(`/api/deals/${dealId}/documents/upload`, { method: "POST", body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        window.alert(body?.error ?? "Erreur lors de l'import du document");
+      } else {
+        await loadDocuments(dealId);
+      }
+    } catch {
+      window.alert("Erreur réseau lors de l'import du document");
     }
     setUploadingDoc(false);
     e.target.value = "";
