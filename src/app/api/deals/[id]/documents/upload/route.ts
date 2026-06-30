@@ -22,11 +22,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "Fichier manquant" }, { status: 400 });
-  if (file.size > MAX_SIZE) return NextResponse.json({ error: "Fichier trop volumineux (>50 Mo)" }, { status: 400 });
+  if (file.size > MAX_SIZE) return NextResponse.json({ error: "Fichier trop volumineux (>200 Mo)" }, { status: 400 });
 
   const docType = (form.get("document_type") as string) || "devis";
   const buffer = Buffer.from(await file.arrayBuffer());
-  const storagePath = `${dealId}/${Date.now()}_${file.name}`;
+  // Sanitize filename: remove accents, replace spaces/special chars with underscores
+  const safeName = file.name
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]/g, "_");
+  const storagePath = `${dealId}/${Date.now()}_${safeName}`;
 
   const { error: uploadError } = await serviceClient.storage
     .from("deal-documents")
