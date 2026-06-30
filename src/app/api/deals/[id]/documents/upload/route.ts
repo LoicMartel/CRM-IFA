@@ -7,7 +7,7 @@ const serviceClient = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_SIZE = 200 * 1024 * 1024; // 200 MB
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const auth = await requireMember();
