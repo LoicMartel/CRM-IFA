@@ -171,7 +171,10 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     status: msg.direction === "inbound" ? "received" : "sent",
     sent_at: msg.direction === "outbound" ? new Date().toISOString() : null,
   });
-  if (msgErr && msgErr.code !== "23505") console.error("[inbox.ingest] message insert failed:", msgErr.message);
+  // Concurrent duplicate delivery (unique index on external_message_id): the winning request is
+  // already processing this exact message — returning a result here would run the agent twice.
+  if (msgErr?.code === "23505") return null;
+  if (msgErr) console.error("[inbox.ingest] message insert failed:", msgErr.message);
 
   // Trace l'échange dans la timeline d'activités de la fiche (best-effort, jamais bloquant).
   // Uniquement si le message a réellement été inséré (pas un doublon 23505) — les retries et

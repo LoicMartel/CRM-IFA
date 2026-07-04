@@ -40,7 +40,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   try {
     let ext: UnipileSendResult;
-    if (channel === "email") {
+    // web_form n'a pas de fil de chat réel (external_chat_id synthétique webform-<email>) :
+    // il répond par EMAIL, même chemin que l'agent (deliver() dans agent.ts).
+    if (channel === "email" || channel === "web_form") {
       const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
       const c = contact as { first_name: string | null; last_name: string | null; email: string | null } | null;
       const to = c?.email;

@@ -106,7 +106,10 @@ export async function sendGreeting(conversationId: string): Promise<void> {
   if (!lock) return;
 
   if (!unipileConfigured()) {
-    console.warn("[inbox.agent] Unipile not configured — greeting skipped (would have sent).");
+    // Fail loud, pas de skip silencieux : le lead n'est pas contacté → un humain doit le rappeler,
+    // et l'escalade sort la conversation de 'active' (le cron ne relance plus dans le vide).
+    console.warn("[inbox.agent] Unipile not configured — greeting not sent, escalating.");
+    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — message d'accueil non envoyé, lead à contacter manuellement.");
     return;
   }
 
@@ -138,6 +141,13 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   if ((conv.agent_turn_count ?? 0) >= MAX_AGENT_TURNS) {
     await escalateConversation(conversationId, "low_confidence",
       `${MAX_AGENT_TURNS} échanges agent atteints sans qualification — reprise humaine requise.`);
+    return;
+  }
+
+  // Sans Unipile configuré l'agent ne peut pas envoyer : escalade AVANT l'appel LLM (pas de skip
+  // silencieux qui laisse la conversation active et fait payer un appel IA à chaque relance cron).
+  if (!unipileConfigured()) {
+    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — l'agent ne peut pas répondre, lead à traiter manuellement.");
     return;
   }
 
@@ -187,14 +197,6 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     .update({ agent_last_acted_at: new Date().toISOString() })
     .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
   if (!lock) return; // taken over / paused / booked while we were thinking — do not send.
-
-  // web_form/email are delivered via Unipile, falling back to the default account
-  // (UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID) in deliver(). Without Unipile configured we skip the
-  // turn entirely rather than emit a phantom "sent" message.
-  if (!unipileConfigured()) {
-    console.warn("[inbox.agent] Unipile not configured — turn skipped (would have sent).");
-    return;
-  }
 
   try {
     const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;

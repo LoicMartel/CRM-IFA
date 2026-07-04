@@ -20,8 +20,10 @@ export type SentBy = "lead" | "agent" | "human";
 
 // Canaux où l'agent répond en full-auto (LinkedIn exclu = escalade only ; SMS = V1.1)
 export const AGENT_CHANNELS: Channel[] = ["email", "whatsapp", "instagram", "messenger", "web_form"];
-// Canaux où Rafi peut répondre depuis le CRM (LinkedIn lecture seule)
-export const SAFE_REPLY_CHANNELS: Channel[] = ["email", "whatsapp", "instagram", "messenger"];
+// Canaux où Rafi peut répondre depuis le CRM (LinkedIn lecture seule).
+// web_form répond par EMAIL (même chemin que l'agent) — sans lui, un lead formulaire escaladé
+// n'était pas traitable depuis /inbox (422) alors que l'agent, lui, lui répondait par email.
+export const SAFE_REPLY_CHANNELS: Channel[] = ["email", "whatsapp", "instagram", "messenger", "web_form"];
 
 export const FOLLOWUP_DELAY_HOURS = 48;
 export const MAX_AGENT_TURNS = 3;
