@@ -3,7 +3,7 @@ import { svc } from "./ingest";
 import { escalateConversation } from "./escalation";
 import { sendChatMessage, sendEmail, unipileConfigured, type UnipileSendResult } from "@/lib/unipile/client";
 import { resolveEmailReply } from "./threading";
-import { type Channel } from "./types";
+import { MAX_AGENT_TURNS, type Channel } from "./types";
 import { resolvePersona, type InboxPersona } from "./routing";
 import { logMessageActivity } from "./activity";
 import { LCA_CONTEXT } from "./lca-context";
@@ -132,6 +132,15 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     .eq("id", conversationId).maybeSingle();
   if (!conv || conv.agent_status !== "active") return;
 
+  // Cap dur "3 échanges max" (design déterministe 03/07) — enforced en code, pas seulement dans le
+  // prompt. Un lead encore non qualifié au cap passe à un humain avec notification (escalade),
+  // jamais en tour supplémentaire ni en dormant silencieux.
+  if ((conv.agent_turn_count ?? 0) >= MAX_AGENT_TURNS) {
+    await escalateConversation(conversationId, "low_confidence",
+      `${MAX_AGENT_TURNS} échanges agent atteints sans qualification — reprise humaine requise.`);
+    return;
+  }
+
   const { data: msgs } = await sb.from("messages").select("body, direction, sent_by").eq("conversation_id", conversationId)
     .order("created_at", { ascending: false }).limit(8);
   const transcript = (msgs ?? []).reverse().map((m) => `[${m.sent_by}] ${m.body}`).join("\n");
@@ -144,7 +153,8 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   let decision;
   try {
     decision = await anthropic.messages.create({
-      model: "claude-sonnet-4-6", max_tokens: 600, system: buildSystemPrompt(persona), tools: TOOLS,
+      model: "claude-sonnet-4-6", max_tokens: 600, temperature: 0, // agent déterministe (design 03/07)
+      system: buildSystemPrompt(persona), tools: TOOLS,
       tool_choice: { type: "any" }, messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {

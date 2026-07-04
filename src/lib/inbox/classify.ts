@@ -64,6 +64,7 @@ export async function classifyConversation(conversationId: string): Promise<Clas
   const res = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 320,
+    temperature: 0, // classification déterministe (design agent "sur rails" 03/07)
     tool_choice: { type: "tool", name: "classify" },
     tools: [TOOL],
     messages: [{ role: "user", content: `Canal: ${conv.channel}\nSujet: ${conv.subject ?? "—"}\nMessages:\n${transcript}\n\n${RULES}` }],
