@@ -26,6 +26,11 @@ export const SAFE_REPLY_CHANNELS: Channel[] = ["email", "whatsapp", "instagram",
 export const FOLLOWUP_DELAY_HOURS = 48;
 export const MAX_AGENT_TURNS = 3;
 
+// Stages au-delà du lead marketing : fiche « établie » — jamais rétrogradée par une route
+// publique, jamais traitée en full-auto par l'agent (même sans ligne deal : client historique,
+// import legacy). Partagé entre ingest (isExistingContact), /api/leads/inbound et webhook Webflow.
+export const PROTECTED_STAGES = ["mql", "sql", "opportunity", "customer", "evangelist"];
+
 export interface IncomingMessage {
   channel: Channel;
   direction: "inbound" | "outbound"; // outbound = message émis hors CRM (anti-collision)

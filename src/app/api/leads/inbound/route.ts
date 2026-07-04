@@ -4,10 +4,9 @@ import { z } from "zod";
 import { sendSessionEmail } from "@/lib/send-email";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import type { IngestResult } from "@/lib/inbox/ingest";
-
 // Stages au-delà du lead marketing : une re-soumission de formulaire (ou un POST forgé — route
 // publique) ne doit JAMAIS les rétrograder ni écraser l'identité de la fiche.
-const PROTECTED_STAGES = ["mql", "sql", "opportunity", "customer", "evangelist"];
+import { PROTECTED_STAGES } from "@/lib/inbox/types";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

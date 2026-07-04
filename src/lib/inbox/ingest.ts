@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { IncomingMessage } from "./types";
+import { PROTECTED_STAGES, type IncomingMessage } from "./types";
 import { logMessageActivity } from "./activity";
 
 export function svc() {
@@ -16,15 +16,18 @@ export async function resolveOwnerId(sb: ReturnType<typeof svc>): Promise<string
   return data?.id ?? null;
 }
 
-// Un contact "qui n'est pas un nouveau lead" = il a au moins un deal rattaché → l'agent ne doit
-// PAS le traiter en auto. Partagé entre le match par handle et le contactId pré-résolu.
-async function contactHasDeal(sb: ReturnType<typeof svc>, contactId: string): Promise<boolean> {
+// Un contact "qui n'est pas un nouveau lead" = il a au moins un deal rattaché OU un stage avancé
+// (client historique sans ligne deal, import legacy) → l'agent ne doit PAS le traiter en auto.
+// Partagé entre le match par handle, le contactId pré-résolu et le recompute sur conversation existante.
+async function contactIsEstablished(sb: ReturnType<typeof svc>, contactId: string): Promise<boolean> {
   const { count } = await sb.from("deals").select("id", { count: "exact", head: true }).eq("contact_id", contactId);
-  return (count ?? 0) > 0;
+  if ((count ?? 0) > 0) return true;
+  const { data } = await sb.from("contacts").select("lifecycle_stage").eq("id", contactId).maybeSingle();
+  return PROTECTED_STAGES.includes(data?.lifecycle_stage ?? "");
 }
 
-// Returns { contactId, isExisting }. isExisting=true means the sender matched a contact that
-// already has a deal (=> not a "new lead", agent must NOT auto-handle).
+// Returns { contactId, isExisting }. isExisting=true means the sender matched an established
+// contact (deal or advanced lifecycle stage => not a "new lead", agent must NOT auto-handle).
 async function matchContact(
   sb: ReturnType<typeof svc>,
   msg: IncomingMessage
@@ -45,7 +48,7 @@ async function matchContact(
     contactId = data?.id ?? null;
   }
   if (!contactId) return { contactId: null, isExisting: false };
-  return { contactId, isExisting: await contactHasDeal(sb, contactId) };
+  return { contactId, isExisting: await contactIsEstablished(sb, contactId) };
 }
 
 async function createContact(sb: ReturnType<typeof svc>, msg: IncomingMessage, ownerId: string | null): Promise<string | null> {
@@ -105,7 +108,7 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     let contactId: string | null;
     if (msg.contactId) {
       contactId = msg.contactId;
-      isExistingContact = await contactHasDeal(sb, msg.contactId);
+      isExistingContact = await contactIsEstablished(sb, msg.contactId);
     } else {
       const matched = await matchContact(sb, msg);
       isExistingContact = matched.isExisting;
@@ -143,7 +146,7 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   // conversation it must be recomputed from the linked contact, otherwise a contact who
   // gained a deal mid-thread keeps being auto-handled from message #2 onward.
   if (!isNewConversation && msg.direction === "inbound" && existingContactId) {
-    isExistingContact = await contactHasDeal(sb, existingContactId);
+    isExistingContact = await contactIsEstablished(sb, existingContactId);
   }
 
   // Echo guard: Unipile mirrors our own agent/CRM sends back as outbound webhooks. Without a

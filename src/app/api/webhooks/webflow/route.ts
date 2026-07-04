@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { sendSessionEmail } from "@/lib/send-email";
+import { PROTECTED_STAGES } from "@/lib/inbox/types";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,15 +17,18 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
 
-    // Verify Webflow signature if secret is set
+    // Verify Webflow signature when a secret is configured. The signature is REQUIRED then:
+    // accepting unsigned requests would let anyone bypass the check by simply omitting the header.
     if (WEBFLOW_SECRET) {
       const signature = req.headers.get("x-webflow-signature");
-      if (signature) {
-        const expected = crypto.createHmac("sha256", WEBFLOW_SECRET).update(rawBody).digest("hex");
-        if (signature !== expected) {
-          console.error("Webflow webhook: invalid signature");
-          return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-        }
+      if (!signature) {
+        console.error("Webflow webhook: missing signature");
+        return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+      }
+      const expected = crypto.createHmac("sha256", WEBFLOW_SECRET).update(rawBody).digest("hex");
+      if (signature !== expected) {
+        console.error("Webflow webhook: invalid signature");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
     }
 
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest) {
     const formResponse = body.payload?.formResponse;
     if (formResponse) {
       // V2: fields are keyed by field ID, each has { displayName, type, textValue/objectValue }
-      for (const field of Object.values(formResponse) as any[]) {
+      for (const field of Object.values(formResponse) as { displayName?: string; textValue?: string; objectValue?: string }[]) {
         const name = (field.displayName ?? "").toLowerCase();
         const value = field.textValue ?? field.objectValue ?? "";
         if (name.includes("prénom") || name.includes("prenom") || name === "first name") firstName = value;
@@ -80,7 +84,7 @@ export async function POST(req: NextRequest) {
     // Check if contact already exists
     const { data: existing } = await supabase
       .from("contacts")
-      .select("id")
+      .select("id, lifecycle_stage")
       .eq("email", email.toLowerCase().trim())
       .maybeSingle();
 
@@ -89,14 +93,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (existing) {
-      // Contact exists, update lifecycle_stage if still a basic lead
-      await supabase.from("contacts").update({
-        lifecycle_stage: "lead_marketing",
-        was_lead_marketing: true,
-        phone: phone || undefined,
-      }).eq("id", existing.id);
+      // Même garde que /api/leads/inbound : une fiche avancée (stage protégé ou deal rattaché)
+      // n'est jamais rétrogradée en lead_marketing par une soumission de formulaire publique.
+      const { count: dealCount } = await supabase.from("deals")
+        .select("id", { count: "exact", head: true }).eq("contact_id", existing.id);
+      const isProtected = PROTECTED_STAGES.includes(existing.lifecycle_stage ?? "") || (dealCount ?? 0) > 0;
+      if (!isProtected) {
+        // Contact exists, update lifecycle_stage if still a basic lead
+        await supabase.from("contacts").update({
+          lifecycle_stage: "lead_marketing",
+          was_lead_marketing: true,
+          phone: phone || undefined,
+        }).eq("id", existing.id);
+      }
 
-      return NextResponse.json({ ok: true, contact_id: existing.id, action: "updated" });
+      return NextResponse.json({ ok: true, contact_id: existing.id, action: isProtected ? "skipped_protected" : "updated" });
     }
 
     // Create new contact as Lead Marketing
@@ -165,7 +176,7 @@ export async function POST(req: NextRequest) {
       .select("id, email")
       .in("email", LEAD_NOTIFY_EMAILS);
     if (notifTargets && notifTargets.length > 0) {
-      const notifRows = notifTargets.map((m: any) => ({
+      const notifRows = notifTargets.map((m: { id: string; email: string }) => ({
         recipient_id: m.id,
         type: "new_lead",
         title: `Nouveau lead : ${firstName} ${lastName}`,
