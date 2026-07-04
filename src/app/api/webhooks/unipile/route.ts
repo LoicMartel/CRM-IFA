@@ -172,7 +172,19 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
     return;
   }
 
-  // mode=agent: the proven leads pipeline (unchanged).
+  // mode=agent: the proven leads pipeline.
+  // Full-auto invariant: a conversation already handed off (escalated, human takeover, non-eligible
+  // pinned 'human', or booked) must NEVER be re-activated by a new inbound message. The message is
+  // already ingested (unread) and visible in /inbox — the agent keeps its hands off. Only a NEW
+  // conversation (DB default 'human'), an 'active' one (ongoing agent thread) or a 'dormant' one
+  // (lead re-engaging after the turn cap — escalated by runAgentTurn's cap guard) may proceed.
+  if (!result.isNewConversation) {
+    const { data: convRow } = await sb.from("conversations")
+      .select("agent_status").eq("id", result.conversationId).maybeSingle();
+    const status = convRow?.agent_status ?? null;
+    if (status !== "active" && status !== "dormant") return;
+  }
+
   // classification best-effort
   const cls = await classifyConversation(result.conversationId).catch((e) => { console.error("[unipile] classify:", e); return null; });
 

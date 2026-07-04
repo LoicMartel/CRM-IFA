@@ -86,12 +86,14 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   let conversationId: string | null = null;
   let isNewConversation = false;
   let isExistingContact = false;
+  let existingContactId: string | null = null;
 
   // Group by the provider thread/chat id (email: thread_id; chat: chat_id; web_form: webform-<email>).
   if (msg.externalChatId) {
-    const { data: existing } = await sb.from("conversations").select("id")
+    const { data: existing } = await sb.from("conversations").select("id, contact_id")
       .eq("channel", msg.channel).eq("external_chat_id", msg.externalChatId).maybeSingle();
     conversationId = existing?.id ?? null;
+    existingContactId = existing?.contact_id ?? null;
   }
 
   // Don't materialize a conversation (and a self-contact) for an untracked outbound message;
@@ -120,9 +122,10 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     }).select("id").single();
     if (error?.code === "23505" && msg.externalChatId) {
       // Concurrent first-message delivery created the conversation first — adopt the winner.
-      const { data: winner } = await sb.from("conversations").select("id")
+      const { data: winner } = await sb.from("conversations").select("id, contact_id")
         .eq("channel", msg.channel).eq("external_chat_id", msg.externalChatId).maybeSingle();
       conversationId = winner?.id ?? null;
+      existingContactId = winner?.contact_id ?? null;
       if (!conversationId) { console.error("[inbox.ingest] conversation insert race unresolved"); return null; }
     } else if (error || !data) {
       console.error("[inbox.ingest] conversation insert failed:", error?.message); return null;
@@ -135,6 +138,13 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
   }
 
   if (!conversationId) return null; // narrow: both branches above set it or returned early
+
+  // isExistingContact was only computed on the new-conversation branch; on an EXISTING
+  // conversation it must be recomputed from the linked contact, otherwise a contact who
+  // gained a deal mid-thread keeps being auto-handled from message #2 onward.
+  if (!isNewConversation && msg.direction === "inbound" && existingContactId) {
+    isExistingContact = await contactHasDeal(sb, existingContactId);
+  }
 
   // Echo guard: Unipile mirrors our own agent/CRM sends back as outbound webhooks. Without a
   // guaranteed id match we'd double-insert and self-pause the agent, so an identical recent

@@ -3,6 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { sendSessionEmail } from "@/lib/send-email";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
+import type { IngestResult } from "@/lib/inbox/ingest";
+
+// Stages au-delà du lead marketing : une re-soumission de formulaire (ou un POST forgé — route
+// publique) ne doit JAMAIS les rétrograder ni écraser l'identité de la fiche.
+const PROTECTED_STAGES = ["mql", "sql", "opportunity", "customer", "evangelist"];
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -112,7 +117,7 @@ export async function POST(request: Request) {
     let contactId: string | null = null;
     const { data: existingContact } = await supabase
       .from("contacts")
-      .select("id")
+      .select("id, lifecycle_stage")
       .ilike("email", email)
       .maybeSingle();
 
@@ -137,17 +142,24 @@ export async function POST(request: Request) {
       : source || "Landing Page";
 
     if (existingContact) {
-      // Update existing contact (including name in case it changed on re-submission)
-      await supabase.from("contacts").update({
-        first_name: firstName,
-        last_name: lastName,
-        phone: phone || undefined,
-        company_id: companyId || undefined,
-        lifecycle_stage: "lead_marketing",
-        lead_status: "lead",
-        was_lead_marketing: true,
-        ...(resolvedSourceId ? { source_id: resolvedSourceId } : {}),
-      }).eq("id", existingContact.id);
+      // Une fiche avancée (stage protégé ou deal rattaché) n'est PAS rétrogradée par un POST
+      // public : on ne touche ni au stage, ni au statut, ni à l'identité (anti-corruption CRM).
+      const { count: dealCount } = await supabase.from("deals")
+        .select("id", { count: "exact", head: true }).eq("contact_id", existingContact.id);
+      const isProtected = PROTECTED_STAGES.includes(existingContact.lifecycle_stage ?? "") || (dealCount ?? 0) > 0;
+      if (!isProtected) {
+        // Update existing contact (including name in case it changed on re-submission)
+        await supabase.from("contacts").update({
+          first_name: firstName,
+          last_name: lastName,
+          phone: phone || undefined,
+          company_id: companyId || undefined,
+          lifecycle_stage: "lead_marketing",
+          lead_status: "lead",
+          was_lead_marketing: true,
+          ...(resolvedSourceId ? { source_id: resolvedSourceId } : {}),
+        }).eq("id", existingContact.id);
+      }
       contactId = existingContact.id;
     } else {
       const { data: newContact } = await supabase
@@ -169,6 +181,58 @@ export async function POST(request: Request) {
         .single();
       contactId = newContact?.id ?? null;
     }
+
+    // Inbox agent pipeline: a web-form lead becomes a conversation the agent contacts.
+    // Speed-to-lead: on un lead "fiche" éligible, on envoie un message d'accueil fixe
+    // signé Rafi (avec lien RDV) immédiatement — pas de tour LLM (0 latence). L'agent
+    // dynamique (runAgentTurn) prend le relais quand le lead répond.
+    // Remonté AVANT les notifs/book : isNewConversation sert de garde anti-rejeu (une
+    // re-soumission du même email ne re-notifie pas l'équipe et ne renvoie pas le book).
+    let inboxResult: IngestResult | null | undefined;
+    try {
+      const { ingestIncoming, svc } = await import("@/lib/inbox/ingest");
+      const { classifyConversation } = await import("@/lib/inbox/classify");
+      const { evaluateEligibility } = await import("@/lib/inbox/eligibility");
+      const { sendGreeting } = await import("@/lib/inbox/agent");
+      const { resolveInboxAccount } = await import("@/lib/inbox/routing");
+      const body = `Nouveau lead via formulaire (${effectiveSource || "site"}).`;
+      // external_chat_id déterministe par email → une re-soumission du même lead réutilise
+      // la conversation existante (au lieu d'en recréer une) ; l'index unique partiel
+      // conversations_chat_uniq + le handling 23505 dédupent aussi les soumissions concurrentes.
+      const webformChatId = `webform-${parsed.data.email.trim().toLowerCase()}`;
+      inboxResult = await ingestIncoming({
+        channel: "web_form", direction: "inbound", accountId: null, externalChatId: webformChatId,
+        externalMessageId: `webform-${parsed.data.email.trim().toLowerCase()}-${Date.now()}`,
+        senderName: `${parsed.data.firstName} ${parsed.data.lastName}`,
+        senderHandle: parsed.data.email, body, subject: "Lead formulaire web",
+        contactId,
+      });
+      const result = inboxResult;
+      // Greeting UNIQUEMENT sur une conversation neuve → un seul message d'accueil par lead,
+      // jamais de doublon sur re-submit / double-clic / retry / rejeu webhook.
+      if (result && result.direction === "inbound" && result.isNewConversation) {
+        // Routage account_id (socle F+C) : un web_form n'a pas d'account_id → mode 'agent' (chantier D).
+        // On résout explicitement pour ne jamais répondre depuis un mode non-agent si ce endpoint
+        // venait à porter un account_id un jour (sécurité = même invariant qu'au webhook Unipile).
+        const { mode } = await resolveInboxAccount(null);
+        if (mode === "agent") {
+          await classifyConversation(result.conversationId).catch(() => {});
+          const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
+          if (v.eligible) {
+            await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
+            await sendGreeting(result.conversationId).catch(() => {});
+          }
+        }
+      }
+    } catch (e) { console.error("[leads/inbound] inbox pipeline failed:", e); }
+
+    // Gardes anti-rejeu (route publique, non rate-limitée) :
+    // - notifs équipe : fail-open (si l'ingest a planté on notifie quand même), bloquées
+    //   uniquement quand on SAIT que c'est une re-soumission (conversation déjà existante) ;
+    // - book PDF : fail-closed (envoyé uniquement sur une conversation neuve) — sinon un POST
+    //   répété permettrait de bombarder la boîte d'un tiers avec la PJ.
+    const notifyTeam = !(inboxResult && !inboxResult.isNewConversation);
+    const sendBook = inboxResult?.isNewConversation === true;
 
     // 3. Send email notification to Alexandre, Rafi and Loïc
     const LEAD_NOTIFY_EMAILS = [
@@ -192,31 +256,33 @@ export async function POST(request: Request) {
       `👉 https://crm-lca.vercel.app/contacts/${contactId}`,
     ].filter(Boolean).join("\n");
 
-    const emailPromises = LEAD_NOTIFY_EMAILS.map((to) =>
-      sendSessionEmail({ to, subject: notifSubject, body: notifBody })
-    );
-    if (emailPromises.length > 0) await Promise.all(emailPromises);
+    if (notifyTeam) {
+      const emailPromises = LEAD_NOTIFY_EMAILS.map((to) =>
+        sendSessionEmail({ to, subject: notifSubject, body: notifBody })
+      );
+      if (emailPromises.length > 0) await Promise.all(emailPromises);
 
-    // In-app notifications for Alexandre, Rafi and Loïc
-    const { data: notifTargets } = await supabase
-      .from("team_members")
-      .select("id, email")
-      .in("email", LEAD_NOTIFY_EMAILS);
-    if (notifTargets && notifTargets.length > 0) {
-      const notifRows = notifTargets.map((m: { id: string; email: string }) => ({
-        recipient_id: m.id,
-        type: "new_lead",
-        title: `Nouveau lead : ${firstName} ${lastName}`,
-        body: `${sourceLabel}${website ? ` — ${website}` : ""}`,
-        link_url: `/contacts/${contactId}`,
-        related_entity_type: "contact",
-        related_entity_id: contactId,
-      }));
-      if (notifRows.length > 0) await supabase.from("notifications").insert(notifRows);
+      // In-app notifications for Alexandre, Rafi and Loïc
+      const { data: notifTargets } = await supabase
+        .from("team_members")
+        .select("id, email")
+        .in("email", LEAD_NOTIFY_EMAILS);
+      if (notifTargets && notifTargets.length > 0) {
+        const notifRows = notifTargets.map((m: { id: string; email: string }) => ({
+          recipient_id: m.id,
+          type: "new_lead",
+          title: `Nouveau lead : ${firstName} ${lastName}`,
+          body: `${sourceLabel}${website ? ` — ${website}` : ""}`,
+          link_url: `/contacts/${contactId}`,
+          related_entity_type: "contact",
+          related_entity_id: contactId,
+        }));
+        if (notifRows.length > 0) await supabase.from("notifications").insert(notifRows);
+      }
     }
 
     // 4. Send thank-you email with book PDF for book-related sources
-    if ((source === "landing-book-financement" || source === "embed-form-book") && email && isStepActive(wf, "send-book-pdf").active) {
+    if (sendBook && (source === "landing-book-financement" || source === "embed-form-book") && email && isStepActive(wf, "send-book-pdf").active) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
         const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);
@@ -256,46 +322,6 @@ export async function POST(request: Request) {
         // Email is best-effort, don't block the response
       }
     }
-
-    // Inbox agent pipeline: a web-form lead becomes a conversation the agent contacts.
-    // Speed-to-lead: on un lead "fiche" éligible, on envoie un message d'accueil fixe
-    // signé Rafi (avec lien RDV) immédiatement — pas de tour LLM (0 latence). L'agent
-    // dynamique (runAgentTurn) prend le relais quand le lead répond.
-    try {
-      const { ingestIncoming, svc } = await import("@/lib/inbox/ingest");
-      const { classifyConversation } = await import("@/lib/inbox/classify");
-      const { evaluateEligibility } = await import("@/lib/inbox/eligibility");
-      const { sendGreeting } = await import("@/lib/inbox/agent");
-      const { resolveInboxAccount } = await import("@/lib/inbox/routing");
-      const body = `Nouveau lead via formulaire (${effectiveSource || "site"}).`;
-      // external_chat_id déterministe par email → une re-soumission du même lead réutilise
-      // la conversation existante (au lieu d'en recréer une) ; l'index unique partiel
-      // conversations_chat_uniq + le handling 23505 dédupent aussi les soumissions concurrentes.
-      const webformChatId = `webform-${parsed.data.email.trim().toLowerCase()}`;
-      const result = await ingestIncoming({
-        channel: "web_form", direction: "inbound", accountId: null, externalChatId: webformChatId,
-        externalMessageId: `webform-${parsed.data.email.trim().toLowerCase()}-${Date.now()}`,
-        senderName: `${parsed.data.firstName} ${parsed.data.lastName}`,
-        senderHandle: parsed.data.email, body, subject: "Lead formulaire web",
-        contactId,
-      });
-      // Greeting UNIQUEMENT sur une conversation neuve → un seul message d'accueil par lead,
-      // jamais de doublon sur re-submit / double-clic / retry / rejeu webhook.
-      if (result && result.direction === "inbound" && result.isNewConversation) {
-        // Routage account_id (socle F+C) : un web_form n'a pas d'account_id → mode 'agent' (chantier D).
-        // On résout explicitement pour ne jamais répondre depuis un mode non-agent si ce endpoint
-        // venait à porter un account_id un jour (sécurité = même invariant qu'au webhook Unipile).
-        const { mode } = await resolveInboxAccount(null);
-        if (mode === "agent") {
-          await classifyConversation(result.conversationId).catch(() => {});
-          const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
-          if (v.eligible) {
-            await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
-            await sendGreeting(result.conversationId).catch(() => {});
-          }
-        }
-      }
-    } catch (e) { console.error("[leads/inbound] inbox pipeline failed:", e); }
 
     return NextResponse.json({ success: true, contactId }, { headers: CORS_HEADERS });
   } catch (err) {
