@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { SyntheseSalesContent } from "@/components/commercial/synthese-sales-content";
 
-export const metadata = { title: "Synth\u00e8se Sales" };
+export const metadata = { title: "Synthèse Sales" };
 
 export default async function SyntheseSalesPage() {
   const supabase = await createClient();
@@ -28,7 +28,7 @@ export default async function SyntheseSalesPage() {
 
   return (
     <>
-      <Header title="Synth\u00e8se Sales" />
+      <Header title="Synthèse Sales" />
       <SyntheseSalesContent
         targets={targets}
         orders={wonDeals ?? []}
