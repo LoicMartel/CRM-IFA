@@ -286,7 +286,7 @@ export function ContactDetail({
     due_date: "",
     task_deadline: "",
     call_result: "" as "" | "no_answer" | "voicemail" | "contacted" | "not_interested",
-    call_outcome: "" as "" | "not_booked" | "booked",
+    call_outcome: "" as "" | "not_booked" | "booked" | "non_qualifie",
     rdv_date: "",
   });
 
@@ -407,7 +407,7 @@ export function ContactDetail({
     let fullDescription = activityForm.description || "";
     if (activityForm.type === "appel" && activityForm.call_result) {
       const resultLabels: Record<string, string> = { no_answer: "Pas de réponse", voicemail: "Message vocal laissé", contacted: "Contacté", not_interested: "Pas intéressé" };
-      const outcomeLabels: Record<string, string> = { not_booked: "Non booké", booked: "Booké" };
+      const outcomeLabels: Record<string, string> = { not_booked: "Non booké", booked: "Booké", non_qualifie: "Non qualifié" };
       let resultText = resultLabels[activityForm.call_result] || "";
       if (activityForm.call_result === "contacted" && activityForm.call_outcome) {
         resultText += " → " + (outcomeLabels[activityForm.call_outcome] || "");
@@ -2066,6 +2066,7 @@ export function ContactDetail({
                   <option value="">Sélectionner...</option>
                   <option value="not_booked">Not booked</option>
                   <option value="booked">Booked</option>
+                  <option value="non_qualifie">Non qualifié</option>
                 </select>
               </div>
             )}

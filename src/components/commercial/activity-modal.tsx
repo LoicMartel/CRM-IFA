@@ -80,6 +80,7 @@ export function ActivityModal({
       const outcomeLabels: Record<string, string> = {
         not_booked: "Non booké",
         booked: "Booké",
+        non_qualifie: "Non qualifié",
       };
       let resultText = resultLabels[form.call_result] || "";
       if (form.call_result === "contacted" && form.call_outcome) {
@@ -251,6 +252,7 @@ export function ActivityModal({
                 <option value="">Sélectionner...</option>
                 <option value="not_booked">Not booked</option>
                 <option value="booked">Booked</option>
+                <option value="non_qualifie">Non qualifié</option>
               </select>
             </div>
           )}
