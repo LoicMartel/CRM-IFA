@@ -41,9 +41,14 @@ create table if not exists nurture_enrollments (
   next_send_at timestamptz,                  -- prochaine étape due ; null quand terminé
   enrolled_at timestamptz not null default now(),
   last_sent_at timestamptz,
-  created_at timestamptz not null default now(),
-  unique (sequence_id, contact_id)           -- pas de double enrôlement dans la même séquence (idempotence)
+  created_at timestamptz not null default now()
 );
+-- Un seul enrôlement ACTIF par (séquence, contact) — via index unique PARTIEL (pas de contrainte
+-- inline) : les lignes terminées (completed/exited_*) restent, ce qui autorise un RÉ-enrôlement
+-- (no-show -> rebook, 2e no-show) tout en empêchant deux séquences actives en parallèle.
+create unique index if not exists nurture_enrollments_active_uidx
+  on nurture_enrollments (sequence_id, contact_id)
+  where status = 'active';
 
 -- Garde-fous de valeurs (idempotents) ----------------------------------------
 do $$

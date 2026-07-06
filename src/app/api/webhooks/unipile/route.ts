@@ -141,13 +141,16 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
   const account = await resolveInboxAccount(accountId);
   const sb = svc();
 
-  // Nurturing : une réponse d'un contact enrôlé stoppe sa/ses séquence(s) actives (il est engagé
-  // -> on ne continue pas le drip). Fire sur tout inbound réel (les échos mail_sent sont déjà
-  // filtrés en amont). Best-effort, n'impacte jamais le pipeline inbox.
-  try {
-    const { data: conv } = await sb.from("conversations").select("contact_id").eq("id", result.conversationId).maybeSingle();
-    if (conv?.contact_id) await exitEnrollments({ contactId: conv.contact_id, reason: "exited_replied" });
-  } catch (e) { console.error("[unipile] nurture exit-on-reply:", e); }
+  // Nurturing : une réponse EMAIL d'un contact enrôlé stoppe sa/ses séquence(s) actives (il est
+  // engagé -> on ne continue pas le drip). Restreint au canal email (le nurturing part/revient par
+  // email) pour ne pas sortir une séquence sur un DM social sans rapport. Les échos mail_sent sont
+  // déjà filtrés en amont. Best-effort, n'impacte jamais le pipeline inbox.
+  if (channel === "email") {
+    try {
+      const { data: conv } = await sb.from("conversations").select("contact_id").eq("id", result.conversationId).maybeSingle();
+      if (conv?.contact_id) await exitEnrollments({ contactId: conv.contact_id, reason: "exited_replied" });
+    } catch (e) { console.error("[unipile] nurture exit-on-reply:", e); }
+  }
 
   // mode=copilot (chantier F P1, copilote Rafi): score → feed/CRM, ZÉRO réponse. The conversation
   // is pinned 'human' so neither the agent nor the followup cron ever sends. An upstream filter

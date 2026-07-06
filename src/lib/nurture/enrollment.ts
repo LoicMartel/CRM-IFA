@@ -67,17 +67,19 @@ export async function enrollContact(opts: {
       nextSendAt = new Date(Date.now() + steps[0].delay_hours * 3600_000).toISOString();
     }
 
-    await sb.from("nurture_enrollments").upsert(
-      {
-        sequence_id: seq.id,
-        contact_id: opts.contactId,
-        meeting_id: opts.meetingId ?? null,
-        status: "active",
-        current_step: currentStep,
-        next_send_at: nextSendAt,
-      },
-      { onConflict: "sequence_id,contact_id", ignoreDuplicates: true },
-    );
+    const { error } = await sb.from("nurture_enrollments").insert({
+      sequence_id: seq.id,
+      contact_id: opts.contactId,
+      meeting_id: opts.meetingId ?? null,
+      status: "active",
+      current_step: currentStep,
+      next_send_at: nextSendAt,
+    });
+    // 23505 = un enrôlement ACTIF existe déjà pour ce (séquence, contact) -> no-op idempotent
+    // (index partiel nurture_enrollments_active_uidx). Toute autre erreur est loggée.
+    if (error && error.code !== "23505") {
+      console.error("[nurture.enroll] insert failed (non-blocking):", error.message);
+    }
   } catch (e) {
     console.error("[nurture.enroll] failed (non-blocking):", e instanceof Error ? e.message : String(e));
   }

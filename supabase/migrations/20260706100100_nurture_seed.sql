@@ -5,8 +5,11 @@
 -- from_account_id = NULL -> l'endpoint utilise UNIPILE_NURTURE_ACCOUNT_ID (compte de Rafi) sinon
 -- UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID. Idempotent (on conflict do nothing).
 -- NOTE contenu : l'email VSL "J+11 / use case 2 avatar" reste un template à trous côté doc -> non
--- seedé (à insérer plus tard en step_order intercalé, delay 264h). Les touchpoints SMS/WhatsApp de
--- R1 ne sont pas seedés (canal non câblé ; multicanal-ready via nurture_steps.channel).
+-- seedé. ⚠️ À l'insertion, RENUMÉROTER : pour une séquence anchor='enrollment', le cron avance
+-- étape par étape et delay_hours DOIT croître avec step_order. J+11 (delay 264) doit devenir
+-- step_order 7 et J+13 (delay 312) passer step_order 8 — sinon la nouvelle étape est due dans le
+-- passé et part immédiatement après l'étape précédente. Les touchpoints SMS/WhatsApp de R1 ne sont
+-- pas seedés (canal non câblé ; multicanal-ready via nurture_steps.channel).
 
 insert into nurture_sequences (slug, name, trigger, anchor, is_active, from_account_id) values
   ('vsl-nurturing', 'Nurturing VSL (leads opt-in non bookés)',        'optin_vsl',  'enrollment', true, null),
