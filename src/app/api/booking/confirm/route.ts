@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getParisOffset } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { processMeetingNotifications } from "@/lib/process-meeting-notifications";
+import { enrollContact, exitEnrollments } from "@/lib/nurture/enrollment";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -164,6 +165,13 @@ export async function POST(request: Request) {
         .eq("contact_id", contact.id).in("agent_status", ["active", "escalated", "dormant", "human"]);
     }
   } catch (e) { console.error("[booking.confirm] mark conversation booked failed:", e); }
+
+  // Nurturing : le lead a booké -> sortir des séquences "pousser à booker" et l'enrôler dans
+  // la séquence pré-RDV (garder chaud jusqu'au bilan, anti no-show en amont). Best-effort.
+  if (contact?.id) {
+    await exitEnrollments({ contactId: contact.id, reason: "exited_booked" });
+    if (meetingId) await enrollContact({ sequenceSlug: "pre-rdv", contactId: contact.id, meetingId });
+  }
 
   return NextResponse.json({
     success: true,

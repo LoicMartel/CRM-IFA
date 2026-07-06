@@ -8,9 +8,10 @@
 -- 1) Séquences ---------------------------------------------------------------
 create table if not exists nurture_sequences (
   id uuid primary key default gen_random_uuid(),
-  slug text not null unique,                 -- 'vsl-nurturing' | 'noshow-r0' | 'noshow-r1'
+  slug text not null unique,                 -- 'vsl-nurturing' | 'noshow-r0' | 'noshow-r1' | 'pre-rdv'
   name text not null,
   trigger text not null,                     -- comment un lead y entre
+  anchor text not null default 'enrollment', -- 'enrollment' (delai depuis l'enrolment) | 'meeting' (compte a rebours: scheduled_at - delai)
   is_active boolean not null default true,
   from_account_id text,                      -- compte Unipile expéditeur (rafi@) ; null -> fallback env UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID
   created_at timestamptz not null default now()
@@ -49,7 +50,11 @@ do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'nurture_sequences_trigger_chk') then
     alter table nurture_sequences add constraint nurture_sequences_trigger_chk
-      check (trigger in ('optin_vsl', 'no_show_r0', 'no_show_r1'));
+      check (trigger in ('optin_vsl', 'no_show_r0', 'no_show_r1', 'booked'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'nurture_sequences_anchor_chk') then
+    alter table nurture_sequences add constraint nurture_sequences_anchor_chk
+      check (anchor in ('enrollment', 'meeting'));
   end if;
 
   if not exists (select 1 from pg_constraint where conname = 'nurture_steps_channel_chk') then

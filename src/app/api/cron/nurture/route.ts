@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   const { data: due } = await sb
     .from("nurture_enrollments")
-    .select("id, sequence_id, contact_id, current_step, enrolled_at")
+    .select("id, sequence_id, contact_id, meeting_id, current_step, enrolled_at")
     .eq("status", "active")
     .lte("next_send_at", nowIso)
     .limit(200);
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 
     const { data: seq } = await sb
       .from("nurture_sequences")
-      .select("id, slug, is_active, from_account_id")
+      .select("id, slug, anchor, is_active, from_account_id")
       .eq("id", enr.sequence_id)
       .single();
     if (!seq || !seq.is_active) {
@@ -103,6 +103,27 @@ export async function GET(req: NextRequest) {
         .eq("id", enr.id);
       channelSkip++;
       continue;
+    }
+
+    // Ancrage 'meeting' (pré-RDV) : échéances calculées à rebours depuis le RDV.
+    let meetingMs: number | null = null;
+    if (seq.anchor === "meeting") {
+      const { data: mtg } = await sb
+        .from("meetings")
+        .select("scheduled_at")
+        .eq("id", enr.meeting_id ?? "")
+        .maybeSingle();
+      if (!mtg?.scheduled_at) {
+        await sb.from("nurture_enrollments").update({ status: "cancelled", next_send_at: null }).eq("id", enr.id);
+        continue;
+      }
+      meetingMs = new Date(mtg.scheduled_at).getTime();
+      // RDV déjà passé -> on stoppe (jamais de rappel post-RDV).
+      if (now.getTime() >= meetingMs) {
+        await sb.from("nurture_enrollments").update({ status: "completed", next_send_at: null }).eq("id", enr.id);
+        completed++;
+        continue;
+      }
     }
 
     const { data: contact } = await sb
@@ -166,8 +187,11 @@ export async function GET(req: NextRequest) {
       .eq("sequence_id", seq.id)
       .eq("step_order", nextOrder + 1)
       .maybeSingle();
-    const enrolledAt = new Date(enr.enrolled_at).getTime();
-    const nextDue = nextStep ? new Date(enrolledAt + nextStep.delay_hours * 3600_000).toISOString() : null;
+    const nextDue = nextStep
+      ? (seq.anchor === "meeting" && meetingMs !== null
+          ? new Date(meetingMs - nextStep.delay_hours * 3600_000).toISOString()
+          : new Date(new Date(enr.enrolled_at).getTime() + nextStep.delay_hours * 3600_000).toISOString())
+      : null;
 
     await sb.from("nurture_enrollments").update({
       current_step: nextOrder,

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getParisOffset } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { processMeetingNotifications } from "@/lib/process-meeting-notifications";
+import { enrollContact, exitEnrollments } from "@/lib/nurture/enrollment";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -128,6 +129,12 @@ export async function POST(request: Request) {
         console.error(`[booking-general] notification error for meeting ${mid}:`, err);
       }
     });
+  }
+
+  // Nurturing : booké -> sortie des séquences "pousser à booker" + enrôlement pré-RDV. Best-effort.
+  if (contact?.id) {
+    await exitEnrollments({ contactId: contact.id, reason: "exited_booked" });
+    if (meetingId) await enrollContact({ sequenceSlug: "pre-rdv", contactId: contact.id, meetingId });
   }
 
   return NextResponse.json({

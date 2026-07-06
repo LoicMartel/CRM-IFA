@@ -8,11 +8,54 @@
 -- seedé (à insérer plus tard en step_order intercalé, delay 264h). Les touchpoints SMS/WhatsApp de
 -- R1 ne sont pas seedés (canal non câblé ; multicanal-ready via nurture_steps.channel).
 
-insert into nurture_sequences (slug, name, trigger, is_active, from_account_id) values
-  ('vsl-nurturing', 'Nurturing VSL (leads opt-in non bookés)',        'optin_vsl',  true, null),
-  ('noshow-r0',     'Relance no-show R0 (lead froid Meta)',           'no_show_r0', true, null),
-  ('noshow-r1',     'Relance no-show R1 (lead chaud, 2e RDV manqué)', 'no_show_r1', true, null)
+insert into nurture_sequences (slug, name, trigger, anchor, is_active, from_account_id) values
+  ('vsl-nurturing', 'Nurturing VSL (leads opt-in non bookés)',        'optin_vsl',  'enrollment', true, null),
+  ('pre-rdv',       'Pré-RDV (garder le lead chaud avant le bilan)',  'booked',     'meeting',    true, null),
+  ('noshow-r0',     'Relance no-show R0 (lead froid Meta)',           'no_show_r0', 'enrollment', true, null),
+  ('noshow-r1',     'Relance no-show R1 (lead chaud, 2e RDV manqué)', 'no_show_r1', 'enrollment', true, null)
 on conflict (slug) do nothing;
+
+-- ── Séquence pré-RDV : compte à rebours depuis le RDV (anchor='meeting') ─────
+-- delay_hours = heures AVANT le RDV. J-2 (48h) / J-1 (24h) / Jour J (~3h avant).
+insert into nurture_steps (sequence_id, step_order, delay_hours, channel, subject, body) values
+((select id from nurture_sequences where slug='pre-rdv'), 1, 48, 'email',
+ $s$Votre bilan commercial approche — ce qu'on va regarder ensemble$s$,
+ $b$Bonjour {{firstName}},
+
+Votre bilan commercial avec La Closing Académie approche, et je voulais vous donner le cadre pour qu'on en tire le maximum.
+
+En 30 minutes, on va poser un diagnostic clair sur votre organisation commerciale : où fuient les leads, ce qui plafonne réellement la performance, et 2 ou 3 leviers activables rapidement chez vous.
+
+Pour que ce soit le plus utile possible, venez avec une idée de vos chiffres clés — volume de leads, taux de closing, cycle de vente — même approximatifs.
+
+À très vite,
+Rafi$b$),
+
+((select id from nurture_sequences where slug='pre-rdv'), 2, 24, 'email',
+ $s$Rappel : votre bilan commercial, c'est demain$s$,
+ $b$Bonjour {{firstName}},
+
+Petit rappel : on se voit demain pour votre bilan commercial.
+
+Un chiffre pour vous mettre en appétit : un dirigeant que nous avons accompagné est passé de 1,5 à 2,7 M€ en 12 mois — pas en achetant plus de leads, mais en structurant son organisation commerciale. C'est exactement le type de leviers qu'on va chercher chez vous.
+
+Le lien de connexion se trouve dans votre invitation d'agenda. Si un imprévu survient, répondez simplement à ce mail : on retrouvera un créneau.
+
+À demain,
+Rafi$b$),
+
+((select id from nurture_sequences where slug='pre-rdv'), 3, 3, 'email',
+ $s$On se voit dans quelques heures$s$,
+ $b$Bonjour {{firstName}},
+
+On se retrouve dans quelques heures pour votre bilan commercial.
+
+Prévoyez un endroit au calme et vos quelques chiffres clés sous la main — on ira droit au but.
+
+Le lien de connexion est dans votre invitation d'agenda. À tout à l'heure !
+
+Rafi$b$)
+on conflict (sequence_id, step_order) do nothing;
 
 -- ── Séquence VSL : 7 emails sur 13 jours ────────────────────────────────────
 insert into nurture_steps (sequence_id, step_order, delay_hours, channel, subject, body) values
