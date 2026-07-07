@@ -27,6 +27,7 @@ import {
   MessageSquare,
   PhoneOutgoing,
   Wallet,
+  Webhook,
 } from "lucide-react";
 import {
   Sidebar,
@@ -87,6 +88,7 @@ const generalItems = [
 const adminItems = [
   { title: "Équipe", href: "/team", icon: Users },
   { title: "Journal Emails", href: "/emails", icon: Mail },
+  { title: "Test VisioFormation", href: "/visioformation-test", icon: Webhook },
 ];
 
 function NavSection({
