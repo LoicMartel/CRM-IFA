@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -8,32 +9,54 @@ export async function GET(request: Request) {
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/home";
 
-  const supabase = await createClient();
+  const cookieStore = await cookies();
+  // Collect cookies set during auth exchange so we can copy them onto the redirect response
+  const pendingCookies: { name: string; value: string; options: Record<string, unknown> }[] = [];
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try { cookieStore.set(name, value, options); } catch { /* Server Component */ }
+            pendingCookies.push({ name, value, options });
+          });
+        },
+      },
+    },
+  );
+
+  let authOk = false;
 
   if (code) {
-    // PKCE flow: exchange the code for a session
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      // For password recovery, redirect to reset-password page
-      if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/reset-password`);
-      }
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    authOk = !error;
   } else if (token_hash && type) {
-    // Magic link / OTP flow: verify the token
     const { error } = await supabase.auth.verifyOtp({
       token_hash,
       type: type as "recovery" | "email" | "signup",
     });
-    if (!error) {
-      if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/reset-password`);
-      }
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+    authOk = !error;
   }
 
-  // If we get here, something went wrong — redirect to login with error
-  return NextResponse.redirect(`${origin}/login?error=Le+lien+a+expiré+ou+est+invalide.+Veuillez+réessayer.`);
+  if (authOk) {
+    const dest = type === "recovery"
+      ? `${origin}/reset-password`
+      : `${origin}${next}`;
+    const response = NextResponse.redirect(dest);
+    // Explicitly set session cookies on the redirect response
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options as any);
+    });
+    return response;
+  }
+
+  return NextResponse.redirect(
+    `${origin}/login?error=Le+lien+a+expiré+ou+est+invalide.+Veuillez+réessayer.`,
+  );
 }

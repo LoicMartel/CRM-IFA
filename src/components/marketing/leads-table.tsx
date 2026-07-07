@@ -7,11 +7,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone } from "lucide-react";
+import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone, PhoneCall } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ExportButton } from "@/components/ui/export-button";
 import { exportData, type ExportFormat } from "@/lib/export";
+import { ActivityModal } from "@/components/commercial/activity-modal";
 
 interface Lead {
   id: string;
@@ -61,6 +62,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
+  const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
   const PAGE_SIZE = 25;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
@@ -215,8 +217,19 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         )} />
       </div>
 
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border" style={{ overflowX: "hidden" }}>
+        <Table style={{ tableLayout: "fixed", width: "100%" }}>
+          <colgroup>
+            <col style={{ width: "9%" }} />   {/* Créé le */}
+            <col style={{ width: "9%" }} />   {/* Statut */}
+            <col style={{ width: "10%" }} />  {/* Nom */}
+            <col style={{ width: "10%" }} />  {/* Prénom */}
+            <col style={{ width: "13%" }} />  {/* Source */}
+            <col style={{ width: "17%" }} />  {/* Email */}
+            <col style={{ width: "11%" }} />  {/* Téléphone */}
+            <col style={{ width: "13%" }} />  {/* Entreprise */}
+            <col style={{ width: "8%" }} />   {/* Actions */}
+          </colgroup>
           <TableHeader>
             <TableRow>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>
@@ -238,17 +251,18 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <span className="flex items-center gap-1">Email <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("phone")}>
-                <span className="flex items-center gap-1">Téléphone <ArrowUpDown className="h-3 w-3" /></span>
+                <span className="flex items-center gap-1">Tél. <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => toggleSort("company")}>
                 <span className="flex items-center gap-1">Entreprise <ArrowUpDown className="h-3 w-3" /></span>
               </TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   Aucun lead trouvé
                 </TableCell>
               </TableRow>
@@ -263,25 +277,41 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   key={l.id}
                   className="cursor-pointer hover:bg-muted/50"
                 >
-                  <TableCell className="p-0" style={{ fontSize: 11, color: "#5a6f80" }}>
-                    <Link href={href} className="block px-4 py-2 text-inherit no-underline">
+                  <TableCell className="p-0" style={{ fontSize: 11, color: "#5a6f80", overflow: "hidden" }}>
+                    <Link href={href} className="block px-2 py-2 text-inherit no-underline truncate">
                       {l.created_at ? new Date(l.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                     </Link>
                   </TableCell>
-                  <TableCell className="p-0">
-                    <Link href={href} className="block px-4 py-2 text-inherit no-underline">
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}>
+                    <Link href={href} className="block px-2 py-2 text-inherit no-underline">
                       {(() => {
                         const s = STATUS_LABELS[l.lead_status ?? ""] ?? { label: l.lead_status ?? "—", color: "#5a6f80", bg: "#f0f0f0" };
-                        return <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 9999, color: s.color, backgroundColor: s.bg }}>{s.label}</span>;
+                        return <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 9999, color: s.color, backgroundColor: s.bg, whiteSpace: "nowrap" }}>{s.label}</span>;
                       })()}
                     </Link>
                   </TableCell>
-                  <TableCell className="p-0 font-medium"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.last_name}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.first_name}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{getName(l.lead_sources) ?? "—"}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{l.email ?? "—"}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{formatPhone(l.phone)}</Link></TableCell>
-                  <TableCell className="p-0"><Link href={href} className="block px-4 py-2 text-inherit no-underline">{getName(l.companies) ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0 font-medium" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate">{l.last_name}</Link></TableCell>
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate">{l.first_name}</Link></TableCell>
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate" title={getName(l.lead_sources) ?? ""}>{getName(l.lead_sources) ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate" title={l.email ?? ""}>{l.email ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate">{formatPhone(l.phone)}</Link></TableCell>
+                  <TableCell className="p-0" style={{ overflow: "hidden" }}><Link href={href} className="block px-2 py-2 text-inherit no-underline truncate" title={getName(l.companies) ?? ""}>{getName(l.companies) ?? "—"}</Link></TableCell>
+                  <TableCell className="p-0 px-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setActivityLeadId(l.id); }}
+                      title="Nouvelle activité"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 3,
+                        padding: "3px 7px", borderRadius: 6, border: "1px solid #dce8f0",
+                        background: "white", color: "#1a6b9c", fontSize: 11, fontWeight: 600,
+                        cursor: "pointer", whiteSpace: "nowrap",
+                      }}
+                    >
+                      <PhoneCall style={{ width: 12, height: 12 }} />
+                      Actions
+                    </button>
+                  </TableCell>
                 </TableRow>
                 );
               })
@@ -290,6 +320,21 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         </Table>
         <TablePagination currentPage={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </div>
+
+      {/* Activity modal for quick log from leads list */}
+      {activityLeadId && (() => {
+        const lead = leads.find((l) => l.id === activityLeadId);
+        if (!lead) return null;
+        return (
+          <ActivityModal
+            contactId={lead.id}
+            companyId={lead.company_id}
+            contactName={`${lead.first_name} ${lead.last_name}`}
+            open={true}
+            onOpenChange={(open) => { if (!open) setActivityLeadId(null); }}
+          />
+        );
+      })()}
     </>
   );
 }

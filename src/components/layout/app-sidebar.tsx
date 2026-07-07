@@ -25,6 +25,7 @@ import {
   UserPlus,
   Users,
   MessageSquare,
+  PhoneOutgoing,
   Wallet,
 } from "lucide-react";
 import {
@@ -65,6 +66,7 @@ const productionItemsList = [
 
 const marketingItems = [
   { title: "Leads", href: "/marketing/leads", icon: UserPlus },
+  { title: "Setting", href: "/marketing/setting", icon: PhoneOutgoing },
   { title: "Suivi Tunnels", href: "/marketing/suivi-prestataires", icon: Megaphone },
   { title: "Campagnes", href: "/marketing/campagnes", icon: Mail },
   { title: "Dépenses Marketing", href: "/marketing/depenses", icon: Wallet },

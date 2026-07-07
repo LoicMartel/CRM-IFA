@@ -16,17 +16,22 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Supabase will auto-detect the recovery token from the URL hash
     const supabase = createClient();
-    supabase.auth.onAuthStateChange((event) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        setReady(true);
+      } else if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
         setReady(true);
       }
     });
-    // Also check if already in a session (token already processed)
+
+    // Fallback: check existing session (token already exchanged server-side)
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setReady(true);
     });
+
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   async function handleReset(e: React.FormEvent) {

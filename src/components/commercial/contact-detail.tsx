@@ -232,6 +232,10 @@ export function ContactDetail({
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [editOpen, setEditOpen] = useState(false);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
+  const sortedActivities = [...activities].sort((a, b) =>
+    (b.due_date ?? b.created_at).localeCompare(a.due_date ?? a.created_at),
+  );
+
   const [activityOpen, setActivityOpen] = useState(false);
   const [rdvOpen, setRdvOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -282,7 +286,7 @@ export function ContactDetail({
     due_date: "",
     task_deadline: "",
     call_result: "" as "" | "no_answer" | "voicemail" | "contacted" | "not_interested",
-    call_outcome: "" as "" | "not_booked" | "booked",
+    call_outcome: "" as "" | "not_booked" | "booked" | "non_qualifie",
     rdv_date: "",
   });
 
@@ -403,7 +407,7 @@ export function ContactDetail({
     let fullDescription = activityForm.description || "";
     if (activityForm.type === "appel" && activityForm.call_result) {
       const resultLabels: Record<string, string> = { no_answer: "Pas de réponse", voicemail: "Message vocal laissé", contacted: "Contacté", not_interested: "Pas intéressé" };
-      const outcomeLabels: Record<string, string> = { not_booked: "Non booké", booked: "Booké" };
+      const outcomeLabels: Record<string, string> = { not_booked: "Non booké", booked: "Booké", non_qualifie: "Non qualifié" };
       let resultText = resultLabels[activityForm.call_result] || "";
       if (activityForm.call_result === "contacted" && activityForm.call_outcome) {
         resultText += " → " + (outcomeLabels[activityForm.call_outcome] || "");
@@ -682,6 +686,25 @@ export function ContactDetail({
       await supabase.from("meeting_contacts").delete().eq("meeting_id", editingMeetingId);
       await supabase.from("meeting_managers").delete().eq("meeting_id", editingMeetingId);
       await insertParticipants(editingMeetingId);
+
+      // Reschedule notifications: Google Calendar update + Slack + email
+      try {
+        const notifyRes = await fetch("/api/meetings/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            meetingId: editingMeetingId,
+            contactIds: selectedContactIds,
+            managerIds: selectedManagerIds,
+            isReschedule: true,
+          }),
+        });
+        const notifyData = await notifyRes.json();
+        if (notifyData.results?.length > 0) {
+          const summary = notifyData.results.map((r: any) => `${r.action}: ${r.status}`).join(", ");
+          alert(`RDV modifié ✅\n\nSync: ${summary}`);
+        }
+      } catch {}
     } else {
       // New meeting creation
       const { data: newMeeting, error } = await supabase.from("meetings").insert({
@@ -780,7 +803,7 @@ export function ContactDetail({
     return new Date(local).toISOString();
   }
 
-  function openEditMeeting(m: MeetingData) {
+  async function openEditMeeting(m: MeetingData) {
     setEditingMeetingId(m.id);
     setRdvForm({
       meeting_type: m.meeting_type,
@@ -793,6 +816,18 @@ export function ContactDetail({
       rdv_result: "",
       action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     });
+
+    // Load existing participants from junction tables
+    const supabase = createClient();
+    const [{ data: mc }, { data: mm }] = await Promise.all([
+      supabase.from("meeting_contacts").select("contact_id").eq("meeting_id", m.id),
+      supabase.from("meeting_managers").select("team_member_id").eq("meeting_id", m.id),
+    ]);
+    const cIds = mc?.map(r => r.contact_id) ?? [];
+    const mIds = mm?.map(r => r.team_member_id) ?? [];
+    setSelectedContactIds(cIds.length > 0 ? cIds : [contact.id]);
+    setSelectedManagerIds(mIds.length > 0 ? mIds : (currentMemberId ? [currentMemberId] : []));
+
     setRdvOpen(true);
   }
 
@@ -1100,7 +1135,7 @@ export function ContactDetail({
                 <Briefcase className="h-4 w-4 mr-1" /> Deals ({deals.length + companyDeals.length})
               </TabsTrigger>
               <TabsTrigger value="activities">
-                <PhoneCall className="h-4 w-4 mr-1" /> Activités ({activities.length})
+                <PhoneCall className="h-4 w-4 mr-1" /> Activités ({sortedActivities.length})
               </TabsTrigger>
               <TabsTrigger value="meetings">
                 <Calendar className="h-4 w-4 mr-1" /> RDV ({meetings.length})
@@ -1116,7 +1151,7 @@ export function ContactDetail({
                 </TabsTrigger>
               )}
               <TabsTrigger value="tasks">
-                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
               </TabsTrigger>
             </TabsList>
 
@@ -1245,11 +1280,11 @@ export function ContactDetail({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {activities.length === 0 ? (
+                    {sortedActivities.length === 0 ? (
                       <p style={{ fontSize: 13, color: "#8399a9" }}>Aucune activité</p>
                     ) : (
                       <div className="space-y-2">
-                        {activities.slice(0, 3).map((a) => {
+                        {sortedActivities.slice(0, 3).map((a) => {
                           const atc = activityTypeColors[a.type] ?? { bg: "#f0f0f0", text: "#666" };
                           return (
                             <div key={a.id} className="flex items-center gap-3" style={{ padding: "6px 0", borderBottom: "1px solid #e6f0f7" }}>
@@ -1406,11 +1441,11 @@ export function ContactDetail({
             <TabsContent value="activities" className="mt-4">
               <Card>
                 <CardContent className="pt-6">
-                  {activities.length === 0 ? (
+                  {sortedActivities.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Aucune activité</p>
                   ) : (
                     <div className="space-y-4">
-                      {activities.map((a) => (
+                      {sortedActivities.map((a) => (
                         <div key={a.id} className="flex gap-4 pb-4 border-b last:border-0">
                           <div className="flex-shrink-0 w-28">
                             <span className="text-xs text-muted-foreground">{formatDate(a.due_date || a.created_at)}</span>
@@ -1733,18 +1768,18 @@ export function ContactDetail({
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center gap-2" style={{ fontSize: 15 }}>
-                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
                   </CardTitle>
                   <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "tâche", title: "", description: "", due_date: "", task_deadline: "", call_result: "", call_outcome: "", rdv_date: "" }); setActivityOpen(true); }}>
                     <PlusCircle className="h-4 w-4 mr-1" /> Nouvelle tâche
                   </Button>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  {activities.filter(a => a.type === "tâche").length === 0 ? (
+                  {sortedActivities.filter(a => a.type === "tâche").length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Aucune tâche</p>
                   ) : (
                     <div className="space-y-3">
-                      {activities.filter(a => a.type === "tâche").map((a) => {
+                      {sortedActivities.filter(a => a.type === "tâche").map((a) => {
                         const deadline = (a as any).task_deadline as string | null;
                         const isOverdue = deadline && !a.is_completed && new Date(deadline) < new Date();
                         return (
@@ -2031,6 +2066,7 @@ export function ContactDetail({
                   <option value="">Sélectionner...</option>
                   <option value="not_booked">Not booked</option>
                   <option value="booked">Booked</option>
+                  <option value="non_qualifie">Non qualifié</option>
                 </select>
               </div>
             )}

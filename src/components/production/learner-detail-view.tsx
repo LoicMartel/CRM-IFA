@@ -159,6 +159,10 @@ export function LearnerDetailView({
 
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const sortedActivities = [...activities].sort((a, b) =>
+    (b.due_date ?? b.created_at).localeCompare(a.due_date ?? a.created_at),
+  );
+
   const [activityOpen, setActivityOpen] = useState(false);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
@@ -514,7 +518,7 @@ export function LearnerDetailView({
                 <Calendar className="h-4 w-4 mr-1" /> Sessions ({typedSessions.length})
               </TabsTrigger>
               <TabsTrigger value="tasks">
-                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                <ClipboardList className="h-4 w-4 mr-1" /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
               </TabsTrigger>
             </TabsList>
 
@@ -862,18 +866,18 @@ export function LearnerDetailView({
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="flex items-center gap-2" style={{ fontSize: 15 }}>
-                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({activities.filter(a => a.type === "tâche").length})
+                    <ClipboardList className="h-4 w-4" style={{ color: "#c62828" }} /> Tâches ({sortedActivities.filter(a => a.type === "tâche").length})
                   </CardTitle>
                   <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "tâche", title: "", description: "", due_date: "", task_deadline: "" }); setActivityOpen(true); }}>
                     <PlusCircle className="h-4 w-4 mr-1" /> Nouvelle tâche
                   </Button>
                 </CardHeader>
                 <CardContent className="pt-2">
-                  {activities.filter(a => a.type === "tâche").length === 0 ? (
+                  {sortedActivities.filter(a => a.type === "tâche").length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">Aucune tâche</p>
                   ) : (
                     <div className="space-y-3">
-                      {activities.filter(a => a.type === "tâche").map((a) => {
+                      {sortedActivities.filter(a => a.type === "tâche").map((a) => {
                         const deadline = a.task_deadline as string | null;
                         const isOverdue = deadline && !a.is_completed && new Date(deadline) < new Date();
                         return (

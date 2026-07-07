@@ -62,19 +62,26 @@ export default function LoginPage() {
     setForgotLoading(true);
     setForgotError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
-    });
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
 
-    if (error) {
-      setForgotError(error.message);
+      if (!res.ok) {
+        const data = await res.json();
+        setForgotError(data.error || "Une erreur est survenue.");
+        setForgotLoading(false);
+        return;
+      }
+
+      setForgotSent(true);
       setForgotLoading(false);
-      return;
+    } catch {
+      setForgotError("Une erreur est survenue.");
+      setForgotLoading(false);
     }
-
-    setForgotSent(true);
-    setForgotLoading(false);
   }
 
   return (

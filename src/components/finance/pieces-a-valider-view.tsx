@@ -14,6 +14,7 @@ export function PiecesAValiderView() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PendingPiece | null>(null);
   const [acting, setActing] = useState(false);
+  const [cacheBust, setCacheBust] = useState(Date.now());
   const [modal, setModal] = useState<PendingPiece | null>(null);
 
   const load = useCallback(async () => {
@@ -122,7 +123,7 @@ export function PiecesAValiderView() {
                               const fd = new FormData(); fd.append("file", f);
                               const res = await fetch(`/api/deals/${selected.dealId}/quote/replace-docx`, { method: "POST", body: fd });
                               const j = await res.json();
-                              if (!res.ok) alert(`Échec : ${j.error ?? "erreur"}`); else { alert(j.message); load(); }
+                              if (!res.ok) alert(`Échec : ${j.error ?? "erreur"}`); else { alert(j.message); setCacheBust(Date.now()); load(); }
                               setActing(false); e.target.value = "";
                             }} />
                         </label>
@@ -134,7 +135,7 @@ export function PiecesAValiderView() {
                   <iframe
                     title="Aperçu PDF"
                     src={selected.type === "devis" && selected.dealId
-                      ? `/api/deals/${selected.dealId}/quote/preview-pdf`
+                      ? `/api/deals/${selected.dealId}/quote/preview-pdf?t=${cacheBust}`
                       : selected.pdfUrl}
                     style={{ width: "100%", height: 560, border: "1px solid #e2e8f0", borderRadius: 6 }}
                   />

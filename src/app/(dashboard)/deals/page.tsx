@@ -17,7 +17,7 @@ export default async function DealsPage() {
     supabase.from("deals").select("*, contacts(first_name, last_name), companies(name), team_members(first_name, last_name)").order("created_at", { ascending: false }).limit(500),
     supabase.from("team_members").select("id, first_name, last_name, roles").eq("is_active", true),
     supabase.from("companies").select("id, name").order("name"),
-    supabase.from("contacts").select("id, first_name, last_name, company_id").order("last_name").limit(500),
+    supabase.from("contacts").select("id, first_name, last_name, company_id").order("last_name").range(0, 4999),
     supabase.from("lead_sources").select("id, name"),
   ]);
 
