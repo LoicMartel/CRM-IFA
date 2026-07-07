@@ -28,7 +28,7 @@ function getLogClient() {
   return logClient;
 }
 
-export type EmailTransporter = "resend" | "ionos";
+export type EmailTransporter = "resend" | "ionos" | "unipile";
 
 export interface EmailLogEntry {
   recipient: string;
