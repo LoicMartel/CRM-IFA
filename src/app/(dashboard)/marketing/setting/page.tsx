@@ -15,6 +15,7 @@ export default async function SettingPage() {
     )
     .eq("was_lead_marketing", true)
     .eq("is_client", false)
+    .not("lifecycle_stage", "in", '("customer","former_customer")')
     .in("lead_status", ["lead", "contacted"])
     .order("created_at", { ascending: false });
 
