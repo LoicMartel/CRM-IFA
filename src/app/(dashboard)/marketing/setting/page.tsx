@@ -14,6 +14,7 @@ export default async function SettingPage() {
       "id, first_name, last_name, email, phone, company_id, lifecycle_stage, lead_status, created_at, last_contacted_at, owner_id, companies!contacts_company_id_fkey(name), lead_sources!contacts_source_id_fkey(name), team_members!contacts_owner_id_fkey(id, first_name, last_name)"
     )
     .eq("was_lead_marketing", true)
+    .eq("is_client", false)
     .in("lead_status", ["lead", "contacted"])
     .order("created_at", { ascending: false });
 
