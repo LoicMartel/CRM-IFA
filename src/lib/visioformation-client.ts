@@ -19,7 +19,7 @@ export function visioformationConfigured(): boolean {
 
 export interface VisioformationPayload {
   meta: { source: string; event: string; environment: string; sent_at: string; external_reference: string };
-  formation: { titre: string | null; mode: string | null; vt_prevues: number | null; journees_prevues: number | null };
+  formation: { titre: string | null; mode: string | null; lieu: string | null; vt_prevues: number | null; journees_prevues: number | null; duree_totale_heures: number | null; date_debut: string | null; date_fin: string | null };
   entreprise: { raison_sociale: string | null; siret: string | null; adresse: string | null; ville: string | null };
   formateur: { nom: string | null; prenom: string | null; email: string | null } | null;
   sessions: Array<{ date: string | null; type: string | null; heures: number | null; statut: string | null }>;
@@ -68,10 +68,26 @@ export function buildFormationPayload(plan: FormationRows, trainer: TrainerRow |
     }
   }
 
+  // Dates de FORMATION = 1re/dernière journée effective (min/max des créneaux), PAS la période de la
+  // convention (demande Loïc 08/07). session_date au format ISO YYYY-MM-DD → tri lexical valide.
+  const sessionDates = (plan.training_sessions ?? []).map((s) => s.session_date).filter((d): d is string => Boolean(d)).sort();
+  const dateDebut = sessionDates[0] ?? null;
+  const dateFin = sessionDates[sessionDates.length - 1] ?? null;
+
+  // Durée totale = somme des heures des créneaux (null si aucune heure renseignée, pas 0 trompeur).
+  const heures = sessions.map((s) => s.heures).filter((h): h is number => typeof h === "number");
+  const dureeTotale = heures.length ? heures.reduce((a, b) => a + b, 0) : null;
+
+  // Lieu : pas de colonne dédiée côté service_plans → dérivé du mode. Distanciel = visio ; sinon les
+  // locaux du client (intra-entreprise). À remplacer par une colonne `lieu` si le CRM en ajoute une.
   const c = plan.companies ?? null;
+  const modeStr = plan.mode ?? plan.format ?? null;
+  const isDistanciel = /distanc|visio|remote|à distance/i.test(modeStr ?? "");
+  const lieu = isDistanciel ? "Distanciel (visioconférence)" : ([c?.address, c?.city].filter(Boolean).join(", ") || null);
+
   return {
     meta: { source: "CRM-LCA", event: "adf.formation.push", environment, sent_at: nowIso, external_reference: `LCA-PLAN-${plan.id}` },
-    formation: { titre: plan.training_programs?.name ?? null, mode: plan.mode ?? plan.format ?? null, vt_prevues: plan.vt_planned ?? null, journees_prevues: plan.days_planned ?? null },
+    formation: { titre: plan.training_programs?.name ?? null, mode: modeStr, lieu, vt_prevues: plan.vt_planned ?? null, journees_prevues: plan.days_planned ?? null, duree_totale_heures: dureeTotale, date_debut: dateDebut, date_fin: dateFin },
     entreprise: { raison_sociale: c?.name ?? null, siret: c?.siret ?? null, adresse: c?.address ?? null, ville: c?.city ?? null },
     formateur: trainer ? { nom: trainer.last_name ?? null, prenom: trainer.first_name ?? null, email: trainer.email ?? null } : null,
     sessions,
