@@ -198,6 +198,9 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   // the status doesn't change between their reads, so both conditional updates matched and both sent.
   // CAS on the agent_last_acted_at value we read at turn start: only one update can match it, so only
   // one turn proceeds. Also still catches a human takeover (status flips → no match).
+  // ⚠️ agent_last_acted_at is a CAS TOKEN: it MUST be written ONLY here/sendGreeting as a ms-ISO string.
+  // Adding a DB trigger, a now() default, or any other writer would make .eq() stop matching and silently
+  // reopen the double-send window. If a DB-side writer ever becomes necessary, switch to an int seq CAS.
   const prevActedAt = conv.agent_last_acted_at as string | null;
   let lockQuery = sb.from("conversations")
     .update({ agent_last_acted_at: new Date().toISOString() })
