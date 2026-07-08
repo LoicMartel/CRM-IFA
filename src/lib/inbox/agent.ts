@@ -98,11 +98,14 @@ export async function sendGreeting(conversationId: string): Promise<void> {
   const persona = await resolvePersona(conv.account_id);
   const text = buildGreeting(firstName, persona);
 
-  // Verrou anti-double-envoi : on n'envoie que si la conversation est TOUJOURS active
-  // (une prise de main humaine / un outbound anti-collision a pu la flipper entre-temps).
+  // Verrou CAS anti-double-envoi : le greeting est le 1er acte de l'agent → agent_last_acted_at est
+  // TOUJOURS null à ce stade. On ne "gagne" le tour que si c'est encore le cas (aucun autre greeting
+  // concurrent n'a agi). Le simple filtre agent_status='active' laissait passer deux greetings
+  // concurrents (le statut ne change pas entre leurs lectures).
   const { data: lock } = await sb.from("conversations")
     .update({ agent_last_acted_at: new Date().toISOString() })
-    .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
+    .eq("id", conversationId).eq("agent_status", "active").is("agent_last_acted_at", null)
+    .select("id").maybeSingle();
   if (!lock) return;
 
   if (!unipileConfigured()) {
@@ -131,7 +134,7 @@ export async function sendGreeting(conversationId: string): Promise<void> {
 export async function runAgentTurn(conversationId: string, isFollowup = false): Promise<void> {
   const sb = svc();
   const { data: conv } = await sb.from("conversations")
-    .select("channel, account_id, external_chat_id, intent, agent_status, agent_turn_count, contacts(email)")
+    .select("channel, account_id, external_chat_id, intent, agent_status, agent_turn_count, agent_last_acted_at, contacts(email)")
     .eq("id", conversationId).maybeSingle();
   if (!conv || conv.agent_status !== "active") return;
 
@@ -190,13 +193,23 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     text = (tool.input as { text: string }).text;
   }
 
-  // Anti-race lock: only send if the conversation is STILL active after the (multi-second) LLM call.
-  // A human takeover or an anti-collision outbound during the call flips the status; this conditional
-  // update both detects that and stamps the action time atomically — closes the double-send window.
-  const { data: lock } = await sb.from("conversations")
+  // Anti-race lock (compare-and-swap): send only if the conversation is STILL active AND nobody acted
+  // since we read it. The old filter (agent_status='active' only) let TWO concurrent turns both win —
+  // the status doesn't change between their reads, so both conditional updates matched and both sent.
+  // CAS on the agent_last_acted_at value we read at turn start: only one update can match it, so only
+  // one turn proceeds. Also still catches a human takeover (status flips → no match).
+  // ⚠️ agent_last_acted_at is a CAS TOKEN: it MUST be written ONLY here/sendGreeting as a ms-ISO string.
+  // Adding a DB trigger, a now() default, or any other writer would make .eq() stop matching and silently
+  // reopen the double-send window. If a DB-side writer ever becomes necessary, switch to an int seq CAS.
+  const prevActedAt = conv.agent_last_acted_at as string | null;
+  let lockQuery = sb.from("conversations")
     .update({ agent_last_acted_at: new Date().toISOString() })
-    .eq("id", conversationId).eq("agent_status", "active").select("id").maybeSingle();
-  if (!lock) return; // taken over / paused / booked while we were thinking — do not send.
+    .eq("id", conversationId).eq("agent_status", "active");
+  lockQuery = prevActedAt === null
+    ? lockQuery.is("agent_last_acted_at", null)
+    : lockQuery.eq("agent_last_acted_at", prevActedAt);
+  const { data: lock } = await lockQuery.select("id").maybeSingle();
+  if (!lock) return; // taken over / paused / booked / another concurrent turn won — do not send.
 
   try {
     const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;

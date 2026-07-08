@@ -205,7 +205,17 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
   // (a spam like France Travail was correctly escalated E2E). Finer newsletter-noise filtering is
   // the upstream deterministic filter (chantier F), out of scope here.
   if (cls?.intent === "spam") {
-    await escalateConversation(result.conversationId, "off_script", "Message classé spam à la réception (escalade sans tour agent).");
+    // Spam : escalader polluerait le feed + cloche à CHAQUE spam dès le branchement de contact@. MAIS
+    // silencier une conversation DÉJÀ engagée par l'agent (turn_count>0) ferait perdre un vrai lead mal
+    // classé sans aucun signal. → on ne silencie QUE le premier contact (turn_count 0) : 'human' (jamais
+    // ré-activé, invariant full-auto) + marqué lu, reste consultable dans /inbox si mal classé. Un "spam"
+    // AU MILIEU d'un échange engagé est anormal → escalade (un humain jette un œil).
+    const { data: convRow } = await sb.from("conversations").select("agent_turn_count").eq("id", result.conversationId).maybeSingle();
+    if ((convRow?.agent_turn_count ?? 0) > 0) {
+      await escalateConversation(result.conversationId, "off_script", "Message classé spam au milieu d'un échange agent — vérification humaine.");
+    } else {
+      await sb.from("conversations").update({ agent_status: "human", unread: false }).eq("id", result.conversationId);
+    }
     return;
   }
 

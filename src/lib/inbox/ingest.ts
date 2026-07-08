@@ -99,6 +99,36 @@ export async function ingestIncoming(msg: IncomingMessage): Promise<IngestResult
     existingContactId = existing?.contact_id ?? null;
   }
 
+  // Promotion web_form → email : un lead créé via formulaire a une conversation `channel='web_form'`
+  // (external_chat_id = `webform-<email>`). Quand il RÉPOND par email, le webhook arrive avec
+  // channel='email' + un thread_id différent → le lookup ci-dessus échoue et une NOUVELLE conversation
+  // serait créée (budget de tours remis à zéro, invariant 'escalated stays escalated' perdu, l'agent
+  // ré-engage un lead déjà pris en main). On PROMEUT la conversation web_form RÉCENTE du même contact
+  // en conversation email (channel=email + external_chat_id=thread_id) : ainsi les messages suivants du
+  // thread — inbound ET l'echo outbound d'une reprise humaine (anti-collision) — matchent par thread_id
+  // sans dépendre d'un champ destinataire non exposé par le webhook.
+  // Borne de RÉCENCE (pas de filtre statut : une conv escaladée doit RESTER rattachée pour que
+  // l'invariant downstream bloque l'agent) → un vieux thread clos ne capte pas un nouveau sujet.
+  if (!conversationId && msg.direction === "inbound" && msg.channel === "email" && msg.externalChatId) {
+    const handle = msg.senderHandle?.trim().toLowerCase();
+    let cid = msg.contactId ?? null;
+    if (!cid && handle?.includes("@")) {
+      const { data: c } = await sb.from("contacts").select("id").ilike("email", handle).maybeSingle();
+      cid = c?.id ?? null;
+    }
+    if (cid) {
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();
+      const { data: wf } = await sb.from("conversations").select("id, contact_id")
+        .eq("contact_id", cid).eq("channel", "web_form").gte("last_message_at", cutoff)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (wf) {
+        await sb.from("conversations").update({ channel: "email", external_chat_id: msg.externalChatId }).eq("id", wf.id);
+        conversationId = wf.id;
+        existingContactId = wf.contact_id;
+      }
+    }
+  }
+
   // Don't materialize a conversation (and a self-contact) for an untracked outbound message;
   // anti-collision only applies to threads we already follow.
   if (!conversationId && msg.direction === "outbound") return null;
