@@ -52,7 +52,12 @@ async function matchContact(
 }
 
 async function createContact(sb: ReturnType<typeof svc>, msg: IncomingMessage, ownerId: string | null): Promise<string | null> {
-  const name = (msg.senderName ?? "Inconnu").trim().split(" ");
+  // Instagram/Messenger arrivent souvent SANS attendee_name (webhook) → repli sur le handle pour que
+  // le contact reste identifiable au lieu d'un "Inconnu" anonyme (le handle n'est stocké nulle part
+  // ailleurs pour ces canaux). Le VRAI display-name nécessiterait un GET attendee Unipile, à valider
+  // avec un compte social connecté (reporté au go-live social — pas d'appel API non validé ici).
+  const nameFallback = ["instagram", "messenger"].includes(msg.channel) ? msg.senderHandle?.trim() : null;
+  const name = (msg.senderName?.trim() || nameFallback || "Inconnu").split(" ");
   const insert: Record<string, unknown> = {
     first_name: name[0] || "Inconnu",
     last_name: name.slice(1).join(" ") || "",
