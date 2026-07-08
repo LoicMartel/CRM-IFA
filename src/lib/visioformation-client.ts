@@ -39,7 +39,7 @@ interface FormationRows {
   companies?: { name?: string | null; siret?: string | null; address?: string | null; city?: string | null } | null;
   training_programs?: { name?: string | null } | null;
   training_sessions?: Array<{
-    session_date?: string | null; session_type?: string | null; duration_hours?: number | null; status?: string | null;
+    session_date?: string | null; session_type?: string | null; duration_hours?: number | null; status?: string | null; session_location?: string | null;
     training_session_learners?: Array<{ learners?: { first_name?: string | null; last_name?: string | null; email?: string | null; phone?: string | null; position?: string | null } | null }> | null;
   }> | null;
 }
@@ -78,12 +78,14 @@ export function buildFormationPayload(plan: FormationRows, trainer: TrainerRow |
   const heures = sessions.map((s) => s.heures).filter((h): h is number => typeof h === "number");
   const dureeTotale = heures.length ? heures.reduce((a, b) => a + b, 0) : null;
 
-  // Lieu : pas de colonne dédiée côté service_plans → dérivé du mode. Distanciel = visio ; sinon les
-  // locaux du client (intra-entreprise). À remplacer par une colonne `lieu` si le CRM en ajoute une.
+  // Lieu : le CRM stocke le lieu PAR créneau (training_sessions.session_location). On remonte le 1er
+  // lieu renseigné au niveau formation (Loïc demande un lieu de formation). Fallback visio si distanciel
+  // sans lieu saisi. ⚠️ La Route A (push-formation/[id]) doit SELECT session_location sur les créneaux.
   const c = plan.companies ?? null;
   const modeStr = plan.mode ?? plan.format ?? null;
+  const sessionLocation = (plan.training_sessions ?? []).map((s) => s.session_location).find((v) => Boolean(v && v.trim())) ?? null;
   const isDistanciel = /distanc|visio|remote|à distance/i.test(modeStr ?? "");
-  const lieu = isDistanciel ? "Distanciel (visioconférence)" : ([c?.address, c?.city].filter(Boolean).join(", ") || null);
+  const lieu = sessionLocation ?? (isDistanciel ? "Distanciel (visioconférence)" : null);
 
   return {
     meta: { source: "CRM-LCA", event: "adf.formation.push", environment, sent_at: nowIso, external_reference: `LCA-PLAN-${plan.id}` },
