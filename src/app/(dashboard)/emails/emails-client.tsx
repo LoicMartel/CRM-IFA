@@ -5,10 +5,12 @@ export type EmailRow = {
   id: string;
   recipient: string;
   subject: string | null;
+  body: string | null;
   transporter: string;
   status: string;
   error: string | null;
   has_attachments: boolean;
+  attachment_count: number | null;
   related_entity_type: string | null;
   related_entity_id: string | null;
   source: string | null;
@@ -52,6 +54,7 @@ function toCsv(rows: EmailRow[]): string {
 export function EmailsClient({ initial }: { initial: EmailRow[] }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [selected, setSelected] = useState<EmailRow | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -116,7 +119,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} className="border-t align-top">
+              <tr key={r.id} onClick={() => setSelected(r)} className="border-t align-top cursor-pointer hover:bg-muted/50">
                 <td className="p-2 whitespace-nowrap text-muted-foreground">{fmtDate(r.created_at)}</td>
                 <td className="p-2">{r.recipient}</td>
                 <td className="p-2">
@@ -135,6 +138,47 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
           </tbody>
         </table>
       </div>
+
+      {selected && (
+        <div
+          onClick={() => setSelected(null)}
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl rounded-lg bg-background shadow-lg">
+            <div className="flex items-start justify-between gap-4 border-b p-4">
+              <div className="min-w-0">
+                <h2 className="truncate font-semibold">{selected.subject ?? "(sans objet)"}</h2>
+                <p className="text-xs text-muted-foreground">{fmtDate(selected.created_at)}</p>
+              </div>
+              <button onClick={() => setSelected(null)} aria-label="Fermer" className="rounded px-2 py-1 text-muted-foreground hover:bg-muted">✕</button>
+            </div>
+
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 p-4 text-sm">
+              <dt className="text-muted-foreground">Destinataire</dt><dd className="break-all">{selected.recipient}</dd>
+              <dt className="text-muted-foreground">Transporteur</dt><dd>{selected.transporter}</dd>
+              <dt className="text-muted-foreground">Statut</dt><dd>{STATUS_BADGE[selected.status] ?? selected.status}</dd>
+              <dt className="text-muted-foreground">Pièces jointes</dt><dd>{selected.has_attachments ? `📎 ${selected.attachment_count ?? ""}`.trim() : "—"}</dd>
+              {selected.source && (<><dt className="text-muted-foreground">Source</dt><dd>{selected.source}</dd></>)}
+              {selected.related_entity_type && (<><dt className="text-muted-foreground">Lié à</dt><dd className="break-all">{selected.related_entity_type}:{selected.related_entity_id ?? ""}</dd></>)}
+            </dl>
+
+            {selected.status === "failed" && selected.error && (
+              <div className="mx-4 mb-4 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700">{selected.error}</div>
+            )}
+
+            <div className="border-t p-4">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">Contenu</p>
+              {selected.body ? (
+                // Aperçu isolé : iframe sandbox="" (aucun script/formulaire/navigation) — le corps peut
+                // être du HTML d'email ; on ne l'injecte JAMAIS dans le DOM parent (OWASP A03).
+                <iframe sandbox="" srcDoc={selected.body} title="Aperçu de l'email" className="h-96 w-full rounded border bg-white" />
+              ) : (
+                <p className="text-sm text-muted-foreground">Corps non enregistré pour cet envoi.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
