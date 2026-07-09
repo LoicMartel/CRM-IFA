@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 export type EmailRow = {
   id: string;
@@ -21,6 +21,39 @@ const STATUS_BADGE: Record<string, string> = {
   sent: "✅ Envoyé",
   failed: "❌ Échec",
 };
+
+// Un même envoi métier (une notif interne, une campagne) est loggé une ligne par destinataire.
+// On regroupe les lignes consécutives (le serveur trie par date desc) qui partagent le même objet
+// et tombent dans une courte fenêtre temporelle → une entrée dépliable au lieu de N lignes.
+const GROUP_WINDOW_MS = 2 * 60 * 1000;
+
+type EmailGroup = { key: string; subject: string | null; anchor: EmailRow; rows: EmailRow[] };
+
+function groupBySend(rows: EmailRow[]): EmailGroup[] {
+  const groups: EmailGroup[] = [];
+  for (const r of rows) {
+    const last = groups[groups.length - 1];
+    if (
+      last &&
+      (last.anchor.subject ?? "") === (r.subject ?? "") &&
+      Math.abs(new Date(last.anchor.created_at).getTime() - new Date(r.created_at).getTime()) <= GROUP_WINDOW_MS
+    ) {
+      last.rows.push(r);
+    } else {
+      groups.push({ key: r.id, subject: r.subject, anchor: r, rows: [r] });
+    }
+  }
+  return groups;
+}
+
+function groupStatus(rows: EmailRow[]): string {
+  const failed = rows.filter((r) => r.status === "failed").length;
+  if (failed === 0) return STATUS_BADGE.sent;
+  if (failed === rows.length) return STATUS_BADGE.failed;
+  return `⚠️ ${failed} échec(s)`;
+}
+
+const uniq = (arr: string[]) => Array.from(new Set(arr));
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -55,6 +88,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<EmailRow | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -67,7 +101,19 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
     );
   }, [initial, search, status]);
 
+  const groups = useMemo(() => groupBySend(filtered), [filtered]);
+
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
   function exportCsv() {
+    // Export à plat (une ligne par destinataire) : la preuve Qualiopi reste par email envoyé.
     const csv = toCsv(filtered);
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -83,7 +129,9 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-semibold">Journal des emails</h1>
-          <p className="text-sm text-muted-foreground">Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) affiché(s) sur {initial.length}.</p>
+          <p className="text-sm text-muted-foreground">
+            Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) sur {initial.length} · {groups.length} envoi(s).
+          </p>
         </div>
         <button onClick={exportCsv} className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-sm">
           Exporter CSV
@@ -118,21 +166,61 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((r) => (
-              <tr key={r.id} onClick={() => setSelected(r)} className="border-t align-top cursor-pointer hover:bg-muted/50">
-                <td className="p-2 whitespace-nowrap text-muted-foreground">{fmtDate(r.created_at)}</td>
-                <td className="p-2">{r.recipient}</td>
-                <td className="p-2">
-                  {r.subject ?? <span className="text-muted-foreground">—</span>}
-                  {r.status === "failed" && r.error ? <div className="text-xs text-red-600">{r.error}</div> : null}
-                </td>
-                <td className="p-2 whitespace-nowrap">{r.transporter}</td>
-                <td className="p-2 whitespace-nowrap">{STATUS_BADGE[r.status] ?? r.status}</td>
-                <td className="p-2">{r.has_attachments ? "📎" : ""}</td>
-                <td className="p-2 text-xs text-muted-foreground">{r.source ?? ""}</td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
+            {groups.map((g) => {
+              const isGroup = g.rows.length > 1;
+              const isOpen = expanded.has(g.key);
+              const transps = uniq(g.rows.map((r) => r.transporter));
+              const sources = uniq(g.rows.map((r) => r.source ?? "").filter(Boolean));
+              const anyPj = g.rows.some((r) => r.has_attachments);
+              return (
+                <Fragment key={g.key}>
+                  <tr
+                    onClick={() => (isGroup ? toggle(g.key) : setSelected(g.anchor))}
+                    aria-expanded={isGroup ? isOpen : undefined}
+                    className="border-t align-top cursor-pointer hover:bg-muted/50"
+                  >
+                    <td className="p-2 whitespace-nowrap text-muted-foreground">{fmtDate(g.anchor.created_at)}</td>
+                    <td className="p-2">
+                      {isGroup ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-muted-foreground">{isOpen ? "▼" : "▶"}</span>
+                          <span>{g.rows.length} destinataires</span>
+                        </span>
+                      ) : (
+                        <span className="break-all">{g.anchor.recipient}</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {g.subject ?? <span className="text-muted-foreground">—</span>}
+                      {!isGroup && g.anchor.status === "failed" && g.anchor.error ? (
+                        <div className="text-xs text-red-600">{g.anchor.error}</div>
+                      ) : null}
+                    </td>
+                    <td className="p-2 whitespace-nowrap">{transps.length === 1 ? transps[0] : "divers"}</td>
+                    <td className="p-2 whitespace-nowrap">{isGroup ? groupStatus(g.rows) : STATUS_BADGE[g.anchor.status] ?? g.anchor.status}</td>
+                    <td className="p-2">{anyPj ? "📎" : ""}</td>
+                    <td className="p-2 text-xs text-muted-foreground">{sources.length === 1 ? sources[0] : sources.length > 1 ? "divers" : ""}</td>
+                  </tr>
+
+                  {isGroup && isOpen && g.rows.map((r) => (
+                    <tr
+                      key={r.id}
+                      onClick={(e) => { e.stopPropagation(); setSelected(r); }}
+                      className="border-t align-top cursor-pointer bg-muted/20 hover:bg-muted/50"
+                    >
+                      <td className="p-2" />
+                      <td className="p-2 pl-8 break-all">{r.recipient}</td>
+                      <td className="p-2 text-xs text-red-600">{r.status === "failed" && r.error ? r.error : ""}</td>
+                      <td className="p-2 whitespace-nowrap text-muted-foreground">{r.transporter}</td>
+                      <td className="p-2 whitespace-nowrap">{STATUS_BADGE[r.status] ?? r.status}</td>
+                      <td className="p-2">{r.has_attachments ? "📎" : ""}</td>
+                      <td className="p-2" />
+                    </tr>
+                  ))}
+                </Fragment>
+              );
+            })}
+            {groups.length === 0 && (
               <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Aucun email.</td></tr>
             )}
           </tbody>
