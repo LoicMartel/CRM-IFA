@@ -23,26 +23,36 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 // Un même email (notif interne, campagne) est loggé une ligne par destinataire, souvent éparpillé
-// dans le temps. On regroupe par OBJET exact (toutes dates confondues) → une entrée dépliable par
-// objet. Le serveur trie par date desc : le groupe se place à sa 1re apparition (= envoi le plus
-// récent) et ses lignes restent triées desc. Un objet vide n'est jamais fusionné (envoi isolé).
-type EmailGroup = { key: string; subject: string | null; anchor: EmailRow; rows: EmailRow[] };
+// dans le temps. On regroupe par FAMILLE d'objet : on coupe au 1er tiret cadratin/demi-cadratin
+// entouré d'espaces (« Nouveau lead marketing — Ruth Nabet » → famille « Nouveau lead marketing » ;
+// « Invitation : VT … — 2026-09-29 » → « Invitation : VT … »). Le suffixe (nom/date) est la partie
+// variable. Un objet sans ce séparateur reste sa propre famille (ex « Votre Book Financements … »).
+// Le serveur trie par date desc : le groupe se place à sa 1re apparition et ses lignes restent desc.
+type EmailGroup = { key: string; family: string; anchor: EmailRow; rows: EmailRow[] };
 
-function groupBySubject(rows: EmailRow[]): EmailGroup[] {
+function subjectFamily(subject: string | null): string {
+  const s = (subject ?? "").trim();
+  if (!s) return "";
+  const m = s.match(/^(.*?)\s[—–]\s/);
+  return m ? m[1].trim() : s;
+}
+
+function groupByFamily(rows: EmailRow[]): EmailGroup[] {
   const groups: EmailGroup[] = [];
-  const bySubject = new Map<string, EmailGroup>();
+  const byFamily = new Map<string, EmailGroup>();
   for (const r of rows) {
-    const subj = (r.subject ?? "").trim();
-    if (!subj) {
-      groups.push({ key: r.id, subject: r.subject, anchor: r, rows: [r] });
+    const fam = subjectFamily(r.subject);
+    if (!fam) {
+      // Objet vide → envoi isolé, jamais fusionné.
+      groups.push({ key: r.id, family: "", anchor: r, rows: [r] });
       continue;
     }
-    const existing = bySubject.get(subj);
+    const existing = byFamily.get(fam);
     if (existing) {
       existing.rows.push(r);
     } else {
-      const g: EmailGroup = { key: `subj:${subj}`, subject: r.subject, anchor: r, rows: [r] };
-      bySubject.set(subj, g);
+      const g: EmailGroup = { key: `fam:${fam}`, family: fam, anchor: r, rows: [r] };
+      byFamily.set(fam, g);
       groups.push(g);
     }
   }
@@ -104,7 +114,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
     );
   }, [initial, search, status]);
 
-  const groups = useMemo(() => groupBySubject(filtered), [filtered]);
+  const groups = useMemo(() => groupByFamily(filtered), [filtered]);
 
   function toggle(key: string) {
     setExpanded((prev) => {
@@ -133,7 +143,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
         <div>
           <h1 className="text-xl font-semibold">Journal des emails</h1>
           <p className="text-sm text-muted-foreground">
-            Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) sur {initial.length} · {groups.length} objet(s).
+            Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) sur {initial.length} · {groups.length} catégorie(s).
           </p>
         </div>
         <button onClick={exportCsv} className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-sm">
@@ -175,6 +185,8 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
               const transps = uniq(g.rows.map((r) => r.transporter));
               const sources = uniq(g.rows.map((r) => r.source ?? "").filter(Boolean));
               const anyPj = g.rows.some((r) => r.has_attachments);
+              const variants = uniq(g.rows.map((r) => r.subject ?? ""));
+              const label = g.family || "(sans objet)";
               return (
                 <Fragment key={g.key}>
                   <tr
@@ -187,17 +199,23 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
                       {isGroup ? (
                         <span className="inline-flex items-center gap-1">
                           <span className="text-muted-foreground">{isOpen ? "▼" : "▶"}</span>
-                          <span>{g.rows.length} destinataires</span>
+                          <span>{g.rows.length} envois</span>
                         </span>
                       ) : (
                         <span className="break-all">{g.anchor.recipient}</span>
                       )}
                     </td>
                     <td className="p-2">
-                      {g.subject ?? <span className="text-muted-foreground">—</span>}
-                      {!isGroup && g.anchor.status === "failed" && g.anchor.error ? (
-                        <div className="text-xs text-red-600">{g.anchor.error}</div>
-                      ) : null}
+                      {isGroup ? (
+                        <span>{label}{variants.length > 1 ? " …" : ""}</span>
+                      ) : (
+                        <>
+                          {g.anchor.subject ?? <span className="text-muted-foreground">—</span>}
+                          {g.anchor.status === "failed" && g.anchor.error ? (
+                            <div className="text-xs text-red-600">{g.anchor.error}</div>
+                          ) : null}
+                        </>
+                      )}
                     </td>
                     <td className="p-2 whitespace-nowrap">{transps.length === 1 ? transps[0] : "divers"}</td>
                     <td className="p-2 whitespace-nowrap">{isGroup ? groupStatus(g.rows) : STATUS_BADGE[g.anchor.status] ?? g.anchor.status}</td>
@@ -213,7 +231,10 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
                     >
                       <td className="p-2 whitespace-nowrap text-xs text-muted-foreground">{fmtDate(r.created_at)}</td>
                       <td className="p-2 pl-8 break-all">{r.recipient}</td>
-                      <td className="p-2 text-xs text-red-600">{r.status === "failed" && r.error ? r.error : ""}</td>
+                      <td className="p-2 text-muted-foreground">
+                        {r.subject ?? "—"}
+                        {r.status === "failed" && r.error ? <div className="text-xs text-red-600">{r.error}</div> : null}
+                      </td>
                       <td className="p-2 whitespace-nowrap text-muted-foreground">{r.transporter}</td>
                       <td className="p-2 whitespace-nowrap">{STATUS_BADGE[r.status] ?? r.status}</td>
                       <td className="p-2">{r.has_attachments ? "📎" : ""}</td>
