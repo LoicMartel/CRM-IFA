@@ -22,25 +22,28 @@ const STATUS_BADGE: Record<string, string> = {
   failed: "❌ Échec",
 };
 
-// Un même envoi métier (une notif interne, une campagne) est loggé une ligne par destinataire.
-// On regroupe les lignes consécutives (le serveur trie par date desc) qui partagent le même objet
-// et tombent dans une courte fenêtre temporelle → une entrée dépliable au lieu de N lignes.
-const GROUP_WINDOW_MS = 2 * 60 * 1000;
-
+// Un même email (notif interne, campagne) est loggé une ligne par destinataire, souvent éparpillé
+// dans le temps. On regroupe par OBJET exact (toutes dates confondues) → une entrée dépliable par
+// objet. Le serveur trie par date desc : le groupe se place à sa 1re apparition (= envoi le plus
+// récent) et ses lignes restent triées desc. Un objet vide n'est jamais fusionné (envoi isolé).
 type EmailGroup = { key: string; subject: string | null; anchor: EmailRow; rows: EmailRow[] };
 
-function groupBySend(rows: EmailRow[]): EmailGroup[] {
+function groupBySubject(rows: EmailRow[]): EmailGroup[] {
   const groups: EmailGroup[] = [];
+  const bySubject = new Map<string, EmailGroup>();
   for (const r of rows) {
-    const last = groups[groups.length - 1];
-    if (
-      last &&
-      (last.anchor.subject ?? "") === (r.subject ?? "") &&
-      Math.abs(new Date(last.anchor.created_at).getTime() - new Date(r.created_at).getTime()) <= GROUP_WINDOW_MS
-    ) {
-      last.rows.push(r);
-    } else {
+    const subj = (r.subject ?? "").trim();
+    if (!subj) {
       groups.push({ key: r.id, subject: r.subject, anchor: r, rows: [r] });
+      continue;
+    }
+    const existing = bySubject.get(subj);
+    if (existing) {
+      existing.rows.push(r);
+    } else {
+      const g: EmailGroup = { key: `subj:${subj}`, subject: r.subject, anchor: r, rows: [r] };
+      bySubject.set(subj, g);
+      groups.push(g);
     }
   }
   return groups;
@@ -101,7 +104,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
     );
   }, [initial, search, status]);
 
-  const groups = useMemo(() => groupBySend(filtered), [filtered]);
+  const groups = useMemo(() => groupBySubject(filtered), [filtered]);
 
   function toggle(key: string) {
     setExpanded((prev) => {
@@ -130,7 +133,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
         <div>
           <h1 className="text-xl font-semibold">Journal des emails</h1>
           <p className="text-sm text-muted-foreground">
-            Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) sur {initial.length} · {groups.length} envoi(s).
+            Preuve d&apos;envoi (Qualiopi) — {filtered.length} email(s) sur {initial.length} · {groups.length} objet(s).
           </p>
         </div>
         <button onClick={exportCsv} className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-sm">
@@ -208,7 +211,7 @@ export function EmailsClient({ initial }: { initial: EmailRow[] }) {
                       onClick={(e) => { e.stopPropagation(); setSelected(r); }}
                       className="border-t align-top cursor-pointer bg-muted/20 hover:bg-muted/50"
                     >
-                      <td className="p-2" />
+                      <td className="p-2 whitespace-nowrap text-xs text-muted-foreground">{fmtDate(r.created_at)}</td>
                       <td className="p-2 pl-8 break-all">{r.recipient}</td>
                       <td className="p-2 text-xs text-red-600">{r.status === "failed" && r.error ? r.error : ""}</td>
                       <td className="p-2 whitespace-nowrap text-muted-foreground">{r.transporter}</td>
