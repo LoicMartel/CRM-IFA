@@ -26,12 +26,13 @@ function isSafeTargetUrl(raw: string): boolean {
 function buildSamplePayload(): VisioformationPayload {
   return {
     meta: { source: "CRM-LCA", event: "adf.formation.push", environment: "preprod", sent_at: new Date().toISOString(), external_reference: "LCA-PLAN-TEST-0001" },
-    formation: { titre: "Performance B2B Outbound", mode: "distanciel", lieu: "Distanciel (visioconférence)", vt_prevues: 6, journees_prevues: 3, duree_totale_heures: 10.5, date_debut: "2026-09-01", date_fin: "2026-09-08" },
+    formation: { titre: "Performance B2B Outbound", mode: "mixte", lieu: "Distanciel (visioconférence)", vt_prevues: 6, journees_prevues: 3, duree_totale_heures: 10.5, date_debut: "2026-09-01", date_fin: "2026-09-08" },
     entreprise: { raison_sociale: "DIVERSIDEES (TEST)", siret: "52474839900012", adresse: "70 RUE JEAN-PIERRE TIMBAUD", ville: "PARIS" },
     formateur: { nom: "Dupont", prenom: "Alexandre", email: "alexandre@closing-academie.com" },
+    // Lieux DIFFÉRENTS par créneau (Iman 13/07 : présentiel possible sur plusieurs sites).
     sessions: [
-      { date: "2026-09-01", type: "VT", heures: 3.5, statut: "planned" },
-      { date: "2026-09-08", type: "journee", heures: 7, statut: "planned" },
+      { date: "2026-09-01", type: "VT", heures: 3.5, statut: "planned", lieu: "Distanciel (visioconférence)" },
+      { date: "2026-09-08", type: "journee", heures: 7, statut: "planned", lieu: "Paris — 70 rue Jean-Pierre Timbaud" },
     ],
     apprenants: [
       { nom: "Chemouny", prenom: "Yohanna", email: "yohanna@diversidees.fr", telephone: "0612345678", fonction: "Dirigeante" },

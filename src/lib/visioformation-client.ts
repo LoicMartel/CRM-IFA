@@ -10,6 +10,11 @@
 // Unité poussée = une FORMATION = un `service_plan` (entreprise + programme + formateur + créneaux
 // + apprenants). Dans le CRM, `training_sessions` = les créneaux (VT/journée) d'un service_plan ;
 // les apprenants sont liés aux créneaux (dédupliqués ici au niveau formation).
+//
+// Unités (Iman 13/07 "les 2" = durée en heures ET en jours) : le CRM stocke TOUT en HEURES
+// (training_sessions.duration_hours). Le "jour" n'est PAS une durée convertie mais un COMPTEUR réel
+// = journees_prevues (service_plans.days_planned). On envoie donc duree_totale_heures (cumul réel) +
+// journees_prevues (nb de journées) — sans jamais convertir heures→jours (aucune base fiable dans le CRM).
 const VF_API_URL = process.env.VF_API_URL ?? "";
 const VF_API_KEY = process.env.VF_API_KEY ?? "";
 
@@ -22,7 +27,7 @@ export interface VisioformationPayload {
   formation: { titre: string | null; mode: string | null; lieu: string | null; vt_prevues: number | null; journees_prevues: number | null; duree_totale_heures: number | null; date_debut: string | null; date_fin: string | null };
   entreprise: { raison_sociale: string | null; siret: string | null; adresse: string | null; ville: string | null };
   formateur: { nom: string | null; prenom: string | null; email: string | null } | null;
-  sessions: Array<{ date: string | null; type: string | null; heures: number | null; statut: string | null }>;
+  sessions: Array<{ date: string | null; type: string | null; heures: number | null; statut: string | null; lieu: string | null }>;
   apprenants: Array<{ nom: string | null; prenom: string | null; email: string | null; telephone: string | null; fonction: string | null }>;
 }
 
@@ -52,6 +57,7 @@ export function buildFormationPayload(plan: FormationRows, trainer: TrainerRow |
     type: s.session_type ?? null,
     heures: s.duration_hours ?? null,
     statut: s.status ?? null,
+    lieu: s.session_location ?? null,  // Iman 13/07 : lieu PAR créneau (présentiel multi-sites possible).
   }));
 
   // Apprenants dédupliqués (un learner peut être lié à plusieurs créneaux) par email, sinon nom complet.
@@ -75,12 +81,13 @@ export function buildFormationPayload(plan: FormationRows, trainer: TrainerRow |
   const dateFin = sessionDates[sessionDates.length - 1] ?? null;
 
   // Durée totale = somme des heures des créneaux (null si aucune heure renseignée, pas 0 trompeur).
+  // Le "jours" attendu par VF = journees_prevues (compteur réel), PAS une conversion heures→jours.
   const heures = sessions.map((s) => s.heures).filter((h): h is number => typeof h === "number");
   const dureeTotale = heures.length ? heures.reduce((a, b) => a + b, 0) : null;
 
-  // Lieu : le CRM stocke le lieu PAR créneau (training_sessions.session_location). On remonte le 1er
-  // lieu renseigné au niveau formation (Loïc demande un lieu de formation). Fallback visio si distanciel
-  // sans lieu saisi. ⚠️ La Route A (push-formation/[id]) doit SELECT session_location sur les créneaux.
+  // Lieu "principal" au niveau formation = 1er lieu renseigné parmi les créneaux (Loïc veut un lieu de
+  // formation). Le lieu PAR créneau est désormais porté par sessions[].lieu (cf. mapping ci-dessus).
+  // Fallback visio si distanciel sans lieu saisi.
   const c = plan.companies ?? null;
   const modeStr = plan.mode ?? plan.format ?? null;
   const sessionLocation = (plan.training_sessions ?? []).map((s) => s.session_location).find((v) => Boolean(v && v.trim())) ?? null;
