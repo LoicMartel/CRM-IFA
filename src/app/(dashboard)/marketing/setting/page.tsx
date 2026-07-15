@@ -29,7 +29,7 @@ export default async function SettingPage() {
       .select("contact_id, type, description, created_at, team_member_id, team_members:team_member_id(id, first_name, last_name)")
       .in("contact_id", leadIds)
       .order("created_at", { ascending: false });
-    activities = data ?? [];
+    activities = (data as typeof activities) ?? [];
   }
 
   // Fetch all active team members for the Account Manager filter
