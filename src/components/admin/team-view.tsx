@@ -245,8 +245,22 @@ export function TeamView({ members }: { members: R[] }) {
   }
 
   async function handleDelete(id: string) {
-    const supabase = createClient();
-    await supabase.from("team_members").delete().eq("id", id);
+    try {
+      const res = await fetch("/api/admin/delete-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: id }),
+      });
+      const result = await res.json();
+      if (!result.success) {
+        alert("Erreur suppression: " + (result.error ?? "Erreur inconnue"));
+        setDeleteConfirm(null);
+        return;
+      }
+      alert(result.message);
+    } catch {
+      alert("Erreur réseau lors de la suppression");
+    }
     setDeleteConfirm(null);
     router.refresh();
   }
