@@ -10,6 +10,7 @@ export default async function TeamPage() {
   const { data: members } = await supabase
     .from("team_members")
     .select("*")
+    .eq("is_active", true)
     .order("last_name");
 
   return (
