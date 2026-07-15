@@ -23,11 +23,19 @@ interface Lead {
   team_members: { id: string; first_name: string; last_name: string }[] | { id: string; first_name: string; last_name: string } | null;
 }
 
+interface TeamMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
 interface Activity {
   contact_id: string;
   type: string;
   description: string | null;
   created_at: string;
+  team_member_id: string | null;
+  team_members: TeamMember | null;
 }
 
 type SettingColumn = "new" | "not_reached" | "contacted_not_booked" | "booked";
@@ -90,16 +98,33 @@ function classifyLead(
   if (hasContactedNotBooked) return "contacted_not_booked";
   if (hasNotReached) return "not_reached";
 
+  // Fallback: use lead_status directly (e.g. booked via booking page, not via activity modal)
+  if (lead.lead_status === "booked") return "booked";
+  if (lead.lead_status === "contacted") return "contacted_not_booked";
+
   // Has activities but no call results → still consider as "new" since no call was made
   return "new";
+}
+
+/** Returns the name of the team member who performed the most recent activity on this lead */
+function getCallerName(lead: Lead, activitiesByContact: Map<string, Activity[]>): string | null {
+  const acts = activitiesByContact.get(lead.id);
+  if (!acts) return null;
+  // Find the most recent activity with a team member (activities are already sorted desc)
+  for (const a of acts) {
+    if (a.team_members) return `${a.team_members.first_name} ${a.team_members.last_name}`;
+  }
+  return null;
 }
 
 export function SettingBoard({
   leads,
   activities,
+  teamMembers,
 }: {
   leads: Lead[];
   activities: Activity[];
+  teamMembers: TeamMember[];
 }) {
   const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -118,8 +143,8 @@ export function SettingBoard({
   }, [activities]);
 
   const ownerNames = useMemo(() => {
-    return Array.from(new Set(leads.map(getOwnerName).filter(Boolean) as string[])).sort();
-  }, [leads]);
+    return teamMembers.map((m) => `${m.first_name} ${m.last_name}`).sort();
+  }, [teamMembers]);
 
   // Classify leads into columns
   const columnLeads = useMemo(() => {
@@ -131,7 +156,11 @@ export function SettingBoard({
     };
 
     let filtered = leads;
-    if (filterOwner) filtered = filtered.filter((l) => getOwnerName(l) === filterOwner);
+    if (filterOwner) filtered = filtered.filter((l) => {
+      const caller = getCallerName(l, activitiesByContact);
+      const owner = getOwnerName(l);
+      return caller === filterOwner || owner === filterOwner;
+    });
     if (filterType) filtered = filtered.filter((l) => getName(l.lead_sources) === filterType);
 
     for (const lead of filtered) {
