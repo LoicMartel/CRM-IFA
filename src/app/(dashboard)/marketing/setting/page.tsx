@@ -20,24 +20,39 @@ export default async function SettingPage() {
     .order("created_at", { ascending: false });
 
   // Fetch activities for these leads to determine their column
+  // Batch in chunks of 200 to avoid URL length limits with large lead sets
   const leadIds = (leads ?? []).map((l) => l.id);
 
-  let activities: { contact_id: string; type: string; description: string | null; created_at: string; team_member_id: string | null; team_members: { id: string; first_name: string; last_name: string } | null }[] = [];
+  type ActivityRow = { contact_id: string; type: string; description: string | null; created_at: string; team_member_id: string | null; team_members: { id: string; first_name: string; last_name: string } | null };
+  let activities: ActivityRow[] = [];
   if (leadIds.length > 0) {
-    const { data } = await supabase
-      .from("activities")
-      .select("contact_id, type, description, created_at, team_member_id, team_members:team_member_id(id, first_name, last_name)")
-      .in("contact_id", leadIds)
-      .order("created_at", { ascending: false });
-    activities = (data as unknown as typeof activities) ?? [];
+    const CHUNK = 200;
+    const chunks: string[][] = [];
+    for (let i = 0; i < leadIds.length; i += CHUNK) chunks.push(leadIds.slice(i, i + CHUNK));
+    const results = await Promise.all(
+      chunks.map((ids) =>
+        supabase
+          .from("activities")
+          .select("contact_id, type, description, created_at, team_member_id, team_members:team_member_id(id, first_name, last_name)")
+          .in("contact_id", ids)
+          .order("created_at", { ascending: false })
+      )
+    );
+    for (const { data } of results) {
+      if (data) activities.push(...(data as unknown as ActivityRow[]));
+    }
   }
 
-  // Fetch all active team members for the Account Manager filter
-  const { data: teamMembers } = await supabase
+  // Fetch Account Managers + Marketing Managers for the filter dropdown
+  const { data: allMembers } = await supabase
     .from("team_members")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, roles")
     .eq("is_active", true)
     .order("last_name");
+  const teamMembers = (allMembers ?? []).filter((m) => {
+    const roles = (m.roles as string[]) ?? [];
+    return roles.includes("Account Manager") || roles.includes("Marketing Manager");
+  });
 
   return (
     <>
