@@ -35,7 +35,7 @@ interface Activity {
   description: string | null;
   created_at: string;
   team_member_id: string | null;
-  team_members: TeamMember | null;
+  team_members: TeamMember | TeamMember[] | null;
 }
 
 type SettingColumn = "new" | "not_reached" | "contacted_not_booked" | "booked";
@@ -112,7 +112,10 @@ function getCallerName(lead: Lead, activitiesByContact: Map<string, Activity[]>)
   if (!acts) return null;
   // Find the most recent activity with a team member (activities are already sorted desc)
   for (const a of acts) {
-    if (a.team_members) return `${a.team_members.first_name} ${a.team_members.last_name}`;
+    const tm = a.team_members;
+    if (!tm) continue;
+    const m = Array.isArray(tm) ? tm[0] : tm;
+    if (m) return `${m.first_name} ${m.last_name}`;
   }
   return null;
 }
