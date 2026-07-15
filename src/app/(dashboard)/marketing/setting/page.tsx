@@ -16,7 +16,7 @@ export default async function SettingPage() {
     .eq("was_lead_marketing", true)
     .eq("is_client", false)
     .not("lifecycle_stage", "in", '("customer","former_customer")')
-    .in("lead_status", ["lead", "contacted"])
+    .in("lead_status", ["lead", "contacted", "booked"])
     .order("created_at", { ascending: false });
 
   // Fetch activities for these leads to determine their column
