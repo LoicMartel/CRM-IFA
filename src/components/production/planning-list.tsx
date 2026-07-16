@@ -454,16 +454,22 @@ export function PlanningList({
     return (Number(plan.budget) || 0) - consumed;
   }
 
-  const activePlans = filtered.filter(p => {
+  function isPlanCompleted(p: ServicePlanRow): boolean {
     const budgetInitial = Number(p.budget) || 0;
-    if (budgetInitial === 0) return true;
-    return getPlanBudgetRemaining(p) > 0;
-  });
-  const completedPlans = filtered.filter(p => {
-    const budgetInitial = Number(p.budget) || 0;
-    if (budgetInitial === 0) return false;
-    return getPlanBudgetRemaining(p) <= 0;
-  });
+    // Budget défini et entièrement consommé
+    if (budgetInitial > 0) return getPlanBudgetRemaining(p) <= 0;
+    // Pas de budget : terminé si toutes les sessions prévues sont réalisées
+    const sessions = p.training_sessions ?? [];
+    const vtTotal = Number(p.vt_planned) || 0;
+    const daysTotal = Number(p.days_planned) || 0;
+    if (vtTotal === 0 && daysTotal === 0) return false;
+    const vtDone = sessions.filter(s => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
+    const daysDone = sessions.filter(s => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
+    return vtDone >= vtTotal && daysDone >= daysTotal;
+  }
+
+  const activePlans = filtered.filter(p => !isPlanCompleted(p));
+  const completedPlans = filtered.filter(p => isPlanCompleted(p));
 
   const displayPlans = activeTab === "en_cours" ? activePlans : completedPlans;
 
