@@ -457,7 +457,7 @@ export function PlanningList({
   function isPlanCompleted(p: ServicePlanRow): boolean {
     const budgetInitial = Number(p.budget) || 0;
     // Budget défini et entièrement consommé
-    if (budgetInitial > 0) return getPlanBudgetRemaining(p) <= 0;
+    if (budgetInitial > 0) return Math.round(getPlanBudgetRemaining(p)) <= 0;
     // Pas de budget : terminé si toutes les sessions prévues sont réalisées
     const sessions = p.training_sessions ?? [];
     const vtTotal = Number(p.vt_planned) || 0;
