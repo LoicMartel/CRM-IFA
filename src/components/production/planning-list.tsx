@@ -17,7 +17,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, X, HelpCircle, ArrowUpDown } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, User, Phone, Mail, CalendarPlus, Trash2, Video, Building2, Pencil, X, HelpCircle, ArrowUpDown, Archive } from "lucide-react";
 type PlanImportRow = Record<string, any>;
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentRoles } from "@/lib/use-current-roles";
@@ -187,6 +187,7 @@ export function PlanningList({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [filterTrainer, setFilterTrainer] = useState("");
   const [filterCompany, setFilterCompany] = useState("");
+  const [activeTab, setActiveTab] = useState<"en_cours" | "termines">("en_cours");
   const searchParams = useSearchParams();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
     const planId = searchParams.get("planId");
@@ -444,21 +445,43 @@ export function PlanningList({
     return sortDirection === "asc" ? cmp : -cmp;
   });
 
-  // KPIs based on filtered plans
-  const filteredSessions = filtered.flatMap((p) => p.training_sessions ?? []);
-  const kpiPlansCount = filtered.length;
+  // Split filtered plans into active vs completed (budget fully consumed)
+  function getPlanBudgetRemaining(plan: ServicePlanRow): number {
+    const sessions = plan.training_sessions ?? [];
+    const hr = Number(plan.hourly_rate) || 0;
+    const billableDone = sessions.filter(s => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
+    const consumed = billableDone.reduce((s, sess) => s + (Number(sess.duration_hours) || 0) * (sess.hourly_rate ?? hr), 0);
+    return (Number(plan.budget) || 0) - consumed;
+  }
+
+  const activePlans = filtered.filter(p => {
+    const budgetInitial = Number(p.budget) || 0;
+    if (budgetInitial === 0) return true;
+    return getPlanBudgetRemaining(p) > 0;
+  });
+  const completedPlans = filtered.filter(p => {
+    const budgetInitial = Number(p.budget) || 0;
+    if (budgetInitial === 0) return false;
+    return getPlanBudgetRemaining(p) <= 0;
+  });
+
+  const displayPlans = activeTab === "en_cours" ? activePlans : completedPlans;
+
+  // KPIs based on displayed plans
+  const filteredSessions = displayPlans.flatMap((p) => p.training_sessions ?? []);
+  const kpiPlansCount = displayPlans.length;
   const kpiVtDone = filteredSessions.filter((s) => s.session_type === "vt" && (s.status === "done" || s.status === "no_show")).length;
-  const kpiVtTotal = filtered.reduce((s, p) => s + (Number(p.vt_planned) || 0), 0);
+  const kpiVtTotal = displayPlans.reduce((s, p) => s + (Number(p.vt_planned) || 0), 0);
   const kpiDaysDone = filteredSessions.filter((s) => s.session_type === "journee" && (s.status === "done" || s.status === "no_show")).length;
-  const kpiDaysTotal = filtered.reduce((s, p) => s + (Number(p.days_planned) || 0), 0);
+  const kpiDaysTotal = displayPlans.reduce((s, p) => s + (Number(p.days_planned) || 0), 0);
   const kpiLearners = new Set(
-    filtered.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
+    displayPlans.flatMap((p) => (p.service_plan_learners ?? []).map((spl) => spl.learner_id))
   ).size;
   const trainerMemberId = filterTrainer ? (expertMembers.find((m) => (m as any).first_name === filterTrainer) as any)?.id ?? null : null;
   const kpiLearnersActuel = allLearners.filter((l) =>
     l.status === "actuel" && (!trainerMemberId || l.expert_id === trainerMemberId)
   ).length;
-  const kpiBudget = filtered.reduce((s, p) => s + (Number(p.budget) || 0), 0);
+  const kpiBudget = displayPlans.reduce((s, p) => s + (Number(p.budget) || 0), 0);
 
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
@@ -975,15 +998,82 @@ export function PlanningList({
         </button>
       </div>
 
+      {/* Tabs: En cours / Terminés */}
+      <div style={{ display: "flex", gap: 0, marginTop: 8, marginBottom: 4, borderBottom: "2px solid #e5e7eb" }}>
+        <button
+          onClick={() => setActiveTab("en_cours")}
+          style={{
+            padding: "8px 20px",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            border: "none",
+            borderBottom: activeTab === "en_cours" ? "2px solid #1a6b9c" : "2px solid transparent",
+            marginBottom: -2,
+            background: "transparent",
+            color: activeTab === "en_cours" ? "#1a6b9c" : "#8399a9",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            transition: "color 0.15s, border-color 0.15s",
+          }}
+        >
+          En cours
+          <span style={{
+            background: activeTab === "en_cours" ? "#e8f0fe" : "#f1f5f9",
+            color: activeTab === "en_cours" ? "#1a6b9c" : "#8399a9",
+            borderRadius: 10,
+            padding: "1px 8px",
+            fontSize: 11,
+            fontWeight: 800,
+          }}>
+            {activePlans.length}
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("termines")}
+          style={{
+            padding: "8px 20px",
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: "pointer",
+            border: "none",
+            borderBottom: activeTab === "termines" ? "2px solid #27ae60" : "2px solid transparent",
+            marginBottom: -2,
+            background: "transparent",
+            color: activeTab === "termines" ? "#27ae60" : "#8399a9",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            transition: "color 0.15s, border-color 0.15s",
+          }}
+        >
+          <Archive className="h-3.5 w-3.5" />
+          Terminés
+          <span style={{
+            background: activeTab === "termines" ? "#e8f5e9" : "#f1f5f9",
+            color: activeTab === "termines" ? "#27ae60" : "#8399a9",
+            borderRadius: 10,
+            padding: "1px 8px",
+            fontSize: 11,
+            fontWeight: 800,
+          }}>
+            {completedPlans.length}
+          </span>
+        </button>
+      </div>
+
       <div style={{ fontSize: 13, color: "#8399a9" }}>
-        {filtered.length} plan{filtered.length > 1 ? "s" : ""} sur {servicePlans.length}
+        {displayPlans.length} plan{displayPlans.length > 1 ? "s" : ""} sur {servicePlans.length}
       </div>
 
       {/* Plans list */}
       <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#8399a9", padding: 32 }}>Aucun plan de formation trouvé</div>
-        ) : filtered.map((plan) => {
+        {displayPlans.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#8399a9", padding: 32 }}>
+            {activeTab === "termines" ? "Aucun plan de formation terminé" : "Aucun plan de formation trouvé"}
+          </div>
+        ) : displayPlans.map((plan) => {
           const isExpanded = expandedIds.has(plan.id);
           const planLearners = ((plan.service_plan_learners ?? []).map((spl) => spl.learners).filter(Boolean) as LearnerNested[]).sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '', 'fr'));
           const sessions = (plan.training_sessions ?? []) as TrainingSession[];
