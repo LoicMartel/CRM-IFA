@@ -41,14 +41,10 @@ export async function updateSession(request: NextRequest) {
     // against the cached JWKS public key and only hits the network to refresh an expired token.
     const { data: claims } = await supabase.auth.getClaims();
 
-    // Only redirect if no valid session AND no Supabase auth cookies present (avoids flash on token refresh)
     if (!claims) {
-      const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
-      if (!hasAuthCookie) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/login";
-        return NextResponse.redirect(url);
-      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
     }
   }
 
