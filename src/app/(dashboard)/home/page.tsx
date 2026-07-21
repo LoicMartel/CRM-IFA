@@ -71,12 +71,13 @@ export default async function HomePage() {
       { data: us },
       { data: ot },
     ] = await Promise.all([
-      // Today meetings assigned to me
+      // Today meetings assigned to me (hide cancelled + originals processed via contact detail)
       supabase.from("meetings").select(meetingSelect)
         .eq("assigned_to", currentMemberId)
         .gte("scheduled_at", `${today}T00:00:00`)
         .lte("scheduled_at", `${today}T23:59:59`)
         .neq("status", "cancelled")
+        .or("next_step.neq.completed,next_step.is.null")
         .order("scheduled_at", { ascending: true }),
 
       // Today meetings where I'm a manager (via meeting_managers)
@@ -86,6 +87,7 @@ export default async function HomePage() {
             .gte("scheduled_at", `${today}T00:00:00`)
             .lte("scheduled_at", `${today}T23:59:59`)
             .neq("status", "cancelled")
+            .or("next_step.neq.completed,next_step.is.null")
             .order("scheduled_at", { ascending: true })
         : Promise.resolve({ data: [] }),
 
