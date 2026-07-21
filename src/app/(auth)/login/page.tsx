@@ -49,6 +49,9 @@ export default function LoginPage() {
         return;
       }
 
+      // Initialize the session-activity cookie so the middleware lets the user through
+      await fetch("/api/auth/session-init", { method: "POST" });
+
       router.push("/home");
       router.refresh();
     } catch {

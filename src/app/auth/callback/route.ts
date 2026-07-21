@@ -53,6 +53,12 @@ export async function GET(request: Request) {
     pendingCookies.forEach(({ name, value, options }) => {
       response.cookies.set(name, value, options as any);
     });
+    // Initialize session-activity cookie for the middleware gate
+    response.cookies.set("crm-session-ts", String(Date.now()), {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: true,
+    });
     return response;
   }
 
