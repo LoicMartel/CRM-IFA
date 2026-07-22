@@ -248,7 +248,7 @@ export function PlanningList({
 
   // Session add state
   const [sessionPlanId, setSessionPlanId] = useState<string | null>(null);
-  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [] as string[], custom_title: "" });
+  const [sessionForm, setSessionForm] = useState({ session_type: "vt" as "vt" | "journee", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [] as string[], custom_title: "", send_notifications: true });
   const [savingSession, setSavingSession] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const importQueue: PlanImportRow[] = [];
@@ -686,23 +686,25 @@ export function PlanningList({
         );
       }
       // Sync: update Google Calendar + notify expert & learners (incluant retraits)
-      try {
-        const notifyRes = await fetch("/api/gcal/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId: editingSessionId,
-            isUpdate: true,
-            customTitle: sessionForm.custom_title || undefined,
-            removedTrainerNames,
-            removedLearnerIds,
-          }),
-        });
-        const notifyData = await notifyRes.json();
-        if (notifyData.success) {
-          setSyncPopup({ sessionId: editingSessionId, syncData: { title: notifyData.title, results: notifyData.results } });
-        }
-      } catch (e) { /* silently fail */ }
+      if (sessionForm.send_notifications) {
+        try {
+          const notifyRes = await fetch("/api/gcal/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: editingSessionId,
+              isUpdate: true,
+              customTitle: sessionForm.custom_title || undefined,
+              removedTrainerNames,
+              removedLearnerIds,
+            }),
+          });
+          const notifyData = await notifyRes.json();
+          if (notifyData.success) {
+            setSyncPopup({ sessionId: editingSessionId, syncData: { title: notifyData.title, results: notifyData.results } });
+          }
+        } catch (e) { /* silently fail */ }
+      }
     } else {
       // Insert new session
       const { data: newSession } = await supabase.from("training_sessions").insert({
@@ -717,7 +719,7 @@ export function PlanningList({
       }
 
       // Auto-sync: Google Calendar + Slack + Email
-      if (newSession) {
+      if (newSession && sessionForm.send_notifications) {
         try {
           const notifyRes = await fetch("/api/gcal/notify", {
             method: "POST",
@@ -735,7 +737,7 @@ export function PlanningList({
     setSavingSession(false);
     setSessionPlanId(null);
     setEditingSessionId(null);
-    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: "" });
+    setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: "", send_notifications: true });
     refetchPlans();
   }
 
@@ -777,6 +779,7 @@ export function PlanningList({
       notes: s.notes ?? "",
       learner_ids: existingLearnerIds,
       custom_title: autoTitle,
+      send_notifications: false,
     });
   }
 
@@ -1300,7 +1303,7 @@ export function PlanningList({
                       <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 14 }}>Sessions planifiées</span>
                       {!isRestrictedExterne && !isReadOnly && (<>
                       <button
-                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t }); }}
+                        onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t, send_notifications: true }); }}
                         style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
@@ -2274,10 +2277,16 @@ export function PlanningList({
                     })}
                   </div>
                 </div>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-                  <input type="checkbox" checked={sessionForm.is_billable} onChange={(e) => setSessionForm({ ...sessionForm, is_billable: e.target.checked })} style={{ accentColor: "#27ae60" }} />
-                  <span style={{ fontWeight: sessionForm.is_billable ? 600 : 400, color: sessionForm.is_billable ? "#27ae60" : "#8399a9" }}>{sessionForm.is_billable ? "Facturable" : "Non facturable"}</span>
-                </label>
+                <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                    <input type="checkbox" checked={sessionForm.is_billable} onChange={(e) => setSessionForm({ ...sessionForm, is_billable: e.target.checked })} style={{ accentColor: "#27ae60" }} />
+                    <span style={{ fontWeight: sessionForm.is_billable ? 600 : 400, color: sessionForm.is_billable ? "#27ae60" : "#8399a9" }}>{sessionForm.is_billable ? "Facturable" : "Non facturable"}</span>
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+                    <input type="checkbox" checked={sessionForm.send_notifications} onChange={(e) => setSessionForm({ ...sessionForm, send_notifications: e.target.checked })} style={{ accentColor: "#1a6b9c" }} />
+                    <span style={{ fontWeight: sessionForm.send_notifications ? 600 : 400, color: sessionForm.send_notifications ? "#1a6b9c" : "#8399a9" }}>{sessionForm.send_notifications ? "Envoyer les notifications" : "Pas de notifications"}</span>
+                  </label>
+                </div>
                 {sessionForm.is_billable && (
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Taux horaire (€/h) — vide = taux du plan</label>
