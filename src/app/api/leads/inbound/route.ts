@@ -4,6 +4,7 @@ import { z } from "zod";
 import { sendSessionEmail } from "@/lib/send-email";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import type { IngestResult } from "@/lib/inbox/ingest";
+import { shouldUseResendBookFallback } from "@/lib/inbox/book-delivery";
 // Stages au-delà du lead marketing : une re-soumission de formulaire (ou un POST forgé — route
 // publique) ne doit JAMAIS les rétrograder ni écraser l'identité de la fiche.
 import { PROTECTED_STAGES } from "@/lib/inbox/types";
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
     const { firstName, lastName, email, phone, website, source, clientType } = parsed.data;
     // Source effective : l'agence authentifiée prime sur le champ `source` du payload.
     const effectiveSource = agencySlug ?? source ?? "";
+    const isBookSource = source === "landing-book-financement" || source === "embed-form-book";
 
     const wf = await loadWorkflow("landing-page-lead");
     if (wf && !wf.is_active) {
@@ -188,6 +190,7 @@ export async function POST(request: Request) {
     // Remonté AVANT les notifs/book : isNewConversation sert de garde anti-rejeu (une
     // re-soumission du même email ne re-notifie pas l'équipe et ne renvoie pas le book).
     let inboxResult: IngestResult | null | undefined;
+    let bookDeliveredByAdam = false;
     try {
       const { ingestIncoming, svc } = await import("@/lib/inbox/ingest");
       const { classifyConversation } = await import("@/lib/inbox/classify");
@@ -219,7 +222,7 @@ export async function POST(request: Request) {
           const v = await evaluateEligibility(result.conversationId, result.isExistingContact, "web_form", body);
           if (v.eligible) {
             await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
-            await sendGreeting(result.conversationId).catch(() => {});
+            bookDeliveredByAdam = await sendGreeting(result.conversationId, { book: isBookSource }).catch(() => false);
           }
         }
       }
@@ -228,10 +231,15 @@ export async function POST(request: Request) {
     // Gardes anti-rejeu (route publique, non rate-limitée) :
     // - notifs équipe : fail-open (si l'ingest a planté on notifie quand même), bloquées
     //   uniquement quand on SAIT que c'est une re-soumission (conversation déjà existante) ;
-    // - book PDF : fail-closed (envoyé uniquement sur une conversation neuve) — sinon un POST
-    //   répété permettrait de bombarder la boîte d'un tiers avec la PJ.
+    // - book PDF : la livraison principale passe par Adam/contact@ ; Resend ne sert que de
+    //   secours si cet envoi a échoué, toujours uniquement sur une conversation neuve.
+    //   Une re-soumission ne peut donc pas bombarder la boîte d'un tiers.
     const notifyTeam = !(inboxResult && !inboxResult.isNewConversation);
-    const sendBook = inboxResult?.isNewConversation === true;
+    const sendBookFallback = shouldUseResendBookFallback({
+      isBookSource,
+      isNewConversation: inboxResult?.isNewConversation === true,
+      deliveredByAdam: bookDeliveredByAdam,
+    });
 
     // 3. Send email notification to Alexandre, Rafi and Loïc
     const LEAD_NOTIFY_EMAILS = [
@@ -280,8 +288,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Send thank-you email with book PDF for book-related sources
-    if (sendBook && (source === "landing-book-financement" || source === "embed-form-book") && email && isStepActive(wf, "send-book-pdf").active) {
+    // 4. Fail-open fallback: if contact@ could not deliver the book, preserve the former
+    // Resend email with the PDF attachment so a valid book request never loses its download.
+    if (sendBookFallback && email && isStepActive(wf, "send-book-pdf").active) {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crm-lca.vercel.app";
         const pdfRes = await fetch(`${baseUrl}/book-financement-gratuit.pdf`);

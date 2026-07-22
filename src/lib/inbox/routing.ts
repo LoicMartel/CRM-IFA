@@ -9,7 +9,10 @@ import { resolveBookingLink } from "./booking-links";
 export type InboxMode = "agent" | "copilot" | "classify";
 export type ReplyMode = "off" | "draft" | "auto";
 
-const DEFAULT_DISPLAY_NAME = "Rafi";
+// Adam = l'assistant IA (persona par défaut depuis le 22/07 — décision Rafi). Les greetings et
+// tours d'agent sans compte configuré (web_form) signent Adam, plus « Rafi » (incohérent avec
+// l'intro « je suis Adam » et l'annonce IA assumée).
+const DEFAULT_DISPLAY_NAME = "Adam";
 
 // Persona (de-hardcoded from agent.ts). P1 only needs name/signature/booking link;
 // voiceProfile (brand-voice block) lands at chantier F P2.
@@ -45,7 +48,9 @@ function buildPersona(row?: AccountRow | null): InboxPersona {
   const displayName = row?.display_name?.trim() || DEFAULT_DISPLAY_NAME;
   return {
     displayName,
-    signature: row?.signature?.trim() || `${displayName}, Expert La Closing Académie`,
+    signature: row?.signature?.trim() || (displayName === "Adam"
+      ? "Adam, assistant IA de La Closing Académie"
+      : `${displayName}, Expert La Closing Académie`),
     bookingLink: row?.booking_link?.trim() || resolveBookingLink(),
     voiceProfile: row?.voice_profile?.trim() || null,
   };

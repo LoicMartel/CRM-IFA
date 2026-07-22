@@ -59,6 +59,10 @@ const TOOLS: Anthropic.Tool[] = [
 ];
 
 const EMAIL_SUBJECT = "Votre demande — La Closing Académie";
+const BOOK_SUBJECT = "Votre Book Financements 2026 est prêt !";
+const APP_BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://crm-lca.vercel.app";
+const BOOK_PDF_URL = `${APP_BASE}/book-financement-gratuit.pdf`;
+const BOOK_UPSELL_URL = "https://buy.stripe.com/14A28qgEA89xf1J9aOfYY06";
 
 interface DeliverOpts {
   toName?: string | null;
@@ -99,23 +103,50 @@ function buildGreeting(firstName: string, persona: InboxPersona): string {
   ].join("\n");
 }
 
+// Book-lead greeting (option A, 22/07): ONE email from contact@ delivers the book AND opens the
+// conversation — replaces the separate Resend book email (kept as fail-open fallback in the route).
+function buildBookGreeting(firstName: string, persona: InboxPersona): string {
+  const hello = firstName ? `Bonjour ${firstName},` : "Bonjour,";
+  return [
+    hello,
+    "",
+    "Enchanté, je suis Adam, l'assistant IA de La Closing Académie 😊",
+    "Merci pour votre intérêt ! Voici votre Book Financements édition 2026 :",
+    BOOK_PDF_URL,
+    "",
+    "Vous y découvrirez comment intégrer les financements dans votre discours commercial, identifier les bons dispositifs selon vos prospects, et transformer un « je n'ai pas le budget » en solution.",
+    "",
+    "Pour la version complète avec tous les dispositifs (OPCO, FAF, CPF, France Travail…) :",
+    BOOK_UPSELL_URL,
+    "",
+    "Et si vous souhaitez échanger sur vos enjeux commerciaux, je vous propose un rendez-vous de 15 minutes avec un de nos experts — il pourra personnaliser nos réponses par rapport à votre contexte :",
+    persona.bookingLink,
+    "",
+    "Si vous avez la moindre question, répondez directement à ce message.",
+    "",
+    persona.signature,
+  ].join("\n");
+}
+
 /**
  * 1er contact d'un lead "fiche" (formulaire/agence). Envoie un message d'accueil
- * déterministe signé Rafi AVANT tout tour d'agent dynamique. L'agent (runAgentTurn)
+ * déterministe signé Adam AVANT tout tour d'agent dynamique. L'agent (runAgentTurn)
  * prend le relais quand le lead répond. Même verrou anti-race que runAgentTurn.
+ * Retourne true si le message est PARTI (le caller book s'en sert pour décider du
+ * fallback Resend — fail-open : greeting raté => l'ancien email book part quand même).
  */
-export async function sendGreeting(conversationId: string): Promise<void> {
+export async function sendGreeting(conversationId: string, opts: { book?: boolean } = {}): Promise<boolean> {
   const sb = svc();
   const { data: conv } = await sb.from("conversations")
     .select("channel, account_id, external_chat_id, agent_status, contacts(first_name, email)")
     .eq("id", conversationId).maybeSingle();
-  if (!conv || conv.agent_status !== "active") return;
+  if (!conv || conv.agent_status !== "active") return false;
 
   const contact = Array.isArray(conv.contacts) ? conv.contacts[0] : conv.contacts;
   const firstName = ((contact as { first_name: string | null } | null)?.first_name ?? "").trim();
   const to = (contact as { email: string | null } | null)?.email ?? null;
   const persona = await resolvePersona(conv.account_id);
-  const text = buildGreeting(firstName, persona);
+  const text = opts.book ? buildBookGreeting(firstName, persona) : buildGreeting(firstName, persona);
 
   // Verrou CAS anti-double-envoi : le greeting est le 1er acte de l'agent → agent_last_acted_at est
   // TOUJOURS null à ce stade. On ne "gagne" le tour que si c'est encore le cas (aucun autre greeting
@@ -125,27 +156,30 @@ export async function sendGreeting(conversationId: string): Promise<void> {
     .update({ agent_last_acted_at: new Date().toISOString() })
     .eq("id", conversationId).eq("agent_status", "active").is("agent_last_acted_at", null)
     .select("id").maybeSingle();
-  if (!lock) return;
+  if (!lock) return false;
 
   if (!unipileConfigured()) {
     // Fail loud, pas de skip silencieux : le lead n'est pas contacté → un humain doit le rappeler,
     // et l'escalade sort la conversation de 'active' (le cron ne relance plus dans le vide).
     console.warn("[inbox.agent] Unipile not configured — greeting not sent, escalating.");
     await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — message d'accueil non envoyé, lead à contacter manuellement.", { feedPost: false });
-    return;
+    return false;
   }
 
   try {
-    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text);
+    const ext = await deliver(conv.channel as Channel, conv.account_id, conv.external_chat_id, to, text,
+      opts.book ? { subject: BOOK_SUBJECT } : {});
     await sb.from("messages").insert({
       conversation_id: conversationId, direction: "outbound", sent_by: "agent", body: text,
       external_message_id: ext.id, status: "sent", sent_at: new Date().toISOString(),
     });
     await sb.from("conversations").update({ agent_turn_count: 1 }).eq("id", conversationId);
     await logMessageActivity(sb, conversationId, { direction: "outbound", channel: conv.channel as Channel, sentBy: "agent", body: text });
+    return true;
   } catch (e) {
     console.error("[inbox.agent] greeting send failed:", e);
     await escalateConversation(conversationId, "low_confidence", "Échec d'envoi du message d'accueil.", { feedPost: false });
+    return false;
   }
 }
 
