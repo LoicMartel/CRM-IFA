@@ -21,11 +21,26 @@ Utilise "escalate" UNIQUEMENT pour les vrais incidents: mécontentement/refus/to
 réponse incomprehensible ou doute réel sur ton prochain message ("low_confidence"). Sinon "reply" pour avancer.
 Applique strictement les règles du bloc CONTEXTE ci-dessous (identité, 3 filtres de qualification, prix, escalade).`;
 
+// DM channels get a dedicated conversational contract (22/07, validated Teina/Rafi direction):
+// short messages, ONE question per turn, and the booking link is EARNED by qualification —
+// never dumped in the first message like the email flow does. Email keeps the original style.
+const CHAT_CHANNELS: Channel[] = ["instagram", "whatsapp", "messenger"];
+
+const DM_STYLE = `STYLE DM (canal chat — Instagram/WhatsApp/Messenger) — remplace le style email:
+- Messages COURTS (1-3 phrases max), ton naturel de messagerie, tutoiement interdit — reste au vouvoiement chaleureux. Un emoji léger maximum par message.
+- SÉQUENCE DE QUALIFICATION : pose UNE seule question par message, jamais deux. Déroule les 3 filtres naturellement (activité/rôle d'abord — la réponse couvre souvent plusieurs filtres d'un coup).
+- Ne propose PAS le lien de rendez-vous dans ton premier message. Tu ne l'envoies (send_booking_link) QUE lorsqu'au moins un des 3 filtres est clairement vert.
+- Si le lead demande d'emblée un rendez-vous ou les prix, applique les règles du bloc CONTEXTE (prix → message type + RDV).
+- Pas de signature formelle en fin de message (c'est un chat, pas un email).`;
+
+const INSTAGRAM_IDENTITY = `IDENTITÉ SUR CE CANAL (compte Instagram de la marque) : présente-toi comme « Adam, l'assistant IA de La Closing Académie » (pas « de Rafi » — tu parles au nom de la marque).`;
+
 // System prompt = base rules + LCA grounding context (positioning + offer catalogue, so the
-// agent stops hallucinating a generic B2C pitch). A voice profile (chantier F P2) is appended
-// when present.
-function buildSystemPrompt(persona: InboxPersona): string {
-  const base = `${SYSTEM_BASE}\n\n${LCA_CONTEXT}`;
+// agent stops hallucinating a generic B2C pitch) + channel style + optional voice profile.
+function buildSystemPrompt(persona: InboxPersona, channel: Channel): string {
+  let base = `${SYSTEM_BASE}\n\n${LCA_CONTEXT}`;
+  if (CHAT_CHANNELS.includes(channel)) base += `\n\n${DM_STYLE}`;
+  if (channel === "instagram") base += `\n\n${INSTAGRAM_IDENTITY}`;
   return persona.voiceProfile
     ? `${base}\n\nVOICE PROFILE — rédige en respectant ce style:\n${persona.voiceProfile}`
     : base;
@@ -171,7 +186,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   try {
     decision = await anthropic.messages.create({
       model: "claude-sonnet-4-6", max_tokens: 600, temperature: 0, // agent déterministe (design 03/07)
-      system: buildSystemPrompt(persona), tools: TOOLS,
+      system: buildSystemPrompt(persona, conv.channel as Channel), tools: TOOLS,
       tool_choice: { type: "any" }, messages: [{ role: "user", content: prompt }],
     });
   } catch (e) {
