@@ -131,7 +131,7 @@ export async function sendGreeting(conversationId: string): Promise<void> {
     // Fail loud, pas de skip silencieux : le lead n'est pas contacté → un humain doit le rappeler,
     // et l'escalade sort la conversation de 'active' (le cron ne relance plus dans le vide).
     console.warn("[inbox.agent] Unipile not configured — greeting not sent, escalating.");
-    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — message d'accueil non envoyé, lead à contacter manuellement.");
+    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — message d'accueil non envoyé, lead à contacter manuellement.", { feedPost: false });
     return;
   }
 
@@ -145,7 +145,7 @@ export async function sendGreeting(conversationId: string): Promise<void> {
     await logMessageActivity(sb, conversationId, { direction: "outbound", channel: conv.channel as Channel, sentBy: "agent", body: text });
   } catch (e) {
     console.error("[inbox.agent] greeting send failed:", e);
-    await escalateConversation(conversationId, "low_confidence", "Échec d'envoi du message d'accueil.");
+    await escalateConversation(conversationId, "low_confidence", "Échec d'envoi du message d'accueil.", { feedPost: false });
   }
 }
 
@@ -169,7 +169,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
   // Sans Unipile configuré l'agent ne peut pas envoyer : escalade AVANT l'appel LLM (pas de skip
   // silencieux qui laisse la conversation active et fait payer un appel IA à chaque relance cron).
   if (!unipileConfigured()) {
-    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — l'agent ne peut pas répondre, lead à traiter manuellement.");
+    await escalateConversation(conversationId, "low_confidence", "Unipile non configuré — l'agent ne peut pas répondre, lead à traiter manuellement.", { feedPost: false });
     return;
   }
 
@@ -191,7 +191,7 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     });
   } catch (e) {
     console.error("[inbox.agent] anthropic error:", e);
-    await escalateConversation(conversationId, "low_confidence", "Erreur technique de l'agent IA.");
+    await escalateConversation(conversationId, "low_confidence", "Erreur technique de l'agent IA.", { feedPost: false });
     return;
   }
 
@@ -253,6 +253,6 @@ export async function runAgentTurn(conversationId: string, isFollowup = false): 
     await logMessageActivity(sb, conversationId, { direction: "outbound", channel: conv.channel as Channel, sentBy: "agent", body: text });
   } catch (e) {
     console.error("[inbox.agent] send failed:", e);
-    await escalateConversation(conversationId, "low_confidence", "Échec d'envoi de la réponse de l'agent.");
+    await escalateConversation(conversationId, "low_confidence", "Échec d'envoi de la réponse de l'agent.", { feedPost: false });
   }
 }

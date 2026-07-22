@@ -20,7 +20,11 @@ const ESCALATION_POST_CATEGORY = process.env.INBOX_ESCALATION_POST_CATEGORY ?? "
 export async function escalateConversation(
   conversationId: string,
   reason: EscalationReason,
-  summary: string
+  summary: string,
+  // feedPost=false → technical failures (send error, missing config): bell notification + inbox
+  // badge only. They flooded the team feed with dozens of identical "Doute de l'agent IA. Échec
+  // d'envoi…" posts (observed 18-21/07, pre-contact@ era) and drowned real lead escalations.
+  opts: { feedPost?: boolean } = {}
 ): Promise<void> {
   const sb = svc();
   const { data: conv } = await sb.from("conversations")
@@ -36,12 +40,14 @@ export async function escalateConversation(
 
   // Post dans le feed d'équipe (author = owner). Slack suit via l'intégration posts existante.
   if (conv.owner_id) {
-    await sb.from("posts").insert({
-      author_id: conv.owner_id,
-      title,
-      content: body,
-      category: ESCALATION_POST_CATEGORY,
-    });
+    if (opts.feedPost !== false) {
+      await sb.from("posts").insert({
+        author_id: conv.owner_id,
+        title,
+        content: body,
+        category: ESCALATION_POST_CATEGORY,
+      });
+    }
     // Notification cloche ciblée → lien direct vers le thread inbox
     await createNotification({
       recipientId: conv.owner_id,

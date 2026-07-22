@@ -9,6 +9,7 @@ import { runAgentTurn } from "@/lib/inbox/agent";
 import { exitEnrollments } from "@/lib/nurture/enrollment";
 import { resolveInboxAccount } from "@/lib/inbox/routing";
 import { shouldSkipScoring } from "@/lib/inbox/upstream-filter";
+import { getChatPeer } from "@/lib/unipile/client";
 import type { Channel, IncomingMessage } from "@/lib/inbox/types";
 
 // Unipile sends TWO distinct flat webhooks.
@@ -261,6 +262,18 @@ export async function POST(req: NextRequest) {
     mapped = mapMessaging(parsed.data);
   }
   if ("ignore" in mapped) return NextResponse.json({ ok: true, ignored: mapped.ignore });
+
+  // IG/Messenger webhooks often ship without attendee_name → the contact lands as "Inconnu"/handle.
+  // One attendees lookup fills the real display name (+ public @username as a readable handle).
+  // Best-effort: a failure never blocks ingestion.
+  if (!("ignore" in mapped) && mapped.direction === "inbound" && !mapped.senderName
+      && ["instagram", "messenger"].includes(mapped.channel) && mapped.externalChatId) {
+    const peer = await getChatPeer(mapped.externalChatId);
+    if (peer) {
+      mapped.senderName = peer.name ?? mapped.senderName;
+      if (peer.publicIdentifier) mapped.senderHandle = peer.publicIdentifier;
+    }
+  }
 
   try {
     const result = await ingestIncoming(mapped);

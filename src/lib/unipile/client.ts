@@ -37,6 +37,29 @@ export async function sendChatMessage(chatId: string, text: string): Promise<Uni
   return unipilePost(`/chats/${chatId}/messages`, form);
 }
 
+export interface ChatPeer {
+  name: string | null;
+  publicIdentifier: string | null; // e.g. Instagram username (without @)
+}
+
+// The messaging webhook often lacks attendee_name for Instagram/Messenger; the attendees
+// endpoint has it (validated live 22/07: name + specifics.public_identifier). Best-effort.
+export async function getChatPeer(chatId: string): Promise<ChatPeer | null> {
+  if (!unipileConfigured()) return null;
+  try {
+    const res = await fetch(`${BASE}/api/v1/chats/${encodeURIComponent(chatId)}/attendees`, {
+      headers: { "X-API-KEY": KEY, accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { items?: Array<{ is_self?: number | boolean; name?: string | null; specifics?: { public_identifier?: string | null } }> };
+    const peer = (j.items ?? []).find((a) => !a.is_self);
+    if (!peer) return null;
+    return { name: peer.name?.trim() || null, publicIdentifier: peer.specifics?.public_identifier?.trim() || null };
+  } catch {
+    return null;
+  }
+}
+
 export interface SendEmailParams {
   accountId: string;
   to: string;
