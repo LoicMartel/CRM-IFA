@@ -525,8 +525,8 @@ export function PlanningList({
     setForm({
       plan_type: planType as "intra" | "inter",
       company_id: plan.company_id,
-      deal_id: plan.deal_id ?? "",
-      deal_ids: (plan as any).deal_ids ?? (plan.deal_id ? [plan.deal_id] : []),
+      deal_id: plan.deal_id && wonDeals.some(d => d.id === plan.deal_id) ? plan.deal_id : "",
+      deal_ids: ((plan as any).deal_ids ?? (plan.deal_id ? [plan.deal_id] : [])).filter((id: string) => wonDeals.some(d => d.id === id)),
       inter_companies: interCompanies,
       plan_name: (plan as any).plan_name ?? "",
       program_id: plan.program_id ?? "",
@@ -553,16 +553,19 @@ export function PlanningList({
     const primaryCompanyId = form.plan_type === "inter" && form.inter_companies.length > 0
       ? form.inter_companies[0].company_id
       : form.company_id;
-    const primaryDealId = form.plan_type === "inter" && form.inter_companies.length > 0
+    const rawDealId = form.plan_type === "inter" && form.inter_companies.length > 0
       ? form.inter_companies[0].deal_id
       : (form.deal_ids.length > 0 ? form.deal_ids[0] : form.deal_id);
+    // Only set deal_id if the deal actually exists (FK constraint)
+    const primaryDealId = rawDealId && wonDeals.some(d => d.id === rawDealId) ? rawDealId : null;
+    const validDealIds = form.deal_ids.filter(id => wonDeals.some(d => d.id === id));
     const primaryPc = getPrimaryContact(primaryCompanyId);
 
     const payload = {
       plan_type: form.plan_type,
       company_id: primaryCompanyId,
-      deal_id: primaryDealId || null,
-      deal_ids: form.deal_ids.length > 0 ? form.deal_ids : (form.deal_id ? [form.deal_id] : []),
+      deal_id: primaryDealId,
+      deal_ids: validDealIds.length > 0 ? validDealIds : (form.deal_id && wonDeals.some(d => d.id === form.deal_id) ? [form.deal_id] : []),
       manager_name: (form.plan_type === "intra" ? pc : primaryPc) ? `${(form.plan_type === "intra" ? pc : primaryPc)!.first_name} ${(form.plan_type === "intra" ? pc : primaryPc)!.last_name}` : null,
       manager_phone: (form.plan_type === "intra" ? pc : primaryPc)?.phone || null,
       manager_email: (form.plan_type === "intra" ? pc : primaryPc)?.email || null,
