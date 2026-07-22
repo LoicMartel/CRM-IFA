@@ -445,7 +445,7 @@ export function PlanningList({
     return sortDirection === "asc" ? cmp : -cmp;
   });
 
-  // Split filtered plans into active vs completed (budget fully consumed)
+  // Split filtered plans into active vs completed
   function getPlanBudgetRemaining(plan: ServicePlanRow): number {
     const sessions = plan.training_sessions ?? [];
     const hr = Number(plan.hourly_rate) || 0;
@@ -454,10 +454,21 @@ export function PlanningList({
     return (Number(plan.budget) || 0) - consumed;
   }
 
+  function getPlanPlannedAmount(plan: ServicePlanRow): number {
+    const sessions = plan.training_sessions ?? [];
+    const hr = Number(plan.hourly_rate) || 0;
+    const billablePlanned = sessions.filter(s => s.status === "planned" && s.is_billable !== false);
+    return billablePlanned.reduce((s, sess) => s + (Number(sess.duration_hours) || 0) * (sess.hourly_rate ?? hr), 0);
+  }
+
   function isPlanCompleted(p: ServicePlanRow): boolean {
     const budgetInitial = Number(p.budget) || 0;
-    // Budget défini et entièrement consommé
-    if (budgetInitial > 0) return Math.round(getPlanBudgetRemaining(p)) <= 0;
+    // Budget défini : terminé si "après planifié" < 250€ ET plus rien en engagé
+    if (budgetInitial > 0) {
+      const remaining = getPlanBudgetRemaining(p);
+      const planned = getPlanPlannedAmount(p);
+      return remaining < 250 && planned === 0;
+    }
     // Pas de budget : terminé si toutes les sessions prévues sont réalisées
     const sessions = p.training_sessions ?? [];
     const vtTotal = Number(p.vt_planned) || 0;
@@ -1967,15 +1978,27 @@ export function PlanningList({
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Taux horaire (€/h)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={form.hourly_rate}
-                  onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
-                  placeholder="250.27"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Taux horaire (€/h)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.hourly_rate}
+                    onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
+                    placeholder="250.27"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Budget (€)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.budget}
+                    onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                    placeholder="5000"
+                  />
+                </div>
               </div>
             </div>
 
