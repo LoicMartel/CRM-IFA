@@ -40,7 +40,7 @@ export default async function CommercialAgendaPage() {
       m.contact_id === cm.contact_id &&
       m.meeting_type === cm.meeting_type &&
       ["done", "cancelled", "no_show"].includes(m.status) &&
-      new Date(m.scheduled_at) >= new Date(cm.scheduled_at)
+      new Date(m.created_at) >= new Date(cm.created_at)
     );
     if (result) {
       (cm as any).status = result.status;

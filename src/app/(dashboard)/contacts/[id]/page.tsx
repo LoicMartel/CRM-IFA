@@ -75,7 +75,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           .from("meetings")
           .select("*, team_members!meetings_assigned_to_fkey(first_name, last_name)")
           .eq("contact_id", id)
-          .order("scheduled_at", { ascending: false }),
+          .order("created_at", { ascending: false }),
         supabase
           .from("meeting_contacts")
           .select("meeting_id")
@@ -91,7 +91,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
         .select("*, team_members!meetings_assigned_to_fkey(first_name, last_name)")
         .in("id", extraIds);
       const all = [...(directMeetings ?? []), ...(extraMeetings ?? [])]
-        .sort((a: any, b: any) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       return { data: all };
     })(),
     supabase

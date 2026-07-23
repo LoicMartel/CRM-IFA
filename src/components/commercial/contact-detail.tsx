@@ -533,7 +533,8 @@ export function ContactDetail({
     ]);
 
     const acts = remainingActivities ?? [];
-    const mtgs = remainingMeetings ?? [];
+    // Exclude originals marked as completed (a result record exists with the final status)
+    const mtgs = (remainingMeetings ?? []).filter(m => m.next_step !== "completed");
 
     // Determine the highest status based on what's left
     // Priority: signed > rdv_done > booked > contacted > lead
