@@ -7,28 +7,44 @@ export const metadata = { title: "Setting" };
 export default async function SettingPage() {
   const supabase = await createClient();
 
-  // Fetch all marketing leads that are still being worked (lead or contacted or booked)
-  const { data: leads } = await supabase
-    .from("contacts")
-    .select(
-      "id, first_name, last_name, email, phone, company_id, lifecycle_stage, lead_status, created_at, last_contacted_at, owner_id, companies!contacts_company_id_fkey(name), lead_sources!contacts_source_id_fkey(name), team_members!contacts_owner_id_fkey(id, first_name, last_name)"
-    )
-    .eq("was_lead_marketing", true)
-    .eq("is_client", false)
-    .not("lifecycle_stage", "in", '("customer","former_customer")')
-    .in("lead_status", ["lead", "contacted", "booked"])
-    .order("created_at", { ascending: false });
+  // Fetch marketing leads: non-booked (still being worked) + booked (worked through setting)
+  const [{ data: activeLeads }, { data: bookedLeads }] = await Promise.all([
+    // Leads still being worked (not yet booked)
+    supabase
+      .from("contacts")
+      .select(
+        "id, first_name, last_name, email, phone, company_id, lifecycle_stage, lead_status, created_at, last_contacted_at, owner_id, companies!contacts_company_id_fkey(name), lead_sources!contacts_source_id_fkey(name), team_members!contacts_owner_id_fkey(id, first_name, last_name)"
+      )
+      .eq("was_lead_marketing", true)
+      .eq("is_client", false)
+      .eq("lifecycle_stage", "lead_marketing")
+      .in("lead_status", ["lead", "contacted"])
+      .order("created_at", { ascending: false }),
+    // Leads who booked (may include direct-bookers — filtered below)
+    supabase
+      .from("contacts")
+      .select(
+        "id, first_name, last_name, email, phone, company_id, lifecycle_stage, lead_status, created_at, last_contacted_at, owner_id, companies!contacts_company_id_fkey(name), lead_sources!contacts_source_id_fkey(name), team_members!contacts_owner_id_fkey(id, first_name, last_name)"
+      )
+      .eq("was_lead_marketing", true)
+      .eq("is_client", false)
+      .eq("lead_status", "booked")
+      .not("lifecycle_stage", "in", '("customer","former_customer")')
+      .order("created_at", { ascending: false }),
+  ]);
 
-  // Fetch activities for these leads to determine their column
-  // Batch in chunks of 200 to avoid URL length limits with large lead sets
-  const leadIds = (leads ?? []).map((l) => l.id);
+  // Fetch activities for all candidate leads
+  const allCandidateIds = [
+    ...(activeLeads ?? []).map((l) => l.id),
+    ...(bookedLeads ?? []).map((l) => l.id),
+  ];
 
   type ActivityRow = { contact_id: string; type: string; description: string | null; created_at: string; team_member_id: string | null; team_members: { id: string; first_name: string; last_name: string } | null };
   let activities: ActivityRow[] = [];
-  if (leadIds.length > 0) {
+  if (allCandidateIds.length > 0) {
     const CHUNK = 200;
     const chunks: string[][] = [];
-    for (let i = 0; i < leadIds.length; i += CHUNK) chunks.push(leadIds.slice(i, i + CHUNK));
+    for (let i = 0; i < allCandidateIds.length; i += CHUNK) chunks.push(allCandidateIds.slice(i, i + CHUNK));
     const results = await Promise.all(
       chunks.map((ids) =>
         supabase
@@ -42,6 +58,20 @@ export default async function SettingPage() {
       if (data) activities.push(...(data as unknown as ActivityRow[]));
     }
   }
+
+  // Keep booked leads ONLY if they have call activities (worked through setting).
+  // Direct-bookers (no call activities) are excluded.
+  const contactsWithCallActivity = new Set(
+    activities
+      .filter((a) => {
+        const d = a.description ?? "";
+        return d.startsWith("Pas de réponse") || d.startsWith("Message vocal") ||
+          d.startsWith("Contacté →") || d.startsWith("Contacté →");
+      })
+      .map((a) => a.contact_id),
+  );
+  const filteredBookedLeads = (bookedLeads ?? []).filter((l) => contactsWithCallActivity.has(l.id));
+  const leads = [...(activeLeads ?? []), ...filteredBookedLeads];
 
   // Fetch Account Managers + Marketing Managers for the filter dropdown
   const { data: allMembers } = await supabase
