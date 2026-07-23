@@ -260,16 +260,35 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
       // Create deal if opportunity detected or quote_to_send
       if (newStatus === "done" && (rdvForm.rdv_result === "opportunity_detected" || rdvForm.rdv_result === "quote_to_send")) {
         const dealStage = rdvForm.rdv_result === "quote_to_send" ? "quote_to_send" : "opportunities";
+        // Check if a deal already exists for this contact
+        const { data: existingDeal } = await supabase.from("deals").select("id").eq("contact_id", m.contact_id).limit(1).maybeSingle();
+        if (existingDeal) {
+          setSaving(false);
+          setSelectedMeeting(null);
+          stopRecording();
+          router.push(`/deals?edit=${existingDeal.id}`);
+          return;
+        }
         const contactName = m.contacts ? `${m.contacts.first_name} ${m.contacts.last_name}` : "Deal";
         const companyName = m.companies?.name ? ` - ${m.companies.name}` : "";
-        await supabase.from("deals").insert({
+        const { data: newDeal, error: dealError } = await supabase.from("deals").insert({
           name: `${contactName}${companyName}`,
           contact_id: m.contact_id,
           company_id: m.company_id,
           owner_id: m.assigned_to,
           stage: dealStage,
           probability: dealStage === "quote_to_send" ? 40 : 20,
-        });
+        }).select("id").single();
+        if (newDeal && !dealError) {
+          setSaving(false);
+          setSelectedMeeting(null);
+          stopRecording();
+          router.push(`/deals?edit=${newDeal.id}`);
+          return;
+        }
+        if (dealError) {
+          alert("Erreur lors de la création du deal : " + dealError.message);
+        }
       }
     } else {
       // Simple edit (notes, mode, duration, etc.)

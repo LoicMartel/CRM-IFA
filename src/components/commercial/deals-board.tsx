@@ -278,12 +278,14 @@ export function DealsBoard({
     const editId = params.get("edit");
     if (editId) {
       const deal = deals.find((d) => d.id === editId);
-      if (deal) openEditDeal(deal);
-      // Clean URL
-      window.history.replaceState({}, "", "/deals");
+      if (deal) {
+        openEditDeal(deal);
+        // Clean URL only after successfully opening the deal
+        window.history.replaceState({}, "", "/deals");
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deals]);
 
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);

@@ -763,6 +763,16 @@ export function ContactDetail({
 
     if (shouldCreateDeal) {
       const supabase2 = createClient();
+      // Check if a deal already exists for this contact
+      const { data: existingDeal } = await supabase2.from("deals").select("id").eq("contact_id", contact.id).limit(1).maybeSingle();
+      if (existingDeal) {
+        setSaving(false);
+        setRdvOpen(false);
+        setEditingMeetingId(null);
+        resetRdvState();
+        router.push(`/deals?edit=${existingDeal.id}`);
+        return;
+      }
       const dealName = `${contact.first_name} ${contact.last_name}${contact.companies ? " - " + contact.companies.name : ""}`;
       const { data: newDeal, error: dealError } = await supabase2.from("deals").insert({
         name: dealName,
@@ -780,6 +790,9 @@ export function ContactDetail({
       if (newDeal && !dealError) {
         router.push(`/deals?edit=${newDeal.id}`);
         return;
+      }
+      if (dealError) {
+        alert("Erreur lors de la création du deal : " + dealError.message);
       }
     }
 
