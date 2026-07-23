@@ -742,7 +742,7 @@ export function HomeView({
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Date & Heure de l&apos;action</div>
                   <div style={{ fontSize: 13, color: "#1a2a3a", padding: "8px 12px", background: "#f5f7fa", borderRadius: 8 }}>
-                    {(() => { try { return format(new Date(m.scheduled_at as string), "dd/MM/yyyy HH:mm", { locale: fr }); } catch { return "—"; } })()}
+                    {(() => { try { return format(new Date((m.created_at ?? m.scheduled_at) as string), "dd/MM/yyyy HH:mm", { locale: fr }); } catch { return "—"; } })()}
                   </div>
                   <div style={{ fontSize: 11, color: "#8399a9", marginTop: 2 }}>Quand cette action a été effectuée</div>
                 </div>

@@ -90,6 +90,7 @@ interface MeetingData {
   meeting_type: string;
   status: string;
   scheduled_at: string;
+  created_at: string;
   duration_minutes: number | null;
   location: string | null;
   meeting_mode: string | null;
@@ -827,7 +828,7 @@ export function ContactDetail({
       status: m.status === "booked" ? "booked" : m.status,
       outcome: m.outcome ?? "",
       rdv_result: "",
-      action_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+      action_date: m.created_at ? utcToLocal(m.created_at) : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
     });
 
     // Load existing participants from junction tables
