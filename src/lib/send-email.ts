@@ -87,7 +87,6 @@ export interface EmailActivityLog {
   type?: string;
   company_id?: string | null;
   contact_id?: string | null;
-  deal_id?: string | null;
   team_member_id?: string | null;
 }
 
@@ -206,7 +205,7 @@ export async function sendSessionEmail({
     await logEmail({ ...logCtx, status: "sent" });
 
     // Trace best-effort de l'email client en activité (ne fait jamais échouer l'envoi).
-    if (logActivity && (logActivity.company_id || logActivity.contact_id || logActivity.deal_id)) {
+    if (logActivity && (logActivity.company_id || logActivity.contact_id)) {
       const supabase = getLogClient();
       if (supabase) {
         try {
@@ -216,7 +215,6 @@ export async function sendSessionEmail({
             description: logActivity.description ?? null,
             company_id: logActivity.company_id ?? null,
             contact_id: logActivity.contact_id ?? null,
-            deal_id: logActivity.deal_id ?? null,
             team_member_id: logActivity.team_member_id ?? null,
             created_at: new Date().toISOString(),
           });

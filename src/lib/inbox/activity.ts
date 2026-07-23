@@ -63,7 +63,6 @@ export async function logMessageActivity(
       description,
       contact_id: contactId,
       company_id: companyId,
-      deal_id: null,
       team_member_id: opts.teamMemberId ?? null,
       created_at: new Date().toISOString(),
     });

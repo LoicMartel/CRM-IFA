@@ -214,7 +214,6 @@ export async function POST(req: NextRequest) {
           title: "Email post-achat envoyé (Book Financements)",
           description: `Email de confirmation d'achat + Book Financements envoyé à ${customerEmail}.`,
           contact_id: contactId,
-          deal_id: deal?.id ?? null,
         },
       });
 
