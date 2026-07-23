@@ -59,17 +59,19 @@ export default async function SettingPage() {
     }
   }
 
-  // Keep booked leads ONLY if the team successfully booked them (activité "Contacté → Booké").
-  // Leads who booked on their own (even if the team tried calling) are excluded.
-  const contactsBookedByTeam = new Set(
-    activities
-      .filter((a) => {
-        const d = a.description ?? "";
-        return d.startsWith("Contacté → Booké") || d.startsWith("Contacté → Booké");
-      })
-      .map((a) => a.contact_id),
-  );
-  const filteredBookedLeads = (bookedLeads ?? []).filter((l) => contactsBookedByTeam.has(l.id));
+  // Exclude booked leads who booked via the booking page (direct-bookers).
+  // The booking routes automatically add "Réservé via la booking page" in meeting notes.
+  const bookedIds = (bookedLeads ?? []).map((l) => l.id);
+  let directBookerIds = new Set<string>();
+  if (bookedIds.length > 0) {
+    const { data: bookingMeetings } = await supabase
+      .from("meetings")
+      .select("contact_id, notes")
+      .in("contact_id", bookedIds)
+      .ilike("notes", "%Réservé via la booking page%");
+    directBookerIds = new Set((bookingMeetings ?? []).map((m) => m.contact_id));
+  }
+  const filteredBookedLeads = (bookedLeads ?? []).filter((l) => !directBookerIds.has(l.id));
   const leads = [...(activeLeads ?? []), ...filteredBookedLeads];
 
   // Fetch Account Managers + Marketing Managers for the filter dropdown
