@@ -55,7 +55,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       .from("meetings")
       .select("*, contacts(first_name, last_name), team_members!meetings_assigned_to_fkey(first_name, last_name)")
       .eq("company_id", id)
-      .order("scheduled_at", { ascending: false }),
+      .order("created_at", { ascending: false }),
     supabase
       .from("deals")
       .select("*, team_members(first_name, last_name), lead_sources(name)")
