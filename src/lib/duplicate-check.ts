@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { normalizePhone, isBlacklistedPhone } from "./normalize-phone";
 
 export interface DuplicateResult {
   isDuplicate: boolean;
@@ -32,50 +33,72 @@ export async function checkLearnerDuplicate(email: string): Promise<DuplicateRes
 }
 
 /**
- * Check if a contact with the same email already exists
+ * Check if a contact with the same email or phone already exists
  */
-export async function checkContactDuplicate(email: string): Promise<DuplicateResult> {
-  if (!email) return { isDuplicate: false, message: "" };
+export async function checkContactDuplicate(email: string, phone?: string): Promise<DuplicateResult> {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("contacts")
-    .select("id, first_name, last_name, email")
-    .ilike("email", email.trim())
-    .limit(1)
-    .maybeSingle();
 
-  if (data) {
-    return {
-      isDuplicate: true,
-      message: `Un contact avec cet email existe déjà : ${data.first_name} ${data.last_name} (${data.email})`,
-      existingId: data.id,
-      existingName: `${data.first_name} ${data.last_name}`,
-    };
+  // Rule 1: Email match
+  if (email) {
+    const { data } = await supabase
+      .from("contacts")
+      .select("id, first_name, last_name, email")
+      .ilike("email", email.trim())
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      return {
+        isDuplicate: true,
+        message: `Un contact avec cet email existe déjà : ${data.first_name} ${data.last_name} (${data.email})`,
+        existingId: data.id,
+        existingName: `${data.first_name} ${data.last_name}`,
+      };
+    }
   }
+
+  // Rule 2: Phone match (normalized)
+  const normalized = normalizePhone(phone);
+  if (normalized && !isBlacklistedPhone(normalized)) {
+    const { data } = await supabase.rpc("find_contact_by_normalized_phone", {
+      p_phone: normalized,
+    });
+    if (data && data.length > 0) {
+      const c = data[0];
+      return {
+        isDuplicate: true,
+        message: `Un contact avec ce téléphone existe déjà : ${c.first_name ?? ""} ${c.last_name ?? ""} (${c.phone})`.trim(),
+        existingId: c.id,
+        existingName: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim(),
+      };
+    }
+  }
+
   return { isDuplicate: false, message: "" };
 }
 
 /**
- * Check if a company with a similar name already exists
+ * Check if a company with a similar name already exists (normalized: dashes, spaces, case)
  */
 export async function checkCompanyDuplicate(name: string): Promise<DuplicateResult> {
   if (!name) return { isDuplicate: false, message: "" };
   const supabase = createClient();
-  const { data } = await supabase
-    .from("companies")
-    .select("id, name")
-    .ilike("name", name.trim())
-    .limit(1)
-    .maybeSingle();
 
-  if (data) {
-    return {
-      isDuplicate: true,
-      message: `Une entreprise avec ce nom existe déjà : ${data.name}`,
-      existingId: data.id,
-      existingName: data.name,
-    };
+  // Try normalized name match via DB function
+  const normalized = name.toLowerCase().replace(/[-_.]/g, " ").replace(/\s+/g, " ").trim();
+  if (normalized && normalized !== "www" && normalized.length > 1) {
+    const { data } = await supabase.rpc("find_company_by_normalized_name", {
+      p_name: normalized,
+    });
+    if (data && data.length > 0) {
+      return {
+        isDuplicate: true,
+        message: `Une entreprise avec ce nom existe déjà : ${data[0].name}`,
+        existingId: data[0].id,
+        existingName: data[0].name,
+      };
+    }
   }
+
   return { isDuplicate: false, message: "" };
 }
 

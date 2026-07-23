@@ -8,6 +8,7 @@ import { shouldUseResendBookFallback } from "@/lib/inbox/book-delivery";
 // Stages au-delà du lead marketing : une re-soumission de formulaire (ou un POST forgé — route
 // publique) ne doit JAMAIS les rétrograder ni écraser l'identité de la fiche.
 import { PROTECTED_STAGES } from "@/lib/inbox/types";
+import { findExistingContact, applyContactInfoChanges, findExistingCompany } from "@/lib/find-existing-contact";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -82,45 +83,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ skipped: true, reason: "workflow disabled" }, { headers: CORS_HEADERS });
     }
 
-    // 1. Find or create company from website URL
+    // 1. Find or create company from website URL (with normalized name fallback)
     let companyId: string | null = null;
     if (website && isStepActive(wf, "create-update-company").active) {
-      const { data: existingCompany } = await supabase
-        .from("companies")
-        .select("id")
-        .ilike("website", `%${website}%`)
-        .maybeSingle();
+      const companyName = website
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\.[a-z]{2,}$/i, "")
+        .replace(/\.[a-z]{2,}$/i, "");
 
+      const existingCompany = await findExistingCompany(supabase, { name: companyName, website });
       if (existingCompany) {
         companyId = existingCompany.id;
       } else {
-        // Extract company name from URL (remove www., .com, .fr, etc.)
-        const companyName = website
-          .replace(/^https?:\/\//, "")
-          .replace(/^www\./, "")
-          .replace(/\.[a-z]{2,}$/i, "")
-          .replace(/\.[a-z]{2,}$/i, "");
-
         const { data: newCompany } = await supabase
           .from("companies")
-          .insert({
-            name: companyName,
-            website,
-            lifecycle_stage: "prospect",
-          })
+          .insert({ name: companyName, website, lifecycle_stage: "prospect" })
           .select("id")
           .single();
         companyId = newCompany?.id ?? null;
       }
     }
 
-    // 2. Find or create contact
+    // 2. Find or create contact (email match → phone match → create)
     let contactId: string | null = null;
-    const { data: existingContact } = await supabase
-      .from("contacts")
-      .select("id, lifecycle_stage")
-      .ilike("email", email)
-      .maybeSingle();
+    const existingContact = await findExistingContact(supabase, { email, phone });
 
     let resolvedSourceId = source === "embed-form"
       ? "59ab5fc4-e4f6-43c4-b327-61a90001ae16"   // Meta ads - tunnel commercial
@@ -129,8 +116,6 @@ export async function POST(request: Request) {
       : null;
 
     // Lead provenant d'une agence authentifiée : rattacher à la lead_source du même nom
-    // (à créer côté CRM par Loïc) pour mesurer le ROI par agence. Si aucune ligne ne matche,
-    // le slug reste tracé via notes/source string (pas de blocage).
     if (!resolvedSourceId && agencySlug) {
       const { data: ls } = await supabase.from("lead_sources").select("id").ilike("name", agencySlug).maybeSingle();
       resolvedSourceId = ls?.id ?? null;
@@ -143,17 +128,17 @@ export async function POST(request: Request) {
       : source || "Landing Page";
 
     if (existingContact) {
-      // Une fiche avancée (stage protégé ou deal rattaché) n'est PAS rétrogradée par un POST
-      // public : on ne touche ni au stage, ni au statut, ni à l'identité (anti-corruption CRM).
+      // Toujours mettre à jour email/téléphone avec les dernières valeurs + tracer le changement
+      await applyContactInfoChanges(supabase, existingContact, { email, phone });
+
+      // Une fiche avancée (stage protégé ou deal rattaché) n'est PAS rétrogradée
       const { count: dealCount } = await supabase.from("deals")
         .select("id", { count: "exact", head: true }).eq("contact_id", existingContact.id);
       const isProtected = PROTECTED_STAGES.includes(existingContact.lifecycle_stage ?? "") || (dealCount ?? 0) > 0;
       if (!isProtected) {
-        // Update existing contact (including name in case it changed on re-submission)
         await supabase.from("contacts").update({
           first_name: firstName,
           last_name: lastName,
-          phone: phone || undefined,
           company_id: companyId || undefined,
           lifecycle_stage: "lead_marketing",
           lead_status: "lead",

@@ -4,6 +4,7 @@ import { getParisOffset } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { processMeetingNotifications } from "@/lib/process-meeting-notifications";
 import { enrollContact, exitEnrollments } from "@/lib/nurture/enrollment";
+import { findExistingContact, applyContactInfoChanges, findExistingCompany } from "@/lib/find-existing-contact";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,15 +31,10 @@ export async function POST(request: Request) {
   const offset = getParisOffset(date);
   const startDateTime = `${date}T${time}:00${offset}`;
 
-  // 1. Find or create company
+  // 1. Find or create company (with normalized name fallback)
   let companyId: string | null = null;
   if (isStepActive(wf, "create-update-company").active) {
-    const { data: existingCompany } = await supabase
-      .from("companies")
-      .select("id")
-      .ilike("name", company)
-      .maybeSingle();
-
+    const existingCompany = await findExistingCompany(supabase, { name: company, website });
     if (existingCompany) {
       companyId = existingCompany.id;
     } else {
@@ -51,20 +47,17 @@ export async function POST(request: Request) {
     }
   }
 
-  // 2. Find or create contact
+  // 2. Find or create contact (email → phone → create)
   let contact: { id: string } | null = null;
   if (isStepActive(wf, "create-update-contact").active) {
-    const { data: existingContact } = await supabase
-      .from("contacts")
-      .select("id")
-      .ilike("email", email)
-      .maybeSingle();
+    const existingContact = await findExistingContact(supabase, { email, phone });
 
     if (existingContact) {
+      // Toujours mettre à jour email/téléphone avec les dernières valeurs + tracer
+      await applyContactInfoChanges(supabase, existingContact, { email, phone });
       await supabase.from("contacts").update({
         first_name: firstName,
         last_name: lastName,
-        phone,
         company_id: companyId,
         lead_status: "booked",
         lifecycle_stage: "prospect",
@@ -72,7 +65,7 @@ export async function POST(request: Request) {
         owner_id: assignedTo,
         notes: source ? `Source: ${source}` : null,
       }).eq("id", existingContact.id);
-      contact = existingContact;
+      contact = { id: existingContact.id };
     } else {
       const { data: newContact } = await supabase
         .from("contacts")
