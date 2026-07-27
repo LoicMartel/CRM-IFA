@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendSessionEmail } from "@/lib/send-email";
+import { findExistingContact } from "@/lib/find-existing-contact";
+import { PROTECTED_STAGES } from "@/lib/inbox/types";
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -61,17 +63,34 @@ export async function POST(req: NextRequest) {
     let contactSourceId: string | null = null;
 
     if (customerEmail) {
-      const { data: existingContact } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name, source_id")
-        .eq("email", customerEmail)
-        .limit(1)
-        .single();
+      // Dédup : même helper que /api/leads/inbound (email insensible à la casse, puis téléphone
+      // normalisé). L'ancien `.eq("email")` était sensible à la casse → un acheteur déjà connu comme
+      // lead repartait en 2e fiche (constaté le 23/07 : "Amandine NICOLAS" + "DAVID FORMATION").
+      const existingContact = await findExistingContact(supabase, {
+        email: customerEmail,
+        phone: session.customer_details?.phone ?? null,
+      });
 
       if (existingContact) {
+        const { data: row } = await supabase
+          .from("contacts")
+          .select("first_name, last_name, source_id")
+          .eq("id", existingContact.id)
+          .maybeSingle();
+
         contactId = existingContact.id;
-        contactName = `${existingContact.first_name} ${existingContact.last_name}`;
-        contactSourceId = existingContact.source_id;
+        contactName = `${row?.first_name ?? ""} ${row?.last_name ?? ""}`.trim() || customerName;
+        contactSourceId = row?.source_id ?? null;
+
+        // L'acheteur devient client sur SA fiche. Un stage déjà avancé n'est jamais rétrogradé.
+        const stage = existingContact.lifecycle_stage;
+        await supabase
+          .from("contacts")
+          .update({
+            is_client: true,
+            ...(stage && PROTECTED_STAGES.includes(stage) ? {} : { lifecycle_stage: "customer" }),
+          })
+          .eq("id", existingContact.id);
       } else {
         // Create a new contact from Stripe data
         const nameParts = customerName.split(" ");

@@ -14,9 +14,27 @@ const INTERNAL_DOMAIN = "@closing-academie.com";
 // Newsletter/marketing body footers (conservative content heuristic).
 export const NEWSLETTER_BODY = /se d[ée]sinscrire|unsubscribe|voir (?:cet?|ce) (?:e?-?mail|message) dans (?:votre|le) navigateur|ne plus recevoir (?:nos|ces|cet)/i;
 
+// Pure-robot senders: nobody ever replies to them, and an inbound from one is never a lead —
+// typically a bounce (mailer-daemon) coming back after the agent mailed an invalid address.
+// Deliberately NARROWER than NOISE_LOCAL: "marketing@" or "newsletter@" can be a real prospect
+// writing from a generic company box, so those are only silenced, never dropped.
+const SYSTEM_LOCAL = /^(no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounce)\b/i;
+
+/**
+ * True ⇒ this inbound comes from a mail robot: on an AGENT box it is dropped BEFORE ingestion
+ * (no ghost contact in the CRM, no conversation, no LLM call, no escalation). Chat handles
+ * (phone, no "@") are never system senders.
+ */
+export function isSystemSender(senderHandle: string | null): boolean {
+  const from = (senderHandle ?? "").trim().toLowerCase();
+  if (!from.includes("@")) return false;
+  return SYSTEM_LOCAL.test(from.split("@")[0]);
+}
+
 /**
  * True ⇒ this inbound is noise: skip scoring (no LLM call) and never promote it to the feed.
- * Only applies to copilot accounts. Chat handles (phone, no "@") are never skipped.
+ * Copilot accounts skip scoring; agent accounts pin it to 'human' (never an auto reply).
+ * Chat handles (phone, no "@") are never skipped.
  */
 export function shouldSkipScoring(senderHandle: string | null, subject: string | null, body: string): boolean {
   const from = (senderHandle ?? "").trim().toLowerCase();

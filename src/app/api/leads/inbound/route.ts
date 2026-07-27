@@ -208,6 +208,19 @@ export async function POST(request: Request) {
           if (v.eligible) {
             await svc().from("conversations").update({ agent_status: "active" }).eq("id", result.conversationId);
             bookDeliveredByAdam = await sendGreeting(result.conversationId, { book: isBookSource }).catch(() => false);
+            // Lead "book" : il vient chercher un PDF, pas ouvrir un échange commercial. Adam LIVRE le
+            // book (ce seul email) puis la conversation retombe en 'human' → l'invariant full-auto du
+            // webhook (une conversation non 'active'/'dormant' n'est JAMAIS ré-activée) garantit que
+            // l'agent ne répondra pas à sa réponse : elle remonte en « à traiter » dans /inbox
+            // (human + unread) et un humain tranche — y compris les réclamations SAV sur le book payant,
+            // que l'agent n'a aucun moyen de traiter. 'active' n'a servi qu'au verrou d'envoi du greeting.
+            // Le .eq('active') ne réécrit pas un statut posé entre-temps (escalade sur échec d'envoi).
+            if (isBookSource) {
+              await svc().from("conversations")
+                .update({ agent_status: "human" })
+                .eq("id", result.conversationId)
+                .eq("agent_status", "active");
+            }
           }
         }
       }

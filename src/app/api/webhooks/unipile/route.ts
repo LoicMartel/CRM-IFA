@@ -7,8 +7,8 @@ import { evaluateEligibility } from "@/lib/inbox/eligibility";
 import { escalateConversation, promoteConversation } from "@/lib/inbox/escalation";
 import { runAgentTurn } from "@/lib/inbox/agent";
 import { exitEnrollments } from "@/lib/nurture/enrollment";
-import { resolveInboxAccount } from "@/lib/inbox/routing";
-import { shouldSkipScoring } from "@/lib/inbox/upstream-filter";
+import { resolveInboxAccount, type ResolvedAccount } from "@/lib/inbox/routing";
+import { isSystemSender, shouldSkipScoring } from "@/lib/inbox/upstream-filter";
 import { getChatPeer } from "@/lib/unipile/client";
 import type { Channel, IncomingMessage } from "@/lib/inbox/types";
 
@@ -137,9 +137,8 @@ function mapMessaging(p: z.infer<typeof messagingSchema>): Mapped {
   };
 }
 
-async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string, accountId: string | null, senderHandle: string | null, subject: string | null) {
-  // Routage account_id (socle F+C). The mode decides what the engine may do on this box.
-  const account = await resolveInboxAccount(accountId);
+async function processInbound(result: NonNullable<Awaited<ReturnType<typeof ingestIncoming>>>, channel: Channel, body: string, account: ResolvedAccount, senderHandle: string | null, subject: string | null) {
+  // Routage account_id (socle F+C) résolu par l'appelant. The mode decides what the engine may do.
   const sb = svc();
 
   // Nurturing : une réponse EMAIL d'un contact enrôlé stoppe sa/ses séquence(s) actives (il est
@@ -186,6 +185,15 @@ async function processInbound(result: NonNullable<Awaited<ReturnType<typeof inge
   }
 
   // mode=agent: the proven leads pipeline.
+  // Noise gate (bounces are dropped upstream, before ingestion): what reaches here and still smells
+  // automated (newsletter footer, marketing@/notifications@ local-part, internal mail) is pinned
+  // 'human' — no classify call, no agent turn, never an auto reply. It stays readable in /inbox,
+  // because the filter is conservative and a generic company box CAN be a real prospect.
+  if (shouldSkipScoring(senderHandle, subject, body)) {
+    await sb.from("conversations").update({ agent_status: "human" }).eq("id", result.conversationId);
+    return;
+  }
+
   // Full-auto invariant: a conversation already handed off (escalated, human takeover, non-eligible
   // pinned 'human', or booked) must NEVER be re-activated by a new inbound message. The message is
   // already ingested (unread) and visible in /inbox — the agent keeps its hands off. Only a NEW
@@ -276,6 +284,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Routage résolu une fois ici (puis passé à processInbound) : il décide aussi de ce qu'on
+    // ingère. Un expéditeur robot (bounce mailer-daemon après un envoi vers une adresse morte,
+    // no-reply…) sur une boîte AGENT n'est jamais un lead → on ne crée ni contact fantôme, ni
+    // conversation, ni appel LLM, ni escalade. Les boîtes `classify` (tri courrier de Rafi), elles,
+    // DOIVENT continuer à voir ces mails : c'est précisément ce qu'elles rangent.
+    const account = await resolveInboxAccount(mapped.accountId);
+    if (mapped.direction === "inbound" && account.mode === "agent" && isSystemSender(mapped.senderHandle)) {
+      console.log(`[webhooks/unipile] robot sender dropped on agent box: ${mapped.senderHandle}`);
+      return NextResponse.json({ ok: true, ignored: "system-sender" });
+    }
+
     const result = await ingestIncoming(mapped);
     if (!result) return NextResponse.json({ ok: true, dedup: true });
 
@@ -285,7 +304,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, humanTakeover: true });
     }
 
-    await processInbound(result, mapped.channel, mapped.body, mapped.accountId, mapped.senderHandle, mapped.subject ?? null);
+    await processInbound(result, mapped.channel, mapped.body, account, mapped.senderHandle, mapped.subject ?? null);
     return NextResponse.json({ ok: true, conversationId: result.conversationId });
   } catch (e) {
     console.error("[webhooks/unipile] error:", e);
