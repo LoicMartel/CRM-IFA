@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireMember } from "@/lib/api-auth";
 import { getCalendarEventsAllPages } from "@/lib/google-calendar";
+import { SESSION_LOCATION_REQUIRED_MESSAGE } from "@/lib/training-session-location";
 
 export const maxDuration = 30;
 
@@ -200,6 +201,12 @@ export async function POST(req: NextRequest) {
       sessionIndex: requestedSessionIndex,
       alreadyBooked: alreadyBookedInput,
     } = body;
+
+    // Le planificateur crée les journées en lot : sans adresse, chaque créneau généré partirait sans
+    // lieu et les convocations retomberaient sur le siège. On refuse avant d'écrire quoi que ce soit.
+    if (Number(daysCount) > 0 && !String(journeeLocation ?? "").trim()) {
+      return NextResponse.json({ success: false, error: SESSION_LOCATION_REQUIRED_MESSAGE }, { status: 422 });
+    }
 
     const isSingleSessionMode = typeof requestedSessionIndex === "number";
     const alreadyBooked: { session_date: string; session_time: string; duration_hours: number; session_type: string; trainer_name: string }[] = alreadyBookedInput ?? [];

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Loader2, CalendarPlus, CheckCircle, AlertTriangle, Users, Star, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { DayTimeline } from "./day-timeline";
 import { fmtDuration } from "@/lib/utils";
+import { missingSessionLocation, SESSION_LOCATION_REQUIRED_MESSAGE } from "@/lib/training-session-location";
 
 const DAYS_OF_WEEK = ["lundi", "mardi", "mercredi", "jeudi", "vendredi"];
 const VT_RHYTHMS = ["1x/semaine", "2x/semaine", "1x/2 semaines", "1x/mois"];
@@ -470,6 +471,11 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
     setSelectedProposalIndex(proposals.length + updatedManual.length - 1);
   }
 
+  // Des journées à planifier sans adresse = des créneaux qui partiraient sans lieu de formation
+  // (convocations sur le siège). Bloque l'analyse tant que le lieu n'est pas saisi.
+  const journeeLocationMissing = Number(form.daysCount) > 0
+    && missingSessionLocation("journee", form.journeeLocation);
+
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -513,7 +519,9 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         endDate: p.endDate || f.endDate,
                         city: p.city || f.city,
                         budget: p.budget ? String(p.budget) : f.budget,
-                        journeeLocation: p.address || f.journeeLocation,
+                        // Pas de reprise automatique de l'adresse entreprise : le lieu de formation en
+                        // diffère souvent et c'est lui qui part sur les convocations.
+                        journeeLocation: f.journeeLocation,
                       }));
                     }
                   }}
@@ -620,9 +628,11 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
                 </div>
                 <div className="space-y-1">
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Lieu</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>Lieu {Number(form.daysCount) > 0 && <span style={{ color: "#e74c3c" }}>*</span>}</label>
                   <input value={form.journeeLocation} onChange={(e) => setForm({ ...form, journeeLocation: e.target.value })}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="Ex: 224 Cour Lafayette, Lyon" />
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                    style={journeeLocationMissing ? { borderColor: "#e74c3c" } : undefined}
+                    placeholder="Ex: 224 Cour Lafayette, Lyon" />
                 </div>
               </div>
             </div>
@@ -690,12 +700,13 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
               </button>
               <button
                 onClick={handleAnalyzeExperts}
-                disabled={expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))}
+                disabled={expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0)) || journeeLocationMissing}
+                title={journeeLocationMissing ? SESSION_LOCATION_REQUIRED_MESSAGE : undefined}
                 style={{
                   height: 40, borderRadius: 8, border: "none", padding: "0 24px",
                   background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  opacity: (expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0))) ? 0.5 : 1,
+                  opacity: (expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0)) || journeeLocationMissing) ? 0.5 : 1,
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>

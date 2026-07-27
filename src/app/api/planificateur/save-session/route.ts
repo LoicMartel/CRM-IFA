@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireMember } from "@/lib/api-auth";
+import { missingSessionLocation, SESSION_LOCATION_REQUIRED_MESSAGE } from "@/lib/training-session-location";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
 
     if (!service_plan_id || !session_date || !session_time) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (missingSessionLocation(session_type, session_location)) {
+      return NextResponse.json({ success: false, error: SESSION_LOCATION_REQUIRED_MESSAGE }, { status: 422 });
     }
 
     // Insert session

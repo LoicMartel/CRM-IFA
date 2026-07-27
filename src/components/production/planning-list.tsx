@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
 import { fmtDuration } from "@/lib/utils";
+import { missingSessionLocation, SESSION_LOCATION_REQUIRED_MESSAGE } from "@/lib/training-session-location";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -647,6 +648,11 @@ export function PlanningList({
 
   async function handleAddSession() {
     if (!sessionPlanId || !sessionForm.session_date) return;
+    // Écriture directe Supabase depuis le navigateur : c'est ici la frontière de validation du lieu.
+    if (missingSessionLocation(sessionForm.session_type, sessionForm.session_location)) {
+      alert(SESSION_LOCATION_REQUIRED_MESSAGE);
+      return;
+    }
     setSavingSession(true);
     const supabase = createClient();
 
@@ -2193,6 +2199,7 @@ export function PlanningList({
         const currentPlan = servicePlans.find(p => p.id === sessionPlanId);
         const popupLearners = currentPlan ? ((currentPlan.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean) as LearnerNested[]).sort((a, b) => (a.last_name ?? '').localeCompare(b.last_name ?? '', 'fr')) : [];
         const compAddr = currentPlan?.companies ? [currentPlan.companies.address, currentPlan.companies.city].filter(Boolean).join(", ") : "";
+        const locationMissing = missingSessionLocation(sessionForm.session_type, sessionForm.session_location);
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={(e) => { if (e.target === e.currentTarget) setSessionPlanId(null); }}>
             <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
@@ -2206,7 +2213,9 @@ export function PlanningList({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Type</div>
-                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: t === "journee" ? compAddr : "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
+                    {/* Le lieu n'est PAS pré-rempli avec le siège : c'est l'adresse de formation qui part sur
+                        les convocations, et elle en diffère souvent (bouton de reprise explicite plus bas). */}
+                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
                       <option value="vt">Visio Training (VT)</option>
                       <option value="journee">Journée</option>
                     </select>
@@ -2235,8 +2244,18 @@ export function PlanningList({
                 </div>
                 {sessionForm.session_type === "journee" && (
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Adresse</div>
-                    <input type="text" value={sessionForm.session_location} onChange={(e) => setSessionForm({ ...sessionForm, session_location: e.target.value })} placeholder="Adresse du lieu" style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, width: "100%" }} />
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>Adresse du lieu de formation <span style={{ color: "#e74c3c" }}>*</span></div>
+                      {compAddr && (
+                        <button type="button" onClick={() => setSessionForm({ ...sessionForm, session_location: compAddr })} style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                          Reprendre l&apos;adresse de l&apos;entreprise
+                        </button>
+                      )}
+                    </div>
+                    <input type="text" value={sessionForm.session_location} onChange={(e) => setSessionForm({ ...sessionForm, session_location: e.target.value })} placeholder="Ex: 22 Rue Picot, 83000 Toulon" style={{ height: 34, borderRadius: 6, border: `1px solid ${locationMissing ? "#e74c3c" : "#dce8f0"}`, padding: "0 10px", fontSize: 13, width: "100%" }} />
+                    {locationMissing && (
+                      <div style={{ fontSize: 11, color: "#e74c3c", marginTop: 4 }}>{SESSION_LOCATION_REQUIRED_MESSAGE}</div>
+                    )}
                   </div>
                 )}
                 <div>
@@ -2299,7 +2318,7 @@ export function PlanningList({
               </div>
               <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button onClick={() => setSessionPlanId(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>Annuler</button>
-                <button onClick={handleAddSession} disabled={savingSession || !sessionForm.session_date} style={{ height: 36, borderRadius: 8, background: editingSessionId ? "#1a6b9c" : "#2ecc71", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date ? 0.5 : 1 }}>
+                <button onClick={handleAddSession} disabled={savingSession || !sessionForm.session_date || locationMissing} style={{ height: 36, borderRadius: 8, background: editingSessionId ? "#1a6b9c" : "#2ecc71", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date || locationMissing ? 0.5 : 1 }}>
                   {savingSession ? "..." : editingSessionId ? "Mettre à jour" : "Ajouter"}
                 </button>
               </div>
