@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireMember } from "@/lib/api-auth";
 import type { VisioformationPayload } from "@/lib/visioformation-client";
+import { buildTestAuthHeader } from "@/lib/visioformation-test-auth";
 
 // Endpoint de TEST demandé par Joseph (VisioFormation, mail 06/07) : un bouton qui, au clic, envoie un
 // webhook (payload JSON au format ADF) vers l'URL de préprod de VF — uniquement si les deux mots de passe
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
   const auth = await requireMember();
   if (auth instanceof NextResponse) return auth;
 
-  let body: { targetUrl?: string; password1?: string; password2?: string };
+  let body: { targetUrl?: string; password1?: string; password2?: string; authHeaderName?: string; bearerPrefix?: boolean };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "JSON invalide." }, { status: 400 }); }
 
   const targetUrl = (body.targetUrl ?? "").trim();
@@ -55,17 +56,20 @@ export async function POST(req: Request) {
   if (!isSafeTargetUrl(targetUrl)) return NextResponse.json({ error: "URL invalide : https requis, hôtes internes interdits." }, { status: 400 });
   if (!p1 || p1 !== p2) return NextResponse.json({ error: "Les deux mots de passe doivent être identiques (et non vides)." }, { status: 400 });
 
+  // Le secret (saisi deux fois, cf. demande de Joseph du 06/07) part en en-tête pour qu'il valide
+  // l'origine. Le NOM de l'en-tête est le sien : réglable dans l'UI, pour s'aligner en séance sans
+  // redéploiement (cf. visioformation-test-auth.ts).
+  const authHeader = buildTestAuthHeader({ headerName: body.authHeaderName, secret: p1, bearerPrefix: body.bearerPrefix });
+  if (!authHeader.ok) return NextResponse.json({ error: authHeader.error }, { status: 400 });
+
   const payload = buildSamplePayload();
 
-  // Le mot de passe (identique des deux côtés) est transmis en en-tête pour que VF puisse valider
-  // l'origine si besoin. ⚠️ Nom d'en-tête PROVISOIRE — à confirmer avec Joseph (simple garde-fou local
-  // ou secret d'auth transmis ?).
   let vfStatus = 0;
   let vfBody = "";
   try {
     const res = await fetch(targetUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Test-Secret": p1 },
+      headers: { "Content-Type": "application/json", [authHeader.name]: authHeader.value },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(15000),
     });
@@ -80,5 +84,7 @@ export async function POST(req: Request) {
     status: vfStatus,
     response: vfBody,
     sentPayload: payload,
+    // Renvoyé pour que l'opérateur voie, en séance, l'en-tête exact qui est parti (le secret reste masqué).
+    sentAuthHeader: `${authHeader.name}: ${body.bearerPrefix ? "Bearer ***" : "***"}`,
   });
 }

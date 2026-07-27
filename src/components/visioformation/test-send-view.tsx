@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { DEFAULT_TEST_AUTH_HEADER } from "@/lib/visioformation-test-auth";
 
-interface TestResult { ok: boolean; status: number; response: string; }
+interface TestResult { ok: boolean; status: number; response: string; authHeader: string; }
 
 // Bouton de test VisioFormation (Route A) : envoie un payload JSON d'exemple vers l'URL de Joseph,
 // uniquement si les deux mots de passe sont identiques. Affiche la réponse de VF + le payload envoyé.
@@ -14,6 +15,10 @@ export function VisioformationTestView({ defaultUrl = "" }: { defaultUrl?: strin
   const [targetUrl, setTargetUrl] = useState(defaultUrl);
   const [password1, setPassword1] = useState("");
   const [password2, setPassword2] = useState("");
+  // Nom de l'en-tête + préfixe Bearer : c'est Joseph qui code son endpoint, donc c'est lui qui fixe le
+  // schéma. Réglable ici pour s'aligner pendant la visio, sans redéploiement.
+  const [authHeaderName, setAuthHeaderName] = useState(DEFAULT_TEST_AUTH_HEADER);
+  const [bearerPrefix, setBearerPrefix] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
@@ -31,14 +36,14 @@ export function VisioformationTestView({ defaultUrl = "" }: { defaultUrl?: strin
       const res = await fetch("/api/visioformation/test-send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUrl: targetUrl.trim(), password1, password2 }),
+        body: JSON.stringify({ targetUrl: targetUrl.trim(), password1, password2, authHeaderName, bearerPrefix }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Échec de l'envoi.");
         return;
       }
-      setResult({ ok: data.ok, status: data.status, response: data.response ?? "" });
+      setResult({ ok: data.ok, status: data.status, response: data.response ?? "", authHeader: data.sentAuthHeader ?? "" });
       setPayload(JSON.stringify(data.sentPayload, null, 2));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur réseau.");
@@ -81,6 +86,23 @@ export function VisioformationTestView({ defaultUrl = "" }: { defaultUrl?: strin
           {password2.length > 0 && !passwordsMatch && (
             <p className="text-sm text-red-600">Les deux mots de passe ne sont pas identiques.</p>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="authHeaderName">En-tête d&apos;authentification attendu par Joseph</Label>
+            <Input
+              id="authHeaderName"
+              placeholder={DEFAULT_TEST_AUTH_HEADER}
+              value={authHeaderName}
+              onChange={(e) => setAuthHeaderName(e.target.value)}
+            />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={bearerPrefix} onChange={(e) => setBearerPrefix(e.target.checked)} />
+              Préfixer la valeur par <code>Bearer </code> (schéma <code>Authorization</code>)
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Le mot de passe part dans cet en-tête. Par défaut <code>{DEFAULT_TEST_AUTH_HEADER}</code> ;
+              à changer si son endpoint en attend un autre.
+            </p>
+          </div>
           <Button onClick={send} disabled={!canSend}>
             {sending ? "Envoi en cours…" : "Envoyer le test"}
           </Button>
@@ -103,6 +125,9 @@ export function VisioformationTestView({ defaultUrl = "" }: { defaultUrl?: strin
               <Label>Réponse reçue</Label>
               <pre className="mt-1 max-h-64 overflow-auto rounded bg-muted p-3 text-xs">{result.response || "(vide)"}</pre>
             </div>
+            {result.authHeader && (
+              <p className="text-xs text-muted-foreground">En-tête envoyé : <code>{result.authHeader}</code></p>
+            )}
             {payload && (
               <div>
                 <Label>Payload envoyé</Label>
