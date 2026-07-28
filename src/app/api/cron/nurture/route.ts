@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     .order("next_send_at", { ascending: true })
     .limit(BATCH);
 
-  let sent = 0, completed = 0, failed = 0, claimSkip = 0, channelSkip = 0, windowSkip = 0;
+  let sent = 0, completed = 0, failed = 0, claimSkip = 0, channelSkip = 0, windowSkip = 0, bookedSkip = 0;
   let firstSend = true;
 
   for (const enr of due ?? []) {
@@ -122,6 +122,29 @@ export async function GET(req: NextRequest) {
       .select("id")
       .maybeSingle();
     if (!claimed) { claimSkip++; continue; }
+
+    // Garde « il a (re)booké » : une séquence de RELANCE ne doit jamais partir vers un contact qui a
+    // un RDV à venir (incident 28/07 : breakup « Je clôture votre dossier ? » envoyé à une prospecte
+    // qui avait rebooké la veille depuis l'UI CRM). La coupure à la source est le trigger
+    // trg_exit_nurture_on_booking ; ceci est la 2e ligne — elle couvre l'enrôlement créé APRÈS la
+    // prise de RDV (trigger no-show sur un ancien RDV) et les RDV backfillés hors trigger.
+    // 'pre-rdv' (anchor='meeting') est exempté : c'est justement la séquence qui prépare ce RDV.
+    if (seq.anchor !== "meeting") {
+      const { data: upcoming } = await sb
+        .from("meetings")
+        .select("id")
+        .eq("contact_id", enr.contact_id)
+        .eq("status", "booked")
+        .gt("scheduled_at", nowIso)
+        .limit(1);
+      if (upcoming?.length) {
+        await sb.from("nurture_enrollments")
+          .update({ status: "exited_booked", next_send_at: null })
+          .eq("id", enr.id);
+        bookedSkip++;
+        continue;
+      }
+    }
 
     const nextOrder = (enr.current_step ?? 0) + 1;
     const { data: step } = await sb
@@ -237,5 +260,5 @@ export async function GET(req: NextRequest) {
     if (!nextDue) completed++;
   }
 
-  return NextResponse.json({ ok: true, sent, completed, failed, claimSkip, channelSkip, windowSkip });
+  return NextResponse.json({ ok: true, sent, completed, failed, claimSkip, channelSkip, windowSkip, bookedSkip });
 }
