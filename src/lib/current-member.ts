@@ -43,19 +43,26 @@ async function fetchCurrentMember(): Promise<CurrentMember | null> {
   // Primary lookup: by auth_user_id
   const { data: byAuthId } = await supabase
     .from("team_members")
-    .select("id, email, first_name, last_name, roles, permissions")
+    .select("id, email, first_name, last_name, roles, permissions, is_active")
     .eq("auth_user_id", user.id)
     .single();
 
   const row = byAuthId ?? (
     await supabase
       .from("team_members")
-      .select("id, email, first_name, last_name, roles, permissions")
+      .select("id, email, first_name, last_name, roles, permissions, is_active")
       .eq("email", user.email)
       .single()
   ).data;
 
   if (!row) return null;
+
+  // Membre désactivé → déconnecter et bloquer l'accès
+  if (row.is_active === false) {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+    return null;
+  }
 
   return {
     id: row.id as string,
