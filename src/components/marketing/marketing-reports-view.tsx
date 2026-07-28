@@ -746,19 +746,19 @@ function SettingReport({
               ))}
             </div>
           )}
-          {/* Contactés qualifiés / Prospects qualifiés */}
-          <FunnelRow
-            label="Contactés qualifiés / Prospects qualifiés"
-            num={stats.totalContactedQualifies}
-            den={stats.qualifies}
-            color="#6a1b9a"
-          />
           {/* Qualifiés / Contactés */}
           <FunnelRow
             label="Qualifiés / Contactés"
             num={stats.totalContactedQualifies}
             den={stats.totalContacted}
             color="#9c27b0"
+          />
+          {/* Contactés qualifiés / Prospects qualifiés */}
+          <FunnelRow
+            label="Contactés qualifiés / Prospects qualifiés"
+            num={stats.totalContactedQualifies}
+            den={stats.qualifies}
+            color="#6a1b9a"
           />
           {/* RDV réservés / Contactés qualifiés */}
           <FunnelRow
