@@ -396,7 +396,6 @@ CREATE TABLE public."email_log" (
   "created_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
   CONSTRAINT "email_log_status_check" CHECK ((status = ANY (ARRAY['sent'::text, 'failed'::text]))),
-  CONSTRAINT "email_log_transporter_check" CHECK ((transporter = ANY (ARRAY['resend'::text, 'ionos'::text, 'pennylane'::text, 'firma'::text]))),
   CONSTRAINT "email_log_transporter_chk" CHECK ((transporter = ANY (ARRAY['resend'::text, 'ionos'::text, 'pennylane'::text, 'firma'::text, 'unipile'::text])))
 );
 
@@ -1724,6 +1723,46 @@ end;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.exit_nurture_on_booking()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_relevant boolean;
+begin
+  -- Sur INSERT il n'y a pas de OLD : on traite toute création de RDV à venir. Sur UPDATE, on ne
+  -- réagit qu'aux transitions utiles (statut ou date), pas à chaque édition de notes.
+  if tg_op = 'INSERT' then
+    v_relevant := true;
+  else
+    v_relevant := (old.status is distinct from new.status)
+               or (old.scheduled_at is distinct from new.scheduled_at)
+               or (old.contact_id is distinct from new.contact_id);
+  end if;
+
+  if v_relevant
+     and new.contact_id is not null
+     and new.status = 'booked'
+     and new.scheduled_at > now() then
+    begin
+      update nurture_enrollments e
+         set status = 'exited_booked',
+             next_send_at = null
+       where e.contact_id = new.contact_id
+         and e.status = 'active'
+         and e.sequence_id in (select id from nurture_sequences where anchor <> 'meeting');
+    exception
+      when others then
+        raise warning 'exit_nurture_on_booking (non-blocking): %', sqlerrm;
+    end;
+  end if;
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.f_unaccent(text)
  RETURNS text
  LANGUAGE sql
@@ -1980,6 +2019,7 @@ CREATE TRIGGER trg_leads_updated_at BEFORE UPDATE ON public.leads FOR EACH ROW E
 CREATE TRIGGER trg_learners_updated_at BEFORE UPDATE ON public.learners FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_learners_uppercase_last_name BEFORE INSERT OR UPDATE OF last_name ON public.learners FOR EACH ROW EXECUTE FUNCTION uppercase_last_name();
 CREATE TRIGGER trg_enroll_noshow_nurture AFTER UPDATE ON public.meetings FOR EACH ROW EXECUTE FUNCTION enroll_noshow_nurture();
+CREATE TRIGGER trg_exit_nurture_on_booking AFTER INSERT OR UPDATE ON public.meetings FOR EACH ROW EXECUTE FUNCTION exit_nurture_on_booking();
 CREATE TRIGGER trg_meetings_updated_at BEFORE UPDATE ON public.meetings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_set_contact_owner_from_meeting_ins AFTER INSERT ON public.meetings FOR EACH ROW EXECUTE FUNCTION set_contact_owner_from_meeting();
 CREATE TRIGGER trg_set_contact_owner_from_meeting_upd AFTER UPDATE OF assigned_to ON public.meetings FOR EACH ROW WHEN ((new.assigned_to IS NOT NULL)) EXECUTE FUNCTION set_contact_owner_from_meeting();
