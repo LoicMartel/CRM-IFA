@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { patchCalendarEventSummary } from "@/lib/google-calendar";
 import { sendSessionEmail } from "@/lib/send-email";
+import { getSlackToken } from "@/lib/oauth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,7 +57,6 @@ export async function POST(req: NextRequest) {
       .in("first_name", trainerNamesToFetch);
 
     const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
-    const slackToken = process.env.SLACK_BOT_TOKEN;
     const results: { trainer: string; gcal?: string; slack?: string }[] = [];
 
     for (const trainer of trainerMembers ?? []) {
@@ -76,9 +76,10 @@ export async function POST(req: NextRequest) {
       }
 
       // 2. Slack DM if the trainer is NOT the one who cancelled
+      const cancelSlackToken = trainer.slack_user_id ? await getSlackToken(trainer.id as string) : null;
       if (
         trainer.slack_user_id &&
-        slackToken &&
+        cancelSlackToken &&
         cancelledBy &&
         trainer.first_name !== cancelledBy
       ) {
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
         try {
           const slackRes = await fetch("https://slack.com/api/chat.postMessage", {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${slackToken}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${cancelSlackToken}` },
             body: JSON.stringify({ channel: trainer.slack_user_id, text: msg }),
           });
           const slackData = await slackRes.json();

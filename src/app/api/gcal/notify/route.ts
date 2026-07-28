@@ -5,6 +5,8 @@ import { sendSessionEmail } from "@/lib/send-email";
 import { generateICS } from "@/lib/ics";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { createNotification } from "@/lib/notifications";
+import { getSlackToken } from "@/lib/oauth";
+import { syncOutlookEvent, removeOutlookEvent } from "@/lib/outlook-sync";
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,7 +85,6 @@ export async function POST(req: NextRequest) {
       .select("id, first_name, last_name, google_calendar_id, google_calendar_id_presentiel, zoom_link, email, slack_user_id, roles")
       .in("first_name", trainers.length > 0 ? trainers : ["__none__"]);
 
-    const slackToken = process.env.SLACK_BOT_TOKEN;
     const results: { trainer: string; slack?: string; gcal?: string; email?: string }[] = [];
 
     const wf = await loadWorkflow("session-notification");
@@ -172,10 +173,26 @@ export async function POST(req: NextRequest) {
         }
 
         results.push({ trainer: trainer.first_name, gcal: upsert.success ? upsert.status : upsert.error });
+
+        // Outlook sync (same event data, different calendar)
+        const olCalType = isJournee ? "presentiel" as const : "formation" as const;
+        const olResult = await syncOutlookEvent({
+          memberId: trainer.id as string,
+          calType: olCalType,
+          summary: title,
+          description,
+          location,
+          startDateTime: startDT,
+          endDateTime: endDT,
+        });
+        if (olResult) {
+          results.push({ trainer: trainer.first_name, gcal: `outlook: ${olResult.status}` });
+        }
       }
 
       // 2. Slack DM (for everyone with a Slack user ID)
-      if (trainer.slack_user_id && slackToken && isStepActive(wf, "slack-dm-trainers").active) {
+      const trainerSlackToken = trainer.slack_user_id ? await getSlackToken(trainer.id as string) : null;
+      if (trainer.slack_user_id && trainerSlackToken && isStepActive(wf, "slack-dm-trainers").active) {
         const slackMsg = [
           `Bonjour ${trainer.first_name},`,
           "",
@@ -194,7 +211,7 @@ export async function POST(req: NextRequest) {
         try {
           const slackRes = await fetch("https://slack.com/api/chat.postMessage", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${slackToken}` },
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${trainerSlackToken}` },
             body: JSON.stringify({ channel: trainer.slack_user_id, text: slackMsg }),
           });
           const slackData = await slackRes.json();
@@ -367,7 +384,8 @@ export async function POST(req: NextRequest) {
 
         // 2. Slack DM de retrait
         let slackStatus: string | undefined;
-        if (trainer.slack_user_id && slackToken) {
+        const removedSlackToken = trainer.slack_user_id ? await getSlackToken(trainer.id as string) : null;
+        if (trainer.slack_user_id && removedSlackToken) {
           const msg = [
             `Bonjour ${trainer.first_name},`,
             "",
@@ -382,7 +400,7 @@ export async function POST(req: NextRequest) {
           try {
             const res = await fetch("https://slack.com/api/chat.postMessage", {
               method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${slackToken}` },
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${removedSlackToken}` },
               body: JSON.stringify({ channel: trainer.slack_user_id, text: msg }),
             });
             const data = await res.json();

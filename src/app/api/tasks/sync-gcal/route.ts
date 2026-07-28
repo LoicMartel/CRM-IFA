@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { upsertCalendarEvent } from "@/lib/google-calendar";
+import { syncOutlookEvent } from "@/lib/outlook-sync";
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,6 +85,17 @@ export async function POST(req: NextRequest) {
     if (upsert.success && upsert.status === "created" && upsert.eventId) {
       await supabase.from("activities").update({ gcal_event_id: upsert.eventId }).eq("id", taskId);
     }
+
+    // Outlook sync (tasks calendar)
+    await syncOutlookEvent({
+      memberId: task.team_member_id,
+      calType: "tasks",
+      summary: title,
+      description,
+      location: "",
+      startDateTime: startDT,
+      endDateTime: endDT,
+    });
 
     return NextResponse.json({
       success: true,

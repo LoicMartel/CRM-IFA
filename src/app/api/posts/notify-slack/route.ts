@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getSlackToken } from "@/lib/oauth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,8 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     const { recipientIds, authorName, postTitle, tagLabels, postId, type } = await req.json();
 
-    const slackToken = process.env.SLACK_BOT_TOKEN;
-    if (!slackToken || !recipientIds?.length) {
+    if (!recipientIds?.length) {
       return NextResponse.json({ success: true, skipped: true });
     }
 
@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
 
     for (const m of members ?? []) {
       if (!m.slack_user_id) continue;
+
+      const memberSlackToken = await getSlackToken(m.id);
+      if (!memberSlackToken) continue;
 
       let msg: string;
       if (type === "mention_post") {
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
       try {
         const res = await fetch("https://slack.com/api/chat.postMessage", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${slackToken}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${memberSlackToken}` },
           body: JSON.stringify({ channel: m.slack_user_id, text: msg }),
         });
         const data = await res.json();

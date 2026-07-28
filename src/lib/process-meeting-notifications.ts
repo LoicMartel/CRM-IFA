@@ -6,6 +6,8 @@ import { toParisDateTime } from "@/lib/timezone";
 import { loadWorkflow, isStepActive } from "@/lib/automations";
 import { createNotification } from "@/lib/notifications";
 import { getProspectEmailBody, getProspectEmailSubject } from "@/lib/meeting-email-templates";
+import { getSlackToken } from "@/lib/oauth";
+import { syncOutlookEvent } from "@/lib/outlook-sync";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -101,7 +103,6 @@ export async function processMeetingNotifications(params: {
   // Title
   const title = `${meeting.meeting_type} — ${contactName}${companyName ? ` (${companyName})` : ""}`;
 
-  const slackToken = process.env.SLACK_BOT_TOKEN;
   const results: { action: string; status: string }[] = [];
 
   const wf = await loadWorkflow("meeting-notification");
@@ -167,27 +168,27 @@ export async function processMeetingNotifications(params: {
 
     // 1. Google Calendar (upsert: update existing event or create new one)
     const commercialCalId = manager.google_calendar_id_commercial || manager.google_calendar_id;
+    const eventDescription = [
+      `📋 ${typeLabel}`,
+      `👤 Contacts : ${contactsListDisplay}`,
+      companyName ? `🏢 Entreprise : ${companyName}` : "",
+      ...allContacts.map(c => c.phone ? `📞 ${c.first_name} ${c.last_name} : ${c.phone}` : "").filter(Boolean),
+      ...allContacts.map(c => c.email ? `✉️ ${c.first_name} ${c.last_name} : ${c.email}` : "").filter(Boolean),
+      `🖥️ Mode : ${modeLabel}`,
+      `⏱️ Duree : ${durationLabel}`,
+      "",
+      meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
+      meeting.location ? `📍 Lieu : ${meeting.location}` : "",
+      meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
+    ].filter(Boolean).join("\n");
+
     if (commercialCalId && isStepActive(wf, "google-calendar").active) {
       try {
-        const description = [
-          `📋 ${typeLabel}`,
-          `👤 Contacts : ${contactsListDisplay}`,
-          companyName ? `🏢 Entreprise : ${companyName}` : "",
-          ...allContacts.map(c => c.phone ? `📞 ${c.first_name} ${c.last_name} : ${c.phone}` : "").filter(Boolean),
-          ...allContacts.map(c => c.email ? `✉️ ${c.first_name} ${c.last_name} : ${c.email}` : "").filter(Boolean),
-          `🖥️ Mode : ${modeLabel}`,
-          `⏱️ Duree : ${durationLabel}`,
-          "",
-          meeting.meeting_mode === "visio" && zoomLink ? `🔗 Lien Zoom : ${zoomLink}` : "",
-          meeting.location ? `📍 Lieu : ${meeting.location}` : "",
-          meeting.notes ? `\n📝 Notes : ${meeting.notes}` : "",
-        ].filter(Boolean).join("\n");
-
         const gcalResult = await upsertCalendarEvent({
           calendarId: commercialCalId,
           existingEventId: existingEventIds[manager.first_name] ?? null,
           summary: title,
-          description,
+          description: eventDescription,
           location,
           startDateTime: startDT,
           endDateTime: endDT,
@@ -205,10 +206,29 @@ export async function processMeetingNotifications(params: {
       } catch (e: any) {
         results.push({ action: `Google Calendar (${manager.first_name})`, status: `Erreur: ${e.message}` });
       }
+
+      // Outlook sync (commercial calendar)
+      try {
+        const olResult = await syncOutlookEvent({
+          memberId: manager.id,
+          calType: "commercial",
+          summary: title,
+          description: eventDescription,
+          location,
+          startDateTime: startDT,
+          endDateTime: endDT,
+        });
+        if (olResult) {
+          results.push({ action: `Outlook (${manager.first_name})`, status: olResult.status === "created" ? "Ajoute" : olResult.status === "updated" ? "Mis a jour" : olResult.status });
+        }
+      } catch (e: any) {
+        results.push({ action: `Outlook (${manager.first_name})`, status: `Erreur: ${e.message}` });
+      }
     }
 
     // 2. Slack DM
-    if (manager.slack_user_id && slackToken && isStepActive(wf, "slack-dm").active) {
+    const managerSlackToken = manager.slack_user_id ? await getSlackToken(manager.id) : null;
+    if (manager.slack_user_id && managerSlackToken && isStepActive(wf, "slack-dm").active) {
       const slackHeading = isReschedule
         ? `🔄 *RDV commercial modifie*`
         : `📅 *Nouveau RDV commercial planifie*`;
@@ -237,7 +257,7 @@ export async function processMeetingNotifications(params: {
       try {
         const slackRes = await fetch("https://slack.com/api/chat.postMessage", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${slackToken}` },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${managerSlackToken}` },
           body: JSON.stringify({ channel: manager.slack_user_id, text: slackMsg }),
         });
         const slackData = await slackRes.json();

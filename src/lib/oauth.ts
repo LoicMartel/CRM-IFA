@@ -163,3 +163,21 @@ export async function getValidToken(
   // Expired with no refresh token
   return row.access_token; // Return anyway; caller will handle 401
 }
+
+/**
+ * Get a Slack token for sending messages.
+ * Uses the member's OAuth token if connected, falls back to SLACK_BOT_TOKEN.
+ */
+export async function getSlackToken(
+  memberId?: string | null,
+): Promise<string | null> {
+  if (memberId) {
+    try {
+      const token = await getValidToken(memberId, "slack");
+      if (token) return token;
+    } catch {
+      // OAuth not available — fall through
+    }
+  }
+  return process.env.SLACK_BOT_TOKEN ?? null;
+}

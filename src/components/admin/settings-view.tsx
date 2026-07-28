@@ -67,6 +67,16 @@ export function SettingsView() {
   const [savingCals, setSavingCals] = useState(false);
   const [calsSaved, setCalsSaved] = useState(false);
 
+  // Outlook calendar mapping
+  interface OutlookCalItem { id: string; name: string; isDefault: boolean; color: string }
+  const [outlookCalendars, setOutlookCalendars] = useState<OutlookCalItem[]>([]);
+  const [olCalCommercial, setOlCalCommercial] = useState("");
+  const [olCalFormation, setOlCalFormation] = useState("");
+  const [olCalPresentiel, setOlCalPresentiel] = useState("");
+  const [olCalTasks, setOlCalTasks] = useState("");
+  const [savingOlCals, setSavingOlCals] = useState(false);
+  const [olCalsSaved, setOlCalsSaved] = useState(false);
+
   // Crop state
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -80,7 +90,7 @@ export function SettingsView() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? "");
-        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id, google_calendar_id_commercial, google_calendar_id_presentiel, google_calendar_id_tasks")
+        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id, google_calendar_id_commercial, google_calendar_id_presentiel, google_calendar_id_tasks, integration_config")
           .or(`auth_user_id.eq.${user.id},email.eq.${user.email}`).limit(1).single();
         if (member) {
           setMemberName(`${member.first_name} ${member.last_name}`);
@@ -111,6 +121,18 @@ export function SettingsView() {
               fetch(`/api/auth/google/calendars?memberId=${member.id}`)
                 .then(r => r.json())
                 .then(d => { if (d.calendars) setGoogleCalendars(d.calendars); })
+                .catch(() => {});
+            }
+            // Si Microsoft est connecté, charger les agendas Outlook
+            if (tokens.some(t => t.provider === "microsoft")) {
+              const ic = (member as any).integration_config ?? {};
+              setOlCalCommercial(ic.outlook_cal_commercial ?? "");
+              setOlCalFormation(ic.outlook_cal_formation ?? "");
+              setOlCalPresentiel(ic.outlook_cal_presentiel ?? "");
+              setOlCalTasks(ic.outlook_cal_tasks ?? "");
+              fetch(`/api/auth/microsoft/calendars?memberId=${member.id}`)
+                .then(r => r.json())
+                .then(d => { if (d.calendars) setOutlookCalendars(d.calendars); })
                 .catch(() => {});
             }
           }
@@ -440,6 +462,50 @@ export function SettingsView() {
                   </button>
                 </div>
               )}
+
+              {/* Mapping des agendas Outlook */}
+              {outlookCalendars.length > 0 && (
+                <div style={{ background: "#f5f0fa", borderRadius: 10, padding: 16, border: "1px solid #e0d4f0", marginTop: googleCalendars.length > 0 ? 12 : 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>
+                    Associer vos agendas Outlook aux types d{"'"}événements
+                  </div>
+                  <div className="space-y-3">
+                    <OutlookCalendarSelect label="RDV commerciaux (R0, R1...)" value={olCalCommercial} onChange={setOlCalCommercial} calendars={outlookCalendars} />
+                    <OutlookCalendarSelect label="Formations à distance (VT)" value={olCalFormation} onChange={setOlCalFormation} calendars={outlookCalendars} />
+                    <OutlookCalendarSelect label="Formations en présentiel" value={olCalPresentiel} onChange={setOlCalPresentiel} calendars={outlookCalendars} />
+                    <OutlookCalendarSelect label="Tâches" value={olCalTasks} onChange={setOlCalTasks} calendars={outlookCalendars} />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setSavingOlCals(true);
+                      const supabase = createClient();
+                      // Merge into integration_config JSONB
+                      const { data: current } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                      const cfg = (current?.integration_config as Record<string, unknown>) ?? {};
+                      await supabase.from("team_members").update({
+                        integration_config: {
+                          ...cfg,
+                          outlook_cal_commercial: olCalCommercial || null,
+                          outlook_cal_formation: olCalFormation || null,
+                          outlook_cal_presentiel: olCalPresentiel || null,
+                          outlook_cal_tasks: olCalTasks || null,
+                        },
+                      }).eq("id", memberId);
+                      setSavingOlCals(false);
+                      setOlCalsSaved(true);
+                      setTimeout(() => setOlCalsSaved(false), 2000);
+                    }}
+                    disabled={savingOlCals}
+                    style={{
+                      marginTop: 14, width: "100%", height: 36, borderRadius: 8, border: "none",
+                      background: olCalsSaved ? "#2e7d32" : "#5b21b6", color: "white",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >
+                    {savingOlCals ? "Sauvegarde..." : olCalsSaved ? "Sauvegardé !" : "Sauvegarder les agendas Outlook"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Messagerie */}
@@ -718,6 +784,33 @@ function CalendarSelect({
         {calendars.map((cal) => (
           <option key={cal.id} value={cal.id}>
             {cal.summary}{cal.primary ? " (principal)" : ""}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function OutlookCalendarSelect({
+  label, value, onChange, calendars,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  calendars: { id: string; name: string; isDefault: boolean; color: string }[];
+}) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 3, display: "block" }}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+      >
+        <option value="">— Aucun agenda —</option>
+        {calendars.map((cal) => (
+          <option key={cal.id} value={cal.id}>
+            {cal.name}{cal.isDefault ? " (principal)" : ""}
           </option>
         ))}
       </select>

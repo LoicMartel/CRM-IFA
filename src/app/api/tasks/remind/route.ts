@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { loadWorkflow } from "@/lib/automations";
+import { getSlackToken } from "@/lib/oauth";
 
 export async function GET() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const slackToken = process.env.SLACK_BOT_TOKEN;
-
-    if (!slackToken) {
-      return NextResponse.json({ error: "SLACK_BOT_TOKEN not configured" }, { status: 500 });
-    }
 
     const wf = await loadWorkflow("task-reminders");
     if (wf && !wf.is_active) {
@@ -71,12 +67,18 @@ export async function GET() {
 
       const message = `⚠️ Rappel urgent — La tâche '${task.title}' pour ${contactName} a dépassé son échéance (${deadlineFormatted}). Merci de la traiter en priorité.`;
 
+      const memberSlackToken = await getSlackToken(member.id);
+      if (!memberSlackToken) {
+        results.push({ task: task.title, member: member.first_name, status: "no slack token" });
+        continue;
+      }
+
       try {
         const slackRes = await fetch("https://slack.com/api/chat.postMessage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${slackToken}`,
+            "Authorization": `Bearer ${memberSlackToken}`,
           },
           body: JSON.stringify({
             channel: member.slack_user_id,

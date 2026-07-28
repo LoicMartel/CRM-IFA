@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSlackToken } from "@/lib/oauth";
 
 const IMAN_SLACK_USER_ID = "U06AGJG5FQE";
 
@@ -6,9 +7,9 @@ export async function POST(req: NextRequest) {
   try {
     const { companyName, sessionDate, sessionType, duration, trainers, notes } = await req.json();
 
-    const slackToken = process.env.SLACK_BOT_TOKEN;
+    const slackToken = await getSlackToken(); // bot token fallback (no specific member)
     if (!slackToken) {
-      return NextResponse.json({ error: "SLACK_BOT_TOKEN not configured" }, { status: 500 });
+      return NextResponse.json({ error: "Slack not configured" }, { status: 500 });
     }
 
     const message = [
