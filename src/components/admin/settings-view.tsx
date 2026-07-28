@@ -57,6 +57,16 @@ export function SettingsView() {
   // OAuth tokens
   const [oauthTokens, setOauthTokens] = useState<{ provider: string; provider_email: string | null }[]>([]);
 
+  // Calendar mapping
+  interface CalendarItem { id: string; summary: string; primary: boolean; backgroundColor: string | null }
+  const [googleCalendars, setGoogleCalendars] = useState<CalendarItem[]>([]);
+  const [calCommercial, setCalCommercial] = useState("");
+  const [calFormation, setCalFormation] = useState("");
+  const [calPresentiel, setCalPresentiel] = useState("");
+  const [calTasks, setCalTasks] = useState("");
+  const [savingCals, setSavingCals] = useState(false);
+  const [calsSaved, setCalsSaved] = useState(false);
+
   // Crop state
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -70,7 +80,7 @@ export function SettingsView() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? "");
-        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id")
+        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id, google_calendar_id_commercial, google_calendar_id_presentiel, google_calendar_id_tasks")
           .or(`auth_user_id.eq.${user.id},email.eq.${user.email}`).limit(1).single();
         if (member) {
           setMemberName(`${member.first_name} ${member.last_name}`);
@@ -80,6 +90,10 @@ export function SettingsView() {
           setZoomLink(member.zoom_link ?? "");
           setSlackUserId(member.slack_user_id ?? "");
           setGoogleCalendarId(member.google_calendar_id ?? "");
+          setCalCommercial(member.google_calendar_id_commercial ?? "");
+          setCalFormation(member.google_calendar_id ?? "");
+          setCalPresentiel(member.google_calendar_id_presentiel ?? "");
+          setCalTasks(member.google_calendar_id_tasks ?? "");
           setInitialIntegrations({
             zoom: member.zoom_link ?? "",
             slack: member.slack_user_id ?? "",
@@ -90,7 +104,16 @@ export function SettingsView() {
             .from("oauth_tokens")
             .select("provider, provider_email")
             .eq("team_member_id", member.id);
-          if (tokens) setOauthTokens(tokens);
+          if (tokens) {
+            setOauthTokens(tokens);
+            // Si Google est connecté, charger la liste des agendas
+            if (tokens.some(t => t.provider === "google")) {
+              fetch(`/api/auth/google/calendars?memberId=${member.id}`)
+                .then(r => r.json())
+                .then(d => { if (d.calendars) setGoogleCalendars(d.calendars); })
+                .catch(() => {});
+            }
+          }
         }
       }
     })();
@@ -375,10 +398,48 @@ export function SettingsView() {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
                 <Calendar className="h-3 w-3" style={{ display: "inline", marginRight: 4 }} /> Agenda
               </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: googleCalendars.length > 0 ? 16 : 0 }}>
                 <OAuthConnectButton provider="google" label="Google Calendar" memberId={memberId} token={oauthTokens.find(t => t.provider === "google")} onDisconnect={handleDisconnectOAuth} />
                 <OAuthConnectButton provider="microsoft" label="Outlook" memberId={memberId} token={oauthTokens.find(t => t.provider === "microsoft")} onDisconnect={handleDisconnectOAuth} />
               </div>
+
+              {/* Mapping des agendas par type d'événement */}
+              {googleCalendars.length > 0 && (
+                <div style={{ background: "#f8fbfd", borderRadius: 10, padding: 16, border: "1px solid #e3edf5" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>
+                    Associer vos agendas aux types d{"'"}événements
+                  </div>
+                  <div className="space-y-3">
+                    <CalendarSelect label="RDV commerciaux (R0, R1...)" value={calCommercial} onChange={setCalCommercial} calendars={googleCalendars} />
+                    <CalendarSelect label="Formations à distance (VT)" value={calFormation} onChange={setCalFormation} calendars={googleCalendars} />
+                    <CalendarSelect label="Formations en présentiel" value={calPresentiel} onChange={setCalPresentiel} calendars={googleCalendars} />
+                    <CalendarSelect label="Tâches" value={calTasks} onChange={setCalTasks} calendars={googleCalendars} />
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setSavingCals(true);
+                      const supabase = createClient();
+                      await supabase.from("team_members").update({
+                        google_calendar_id: calFormation || null,
+                        google_calendar_id_commercial: calCommercial || null,
+                        google_calendar_id_presentiel: calPresentiel || null,
+                        google_calendar_id_tasks: calTasks || null,
+                      }).eq("id", memberId);
+                      setSavingCals(false);
+                      setCalsSaved(true);
+                      setTimeout(() => setCalsSaved(false), 2000);
+                    }}
+                    disabled={savingCals}
+                    style={{
+                      marginTop: 14, width: "100%", height: 36, borderRadius: 8, border: "none",
+                      background: calsSaved ? "#2e7d32" : "#1a6b9c", color: "white",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >
+                    {savingCals ? "Sauvegarde..." : calsSaved ? "Sauvegardé !" : "Sauvegarder les agendas"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Messagerie */}
@@ -634,6 +695,33 @@ function OAuthConnectButton({
       <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ccc", flexShrink: 0 }} />
       Connecter {label}
     </button>
+  );
+}
+
+function CalendarSelect({
+  label, value, onChange, calendars,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  calendars: { id: string; summary: string; primary: boolean; backgroundColor: string | null }[];
+}) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 3, display: "block" }}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+      >
+        <option value="">— Aucun agenda —</option>
+        {calendars.map((cal) => (
+          <option key={cal.id} value={cal.id}>
+            {cal.summary}{cal.primary ? " (principal)" : ""}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
