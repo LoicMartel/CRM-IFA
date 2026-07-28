@@ -509,92 +509,79 @@ function SettingReport({
   }
 
   const stats = useMemo(() => {
-    // 1. Prospects appelés = leads marketing créés dans la période
-    const prospectsAppeles = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
-    const prospectIds = new Set(prospectsAppeles.map((l) => l.id));
-    const totalProspects = prospectsAppeles.length;
+    // Référentiel : tous les leads marketing (was_lead_marketing = true)
+    const allLeadIds = new Set(leads.map((l) => l.id));
+    const leadsById = new Map(leads.map((l) => [l.id, l]));
 
-    // 2. Prospects disqualifiés : not_interested OU ayant une activité "Contacté → Non qualifié"
+    // Toutes les activités d'appel dans la période (date de l'action)
+    const callsInPeriod = activities.filter(
+      (a) => allLeadIds.has(a.contact_id) && inPeriod(a.created_at.split("T")[0])
+    );
+    const totalCalls = callsInPeriod.length;
+
+    // 1. Prospects appelés = leads uniques ayant eu au moins 1 appel dans la période
+    const calledIds = new Set<string>();
+    for (const a of callsInPeriod) calledIds.add(a.contact_id);
+    const totalProspects = calledIds.size;
+
+    // 2. Disqualifiés parmi les appelés : not_interested OU activité "Contacté → Non qualifié"
     const disqualifiedIds = new Set<string>();
-    for (const l of prospectsAppeles) {
-      if (l.lead_status === "not_interested") disqualifiedIds.add(l.id);
+    for (const id of calledIds) {
+      const l = leadsById.get(id);
+      if (l?.lead_status === "not_interested") disqualifiedIds.add(id);
     }
-    for (const a of activities) {
-      if (prospectIds.has(a.contact_id) && (a.description ?? "").startsWith("Contacté → Non qualifié")) {
+    for (const a of callsInPeriod) {
+      if ((a.description ?? "").startsWith("Contacté → Non qualifié")) {
         disqualifiedIds.add(a.contact_id);
       }
     }
     const disqualifies = disqualifiedIds.size;
     const qualifies = totalProspects - disqualifies;
 
-    // 3. Tentatives d'appels = toutes les activités type appel dans la période, peu importe la date de création du contact
-    const allCallsInPeriod = activities.filter(
-      (a) => inPeriod(a.created_at.split("T")[0])
-    );
-    const totalCalls = allCallsInPeriod.length;
-
-    // Appels sur les prospects du périmètre (pour les métriques contacté)
-    const callAttempts = activities.filter(
-      (a) => prospectIds.has(a.contact_id) && inPeriod(a.created_at.split("T")[0])
-    );
-
-    // 4. Contactés = prospects ayant été au moins une fois en statut "contacted"
-    // Soit via une activité "Contacté…", soit via leur lead_status actuel
-    // (contacted, booked, rdv_done, signed, no_show = tous passés par "contacted")
+    // 3. Contactés = leads ayant une activité "Contacté…" dans la période
+    // OU dont le lead_status actuel prouve qu'ils ont été contactés (contacted, booked, rdv_done, signed, no_show)
     const CONTACTED_OR_AFTER = new Set(["contacted", "booked", "rdv_done", "signed", "no_show"]);
     const contactedIds = new Set<string>();
-    // Par statut actuel (si le statut a évolué après "contacted", ils l'ont été)
-    for (const l of prospectsAppeles) {
-      if (l.lead_status && CONTACTED_OR_AFTER.has(l.lead_status)) {
-        contactedIds.add(l.id);
+    for (const a of callsInPeriod) {
+      if ((a.description ?? "").startsWith("Contacté")) {
+        contactedIds.add(a.contact_id);
       }
     }
-    // Par activité (au cas où le statut a été modifié manuellement)
-    for (const a of callAttempts) {
-      const desc = a.description ?? "";
-      if (desc.startsWith("Contacté")) {
-        contactedIds.add(a.contact_id);
+    // Ajouter ceux appelés dans la période dont le statut prouve qu'ils ont été contactés
+    for (const id of calledIds) {
+      const l = leadsById.get(id);
+      if (l?.lead_status && CONTACTED_OR_AFTER.has(l.lead_status)) {
+        contactedIds.add(id);
       }
     }
     const totalContacted = contactedIds.size;
 
-    // 4b. Contactés par source
-    const prospectsBySource = new Map<string, string>();
-    for (const l of prospectsAppeles) {
-      prospectsBySource.set(l.id, getSourceName(l));
-    }
+    // 4. Contactés par source
     const sourceStats: { source: string; total: number; contacted: number }[] = [];
     const sourceTotals: Record<string, number> = {};
     const sourceContacted: Record<string, number> = {};
-    for (const l of prospectsAppeles) {
-      const src = getSourceName(l);
+    for (const id of calledIds) {
+      const l = leadsById.get(id);
+      const src = l ? getSourceName(l) : "Non définie";
       sourceTotals[src] = (sourceTotals[src] ?? 0) + 1;
     }
     for (const id of contactedIds) {
-      const src = prospectsBySource.get(id) ?? "Non définie";
+      const l = leadsById.get(id);
+      const src = l ? getSourceName(l) : "Non définie";
       sourceContacted[src] = (sourceContacted[src] ?? 0) + 1;
     }
     for (const src of Object.keys(sourceTotals).sort((a, b) => sourceTotals[b] - sourceTotals[a])) {
       sourceStats.push({ source: src, total: sourceTotals[src], contacted: sourceContacted[src] ?? 0 });
     }
 
-    // 5. Contactés parmi les qualifiés = contactés qui ne sont pas disqualifiés
+    // 5. Contactés qualifiés = contactés qui ne sont pas disqualifiés
     const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
     const totalContactedQualifies = contactedQualifiesIds.size;
 
-    // 5b. Qualifiés + Not Reached = prospects avec au moins 1 appel ET non disqualifiés
-    const calledIds = new Set<string>();
-    for (const a of callAttempts) {
-      calledIds.add(a.contact_id);
-    }
-    const qualifiesAndNotReached = [...calledIds].filter((id) => !disqualifiedIds.has(id)).length;
-
-    // 6. RDV réservés = tous les meetings créés dans la période (peu importe la date de création du contact)
-    const allLeadIds = new Set(leads.map((l) => l.id));
+    // 6. RDV réservés = meetings créés dans la période (date de l'action)
     const meetingsInScope = meetings.filter(
       (m) => allLeadIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
-    // Grouper par contact pour détecter les annulés avec remplacement
     const meetingsByContact = new Map<string, typeof meetingsInScope>();
     for (const m of meetingsInScope) {
       const list = meetingsByContact.get(m.contact_id);
@@ -603,15 +590,12 @@ function SettingReport({
     let totalRdvBooked = 0;
     for (const [, contactMeetings] of meetingsByContact) {
       const nonCancelled = contactMeetings.filter((m) => m.status !== "cancelled");
-      // Si le prospect a des RDV non-annulés, compter ceux-là ; sinon compter 1 (l'annulé seul)
       totalRdvBooked += nonCancelled.length > 0 ? nonCancelled.length : 1;
     }
 
-    // 7. RDV faits = parmi les meetings réservés (meetingsInScope), combien ont été faits
-    // Un RDV est "fait" si le meeting a status "done" OU si le contact a lead_status rdv_done/signed
+    // 7. RDV faits = meetings done dans la période OU contact avec lead_status rdv_done/signed
     const RDV_DONE_OR_AFTER = new Set(["rdv_done", "signed"]);
     const rdvDoneContactIds = new Set<string>();
-    // Vérifier le lead_status sur TOUS les leads marketing (pas seulement ceux créés dans la période)
     const meetingContactIds = new Set(meetingsInScope.map((m) => m.contact_id));
     for (const l of leads) {
       if (meetingContactIds.has(l.id) && l.lead_status && RDV_DONE_OR_AFTER.has(l.lead_status)) {
@@ -622,7 +606,6 @@ function SettingReport({
       if (m.status === "done") rdvDoneContactIds.add(m.contact_id);
     }
     const totalRdvDone = rdvDoneContactIds.size;
-    // Dénominateur = même base que RDV réservés
     const totalRdvForShowRate = totalRdvBooked;
 
     return {
@@ -632,7 +615,6 @@ function SettingReport({
       totalCalls,
       totalContacted,
       totalContactedQualifies,
-      qualifiesAndNotReached,
       sourceStats,
       totalRdvBooked,
       totalRdvDone,
