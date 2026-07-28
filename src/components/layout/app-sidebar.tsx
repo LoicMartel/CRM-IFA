@@ -26,6 +26,7 @@ import {
   Users,
   MessageSquare,
   PhoneOutgoing,
+  Settings,
   Wallet,
   Webhook,
 } from "lucide-react";
@@ -86,6 +87,7 @@ const generalItems = [
 ];
 
 const adminItems = [
+  { title: "Réglages", href: "/reglages", icon: Settings },
   { title: "Équipe", href: "/team", icon: Users },
   { title: "Journal Emails", href: "/emails", icon: Mail },
   { title: "Test VisioFormation", href: "/visioformation-test", icon: Webhook },
