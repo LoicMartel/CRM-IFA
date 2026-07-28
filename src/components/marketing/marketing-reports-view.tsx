@@ -582,6 +582,13 @@ function SettingReport({
     const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
     const totalContactedQualifies = contactedQualifiesIds.size;
 
+    // 5b. Qualifiés + Not Reached = prospects avec au moins 1 appel ET non disqualifiés
+    const calledIds = new Set<string>();
+    for (const a of callAttempts) {
+      calledIds.add(a.contact_id);
+    }
+    const qualifiesAndNotReached = [...calledIds].filter((id) => !disqualifiedIds.has(id)).length;
+
     // 6. RDV réservés = meetings créés dans la période pour les prospects du périmètre
     const meetingsInScope = meetings.filter(
       (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
@@ -611,6 +618,7 @@ function SettingReport({
       totalCalls,
       totalContacted,
       totalContactedQualifies,
+      qualifiesAndNotReached,
       sourceStats,
       totalRdvBooked,
       totalRdvDone,
@@ -722,11 +730,11 @@ function SettingReport({
               color={SOURCE_COLORS[i % SOURCE_COLORS.length]}
             />
           ))}
-          {/* Contactés / Qualifiés */}
+          {/* Contactés / Qualifiés + Not Reached */}
           <FunnelRow
-            label="Contactés / Qualifiés"
+            label="Contactés / Qualifiés + Not Reached"
             num={stats.totalContactedQualifies}
-            den={stats.qualifies}
+            den={stats.qualifiesAndNotReached}
             color="#6a1b9a"
           />
           {/* Qualifiés / Contactés */}
