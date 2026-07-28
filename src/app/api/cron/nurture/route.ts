@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     .order("next_send_at", { ascending: true })
     .limit(BATCH);
 
-  let sent = 0, completed = 0, failed = 0, claimSkip = 0, channelSkip = 0, windowSkip = 0, bookedSkip = 0;
+  let sent = 0, completed = 0, failed = 0, claimSkip = 0, channelSkip = 0, windowSkip = 0, bookedSkip = 0, pausedSkip = 0;
   let firstSend = true;
 
   for (const enr of due ?? []) {
@@ -108,6 +108,17 @@ export async function GET(req: NextRequest) {
       await sb.from("nurture_enrollments").update({ status: "cancelled", next_send_at: null }).eq("id", enr.id).eq("status", "active");
       continue;
     }
+    // GEL DES RELANCES (décision Teina, 28/07, après l'incident Céline HADJADJ) : les séquences de
+    // relance (no-show, VSL) ne partent plus en automatique — l'équipe recontacte déjà à la main
+    // (4 des 5 dernières relances doublonnaient un commercial). Elles repartiront derrière la file
+    // de validation humaine, pas avant.
+    // Fail-closed : sans NURTURE_RELANCES_ENABLED='true', c'est gelé. Volontairement AVANT le claim
+    // pour ne rien consommer : les enrôlements restent actifs et dus, s'accumulent, et basculeront
+    // dans la file de validation. On ne les annule PAS (contrairement à is_active=false sur la
+    // séquence, qui les passerait en 'cancelled' et perdrait l'état).
+    // Les rappels pré-RDV (anchor='meeting') ne sont pas concernés : ils confirment un RDV réel.
+    if (seq.anchor !== "meeting" && process.env.NURTURE_RELANCES_ENABLED !== "true") { pausedSkip++; continue; }
+
     // Drip par événement (VSL/no-show) : respecte la fenêtre. Pré-RDV : exempté (pas de claim, on
     // laisse la ligne due -> re-tentée au prochain tick en fenêtre).
     if (seq.anchor !== "meeting" && !inWindow) { windowSkip++; continue; }
@@ -260,5 +271,5 @@ export async function GET(req: NextRequest) {
     if (!nextDue) completed++;
   }
 
-  return NextResponse.json({ ok: true, sent, completed, failed, claimSkip, channelSkip, windowSkip, bookedSkip });
+  return NextResponse.json({ ok: true, sent, completed, failed, claimSkip, channelSkip, windowSkip, bookedSkip, pausedSkip });
 }
