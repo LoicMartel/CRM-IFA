@@ -509,37 +509,38 @@ function SettingReport({
   }
 
   const stats = useMemo(() => {
-    // Référentiel : tous les leads marketing (was_lead_marketing = true)
     const allLeadIds = new Set(leads.map((l) => l.id));
     const leadsById = new Map(leads.map((l) => [l.id, l]));
 
-    // Toutes les activités d'appel dans la période (date de l'action)
+    // ── Activités d'appel dans la période (date de l'action) ──
     const callsInPeriod = activities.filter(
       (a) => allLeadIds.has(a.contact_id) && inPeriod(a.created_at.split("T")[0])
     );
     const totalCalls = callsInPeriod.length;
 
-    // 1. Prospects appelés = leads uniques ayant eu au moins 1 appel dans la période
+    // ── 1. Prospects appelés = leads uniques avec au moins 1 appel dans la période ──
     const calledIds = new Set<string>();
     for (const a of callsInPeriod) calledIds.add(a.contact_id);
     const totalProspects = calledIds.size;
 
-    // 2. Disqualifiés parmi les appelés : not_interested OU activité "Contacté → Non qualifié"
+    // ── 2. Prospects qualifiés = tous les leads passés par "new lead" (was_lead_marketing)
+    //       créés dans la période, MOINS les not_interested / non qualifié / disqualifié ──
+    const leadsCreatedInPeriod = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
     const disqualifiedIds = new Set<string>();
-    for (const id of calledIds) {
-      const l = leadsById.get(id);
-      if (l?.lead_status === "not_interested") disqualifiedIds.add(id);
+    for (const l of leadsCreatedInPeriod) {
+      if (l.lead_status === "not_interested") disqualifiedIds.add(l.id);
     }
-    for (const a of callsInPeriod) {
-      if ((a.description ?? "").startsWith("Contacté → Non qualifié")) {
+    // Aussi checker les activités "Contacté → Non qualifié" sur TOUS les leads
+    for (const a of activities) {
+      if (allLeadIds.has(a.contact_id) && (a.description ?? "").startsWith("Contacté → Non qualifié")) {
         disqualifiedIds.add(a.contact_id);
       }
     }
-    const disqualifies = disqualifiedIds.size;
-    const qualifies = totalProspects - disqualifies;
+    const disqualifiesInPeriod = leadsCreatedInPeriod.filter((l) => disqualifiedIds.has(l.id)).length;
+    const qualifies = leadsCreatedInPeriod.length - disqualifiesInPeriod;
 
-    // 3. Contactés = leads ayant une activité "Contacté…" dans la période
-    // OU dont le lead_status actuel prouve qu'ils ont été contactés (contacted, booked, rdv_done, signed, no_show)
+    // ── 3. Contactés = leads ayant une activité "Contacté…" dans la période
+    //       OU dont le statut prouve qu'ils ont été contactés ──
     const CONTACTED_OR_AFTER = new Set(["contacted", "booked", "rdv_done", "signed", "no_show"]);
     const contactedIds = new Set<string>();
     for (const a of callsInPeriod) {
@@ -547,7 +548,6 @@ function SettingReport({
         contactedIds.add(a.contact_id);
       }
     }
-    // Ajouter ceux appelés dans la période dont le statut prouve qu'ils ont été contactés
     for (const id of calledIds) {
       const l = leadsById.get(id);
       if (l?.lead_status && CONTACTED_OR_AFTER.has(l.lead_status)) {
@@ -556,13 +556,13 @@ function SettingReport({
     }
     const totalContacted = contactedIds.size;
 
-    // 4. Contactés par source
+    // ── 4. Contactés par source ──
     const sourceStats: { source: string; total: number; contacted: number }[] = [];
     const sourceTotals: Record<string, number> = {};
     const sourceContacted: Record<string, number> = {};
-    for (const id of calledIds) {
-      const l = leadsById.get(id);
-      const src = l ? getSourceName(l) : "Non définie";
+    // Total par source = leads créés dans la période (dénominateur)
+    for (const l of leadsCreatedInPeriod) {
+      const src = getSourceName(l);
       sourceTotals[src] = (sourceTotals[src] ?? 0) + 1;
     }
     for (const id of contactedIds) {
@@ -574,11 +574,13 @@ function SettingReport({
       sourceStats.push({ source: src, total: sourceTotals[src], contacted: sourceContacted[src] ?? 0 });
     }
 
-    // 5. Contactés qualifiés = contactés qui ne sont pas disqualifiés
+    // ── 5. Contactés qualifiés = contactés qui ne sont pas disqualifiés ──
     const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
     const totalContactedQualifies = contactedQualifiesIds.size;
 
-    // 6. RDV réservés = meetings créés dans la période (date de l'action)
+    // ── 6. RDV réservés (date de la PRISE de RDV = created_at du meeting)
+    //       Exclu booking page (déjà filtré côté serveur).
+    //       Si cancel+rebook pour même prospect → compte 1 seul ──
     const meetingsInScope = meetings.filter(
       (m) => allLeadIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
@@ -590,10 +592,12 @@ function SettingReport({
     let totalRdvBooked = 0;
     for (const [, contactMeetings] of meetingsByContact) {
       const nonCancelled = contactMeetings.filter((m) => m.status !== "cancelled");
+      // Si RDV non-annulés → compter ceux-là ; sinon 1 (annulé seul)
       totalRdvBooked += nonCancelled.length > 0 ? nonCancelled.length : 1;
     }
 
-    // 7. RDV faits = meetings done dans la période OU contact avec lead_status rdv_done/signed
+    // ── 7. RDV faits (date de l'action = quand le meeting passe en "done")
+    //       Un prospect = 1 RDV fait max (même si cancel+rebook) ──
     const RDV_DONE_OR_AFTER = new Set(["rdv_done", "signed"]);
     const rdvDoneContactIds = new Set<string>();
     const meetingContactIds = new Set(meetingsInScope.map((m) => m.contact_id));
@@ -606,11 +610,10 @@ function SettingReport({
       if (m.status === "done") rdvDoneContactIds.add(m.contact_id);
     }
     const totalRdvDone = rdvDoneContactIds.size;
-    const totalRdvForShowRate = totalRdvBooked;
 
     return {
       totalProspects,
-      disqualifies,
+      disqualifies: disqualifiesInPeriod,
       qualifies,
       totalCalls,
       totalContacted,
@@ -618,7 +621,7 @@ function SettingReport({
       sourceStats,
       totalRdvBooked,
       totalRdvDone,
-      totalRdvForShowRate,
+      totalLeadsCreated: leadsCreatedInPeriod.length,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leads, activities, meetings, periodMode, filterMonth, customFrom, customTo]);
@@ -686,7 +689,7 @@ function SettingReport({
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV faits</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#2e7d32" }}>{stats.totalRdvDone}</div>
-            <div style={{ fontSize: 10, color: "#8399a9" }}>sur {stats.totalRdvForShowRate} réservé{stats.totalRdvForShowRate > 1 ? "s" : ""}</div>
+            <div style={{ fontSize: 10, color: "#8399a9" }}>sur {stats.totalRdvBooked} réservé{stats.totalRdvBooked > 1 ? "s" : ""}</div>
           </div>
           <CalendarCheck style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -696,11 +699,11 @@ function SettingReport({
       <div className="lca-card" style={{ padding: 20 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>Funnel Setting</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Contactés / Total */}
+          {/* Contactés / Total leads créés */}
           <FunnelRow
             label="Contactés / Total prospects"
             num={stats.totalContacted}
-            den={stats.totalProspects}
+            den={stats.totalLeadsCreated}
             color="#1a6b9c"
           />
           {/* Toggle détail par source */}
@@ -731,23 +734,23 @@ function SettingReport({
               ))}
             </div>
           )}
-          {/* Qualifiés / Contactés */}
+          {/* Taux de qualification des leads contactés */}
           <FunnelRow
-            label="Qualifiés / Contactés"
+            label="Taux de qualification des leads contactés"
             num={stats.totalContactedQualifies}
             den={stats.totalContacted}
             color="#9c27b0"
           />
-          {/* Contactés qualifiés / Prospects qualifiés */}
+          {/* Taux de contactés qualifiés */}
           <FunnelRow
-            label="Contactés qualifiés / Prospects qualifiés"
+            label="Taux de contactés qualifiés"
             num={stats.totalContactedQualifies}
             den={stats.qualifies}
             color="#6a1b9a"
           />
-          {/* RDV réservés / Contactés qualifiés */}
+          {/* Taux de booking des contactés qualifiés */}
           <FunnelRow
-            label="RDV réservés / Contactés qualifiés"
+            label="Taux de booking des contactés qualifiés"
             num={stats.totalRdvBooked}
             den={stats.totalContactedQualifies}
             color="#e65100"
@@ -756,7 +759,7 @@ function SettingReport({
           <FunnelRow
             label="RDV faits / RDV réservés"
             num={stats.totalRdvDone}
-            den={stats.totalRdvForShowRate}
+            den={stats.totalRdvBooked}
             color="#2e7d32"
           />
         </div>
