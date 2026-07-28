@@ -46,8 +46,8 @@ export default async function RapportsMarketingPage() {
     }
   }
 
-  type SettingMeeting = { id: string; contact_id: string; status: string; scheduled_at: string; created_at: string };
-  let settingMeetings: SettingMeeting[] = [];
+  type SettingMeetingRaw = { id: string; contact_id: string; status: string; scheduled_at: string; created_at: string; notes: string | null };
+  let settingMeetingsRaw: SettingMeetingRaw[] = [];
   if (allLeadIds.length > 0) {
     const CHUNK = 200;
     const chunks: string[][] = [];
@@ -56,15 +56,19 @@ export default async function RapportsMarketingPage() {
       chunks.map((ids) =>
         supabase
           .from("meetings")
-          .select("id, contact_id, status, scheduled_at, created_at")
+          .select("id, contact_id, status, scheduled_at, created_at, notes")
           .in("contact_id", ids)
           .order("created_at", { ascending: false })
       )
     );
     for (const { data } of results) {
-      if (data) settingMeetings.push(...(data as SettingMeeting[]));
+      if (data) settingMeetingsRaw.push(...(data as SettingMeetingRaw[]));
     }
   }
+  // Exclure les meetings réservés directement via la booking page (pas du setting)
+  const settingMeetings = settingMeetingsRaw.filter(
+    (m) => !m.notes?.includes("Réservé via la booking page")
+  );
 
   return (
     <>
