@@ -134,6 +134,8 @@ function sourceToProvider(sourceName: string): string {
   return ""; // source non marketing (Renouvellement, Prospection, etc.)
 }
 
+const SOURCE_COLORS = ["#1a6b9c", "#e65100", "#6a1b9a", "#2e7d32", "#c62828", "#0d4f7a", "#f57c00", "#4a148c"];
+
 function getMonthKey(dateStr: string): string {
   return dateStr.slice(0, 7);
 }
@@ -279,7 +281,7 @@ export function MarketingReportsView({
   const sortedCosts = Object.entries(costsByProvider).sort((a, b) => b[1] - a[1]);
   const maxCost = Math.max(...Object.values(costsByProvider), 1);
 
-  const SOURCE_COLORS = ["#1a6b9c", "#e65100", "#6a1b9a", "#2e7d32", "#c62828", "#0d4f7a", "#f57c00", "#4a148c"];
+  // SOURCE_COLORS est défini au niveau module
 
   return (
     <>
@@ -546,15 +548,25 @@ function SettingReport({
     }
     const totalContacted = contactedIds.size;
 
-    // 4b. Contactés par type de tunnel
+    // 4b. Contactés par source
     const prospectsBySource = new Map<string, string>();
     for (const l of prospectsAppeles) {
       prospectsBySource.set(l.id, getSourceName(l));
     }
-    const totalTunnelBook = prospectsAppeles.filter((l) => getSourceName(l) === "Meta ads - tunnel book").length;
-    const contactedTunnelBook = [...contactedIds].filter((id) => prospectsBySource.get(id) === "Meta ads - tunnel book").length;
-    const totalTunnelCommercial = prospectsAppeles.filter((l) => getSourceName(l) === "Meta ads - tunnel commercial").length;
-    const contactedTunnelCommercial = [...contactedIds].filter((id) => prospectsBySource.get(id) === "Meta ads - tunnel commercial").length;
+    const sourceStats: { source: string; total: number; contacted: number }[] = [];
+    const sourceTotals: Record<string, number> = {};
+    const sourceContacted: Record<string, number> = {};
+    for (const l of prospectsAppeles) {
+      const src = getSourceName(l);
+      sourceTotals[src] = (sourceTotals[src] ?? 0) + 1;
+    }
+    for (const id of contactedIds) {
+      const src = prospectsBySource.get(id) ?? "Non définie";
+      sourceContacted[src] = (sourceContacted[src] ?? 0) + 1;
+    }
+    for (const src of Object.keys(sourceTotals).sort((a, b) => sourceTotals[b] - sourceTotals[a])) {
+      sourceStats.push({ source: src, total: sourceTotals[src], contacted: sourceContacted[src] ?? 0 });
+    }
 
     // 5. Contactés parmi les qualifiés = contactés qui ne sont pas not_interested
     const disqualifiedIds = new Set(prospectsAppeles.filter((l) => l.lead_status === "not_interested").map((l) => l.id));
@@ -595,10 +607,7 @@ function SettingReport({
       totalCalls,
       totalContacted,
       totalContactedQualifies,
-      totalTunnelBook,
-      contactedTunnelBook,
-      totalTunnelCommercial,
-      contactedTunnelCommercial,
+      sourceStats,
       totalRdvBooked,
       totalRdvDone,
       totalRdvForShowRate,
@@ -686,20 +695,16 @@ function SettingReport({
             den={stats.totalProspects}
             color="#1a6b9c"
           />
-          {/* Contactés / Tunnel Commercial */}
-          <FunnelRow
-            label="Contactés / Prospects Tunnel Commercial"
-            num={stats.contactedTunnelCommercial}
-            den={stats.totalTunnelCommercial}
-            color="#0d4f7a"
-          />
-          {/* Contactés / Tunnel Book */}
-          <FunnelRow
-            label="Contactés / Prospects Tunnel Book"
-            num={stats.contactedTunnelBook}
-            den={stats.totalTunnelBook}
-            color="#f57c00"
-          />
+          {/* Contactés par source */}
+          {stats.sourceStats.map((s, i) => (
+            <FunnelRow
+              key={s.source}
+              label={`Contactés / ${s.source}`}
+              num={s.contacted}
+              den={s.total}
+              color={SOURCE_COLORS[i % SOURCE_COLORS.length]}
+            />
+          ))}
           {/* Qualifiés / Contactés */}
           <FunnelRow
             label="Qualifiés / Contactés"
