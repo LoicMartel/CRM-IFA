@@ -20,6 +20,31 @@ export function ChatBubble() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Drag vertical pour la bulle
+  const [bubbleBottom, setBubbleBottom] = useState(24);
+  const dragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartBottom = useRef(0);
+  const wasDragged = useRef(false);
+
+  function onPointerDown(e: React.PointerEvent) {
+    dragging.current = true;
+    wasDragged.current = false;
+    dragStartY.current = e.clientY;
+    dragStartBottom.current = bubbleBottom;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragging.current) return;
+    const delta = dragStartY.current - e.clientY;
+    if (Math.abs(delta) > 4) wasDragged.current = true;
+    const newBottom = Math.max(10, Math.min(window.innerHeight - 70, dragStartBottom.current + delta));
+    setBubbleBottom(newBottom);
+  }
+  function onPointerUp() {
+    dragging.current = false;
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -66,21 +91,26 @@ export function ChatBubble() {
 
   return (
     <>
-      {/* Floating bubble */}
+      {/* Floating bubble — draggable vertically */}
       {!open && (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => { if (!wasDragged.current) setOpen(true); }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           style={{
-            position: "fixed", bottom: 24, right: 24, zIndex: 9998,
-            width: 60, height: 60, borderRadius: "50%", border: "none", cursor: "pointer",
+            position: "fixed", bottom: bubbleBottom, right: 24, zIndex: 9998,
+            width: 60, height: 60, borderRadius: "50%", border: "none",
+            cursor: dragging.current ? "grabbing" : "pointer",
             background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
             boxShadow: "0 4px 20px rgba(10, 61, 95, 0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, transition: "transform 0.2s",
+            fontSize: 28, transition: dragging.current ? "none" : "transform 0.2s",
+            touchAction: "none",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          title="Assistant IA"
+          onMouseEnter={(e) => { if (!dragging.current) e.currentTarget.style.transform = "scale(1.1)"; }}
+          onMouseLeave={(e) => { if (!dragging.current) e.currentTarget.style.transform = "scale(1)"; }}
+          title="Assistant IA — glisse vers le haut ou le bas pour déplacer"
         >
           🧙‍♂️
         </button>
@@ -89,7 +119,7 @@ export function ChatBubble() {
       {/* Chat window */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 9998,
+          position: "fixed", bottom: bubbleBottom, right: 24, zIndex: 9998,
           width: 420, height: 560, borderRadius: 16,
           background: "white", boxShadow: "0 8px 40px rgba(0,0,0,0.2)",
           display: "flex", flexDirection: "column", overflow: "hidden",
