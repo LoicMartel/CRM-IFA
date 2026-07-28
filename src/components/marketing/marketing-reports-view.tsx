@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { DollarSign, TrendingUp, Users, Target, BarChart3 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { DollarSign, TrendingUp, Users, Target, BarChart3, Phone, CalendarCheck, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -51,7 +51,23 @@ interface Lead {
   id: string;
   created_at: string;
   source_id: string | null;
+  lead_status: string | null;
   lead_sources: { name: string }[] | { name: string } | null;
+}
+
+interface SettingActivity {
+  contact_id: string;
+  type: string;
+  description: string | null;
+  created_at: string;
+}
+
+interface SettingMeeting {
+  id: string;
+  contact_id: string;
+  status: string;
+  scheduled_at: string;
+  created_at: string;
 }
 
 interface Provider {
@@ -137,12 +153,16 @@ export function MarketingReportsView({
   leads,
   providers,
   wonDeals,
+  settingActivities,
+  settingMeetings,
 }: {
   weeklyStats: WeeklyStat[];
   expenses: Expense[];
   leads: Lead[];
   providers: Provider[];
   wonDeals: WonDeal[];
+  settingActivities: SettingActivity[];
+  settingMeetings: SettingMeeting[];
 }) {
   const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
   const [filterMonth, setFilterMonth] = useState(() => {
@@ -451,6 +471,225 @@ export function MarketingReportsView({
           )}
         </div>
       </div>
+
+      {/* ===== Rapport Setting ===== */}
+      <SettingReport leads={leads} activities={settingActivities} meetings={settingMeetings} />
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rapport Setting – sous-composant avec ses propres filtres          */
+/* ------------------------------------------------------------------ */
+
+function SettingReport({
+  leads,
+  activities,
+  meetings,
+}: {
+  leads: Lead[];
+  activities: SettingActivity[];
+  meetings: SettingMeeting[];
+}) {
+  const [periodMode, setPeriodMode] = useState<"all" | "month" | "custom">("all");
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+
+  function inPeriod(dateStr: string) {
+    if (periodMode === "month") return dateStr.startsWith(filterMonth);
+    if (periodMode === "custom" && customFrom && customTo) return dateStr >= customFrom && dateStr <= customTo;
+    return true;
+  }
+
+  const stats = useMemo(() => {
+    // 1. Prospects appelés = leads marketing créés dans la période
+    const prospectsAppeles = leads.filter((l) => inPeriod(l.created_at.split("T")[0]));
+    const prospectIds = new Set(prospectsAppeles.map((l) => l.id));
+    const totalProspects = prospectsAppeles.length;
+
+    // 2. Prospects disqualifiés (not_interested) parmi ceux de la période
+    const disqualifies = prospectsAppeles.filter((l) => l.lead_status === "not_interested").length;
+    const qualifies = totalProspects - disqualifies;
+
+    // 3. Tentatives d'appels = activités type appel sur les prospects du périmètre, filtrées par date de l'activité
+    const callAttempts = activities.filter(
+      (a) => prospectIds.has(a.contact_id) && inPeriod(a.created_at.split("T")[0])
+    );
+    const totalCalls = callAttempts.length;
+
+    // 4. Reached (contactés) = prospects ayant au moins 1 activité "Contacté…" dans la période
+    // On regroupe par contact pour ne compter qu'une fois chaque prospect
+    const reachedIds = new Set<string>();
+    for (const a of callAttempts) {
+      const desc = a.description ?? "";
+      if (desc.startsWith("Contacté")) {
+        reachedIds.add(a.contact_id);
+      }
+    }
+    const totalReached = reachedIds.size;
+
+    // 5. Contactés parmi les qualifiés = reached qui ne sont pas not_interested
+    const disqualifiedIds = new Set(prospectsAppeles.filter((l) => l.lead_status === "not_interested").map((l) => l.id));
+    const reachedQualifiesIds = new Set([...reachedIds].filter((id) => !disqualifiedIds.has(id)));
+    const totalReachedQualifies = reachedQualifiesIds.size;
+
+    // 6. RDV réservés = meetings créés dans la période pour les prospects du périmètre
+    const meetingsInScope = meetings.filter(
+      (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
+    );
+    const totalRdvBooked = meetingsInScope.length;
+
+    // Contactés ET qualifiés (dénominateur pour le taux de booking)
+    const contactesQualifies = totalReachedQualifies;
+
+    // 7. RDV faits = meetings avec status "done" parmi ceux du périmètre, filtrés par scheduled_at
+    const meetingsForDone = meetings.filter(
+      (m) => prospectIds.has(m.contact_id) && inPeriod(m.scheduled_at.split("T")[0])
+    );
+    const totalRdvDone = meetingsForDone.filter((m) => m.status === "done").length;
+    // Dénominateur = tous les RDV réservés (booked + done + no_show, pas cancelled)
+    const totalRdvForShowRate = meetingsForDone.filter((m) => m.status !== "cancelled").length;
+
+    return {
+      totalProspects,
+      disqualifies,
+      qualifies,
+      totalCalls,
+      totalReached,
+      totalReachedQualifies,
+      contactesQualifies,
+      totalRdvBooked,
+      totalRdvDone,
+      totalRdvForShowRate,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, activities, meetings, periodMode, filterMonth, customFrom, customTo]);
+
+  return (
+    <div style={{ borderTop: "2px solid #dce8f0", paddingTop: 24, marginTop: 8 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 800, color: "#1a2a3a", marginBottom: 16 }}>Rapport Setting</h2>
+
+      {/* Filtres temporels */}
+      <div className="flex gap-3 items-center flex-wrap" style={{ marginBottom: 16 }}>
+        <select
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+          value={periodMode}
+          onChange={(e) => setPeriodMode(e.target.value as "all" | "month" | "custom")}
+        >
+          <option value="all">Toutes les périodes</option>
+          <option value="month">Par mois</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        {periodMode === "month" && (
+          <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-40 h-9" />
+        )}
+        {periodMode === "custom" && (
+          <div className="flex items-center gap-2">
+            <Input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} className="w-36 h-9 text-xs" />
+            <span style={{ color: "#8399a9" }}>au</span>
+            <Input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} className="w-36 h-9 text-xs" />
+          </div>
+        )}
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-3 md:grid-cols-4" style={{ marginBottom: 16 }}>
+        {/* Prospects appelés */}
+        <div className="lca-card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Prospects appelés</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{stats.totalProspects}</div>
+          </div>
+          <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+
+        {/* Prospects qualifiés */}
+        <div className="lca-card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Prospects qualifiés</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#27ae60" }}>{stats.qualifies}</div>
+            <div style={{ fontSize: 10, color: "#8399a9" }}>{stats.disqualifies} disqualifié{stats.disqualifies > 1 ? "s" : ""}</div>
+          </div>
+          <UserCheck style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+
+        {/* Tentatives d'appels */}
+        <div className="lca-card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Tentatives d{"'"}appels</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#e65100" }}>{stats.totalCalls}</div>
+            <div style={{ fontSize: 10, color: "#8399a9" }}>{stats.totalProspects > 0 ? fmtNum(stats.totalCalls / stats.totalProspects) : "—"} appels/prospect</div>
+          </div>
+          <Phone style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+
+        {/* RDV faits */}
+        <div className="lca-card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV faits</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#2e7d32" }}>{stats.totalRdvDone}</div>
+            <div style={{ fontSize: 10, color: "#8399a9" }}>sur {stats.totalRdvForShowRate} réservé{stats.totalRdvForShowRate > 1 ? "s" : ""}</div>
+          </div>
+          <CalendarCheck style={{ width: 16, height: 16, color: "#8399a9" }} />
+        </div>
+      </div>
+
+      {/* Taux de conversion (funnel) */}
+      <div className="lca-card" style={{ padding: 20 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>Funnel Setting</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Reached / Total */}
+          <FunnelRow
+            label="Reached / Total prospects"
+            num={stats.totalReached}
+            den={stats.totalProspects}
+            color="#1a6b9c"
+          />
+          {/* Contactés / Qualifiés */}
+          <FunnelRow
+            label="Contactés / Qualifiés"
+            num={stats.totalReachedQualifies}
+            den={stats.qualifies}
+            color="#6a1b9a"
+          />
+          {/* RDV réservés / Contactés qualifiés */}
+          <FunnelRow
+            label="RDV réservés / Contactés qualifiés"
+            num={stats.totalRdvBooked}
+            den={stats.contactesQualifies}
+            color="#e65100"
+          />
+          {/* RDV faits / RDV réservés */}
+          <FunnelRow
+            label="RDV faits / RDV réservés"
+            num={stats.totalRdvDone}
+            den={stats.totalRdvForShowRate}
+            color="#2e7d32"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FunnelRow({ label, num, den, color }: { label: string; num: number; den: number; color: string }) {
+  const pctVal = den > 0 ? (num / den) * 100 : 0;
+  const pctStr = den > 0 ? fmtNum(pctVal) + " %" : "—";
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+        <span style={{ fontWeight: 600, color: "#1a2a3a" }}>{label}</span>
+        <span style={{ fontWeight: 700, color }}>
+          {num} / {den} — {pctStr}
+        </span>
+      </div>
+      <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${Math.min(pctVal, 100)}%`, background: color, borderRadius: 4, transition: "width 0.3s" }} />
+      </div>
+    </div>
   );
 }
