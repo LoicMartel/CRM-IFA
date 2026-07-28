@@ -552,11 +552,24 @@ function SettingReport({
     );
     const totalRdvBooked = meetingsInScope.length;
 
-    // 7. RDV faits = meetings avec status "done" parmi ceux du périmètre, filtrés par scheduled_at
+    // 7. RDV faits = prospects ayant eu au moins un RDV fait, même si le statut a changé depuis
+    // Un prospect a fait son RDV si :
+    //   - son lead_status actuel est rdv_done ou signed (forcément passé par RDV fait)
+    //   - OU il a un meeting avec status "done"
+    const RDV_DONE_OR_AFTER = new Set(["rdv_done", "signed"]);
+    const rdvDoneContactIds = new Set<string>();
+    for (const l of prospectsAppeles) {
+      if (l.lead_status && RDV_DONE_OR_AFTER.has(l.lead_status)) {
+        rdvDoneContactIds.add(l.id);
+      }
+    }
     const meetingsForDone = meetings.filter(
       (m) => prospectIds.has(m.contact_id) && inPeriod(m.scheduled_at.split("T")[0])
     );
-    const totalRdvDone = meetingsForDone.filter((m) => m.status === "done").length;
+    for (const m of meetingsForDone) {
+      if (m.status === "done") rdvDoneContactIds.add(m.contact_id);
+    }
+    const totalRdvDone = rdvDoneContactIds.size;
     // Dénominateur = tous les RDV réservés (booked + done + no_show, pas cancelled)
     const totalRdvForShowRate = meetingsForDone.filter((m) => m.status !== "cancelled").length;
 
