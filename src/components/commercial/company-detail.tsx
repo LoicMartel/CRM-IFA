@@ -618,6 +618,7 @@ export function CompanyDetail({
               <TabsTrigger value="deals">Deals ({deals.length})</TabsTrigger>
               {quotations.length > 0 && <TabsTrigger value="quotations">Cotations ({quotations.length})</TabsTrigger>}
               {/* Ligne 2 */}
+              <div style={{ flexBasis: "100%", height: 0 }} />
               <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
               <TabsTrigger value="learners">Apprenants ({learners.length})</TabsTrigger>
               <TabsTrigger value="invoices">Factures ({billingEntries.length})</TabsTrigger>
