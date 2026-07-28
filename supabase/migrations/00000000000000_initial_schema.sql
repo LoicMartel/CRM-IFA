@@ -261,6 +261,19 @@ CREATE TABLE public."contact_lists" (
   PRIMARY KEY ("id")
 );
 
+CREATE TABLE public."crm_integrations" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "category" text NOT NULL,
+  "provider" text NOT NULL,
+  "label" text NOT NULL,
+  "enabled" boolean NOT NULL DEFAULT false,
+  "config" jsonb DEFAULT '{}'::jsonb,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "crm_integrations_provider_key" UNIQUE (provider)
+);
+
 CREATE TABLE public."contacts" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "first_name" text NOT NULL,
@@ -1132,6 +1145,21 @@ CREATE TABLE public."nurture_steps" (
   CONSTRAINT "nurture_steps_order_chk" CHECK ((step_order >= 1))
 );
 
+CREATE TABLE public."oauth_tokens" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "team_member_id" uuid NOT NULL,
+  "provider" text NOT NULL,
+  "access_token" text NOT NULL,
+  "refresh_token" text,
+  "token_expires_at" timestamptz,
+  "scopes" text,
+  "provider_email" text,
+  "created_at" timestamptz DEFAULT now(),
+  "updated_at" timestamptz DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "oauth_tokens_member_provider_key" UNIQUE (team_member_id, provider)
+);
+
 CREATE TABLE public."opportunities" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "name" text NOT NULL,
@@ -1383,6 +1411,7 @@ CREATE TABLE public."team_members" (
   "expert_status" text DEFAULT 'active'::text,
   "mobility" text DEFAULT 'Toute la France'::text,
   "email_signature" text,
+  "integration_config" jsonb DEFAULT '{}'::jsonb,
   PRIMARY KEY ("id"),
   CONSTRAINT "team_members_email_key" UNIQUE (email),
   CONSTRAINT "team_members_expert_status_check" CHECK ((expert_status = ANY (ARRAY['active'::text, 'pending'::text, 'inactive'::text]))),
@@ -1552,6 +1581,7 @@ ALTER TABLE public."nurture_enrollments" ADD CONSTRAINT "nurture_enrollments_con
 ALTER TABLE public."nurture_enrollments" ADD CONSTRAINT "nurture_enrollments_meeting_id_fkey" FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE SET NULL;
 ALTER TABLE public."nurture_enrollments" ADD CONSTRAINT "nurture_enrollments_sequence_id_fkey" FOREIGN KEY (sequence_id) REFERENCES nurture_sequences(id) ON DELETE CASCADE;
 ALTER TABLE public."nurture_steps" ADD CONSTRAINT "nurture_steps_sequence_id_fkey" FOREIGN KEY (sequence_id) REFERENCES nurture_sequences(id) ON DELETE CASCADE;
+ALTER TABLE public."oauth_tokens" ADD CONSTRAINT "oauth_tokens_team_member_id_fkey" FOREIGN KEY (team_member_id) REFERENCES team_members(id) ON DELETE CASCADE;
 ALTER TABLE public."opportunities" ADD CONSTRAINT "opportunities_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id);
 ALTER TABLE public."opportunities" ADD CONSTRAINT "opportunities_contact_id_fkey" FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE;
 ALTER TABLE public."opportunities" ADD CONSTRAINT "opportunities_sales_id_fkey" FOREIGN KEY (sales_id) REFERENCES team_members(id);
@@ -2053,6 +2083,7 @@ ALTER TABLE public."contact_list_members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."contact_lists" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."contacts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."conversations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."crm_integrations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."deal_documents" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."deals" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."email_log" ENABLE ROW LEVEL SECURITY;
@@ -2103,6 +2134,7 @@ ALTER TABLE public."notifications" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."nurture_enrollments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."nurture_sequences" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."nurture_steps" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."oauth_tokens" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."opportunities" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."post_attachments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."post_comments" ENABLE ROW LEVEL SECURITY;
@@ -2156,6 +2188,8 @@ CREATE POLICY "Authenticated users can read all" ON public."companies" AS PERMIS
 CREATE POLICY "Authenticated users can manage company documents" ON public."company_documents" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can do everything on company_raisons_social" ON public."company_raisons_sociales" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can do everything on raison_sociale_learner" ON public."raison_sociale_learners" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated can modify integrations" ON public."crm_integrations" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated can read integrations" ON public."crm_integrations" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated users can modify all" ON public."company_types" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can read all" ON public."company_types" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth delete clm" ON public."contact_list_members" AS PERMISSIVE FOR DELETE TO authenticated USING (true);
@@ -2297,6 +2331,7 @@ CREATE POLICY "notifications_update" ON public."notifications" AS PERMISSIVE FOR
 CREATE POLICY "nurture_enrollments_select_authenticated" ON public."nurture_enrollments" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "nurture_sequences_select_authenticated" ON public."nurture_sequences" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "nurture_steps_select_authenticated" ON public."nurture_steps" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated can manage oauth tokens" ON public."oauth_tokens" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can modify all" ON public."opportunities" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can read all" ON public."opportunities" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "post_attachments_delete" ON public."post_attachments" AS PERMISSIVE FOR DELETE TO authenticated USING (true);
