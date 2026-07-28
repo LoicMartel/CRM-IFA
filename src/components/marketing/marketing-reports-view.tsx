@@ -743,14 +743,14 @@ function SettingReport({
           />
           {/* Taux de contactés qualifiés */}
           <FunnelRow
-            label="Taux de contactés qualifiés"
+            label="Taux de contactés qualifiés (contactés qualifiés / prospects qualifiés)"
             num={stats.totalContactedQualifies}
             den={stats.qualifies}
             color="#6a1b9a"
           />
           {/* Taux de booking des contactés qualifiés */}
           <FunnelRow
-            label="Taux de booking des contactés qualifiés"
+            label="Taux de booking des contactés qualifiés (RDV pris / contactés qualifiés)"
             num={stats.totalRdvBooked}
             den={stats.totalContactedQualifies}
             color="#e65100"
