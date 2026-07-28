@@ -580,21 +580,12 @@ function SettingReport({
 
     // ── 6. RDV réservés (date de la PRISE de RDV = created_at du meeting)
     //       Exclu booking page (déjà filtré côté serveur).
-    //       Si cancel+rebook pour même prospect → compte 1 seul ──
+    //       1 prospect = 1 RDV réservé max (cancel/rebook/suivi = 1 seul) ──
     const meetingsInScope = meetings.filter(
       (m) => allLeadIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
-    const meetingsByContact = new Map<string, typeof meetingsInScope>();
-    for (const m of meetingsInScope) {
-      const list = meetingsByContact.get(m.contact_id);
-      if (list) list.push(m); else meetingsByContact.set(m.contact_id, [m]);
-    }
-    let totalRdvBooked = 0;
-    for (const [, contactMeetings] of meetingsByContact) {
-      const nonCancelled = contactMeetings.filter((m) => m.status !== "cancelled");
-      // Si RDV non-annulés → compter ceux-là ; sinon 1 (annulé seul)
-      totalRdvBooked += nonCancelled.length > 0 ? nonCancelled.length : 1;
-    }
+    const rdvBookedContactIds = new Set(meetingsInScope.map((m) => m.contact_id));
+    const totalRdvBooked = rdvBookedContactIds.size;
 
     // ── 7. RDV faits (date de l'action = quand le meeting passe en "done")
     //       Un prospect = 1 RDV fait max (même si cancel+rebook) ──
