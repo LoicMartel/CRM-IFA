@@ -727,12 +727,19 @@ function SettingReport({
               color={SOURCE_COLORS[i % SOURCE_COLORS.length]}
             />
           ))}
+          {/* Contactés / Qualifiés */}
+          <FunnelRow
+            label="Contactés / Qualifiés"
+            num={stats.totalContactedQualifies}
+            den={stats.qualifies}
+            color="#6a1b9a"
+          />
           {/* Qualifiés / Contactés */}
           <FunnelRow
             label="Qualifiés / Contactés"
             num={stats.totalContactedQualifies}
             den={stats.totalContacted}
-            color="#6a1b9a"
+            color="#9c27b0"
           />
           {/* RDV réservés / Contactés qualifiés */}
           <FunnelRow
