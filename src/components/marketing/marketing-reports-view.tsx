@@ -546,6 +546,16 @@ function SettingReport({
     }
     const totalContacted = contactedIds.size;
 
+    // 4b. Contactés par type de tunnel
+    const prospectsBySource = new Map<string, string>();
+    for (const l of prospectsAppeles) {
+      prospectsBySource.set(l.id, getSourceName(l));
+    }
+    const totalTunnelBook = prospectsAppeles.filter((l) => getSourceName(l) === "Meta ads - tunnel book").length;
+    const contactedTunnelBook = [...contactedIds].filter((id) => prospectsBySource.get(id) === "Meta ads - tunnel book").length;
+    const totalTunnelCommercial = prospectsAppeles.filter((l) => getSourceName(l) === "Meta ads - tunnel commercial").length;
+    const contactedTunnelCommercial = [...contactedIds].filter((id) => prospectsBySource.get(id) === "Meta ads - tunnel commercial").length;
+
     // 5. Contactés parmi les qualifiés = contactés qui ne sont pas not_interested
     const disqualifiedIds = new Set(prospectsAppeles.filter((l) => l.lead_status === "not_interested").map((l) => l.id));
     const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
@@ -585,6 +595,10 @@ function SettingReport({
       totalCalls,
       totalContacted,
       totalContactedQualifies,
+      totalTunnelBook,
+      contactedTunnelBook,
+      totalTunnelCommercial,
+      contactedTunnelCommercial,
       totalRdvBooked,
       totalRdvDone,
       totalRdvForShowRate,
@@ -671,6 +685,20 @@ function SettingReport({
             num={stats.totalContacted}
             den={stats.totalProspects}
             color="#1a6b9c"
+          />
+          {/* Contactés / Tunnel Commercial */}
+          <FunnelRow
+            label="Contactés / Prospects Tunnel Commercial"
+            num={stats.contactedTunnelCommercial}
+            den={stats.totalTunnelCommercial}
+            color="#0d4f7a"
+          />
+          {/* Contactés / Tunnel Book */}
+          <FunnelRow
+            label="Contactés / Prospects Tunnel Book"
+            num={stats.contactedTunnelBook}
+            den={stats.totalTunnelBook}
+            color="#f57c00"
           />
           {/* Qualifiés / Contactés */}
           <FunnelRow
