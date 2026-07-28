@@ -514,8 +514,17 @@ function SettingReport({
     const prospectIds = new Set(prospectsAppeles.map((l) => l.id));
     const totalProspects = prospectsAppeles.length;
 
-    // 2. Prospects disqualifiés (not_interested) parmi ceux de la période
-    const disqualifies = prospectsAppeles.filter((l) => l.lead_status === "not_interested").length;
+    // 2. Prospects disqualifiés : not_interested OU ayant une activité "Contacté → Non qualifié"
+    const disqualifiedIds = new Set<string>();
+    for (const l of prospectsAppeles) {
+      if (l.lead_status === "not_interested") disqualifiedIds.add(l.id);
+    }
+    for (const a of activities) {
+      if (prospectIds.has(a.contact_id) && (a.description ?? "").startsWith("Contacté → Non qualifié")) {
+        disqualifiedIds.add(a.contact_id);
+      }
+    }
+    const disqualifies = disqualifiedIds.size;
     const qualifies = totalProspects - disqualifies;
 
     // 3. Tentatives d'appels = toutes les activités type appel dans la période, peu importe la date de création du contact
@@ -569,8 +578,7 @@ function SettingReport({
       sourceStats.push({ source: src, total: sourceTotals[src], contacted: sourceContacted[src] ?? 0 });
     }
 
-    // 5. Contactés parmi les qualifiés = contactés qui ne sont pas not_interested
-    const disqualifiedIds = new Set(prospectsAppeles.filter((l) => l.lead_status === "not_interested").map((l) => l.id));
+    // 5. Contactés parmi les qualifiés = contactés qui ne sont pas disqualifiés
     const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
     const totalContactedQualifies = contactedQualifiesIds.size;
 
