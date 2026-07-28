@@ -374,6 +374,7 @@ CREATE TABLE public."deals" (
   "wf009_suggested_trainer_id" uuid,
   "wf009_suggestion_correct" boolean,
   "wf009_feedback" text,
+  "raison_sociale_id" uuid,
   PRIMARY KEY ("id"),
   CONSTRAINT "deals_probability_check" CHECK (((probability >= 0) AND (probability <= 100))),
   CONSTRAINT "deals_stage_check" CHECK ((stage = ANY (ARRAY['opportunities'::text, 'quote_to_send'::text, 'quote_to_validate'::text, 'quote_sent'::text, 'opco_deposit'::text, 'quote_signed'::text, 'ordered'::text, 'closed_won'::text, 'closed_lost'::text])))
@@ -1476,6 +1477,7 @@ ALTER TABLE public."deal_documents" ADD CONSTRAINT "deal_documents_uploaded_by_f
 ALTER TABLE public."deals" ADD CONSTRAINT "deals_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
 ALTER TABLE public."deals" ADD CONSTRAINT "deals_contact_id_fkey" FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE SET NULL;
 ALTER TABLE public."deals" ADD CONSTRAINT "deals_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES team_members(id);
+ALTER TABLE public."deals" ADD CONSTRAINT "deals_raison_sociale_id_fkey" FOREIGN KEY (raison_sociale_id) REFERENCES company_raisons_sociales(id) ON DELETE SET NULL;
 ALTER TABLE public."deals" ADD CONSTRAINT "deals_source_id_fkey" FOREIGN KEY (source_id) REFERENCES lead_sources(id);
 ALTER TABLE public."engagements" ADD CONSTRAINT "engagements_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id);
 ALTER TABLE public."engagements" ADD CONSTRAINT "engagements_contact_id_fkey" FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE;
@@ -1622,6 +1624,7 @@ CREATE INDEX idx_deals_owner ON public.deals USING btree (owner_id);
 CREATE INDEX idx_deals_pennylane_invoice_id ON public.deals USING btree (pennylane_invoice_id) WHERE (pennylane_invoice_id IS NOT NULL);
 CREATE INDEX idx_deals_pennylane_quote_id ON public.deals USING btree (pennylane_quote_id) WHERE (pennylane_quote_id IS NOT NULL);
 CREATE INDEX idx_deals_quote_scheduled_send ON public.deals USING btree (quote_scheduled_send_at) WHERE ((quote_scheduled_send_at IS NOT NULL) AND (pennylane_quote_id IS NULL));
+CREATE INDEX idx_deals_raison_sociale ON public.deals USING btree (raison_sociale_id);
 CREATE INDEX idx_deals_stage ON public.deals USING btree (stage);
 CREATE INDEX email_log_created_at_idx ON public.email_log USING btree (created_at DESC);
 CREATE INDEX email_log_recipient_idx ON public.email_log USING btree (recipient);
