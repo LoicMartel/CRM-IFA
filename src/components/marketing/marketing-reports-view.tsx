@@ -589,9 +589,10 @@ function SettingReport({
     }
     const qualifiesAndNotReached = [...calledIds].filter((id) => !disqualifiedIds.has(id)).length;
 
-    // 6. RDV réservés = tous les meetings, mais si un prospect a un annulé + un autre RDV, ne pas compter l'annulé
+    // 6. RDV réservés = tous les meetings créés dans la période (peu importe la date de création du contact)
+    const allLeadIds = new Set(leads.map((l) => l.id));
     const meetingsInScope = meetings.filter(
-      (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
+      (m) => allLeadIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
     // Grouper par contact pour détecter les annulés avec remplacement
     const meetingsByContact = new Map<string, typeof meetingsInScope>();
@@ -610,8 +611,10 @@ function SettingReport({
     // Un RDV est "fait" si le meeting a status "done" OU si le contact a lead_status rdv_done/signed
     const RDV_DONE_OR_AFTER = new Set(["rdv_done", "signed"]);
     const rdvDoneContactIds = new Set<string>();
-    for (const l of prospectsAppeles) {
-      if (l.lead_status && RDV_DONE_OR_AFTER.has(l.lead_status)) {
+    // Vérifier le lead_status sur TOUS les leads marketing (pas seulement ceux créés dans la période)
+    const meetingContactIds = new Set(meetingsInScope.map((m) => m.contact_id));
+    for (const l of leads) {
+      if (meetingContactIds.has(l.id) && l.lead_status && RDV_DONE_OR_AFTER.has(l.lead_status)) {
         rdvDoneContactIds.add(l.id);
       }
     }
