@@ -515,11 +515,16 @@ function SettingReport({
     const disqualifies = prospectsAppeles.filter((l) => l.lead_status === "not_interested").length;
     const qualifies = totalProspects - disqualifies;
 
-    // 3. Tentatives d'appels = activités type appel sur les prospects du périmètre, filtrées par date de l'activité
+    // 3. Tentatives d'appels = toutes les activités type appel dans la période, peu importe la date de création du contact
+    const allCallsInPeriod = activities.filter(
+      (a) => inPeriod(a.created_at.split("T")[0])
+    );
+    const totalCalls = allCallsInPeriod.length;
+
+    // Appels sur les prospects du périmètre (pour les métriques contacté)
     const callAttempts = activities.filter(
       (a) => prospectIds.has(a.contact_id) && inPeriod(a.created_at.split("T")[0])
     );
-    const totalCalls = callAttempts.length;
 
     // 4. Contactés = prospects ayant été au moins une fois en statut "contacted"
     // Soit via une activité "Contacté…", soit via leur lead_status actuel
