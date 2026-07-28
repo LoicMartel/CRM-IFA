@@ -96,6 +96,7 @@ export async function GET(request: Request) {
         timeMin,
         timeMax,
         timeZone: TZ,
+        memberId: member.id,
       });
       if (!error) {
         accessibleCount++;

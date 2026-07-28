@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     const trainerNamesToFetch = trainers.length > 0 ? trainers : ["__none__"];
     const { data: trainerMembers } = await supabase
       .from("team_members")
-      .select("first_name, google_calendar_id, google_calendar_id_presentiel, slack_user_id")
+      .select("id, first_name, google_calendar_id, google_calendar_id_presentiel, slack_user_id")
       .in("first_name", trainerNamesToFetch);
 
     const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
           : trainer.google_calendar_id;
 
         if (calendarId) {
-          const res = await patchCalendarEventSummary({ calendarId, eventId, summary: cancelledTitle });
+          const res = await patchCalendarEventSummary({ calendarId, eventId, summary: cancelledTitle, memberId: trainer.id as string });
           results.push({ trainer: trainer.first_name, gcal: res.success ? "updated" : (res.error ?? "error") });
         } else {
           results.push({ trainer: trainer.first_name, gcal: "no_calendar" });

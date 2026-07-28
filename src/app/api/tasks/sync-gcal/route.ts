@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       location: "",
       startDateTime: startDT,
       endDateTime: endDT,
+      memberId: task.team_member_id,
     });
 
     // Si un nouvel évènement a été créé (initial OU fallback après update 404), persister l'ID

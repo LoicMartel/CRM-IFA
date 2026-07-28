@@ -191,6 +191,7 @@ export async function processMeetingNotifications(params: {
           location,
           startDateTime: startDT,
           endDateTime: endDT,
+          memberId: manager.id,
         });
 
         if (gcalResult.success && gcalResult.eventId) {

@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
           location,
           startDateTime: startDT,
           endDateTime: endDT,
+          memberId: trainer.id as string,
         });
 
         // Persist per-trainer event ID in the JSONB map
@@ -353,7 +354,7 @@ export async function POST(req: NextRequest) {
         const eventIdsMap = ((session as any).gcal_event_ids as Record<string, string>) ?? {};
         const trainerEventId = eventIdsMap[trainer.first_name];
         if (calId && trainerEventId) {
-          const del = await deleteCalendarEvent({ calendarId: calId, eventId: trainerEventId });
+          const del = await deleteCalendarEvent({ calendarId: calId, eventId: trainerEventId, memberId: trainer.id as string });
           gcalStatus = del.success ? "removed" : (del.error?.toLowerCase().includes("not found") ? "already_absent" : del.error);
           // Remove from the map
           if (del.success) {

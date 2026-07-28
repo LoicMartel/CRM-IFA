@@ -95,7 +95,7 @@ export async function GET(request: Request) {
     TEAM.map(async (member) => {
       const allBusy: { start: string; end: string; summary?: string }[] = [];
       for (const calId of member.calendarIds) {
-        const { events } = await getCalendarEvents({ calendarId: calId, timeMin, timeMax, timeZone: TZ });
+        const { events } = await getCalendarEvents({ calendarId: calId, timeMin, timeMax, timeZone: TZ, memberId: member.id });
         allBusy.push(...events);
       }
       busyByMember.set(member.id, allBusy);

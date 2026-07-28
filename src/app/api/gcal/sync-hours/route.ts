@@ -1,43 +1,6 @@
 import { NextResponse } from "next/server";
-import { google } from "googleapis";
 import { createClient } from "@/lib/supabase/server";
-
-function getAuth() {
-  const b64 = process.env.GOOGLE_SA_KEY_B64?.trim();
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!b64 && !raw) return null;
-  try {
-    let parsed: any;
-    if (b64) {
-      const clean = b64.replace(/^["']|["']$/g, "").replace(/\s/g, "");
-      parsed = JSON.parse(Buffer.from(clean, "base64").toString("utf-8"));
-    }
-    if (!parsed && raw) {
-      try { parsed = JSON.parse(raw); } catch { parsed = JSON.parse(raw.replace(/\r?\n/g, "\\n")); }
-    }
-    if (!parsed) return null;
-    return new google.auth.GoogleAuth({ credentials: parsed, scopes: ["https://www.googleapis.com/auth/calendar.readonly"] });
-  } catch { return null; }
-}
-
-async function listCalendarEvents(auth: any, calendarId: string, timeMin: string, timeMax: string) {
-  const calendar = google.calendar({ version: "v3", auth });
-  const events: any[] = [];
-  let pageToken: string | undefined;
-  try {
-    do {
-      const res = await calendar.events.list({
-        calendarId, timeMin, timeMax, timeZone: "Europe/Paris",
-        singleEvents: true, orderBy: "startTime", maxResults: 250, pageToken,
-      });
-      events.push(...(res.data.items ?? []));
-      pageToken = res.data.nextPageToken ?? undefined;
-    } while (pageToken);
-  } catch (err: any) {
-    console.error(`Error listing events for ${calendarId}:`, err.message);
-  }
-  return events;
-}
+import { getCalendarEventsAllPages } from "@/lib/google-calendar";
 
 // Extract time (HH:MM) from ISO datetime
 function extractTime(isoStr: string): string | null {
@@ -55,9 +18,6 @@ function normalize(s: string): string {
 }
 
 export async function POST() {
-  const auth = getAuth();
-  if (!auth) return NextResponse.json({ error: "Google Calendar not configured" }, { status: 500 });
-
   const supabase = await createClient();
 
   // Get all VT training sessions with session_time = 09:00 (default)
@@ -87,6 +47,17 @@ export async function POST() {
     ],
   };
 
+  // Lookup member IDs by first_name for OAuth
+  const { data: members } = await supabase
+    .from("team_members")
+    .select("id, first_name")
+    .in("first_name", Object.keys(trainerCalendars));
+
+  const memberIdByName: Record<string, string> = {};
+  for (const m of members ?? []) {
+    memberIdByName[m.first_name] = m.id;
+  }
+
   // Determine date range
   const dates = sessions.map(s => s.session_date).filter(Boolean) as string[];
   const minDate = dates.sort()[0];
@@ -100,10 +71,16 @@ export async function POST() {
 
   for (const [trainer, calIds] of Object.entries(trainerCalendars)) {
     for (const calId of calIds) {
-      const events = await listCalendarEvents(auth, calId, timeMin, timeMax);
+      const { events } = await getCalendarEventsAllPages({
+        calendarId: calId,
+        timeMin,
+        timeMax,
+        timeZone: "Europe/Paris",
+        memberId: memberIdByName[trainer] ?? null,
+      });
       for (const e of events) {
-        const startTime = extractTime(e.start?.dateTime ?? "");
-        const startDate = (e.start?.dateTime ?? e.start?.date ?? "").slice(0, 10);
+        const startTime = extractTime(e.start ?? "");
+        const startDate = (e.start ?? "").slice(0, 10);
         if (startTime && startDate) {
           allEvents.push({
             trainer,

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getFreeBusy, getCalendarEvents } from "@/lib/google-calendar";
 
+// Rafi's member ID for OAuth
+const RAFI_MEMBER_ID = "93469203-fa59-4ffb-8877-7486a82addab";
+
 const CALENDARS = [
   { name: "RA:Rdv commerciaux/suivi", id: "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com" },
   { name: "RA:F Visio", id: "rafi.mouhamad.nmfconsulting@gmail.com" },
@@ -21,8 +24,8 @@ export async function GET(request: Request) {
   const results = [];
   for (const cal of CALENDARS) {
     const [fb, ev] = await Promise.all([
-      getFreeBusy({ calendarId: cal.id, timeMin, timeMax, timeZone: "Europe/Paris" }),
-      getCalendarEvents({ calendarId: cal.id, timeMin, timeMax, timeZone: "Europe/Paris" }),
+      getFreeBusy({ calendarId: cal.id, timeMin, timeMax, timeZone: "Europe/Paris", memberId: RAFI_MEMBER_ID }),
+      getCalendarEvents({ calendarId: cal.id, timeMin, timeMax, timeZone: "Europe/Paris", memberId: RAFI_MEMBER_ID }),
     ]);
     results.push({
       name: cal.name,

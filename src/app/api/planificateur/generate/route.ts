@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
         const allEvents: { start: string; end: string; summary?: string }[] = [];
 
         for (const calId of calIds) {
-          const { events } = await getCalendarEventsAllPages({ calendarId: calId, timeMin, timeMax });
+          const { events } = await getCalendarEventsAllPages({ calendarId: calId, timeMin, timeMax, memberId: candidate.id });
           allEvents.push(...events);
         }
 

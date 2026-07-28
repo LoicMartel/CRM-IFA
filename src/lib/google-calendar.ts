@@ -1,8 +1,9 @@
 import { google } from "googleapis";
+import { getValidToken } from "./oauth";
 
 let cachedAuth: any = null;
 
-function getAuth() {
+function getServiceAccountAuth() {
   if (cachedAuth) return cachedAuth;
 
   // Try GOOGLE_SA_KEY_B64 (base64-encoded, Vercel-safe) first, then fallback to GOOGLE_SERVICE_ACCOUNT_KEY
@@ -41,6 +42,30 @@ function getAuth() {
 }
 
 /**
+ * Get auth for a specific team member.
+ * Uses their OAuth token (from oauth_tokens table) if available,
+ * falls back to the service account.
+ */
+async function getAuthForMember(memberId?: string | null): Promise<any> {
+  if (memberId) {
+    try {
+      const token = await getValidToken(memberId, "google");
+      if (token) {
+        const oauth2Client = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+        );
+        oauth2Client.setCredentials({ access_token: token });
+        return oauth2Client;
+      }
+    } catch {
+      // OAuth token not available — fall through to service account
+    }
+  }
+  return getServiceAccountAuth();
+}
+
+/**
  * Get all events from a calendar (not just "busy" ones).
  * Unlike FreeBusy, this catches events marked as "available/free".
  */
@@ -49,13 +74,15 @@ export async function getCalendarEvents({
   timeMin,
   timeMax,
   timeZone = "Europe/Paris",
+  memberId,
 }: {
   calendarId: string;
   timeMin: string;
   timeMax: string;
   timeZone?: string;
+  memberId?: string | null;
 }): Promise<{ events: { start: string; end: string; summary?: string }[]; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { events: [], error: "Google Calendar not configured" };
 
   try {
@@ -101,13 +128,15 @@ export async function getCalendarEventsAllPages({
   timeMin,
   timeMax,
   timeZone = "Europe/Paris",
+  memberId,
 }: {
   calendarId: string;
   timeMin: string;
   timeMax: string;
   timeZone?: string;
+  memberId?: string | null;
 }): Promise<{ events: { start: string; end: string; summary?: string }[]; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { events: [], error: "Google Calendar not configured" };
 
   try {
@@ -155,13 +184,15 @@ export async function getFreeBusy({
   timeMin,
   timeMax,
   timeZone = "Europe/Paris",
+  memberId,
 }: {
   calendarId: string;
   timeMin: string;
   timeMax: string;
   timeZone?: string;
+  memberId?: string | null;
 }): Promise<{ busy: { start: string; end: string }[]; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { busy: [], error: "Google Calendar not configured" };
 
   try {
@@ -196,6 +227,7 @@ export async function createCalendarEvent({
   endDateTime,
   timeZone = "Europe/Paris",
   attendees = [],
+  memberId,
 }: {
   calendarId: string;
   summary: string;
@@ -205,8 +237,9 @@ export async function createCalendarEvent({
   endDateTime: string;
   timeZone?: string;
   attendees?: { email: string; displayName?: string }[];
+  memberId?: string | null;
 }): Promise<{ success: boolean; eventId?: string; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { success: false, error: "Google Calendar not configured" };
 
   try {
@@ -241,6 +274,7 @@ export async function updateCalendarEvent({
   startDateTime,
   endDateTime,
   timeZone = "Europe/Paris",
+  memberId,
 }: {
   calendarId: string;
   eventId: string;
@@ -250,8 +284,9 @@ export async function updateCalendarEvent({
   startDateTime: string;
   endDateTime: string;
   timeZone?: string;
+  memberId?: string | null;
 }): Promise<{ success: boolean; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { success: false, error: "Google Calendar not configured" };
 
   try {
@@ -295,6 +330,7 @@ export async function upsertCalendarEvent({
   endDateTime,
   timeZone = "Europe/Paris",
   attendees = [],
+  memberId,
 }: {
   calendarId: string;
   existingEventId?: string | null;
@@ -305,6 +341,7 @@ export async function upsertCalendarEvent({
   endDateTime: string;
   timeZone?: string;
   attendees?: { email: string; displayName?: string }[];
+  memberId?: string | null;
 }): Promise<{ success: boolean; eventId?: string; status: "created" | "updated" | "failed"; error?: string }> {
   // 1. Tentative d'update si on a un ID existant
   if (existingEventId) {
@@ -317,6 +354,7 @@ export async function upsertCalendarEvent({
       startDateTime,
       endDateTime,
       timeZone,
+      memberId,
     });
     if (upd.success) {
       return { success: true, eventId: existingEventId, status: "updated" };
@@ -346,6 +384,7 @@ export async function upsertCalendarEvent({
     endDateTime,
     timeZone,
     attendees,
+    memberId,
   });
   if (created.success && created.eventId) {
     return { success: true, eventId: created.eventId, status: "created" };
@@ -357,12 +396,14 @@ export async function patchCalendarEventSummary({
   calendarId,
   eventId,
   summary,
+  memberId,
 }: {
   calendarId: string;
   eventId: string;
   summary: string;
+  memberId?: string | null;
 }): Promise<{ success: boolean; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { success: false, error: "Google Calendar not configured" };
 
   try {
@@ -382,11 +423,13 @@ export async function patchCalendarEventSummary({
 export async function deleteCalendarEvent({
   calendarId,
   eventId,
+  memberId,
 }: {
   calendarId: string;
   eventId: string;
+  memberId?: string | null;
 }): Promise<{ success: boolean; error?: string }> {
-  const auth = getAuth();
+  const auth = await getAuthForMember(memberId);
   if (!auth) return { success: false, error: "Google Calendar not configured" };
 
   try {
