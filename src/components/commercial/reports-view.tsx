@@ -1285,8 +1285,7 @@ export function ReportsView({
               if (a.contact_id) repBookedContactIds.add(a.contact_id as string);
             }
           });
-          // Also count meetings directly assigned to this rep as booked
-          repMeetings.forEach((m: R) => { if (m.contact_id && (m.status === "booked" || m.status === "done")) repBookedContactIds.add(m.contact_id as string); });
+          // Booked = uniquement crédité à la personne qui a fait l'appel de booking (activité "Booké")
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMeeting[cid];
