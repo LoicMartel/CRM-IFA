@@ -215,6 +215,26 @@ CREATE TABLE public."company_documents" (
   PRIMARY KEY ("id")
 );
 
+CREATE TABLE public."company_raisons_sociales" (
+  "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+  "company_id" uuid NOT NULL,
+  "name" text NOT NULL,
+  "siret" text,
+  "address" text,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE public."raison_sociale_learners" (
+  "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+  "raison_sociale_id" uuid NOT NULL,
+  "learner_id" uuid NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "raison_sociale_learners_raison_sociale_id_learner_id_key" UNIQUE (raison_sociale_id, learner_id)
+);
+
 CREATE TABLE public."company_types" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "name" text NOT NULL,
@@ -1441,6 +1461,7 @@ ALTER TABLE public."comment_reactions" ADD CONSTRAINT "comment_reactions_team_me
 ALTER TABLE public."companies" ADD CONSTRAINT "companies_company_type_id_fkey" FOREIGN KEY (company_type_id) REFERENCES company_types(id);
 ALTER TABLE public."companies" ADD CONSTRAINT "companies_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES team_members(id);
 ALTER TABLE public."companies" ADD CONSTRAINT "companies_primary_contact_id_fkey" FOREIGN KEY (primary_contact_id) REFERENCES contacts(id) ON DELETE SET NULL;
+ALTER TABLE public."company_raisons_sociales" ADD CONSTRAINT "company_raisons_sociales_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 ALTER TABLE public."company_documents" ADD CONSTRAINT "company_documents_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE;
 ALTER TABLE public."contact_list_members" ADD CONSTRAINT "contact_list_members_contact_id_fkey" FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE;
 ALTER TABLE public."contact_list_members" ADD CONSTRAINT "contact_list_members_list_id_fkey" FOREIGN KEY (list_id) REFERENCES contact_lists(id) ON DELETE CASCADE;
@@ -1540,6 +1561,8 @@ ALTER TABLE public."post_reactions" ADD CONSTRAINT "post_reactions_post_id_fkey"
 ALTER TABLE public."post_reactions" ADD CONSTRAINT "post_reactions_team_member_id_fkey" FOREIGN KEY (team_member_id) REFERENCES team_members(id);
 ALTER TABLE public."posts" ADD CONSTRAINT "posts_author_id_fkey" FOREIGN KEY (author_id) REFERENCES team_members(id);
 ALTER TABLE public."posts" ADD CONSTRAINT "posts_project_tag_id_fkey" FOREIGN KEY (project_tag_id) REFERENCES post_project_tags(id);
+ALTER TABLE public."raison_sociale_learners" ADD CONSTRAINT "raison_sociale_learners_raison_sociale_id_fkey" FOREIGN KEY (raison_sociale_id) REFERENCES company_raisons_sociales(id) ON DELETE CASCADE;
+ALTER TABLE public."raison_sociale_learners" ADD CONSTRAINT "raison_sociale_learners_learner_id_fkey" FOREIGN KEY (learner_id) REFERENCES learners(id) ON DELETE CASCADE;
 ALTER TABLE public."quotations" ADD CONSTRAINT "quotations_company_id_fkey" FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;
 ALTER TABLE public."quotations" ADD CONSTRAINT "quotations_contact_id_fkey" FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE SET NULL;
 ALTER TABLE public."quotations" ADD CONSTRAINT "quotations_deal_id_fkey" FOREIGN KEY (deal_id) REFERENCES deals(id) ON DELETE SET NULL;
@@ -1578,6 +1601,9 @@ CREATE INDEX idx_billing_months_entry_id ON public.billing_months USING btree (b
 CREATE INDEX idx_category_members_category ON public.category_members USING btree (category);
 CREATE INDEX idx_category_members_member ON public.category_members USING btree (team_member_id);
 CREATE INDEX idx_companies_lifecycle ON public.companies USING btree (lifecycle_stage);
+CREATE INDEX idx_company_raisons_sociales_company_id ON public.company_raisons_sociales USING btree (company_id);
+CREATE INDEX idx_raison_sociale_learners_raison_id ON public.raison_sociale_learners USING btree (raison_sociale_id);
+CREATE INDEX idx_raison_sociale_learners_learner_id ON public.raison_sociale_learners USING btree (learner_id);
 CREATE INDEX idx_company_documents_company_id ON public.company_documents USING btree (company_id);
 CREATE INDEX idx_contacts_company ON public.contacts USING btree (company_id);
 CREATE INDEX idx_contacts_lifecycle ON public.contacts USING btree (lifecycle_stage);
@@ -1977,7 +2003,9 @@ ALTER TABLE public."comment_attachments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."comment_reactions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."companies" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."company_documents" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."company_raisons_sociales" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."company_types" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."raison_sociale_learners" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."contact_list_members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."contact_lists" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."contacts" ENABLE ROW LEVEL SECURITY;
@@ -2083,6 +2111,8 @@ CREATE POLICY "Authenticated users can read comment reactions" ON public."commen
 CREATE POLICY "Authenticated users can modify all" ON public."companies" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can read all" ON public."companies" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Authenticated users can manage company documents" ON public."company_documents" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything on company_raisons_social" ON public."company_raisons_sociales" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything on raison_sociale_learner" ON public."raison_sociale_learners" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can modify all" ON public."company_types" AS PERMISSIVE FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated users can read all" ON public."company_types" AS PERMISSIVE FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth delete clm" ON public."contact_list_members" AS PERMISSIVE FOR DELETE TO authenticated USING (true);
