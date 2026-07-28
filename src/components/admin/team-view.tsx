@@ -36,6 +36,7 @@ const TABS = [
   { key: "expert", label: "Experts" },
   { key: "am", label: "Account Managers" },
   { key: "externe", label: "Externe" },
+  { key: "inactive", label: "Membres inactifs" },
 ];
 
 const ALL_EXPERTISES = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
@@ -67,7 +68,7 @@ const emptyForm = {
   mobility: "Toute la France",
 };
 
-export function TeamView({ members }: { members: R[] }) {
+export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inactiveMembers?: R[] }) {
   const router = useRouter();
   const { isAdmin } = useCurrentRoles();
   const [activeTab, setActiveTab] = useState("all");
@@ -115,14 +116,16 @@ export function TeamView({ members }: { members: R[] }) {
     router.refresh();
   }
 
-  const filtered = members.filter(m => {
-    if (activeTab === "all") return true;
-    const roles = (m.roles as string[]) ?? [];
-    if (activeTab === "expert") return roles.some(r => r === "Expert" || r === "Experte");
-    if (activeTab === "am") return roles.includes("Account Manager");
-    if (activeTab === "externe") return roles.includes("Externe");
-    return true;
-  });
+  const filtered = activeTab === "inactive"
+    ? inactiveMembers
+    : members.filter(m => {
+        if (activeTab === "all") return true;
+        const roles = (m.roles as string[]) ?? [];
+        if (activeTab === "expert") return roles.some(r => r === "Expert" || r === "Experte");
+        if (activeTab === "am") return roles.includes("Account Manager");
+        if (activeTab === "externe") return roles.includes("Externe");
+        return true;
+      });
 
   function openCreate() {
     setForm({ ...emptyForm });
