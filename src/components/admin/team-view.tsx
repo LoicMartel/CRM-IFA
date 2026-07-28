@@ -105,7 +105,9 @@ const emptyForm = {
   mobility: "Toute la France",
 };
 
-export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inactiveMembers?: R[] }) {
+interface OAuthToken { team_member_id: string; provider: string; provider_email: string | null }
+
+export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { members: R[]; inactiveMembers?: R[]; oauthTokens?: OAuthToken[] }) {
   const router = useRouter();
   const { isAdmin } = useCurrentRoles();
   const [activeTab, setActiveTab] = useState("all");
@@ -473,6 +475,37 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
                       {member.days_per_week ? <span>{String(member.days_per_week) + "j/sem"}</span> : null}
                     </div>
                   ) : null}
+                  {/* Indicateurs de synchronisation */}
+                  {isAdmin && (() => {
+                    const mid = member.id as string;
+                    const memberTokens = oauthTokens.filter(t => t.team_member_id === mid);
+                    const hasGoogle = memberTokens.some(t => t.provider === "google");
+                    const hasMicrosoft = memberTokens.some(t => t.provider === "microsoft");
+                    const hasZoom = memberTokens.some(t => t.provider === "zoom");
+                    const hasSlack = memberTokens.some(t => t.provider === "slack");
+                    const syncs = [
+                      { label: "Google", on: hasGoogle },
+                      { label: "Microsoft", on: hasMicrosoft },
+                      { label: "Zoom", on: hasZoom },
+                      { label: "Slack", on: hasSlack },
+                    ];
+                    return (
+                      <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                        {syncs.map(s => (
+                          <span key={s.label} style={{
+                            fontSize: 9, fontWeight: 600, padding: "2px 7px", borderRadius: 8,
+                            display: "flex", alignItems: "center", gap: 3,
+                            background: s.on ? "#e8f5e9" : "#fafafa",
+                            color: s.on ? "#2e7d32" : "#bbb",
+                            border: `1px solid ${s.on ? "#a5d6a7" : "#e0e0e0"}`,
+                          }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.on ? "#2e7d32" : "#e0e0e0" }} />
+                            {s.label}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -705,41 +738,7 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
                 </>
               )}
 
-              {/* Intégrations */}
-              <div style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 12 }}>
-                  Intégrations
-                </div>
-                <div className="space-y-4">
-                  {/* Agenda */}
-                  <IntegrationPicker
-                    label="Agenda"
-                    options={CALENDAR_OPTIONS}
-                    provider={form.calendar_provider}
-                    onProviderChange={(v) => setForm({ ...form, calendar_provider: v })}
-                    config={form.integration_config}
-                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
-                  />
-                  {/* Messagerie */}
-                  <IntegrationPicker
-                    label="Messagerie"
-                    options={MESSAGING_OPTIONS}
-                    provider={form.messaging_provider}
-                    onProviderChange={(v) => setForm({ ...form, messaging_provider: v })}
-                    config={form.integration_config}
-                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
-                  />
-                  {/* Visioconférence */}
-                  <IntegrationPicker
-                    label="Visioconférence"
-                    options={VISIO_OPTIONS}
-                    provider={form.visio_provider}
-                    onProviderChange={(v) => setForm({ ...form, visio_provider: v })}
-                    config={form.integration_config}
-                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
-                  />
-                </div>
-              </div>
+              {/* Intégrations — gérées dans Paramètres par chaque utilisateur */}
 
               {/* Notes */}
               <div className="space-y-2">

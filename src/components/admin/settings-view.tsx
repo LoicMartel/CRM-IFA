@@ -54,6 +54,9 @@ export function SettingsView() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
+  // OAuth tokens
+  const [oauthTokens, setOauthTokens] = useState<{ provider: string; provider_email: string | null }[]>([]);
+
   // Crop state
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -82,10 +85,24 @@ export function SettingsView() {
             slack: member.slack_user_id ?? "",
             gcal: member.google_calendar_id ?? "",
           });
+          // Fetch OAuth tokens for this member
+          const { data: tokens } = await supabase
+            .from("oauth_tokens")
+            .select("provider, provider_email")
+            .eq("team_member_id", member.id);
+          if (tokens) setOauthTokens(tokens);
         }
       }
     })();
   }, []);
+
+  async function handleDisconnectOAuth(provider: string) {
+    if (!memberId) return;
+    if (!window.confirm(`Déconnecter ${provider} ?`)) return;
+    const supabase = createClient();
+    await supabase.from("oauth_tokens").delete().eq("team_member_id", memberId).eq("provider", provider);
+    setOauthTokens(oauthTokens.filter(t => t.provider !== provider));
+  }
 
   const onCropComplete = useCallback((_: any, croppedPixels: CropArea) => {
     setCroppedAreaPixels(croppedPixels);
@@ -345,63 +362,69 @@ export function SettingsView() {
             </div>
           </div>
         </div>
-        {/* Intégrations */}
+        {/* Intégrations — connexion OAuth */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ height: 4, background: "linear-gradient(90deg, #1a6b9c 0%, #00695c 100%)" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <Link className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Intégrations
             </h3>
-            <div className="space-y-4">
-              {/* Zoom */}
-              <div className="space-y-2">
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 16 }}>📹</span> Lien Zoom personnel
-                </label>
-                <input
-                  type="url"
-                  value={zoomLink}
-                  onChange={(e) => setZoomLink(e.target.value)}
-                  placeholder="https://us06web.zoom.us/j/1234567890"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                />
-                <p style={{ fontSize: 11, color: "#8399a9" }}>Votre lien de reunion Zoom personnel. Il sera utilise pour les sessions de formation.</p>
-              </div>
 
-              {/* Slack */}
-              <div className="space-y-2">
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
-                  <MessageSquare className="h-4 w-4" style={{ color: "#5a6f80" }} /> Slack ID
-                </label>
-                <input
-                  type="text"
-                  value={slackUserId}
-                  onChange={(e) => setSlackUserId(e.target.value)}
-                  placeholder="U0XXXXXXXXX"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                />
-                <p style={{ fontSize: 11, color: "#8399a9" }}>
-                  Pour trouver votre Slack ID : ouvrez Slack, cliquez sur votre profil, puis sur les <strong>trois points</strong> (⋯) et selectionnez <strong>&quot;Copier l&apos;identifiant du membre&quot;</strong>.
-                </p>
+            {/* Agenda */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
+                <Calendar className="h-3 w-3" style={{ display: "inline", marginRight: 4 }} /> Agenda
               </div>
-
-              {/* Google Calendar ID */}
-              <div className="space-y-2">
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", display: "flex", alignItems: "center", gap: 6 }}>
-                  <Calendar className="h-4 w-4" style={{ color: "#5a6f80" }} /> Google Calendar ID
-                </label>
-                <input
-                  type="text"
-                  value={googleCalendarId}
-                  onChange={(e) => setGoogleCalendarId(e.target.value)}
-                  placeholder="votre.email@gmail.com ou ID de calendrier"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                />
-                <p style={{ fontSize: 11, color: "#8399a9" }}>
-                  En general c&apos;est votre adresse Gmail. Vous pouvez aussi le trouver dans Google Calendar &gt; Parametres du calendrier &gt; ID du calendrier.
-                </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <OAuthConnectButton provider="google" label="Google Calendar" memberId={memberId} token={oauthTokens.find(t => t.provider === "google")} onDisconnect={handleDisconnectOAuth} />
+                <OAuthConnectButton provider="microsoft" label="Outlook" memberId={memberId} token={oauthTokens.find(t => t.provider === "microsoft")} onDisconnect={handleDisconnectOAuth} />
               </div>
             </div>
+
+            {/* Messagerie */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
+                <MessageSquare className="h-3 w-3" style={{ display: "inline", marginRight: 4 }} /> Messagerie
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <OAuthConnectButton provider="slack" label="Slack" memberId={memberId} token={oauthTokens.find(t => t.provider === "slack")} onDisconnect={handleDisconnectOAuth} />
+                <OAuthConnectButton provider="microsoft" label="Microsoft Teams" memberId={memberId} token={oauthTokens.find(t => t.provider === "microsoft")} onDisconnect={handleDisconnectOAuth} />
+              </div>
+            </div>
+
+            {/* Visioconférence */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
+                📹 Visioconférence
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <OAuthConnectButton provider="zoom" label="Zoom" memberId={memberId} token={oauthTokens.find(t => t.provider === "zoom")} onDisconnect={handleDisconnectOAuth} />
+                <OAuthConnectButton provider="google" label="Google Meet" memberId={memberId} token={oauthTokens.find(t => t.provider === "google")} onDisconnect={handleDisconnectOAuth} />
+                <OAuthConnectButton provider="microsoft" label="Microsoft Teams" memberId={memberId} token={oauthTokens.find(t => t.provider === "microsoft")} onDisconnect={handleDisconnectOAuth} />
+              </div>
+            </div>
+
+            {/* Champs manuels (rétrocompatibilité) */}
+            <details style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12 }}>
+              <summary style={{ fontSize: 12, fontWeight: 600, color: "#8399a9", cursor: "pointer" }}>Configuration manuelle (avancé)</summary>
+              <div className="space-y-4" style={{ marginTop: 12 }}>
+                <div className="space-y-2">
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Lien Zoom personnel</label>
+                  <input type="url" value={zoomLink} onChange={(e) => setZoomLink(e.target.value)}
+                    placeholder="https://zoom.us/j/..." className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                </div>
+                <div className="space-y-2">
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Slack User ID</label>
+                  <input type="text" value={slackUserId} onChange={(e) => setSlackUserId(e.target.value)}
+                    placeholder="U0XXXXXXXXX" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                </div>
+                <div className="space-y-2">
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Google Calendar ID</label>
+                  <input type="text" value={googleCalendarId} onChange={(e) => setGoogleCalendarId(e.target.value)}
+                    placeholder="email@gmail.com" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                </div>
+              </div>
+            </details>
           </div>
         </div>
 
@@ -559,6 +582,59 @@ export function SettingsView() {
         </div>
       )}
     </div>
+  );
+}
+
+function OAuthConnectButton({
+  provider, label, memberId, token, onDisconnect,
+}: {
+  provider: string;
+  label: string;
+  memberId: string;
+  token?: { provider: string; provider_email: string | null };
+  onDisconnect: (provider: string) => void;
+}) {
+  const isConnected = !!token;
+
+  if (isConnected) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+        borderRadius: 8, border: "1px solid #a5d6a7", background: "#f1f8e9",
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2e7d32", flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
+          {token.provider_email && <div style={{ fontSize: 11, color: "#5a6f80" }}>{token.provider_email}</div>}
+        </div>
+        <button
+          type="button"
+          onClick={() => onDisconnect(provider)}
+          style={{ fontSize: 11, color: "#c62828", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
+        >
+          Déconnecter
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => { window.location.href = `/api/auth/${provider}?memberId=${memberId}`; }}
+      disabled={!memberId}
+      style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+        borderRadius: 8, border: "1px solid #dce8f0", background: "white",
+        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+        transition: "all 0.15s",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
+    >
+      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ccc", flexShrink: 0 }} />
+      Connecter {label}
+    </button>
   );
 }
 
