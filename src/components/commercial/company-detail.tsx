@@ -610,17 +610,19 @@ export function CompanyDetail({
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview">
             <TabsList className="flex-wrap">
+              {/* Ligne 1 */}
               <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
               <TabsTrigger value="activity">Activité ({activities.length})</TabsTrigger>
               <TabsTrigger value="contacts">Contacts ({contacts.length})</TabsTrigger>
+              <TabsTrigger value="meetings">RDV ({meetings.length})</TabsTrigger>
               <TabsTrigger value="deals">Deals ({deals.length})</TabsTrigger>
               {quotations.length > 0 && <TabsTrigger value="quotations">Cotations ({quotations.length})</TabsTrigger>}
-              <TabsTrigger value="meetings">RDV ({meetings.length})</TabsTrigger>
-              <TabsTrigger value="invoices">Factures ({billingEntries.length})</TabsTrigger>
+              {/* Ligne 2 */}
               <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
               <TabsTrigger value="learners">Apprenants ({learners.length})</TabsTrigger>
-              <TabsTrigger value="documents">Documents ({companyDocs.length})</TabsTrigger>
+              <TabsTrigger value="invoices">Factures ({billingEntries.length})</TabsTrigger>
               <TabsTrigger value="raisons-sociales">Raisons Sociales ({raisonsSociales.length})</TabsTrigger>
+              <TabsTrigger value="documents">Documents ({companyDocs.length})</TabsTrigger>
             </TabsList>
 
             {/* --- Vue d'ensemble --- */}
