@@ -521,30 +521,36 @@ function SettingReport({
     );
     const totalCalls = callAttempts.length;
 
-    // 4. Reached (contactés) = prospects ayant au moins 1 activité "Contacté…" dans la période
-    // On regroupe par contact pour ne compter qu'une fois chaque prospect
-    const reachedIds = new Set<string>();
+    // 4. Contactés = prospects ayant été au moins une fois en statut "contacted"
+    // Soit via une activité "Contacté…", soit via leur lead_status actuel
+    // (contacted, booked, rdv_done, signed, no_show = tous passés par "contacted")
+    const CONTACTED_OR_AFTER = new Set(["contacted", "booked", "rdv_done", "signed", "no_show"]);
+    const contactedIds = new Set<string>();
+    // Par statut actuel (si le statut a évolué après "contacted", ils l'ont été)
+    for (const l of prospectsAppeles) {
+      if (l.lead_status && CONTACTED_OR_AFTER.has(l.lead_status)) {
+        contactedIds.add(l.id);
+      }
+    }
+    // Par activité (au cas où le statut a été modifié manuellement)
     for (const a of callAttempts) {
       const desc = a.description ?? "";
       if (desc.startsWith("Contacté")) {
-        reachedIds.add(a.contact_id);
+        contactedIds.add(a.contact_id);
       }
     }
-    const totalReached = reachedIds.size;
+    const totalContacted = contactedIds.size;
 
-    // 5. Contactés parmi les qualifiés = reached qui ne sont pas not_interested
+    // 5. Contactés parmi les qualifiés = contactés qui ne sont pas not_interested
     const disqualifiedIds = new Set(prospectsAppeles.filter((l) => l.lead_status === "not_interested").map((l) => l.id));
-    const reachedQualifiesIds = new Set([...reachedIds].filter((id) => !disqualifiedIds.has(id)));
-    const totalReachedQualifies = reachedQualifiesIds.size;
+    const contactedQualifiesIds = new Set([...contactedIds].filter((id) => !disqualifiedIds.has(id)));
+    const totalContactedQualifies = contactedQualifiesIds.size;
 
     // 6. RDV réservés = meetings créés dans la période pour les prospects du périmètre
     const meetingsInScope = meetings.filter(
       (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
     const totalRdvBooked = meetingsInScope.length;
-
-    // Contactés ET qualifiés (dénominateur pour le taux de booking)
-    const contactesQualifies = totalReachedQualifies;
 
     // 7. RDV faits = meetings avec status "done" parmi ceux du périmètre, filtrés par scheduled_at
     const meetingsForDone = meetings.filter(
@@ -559,9 +565,8 @@ function SettingReport({
       disqualifies,
       qualifies,
       totalCalls,
-      totalReached,
-      totalReachedQualifies,
-      contactesQualifies,
+      totalContacted,
+      totalContactedQualifies,
       totalRdvBooked,
       totalRdvDone,
       totalRdvForShowRate,
@@ -642,17 +647,17 @@ function SettingReport({
       <div className="lca-card" style={{ padding: 20 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 16 }}>Funnel Setting</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Reached / Total */}
+          {/* Contactés / Total */}
           <FunnelRow
-            label="Reached / Total prospects"
-            num={stats.totalReached}
+            label="Contactés / Total prospects"
+            num={stats.totalContacted}
             den={stats.totalProspects}
             color="#1a6b9c"
           />
           {/* Contactés / Qualifiés */}
           <FunnelRow
             label="Contactés / Qualifiés"
-            num={stats.totalReachedQualifies}
+            num={stats.totalContactedQualifies}
             den={stats.qualifies}
             color="#6a1b9a"
           />
@@ -660,7 +665,7 @@ function SettingReport({
           <FunnelRow
             label="RDV réservés / Contactés qualifiés"
             num={stats.totalRdvBooked}
-            den={stats.contactesQualifies}
+            den={stats.totalContactedQualifies}
             color="#e65100"
           />
           {/* RDV faits / RDV réservés */}
