@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+
+/** Entité (raison sociale) proposée au choix, ou repli sur l'entreprise (id vide). */
+type Entity = {
+  id: string;
+  name: string | null;
+  siret: string | null;
+  address: string | null;
+  learner_names: string[];
+};
 
 export function ConventionModal({
   dealId, dealName, dealAmount, companyName, contactName, trainingDays, onClose, onDone,
@@ -29,7 +38,41 @@ export function ConventionModal({
   const [lieuSignature, setLieuSignature] = useState("Combaillaux");
   const [saving, setSaving] = useState(false);
 
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [companyEntity, setCompanyEntity] = useState<Entity | null>(null);
+  const [raisonSocialeId, setRaisonSocialeId] = useState("");
+
   const ht = dealAmount ?? 0;
+
+  /** Les stagiaires et l'effectif suivent l'entité : ce sont ses apprenants rattachés. */
+  function prefillFrom(names: string[]) {
+    setStagiaires(names.length > 0 ? names : [""]);
+    setEffectifs(names.length > 0 ? String(names.length) : "");
+  }
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const res = await fetch(`/api/deals/${dealId}/raisons-sociales`);
+      const json = await res.json();
+      if (!active || !res.ok) return;
+      const options: Entity[] = json.raisons_sociales ?? [];
+      const fallback: Entity | null = json.company ? { id: "", ...json.company } : null;
+      setEntities(options);
+      setCompanyEntity(fallback);
+      const initial = options.some((o) => o.id === json.selected_id) ? json.selected_id : "";
+      setRaisonSocialeId(initial);
+      prefillFrom((initial ? options.find((o) => o.id === initial) : fallback)?.learner_names ?? []);
+    })();
+    return () => { active = false; };
+  }, [dealId]);
+
+  function selectEntity(id: string) {
+    setRaisonSocialeId(id);
+    prefillFrom((id ? entities.find((o) => o.id === id) : companyEntity)?.learner_names ?? []);
+  }
+
+  const selected = raisonSocialeId ? entities.find((o) => o.id === raisonSocialeId) : companyEntity;
 
   async function submit() {
     if (!intitule.trim()) { alert("Intitulé requis"); return; }
@@ -41,6 +84,7 @@ export function ConventionModal({
         body: JSON.stringify({
           intitule, dureeHeures, lieu, effectifs, horaires, dateSession,
           formateur, programme, stagiaires, dateSignature, lieuSignature,
+          raisonSocialeId: raisonSocialeId || null,
         }),
       });
       const json = await res.json();
@@ -64,6 +108,21 @@ export function ConventionModal({
         <p style={{ fontSize: 12, color: "#64748b", marginBottom: 16 }}>
           {companyName} · {contactName} · {ht.toLocaleString("fr-FR")} € HT (TVA 20 % → {(ht * 1.2).toLocaleString("fr-FR")} € TTC)
         </p>
+
+        {entities.length > 0 && (
+          <>
+            <label style={{ fontSize: 13 }}>Raison sociale (bénéficiaire)</label>
+            <select value={raisonSocialeId} onChange={(e) => selectEntity(e.target.value)} style={field}>
+              <option value="">{companyEntity?.name ?? companyName} — infos de l&apos;entreprise</option>
+              {entities.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          </>
+        )}
+        {selected && (
+          <p style={{ fontSize: 12, color: selected.siret ? "#64748b" : "#92600a", marginBottom: 12 }}>
+            Sur la convention : {selected.name ?? "—"} · SIRET {selected.siret || "manquant"} · {selected.address || "adresse manquante"}
+          </p>
+        )}
 
         <label style={{ fontSize: 13 }}>Intitulé de la formation</label>
         <input value={intitule} onChange={(e) => setIntitule(e.target.value)} style={field} />

@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     lines?: import("@/lib/adv-quote").QuoteLineDraft[];
     subject?: string;
     description?: string;
+    raison_sociale_id?: string | null;
   };
   try {
     body = await req.json();
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description")
+    .select("id, name, stage, amount, owner_id, contact_id, company_id, training_days, notes, pennylane_quote_id, quote_lines, quote_subject, quote_pdf_description, raison_sociale_id")
     .eq("id", dealId)
     .maybeSingle();
 
@@ -92,6 +93,29 @@ export async function POST(req: Request) {
     deal.quote_pdf_description = body.description ?? null;
   }
 
+  // Entité (raison sociale) retenue pour le devis. Validée contre l'entreprise du deal :
+  // un id étranger est refusé plutôt que silencieusement ignoré. Persistée sur le deal
+  // pour que la génération planifiée (cron) reparte du même bénéficiaire.
+  if (body.raison_sociale_id !== undefined) {
+    const rsId = body.raison_sociale_id?.trim() || null;
+    if (rsId) {
+      const { data: rs } = await serviceClient
+        .from("company_raisons_sociales")
+        .select("id")
+        .eq("id", rsId)
+        .eq("company_id", deal.company_id)
+        .maybeSingle();
+      if (!rs) {
+        return NextResponse.json({ error: "Raison sociale inconnue pour cette entreprise" }, { status: 400 });
+      }
+    }
+    await serviceClient
+      .from("deals")
+      .update({ raison_sociale_id: rsId, updated_at: new Date().toISOString() })
+      .eq("id", deal.id);
+    deal.raison_sociale_id = rsId;
+  }
+
   const nomenclatureWarning =
     !deal.amount || Number(deal.amount) <= 0
       ? "Montant manquant sur le deal."
@@ -141,6 +165,7 @@ export async function POST(req: Request) {
       quote_lines: deal.quote_lines,
       quote_subject: deal.quote_subject,
       quote_pdf_description: deal.quote_pdf_description,
+      raison_sociale_id: deal.raison_sociale_id,
     },
     teamMemberId: member.id,
   });

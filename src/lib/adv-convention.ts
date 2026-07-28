@@ -16,10 +16,12 @@ export interface ConventionDeal {
   name: string | null;
   amount: number | string | null;
 }
+/** Bénéficiaire de la convention : entité (raison sociale) choisie, ou entreprise par défaut. */
 export interface ConventionCompany {
   name: string | null;
   address: string | null;
   city: string | null;
+  siret: string | null;
 }
 export interface ConventionContact {
   first_name: string | null;
@@ -60,6 +62,7 @@ export function buildConventionData(
   return {
     companyName: company.name ?? "—",
     companyAddress,
+    companySiret: company.siret ?? "—",
     decisionnaire,
     intitule: form.intitule,
     dureeHeures: form.dureeHeures,

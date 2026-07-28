@@ -193,7 +193,7 @@ export async function GET(req: NextRequest) {
   // (L'envoi Firma réel est déclenché par la validation Naznine dans /a-valider.)
   const { data: dueQuotes } = await supabase
     .from("deals")
-    .select("id, name, amount, training_days, notes, contact_id, company_id, quote_lines, quote_subject, quote_pdf_description")
+    .select("id, name, amount, training_days, notes, contact_id, company_id, quote_lines, quote_subject, quote_pdf_description, raison_sociale_id")
     .not("quote_scheduled_send_at", "is", null)
     .lte("quote_scheduled_send_at", nowIso)
     .is("pennylane_quote_id", null)

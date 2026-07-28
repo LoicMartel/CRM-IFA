@@ -16,6 +16,7 @@ import { prepareQuoteDoc, sendQuoteSignature } from "@/lib/adv-quote-doc";
 import { convertDocxToPdf } from "@/lib/carbone-client";
 import { assignQuoteNumber } from "@/lib/quote-number";
 import { notifyPieceToValidate } from "@/lib/adv-notify";
+import { resolveBeneficiary } from "@/lib/adv-raison-sociale";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -34,6 +35,8 @@ export interface RunDealQuoteDeal {
   quote_pdf_description: string | null;
   contact_id: string | null;
   company_id: string | null;
+  /** Entité (raison sociale) facturée, ou null pour les infos de l'entreprise. */
+  raison_sociale_id: string | null;
 }
 
 export type RunDealQuoteResult =
@@ -69,10 +72,9 @@ export async function prepareDealQuote(opts: {
   const { data: contact } = await serviceClient
     .from("contacts").select("first_name, last_name, email, phone")
     .eq("id", deal.contact_id).maybeSingle();
-  const { data: company } = await serviceClient
-    .from("companies").select("id, name, siret, address, city, country")
-    .eq("id", deal.company_id).maybeSingle();
-  if (!contact || !company) {
+  // Entité choisie sur le deal (SIRET / adresse / raison sociale du devis), sinon l'entreprise.
+  const beneficiary = await resolveBeneficiary(serviceClient, deal.company_id, deal.raison_sociale_id);
+  if (!contact || !beneficiary) {
     return { ok: false, status: 422, error: "Contact ou entreprise introuvable sur le deal" };
   }
 
@@ -81,7 +83,7 @@ export async function prepareDealQuote(opts: {
     const now = new Date();
     const { docx } = await prepareQuoteDoc({
       deal: { id: deal.id, name: deal.name },
-      company: { name: company.name, address: company.address, city: company.city, siret: company.siret },
+      company: { name: beneficiary.name, address: beneficiary.address, city: beneficiary.city, siret: beneficiary.siret },
       contact: { first_name: contact.first_name, last_name: contact.last_name, email: contact.email },
       lines: deal.quote_lines ?? [],
       header: {
@@ -155,7 +157,7 @@ export async function sendValidatedQuote(opts: {
 
   const { data: deal } = await serviceClient
     .from("deals")
-    .select("id, name, stage, contact_id, company_id, quote_number")
+    .select("id, name, stage, contact_id, company_id, quote_number, raison_sociale_id")
     .eq("id", dealId).maybeSingle();
   if (!deal) return { ok: false, status: 404, error: `Deal ${dealId} introuvable` };
   if (deal.stage !== "quote_to_validate") {
@@ -165,8 +167,8 @@ export async function sendValidatedQuote(opts: {
   const { data: contact } = await serviceClient
     .from("contacts").select("first_name, last_name, email, phone")
     .eq("id", deal.contact_id).maybeSingle();
-  const { data: company } = await serviceClient
-    .from("companies").select("name").eq("id", deal.company_id).maybeSingle();
+  // Le document de signature porte le nom de l'entité retenue à la préparation.
+  const beneficiary = await resolveBeneficiary(serviceClient, deal.company_id, deal.raison_sociale_id);
   if (!contact) return { ok: false, status: 422, error: "Contact introuvable" };
 
   try {
@@ -182,7 +184,7 @@ export async function sendValidatedQuote(opts: {
     const pdf = await convertDocxToPdf(docxBuffer);
 
     const r = await sendQuoteSignature({
-      companyName: company?.name ?? null,
+      companyName: beneficiary?.name ?? null,
       contact: { first_name: contact.first_name, last_name: contact.last_name, email: contact.email },
       pdfBase64: pdf.toString("base64"),
       quoteNumber: (deal.quote_number as string) ?? dealId,

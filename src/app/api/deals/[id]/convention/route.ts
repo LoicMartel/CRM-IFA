@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canInvoice, getCurrentMember } from "@/lib/adv-permissions";
 import { prepareConvention, AdvConventionError, type ConventionFormInput } from "@/lib/adv-convention";
+import { resolveBeneficiary } from "@/lib/adv-raison-sociale";
+
+/** Corps posté par la modale : champs du template + entité choisie (id seul). */
+type ConventionBody = ConventionFormInput & { raisonSocialeId?: string | null };
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,9 +20,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const { id: dealId } = await ctx.params;
-  let form: ConventionFormInput;
+  let form: ConventionBody;
   try {
-    form = (await req.json()) as ConventionFormInput;
+    form = (await req.json()) as ConventionBody;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -28,7 +32,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const { data: deal, error: dealErr } = await serviceClient
     .from("deals")
-    .select("id, name, amount, contact_id, company_id, convention_signed_at")
+    .select("id, name, amount, contact_id, company_id, convention_signed_at, raison_sociale_id")
     .eq("id", dealId)
     .maybeSingle();
   if (dealErr) return NextResponse.json({ error: dealErr.message }, { status: 500 });
@@ -42,16 +46,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const { data: contact } = await serviceClient
     .from("contacts").select("first_name, last_name, email").eq("id", deal.contact_id).maybeSingle();
-  const { data: company } = await serviceClient
-    .from("companies").select("name, address, city").eq("id", deal.company_id).maybeSingle();
-  if (!contact || !company) {
+  // Le bénéficiaire est résolu côté serveur : la modale n'envoie qu'un id d'entité,
+  // jamais le SIRET ni l'adresse qui figureront sur la convention.
+  const beneficiary = await resolveBeneficiary(serviceClient, deal.company_id, form.raisonSocialeId);
+  if (!contact || !beneficiary) {
     return NextResponse.json({ error: "Contact ou entreprise introuvable sur le deal" }, { status: 422 });
+  }
+
+  // Mémorise l'entité retenue : la facturation et une régénération repartent du même choix.
+  if ((deal.raison_sociale_id ?? null) !== beneficiary.raisonSocialeId) {
+    await serviceClient.from("deals")
+      .update({ raison_sociale_id: beneficiary.raisonSocialeId })
+      .eq("id", deal.id);
   }
 
   try {
     const { pdf } = await prepareConvention({
       deal: { id: deal.id, name: deal.name, amount: deal.amount },
-      company,
+      company: {
+        name: beneficiary.name,
+        address: beneficiary.address,
+        city: beneficiary.city,
+        siret: beneficiary.siret,
+      },
       contact,
       form,
     });

@@ -11,6 +11,9 @@ function tomorrowISODate() {
 
 type CatalogItem = { ref: string; label: string; id: number };
 
+/** Entité (raison sociale) proposée au choix, ou repli sur l'entreprise (id vide). */
+type Entity = { id: string; name: string | null; siret: string | null; address: string | null };
+
 export function QuoteSendModal({
   dealId,
   dealName,
@@ -32,6 +35,9 @@ export function QuoteSendModal({
   const [mode, setMode] = useState<"now" | "scheduled">("now");
   const [date, setDate] = useState(tomorrowISODate());
   const [saving, setSaving] = useState(false);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [companyEntity, setCompanyEntity] = useState<Entity | null>(null);
+  const [raisonSocialeId, setRaisonSocialeId] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -40,7 +46,10 @@ export function QuoteSendModal({
         const url = fromQuotation
           ? `/api/quotes/draft/${dealId}?fromQuotation=${fromQuotation}`
           : `/api/quotes/draft/${dealId}`;
-        const res = await fetch(url);
+        const [res, rsRes] = await Promise.all([
+          fetch(url),
+          fetch(`/api/deals/${dealId}/raisons-sociales`),
+        ]);
         const json = await res.json();
         if (!active) return;
         if (res.ok) {
@@ -51,6 +60,14 @@ export function QuoteSendModal({
         } else {
           alert(`Erreur chargement devis : ${json.error ?? "inconnue"}`);
         }
+        if (rsRes.ok) {
+          const rsJson = await rsRes.json();
+          if (!active) return;
+          const options: Entity[] = rsJson.raisons_sociales ?? [];
+          setEntities(options);
+          setCompanyEntity(rsJson.company ? { id: "", ...rsJson.company } : null);
+          setRaisonSocialeId(options.some((o) => o.id === rsJson.selected_id) ? rsJson.selected_id : "");
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -59,6 +76,8 @@ export function QuoteSendModal({
       active = false;
     };
   }, [dealId, fromQuotation]);
+
+  const selectedEntity = raisonSocialeId ? entities.find((o) => o.id === raisonSocialeId) : companyEntity;
 
   function updateLine(i: number, patch: Partial<QuoteLineDraft>) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -102,7 +121,8 @@ export function QuoteSendModal({
         subject: string;
         description: string;
         scheduled_send_at?: string;
-      } = { deal_id: dealId, lines, subject, description };
+        raison_sociale_id: string | null;
+      } = { deal_id: dealId, lines, subject, description, raison_sociale_id: raisonSocialeId || null };
       if (mode === "scheduled") body.scheduled_send_at = date;
       const res = await fetch("/api/quotes/create-from-deal", {
         method: "POST",
@@ -136,6 +156,25 @@ export function QuoteSendModal({
           <p style={{ fontSize: 13, color: "#64748b" }}>Chargement…</p>
         ) : (
           <>
+            {entities.length > 0 && (
+              <>
+                <label style={{ fontSize: 12, fontWeight: 600 }}>Raison sociale (bénéficiaire)</label>
+                <select
+                  value={raisonSocialeId}
+                  onChange={(e) => setRaisonSocialeId(e.target.value)}
+                  style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6, marginBottom: 4 }}
+                >
+                  <option value="">{companyEntity?.name ?? "Entreprise"} — infos de l&apos;entreprise</option>
+                  {entities.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </>
+            )}
+            {selectedEntity && (
+              <p style={{ fontSize: 12, color: selectedEntity.siret ? "#64748b" : "#92600a", marginBottom: 10 }}>
+                Sur le devis : {selectedEntity.name ?? "—"} · SIRET {selectedEntity.siret || "manquant"} · {selectedEntity.address || "adresse manquante"}
+              </p>
+            )}
+
             <label style={{ fontSize: 12, fontWeight: 600 }}>Titre du devis (PDF)</label>
             <input value={subject} onChange={(e) => setSubject(e.target.value)} style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6, marginBottom: 10 }} />
             <label style={{ fontSize: 12, fontWeight: 600 }}>Description (PDF)</label>

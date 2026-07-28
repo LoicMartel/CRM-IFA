@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { canValidateAdv, getCurrentMember } from "@/lib/adv-permissions";
 import { sendConventionSignature, AdvConventionError } from "@/lib/adv-convention";
+import { resolveBeneficiary } from "@/lib/adv-raison-sociale";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +19,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
 
   const { data: deal } = await serviceClient
     .from("deals")
-    .select("id, name, convention_status, convention_signed_at, contact_id, company_id")
+    .select("id, name, convention_status, convention_signed_at, contact_id, company_id, raison_sociale_id")
     .eq("id", dealId)
     .maybeSingle();
   if (!deal) return NextResponse.json({ error: `Deal ${dealId} introuvable` }, { status: 404 });
@@ -37,11 +38,8 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
     .select("first_name, last_name, email")
     .eq("id", deal.contact_id)
     .maybeSingle();
-  const { data: company } = await serviceClient
-    .from("companies")
-    .select("name")
-    .eq("id", deal.company_id)
-    .maybeSingle();
+  // Le document de signature porte le nom de l'entité retenue à la préparation.
+  const beneficiary = await resolveBeneficiary(serviceClient, deal.company_id, deal.raison_sociale_id);
   if (!contact) return NextResponse.json({ error: "Contact introuvable" }, { status: 422 });
 
   const { data: doc } = await serviceClient
@@ -73,7 +71,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       return NextResponse.json({ error: `PDF convention invalide (magic="${magic}")` }, { status: 502 });
     }
     const r = await sendConventionSignature({
-      companyName: company?.name ?? null,
+      companyName: beneficiary?.name ?? null,
       contact,
       pdfBase64: pdfBuffer.toString("base64"),
     });
