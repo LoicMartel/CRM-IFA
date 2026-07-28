@@ -87,8 +87,8 @@ const generalItems = [
 ];
 
 const adminItems = [
-  { title: "Réglages", href: "/reglages", icon: Settings },
   { title: "Équipe", href: "/team", icon: Users },
+  { title: "Réglages", href: "/reglages", icon: Settings },
   { title: "Journal Emails", href: "/emails", icon: Mail },
   { title: "Test VisioFormation", href: "/visioformation-test", icon: Webhook },
 ];
