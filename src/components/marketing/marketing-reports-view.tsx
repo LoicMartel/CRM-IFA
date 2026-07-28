@@ -589,12 +589,22 @@ function SettingReport({
     }
     const qualifiesAndNotReached = [...calledIds].filter((id) => !disqualifiedIds.has(id)).length;
 
-    // 6. RDV réservés = prospects uniques ayant au moins 1 meeting dans la période (inclut annulés)
+    // 6. RDV réservés = tous les meetings, mais si un prospect a un annulé + un autre RDV, ne pas compter l'annulé
     const meetingsInScope = meetings.filter(
       (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
-    const rdvBookedContactIds = new Set(meetingsInScope.map((m) => m.contact_id));
-    const totalRdvBooked = rdvBookedContactIds.size;
+    // Grouper par contact pour détecter les annulés avec remplacement
+    const meetingsByContact = new Map<string, typeof meetingsInScope>();
+    for (const m of meetingsInScope) {
+      const list = meetingsByContact.get(m.contact_id);
+      if (list) list.push(m); else meetingsByContact.set(m.contact_id, [m]);
+    }
+    let totalRdvBooked = 0;
+    for (const [, contactMeetings] of meetingsByContact) {
+      const nonCancelled = contactMeetings.filter((m) => m.status !== "cancelled");
+      // Si le prospect a des RDV non-annulés, compter ceux-là ; sinon compter 1 (l'annulé seul)
+      totalRdvBooked += nonCancelled.length > 0 ? nonCancelled.length : 1;
+    }
 
     // 7. RDV faits = parmi les meetings réservés (meetingsInScope), combien ont été faits
     // Un RDV est "fait" si le meeting a status "done" OU si le contact a lead_status rdv_done/signed
@@ -609,8 +619,8 @@ function SettingReport({
       if (m.status === "done") rdvDoneContactIds.add(m.contact_id);
     }
     const totalRdvDone = rdvDoneContactIds.size;
-    // Dénominateur = même base que RDV réservés (prospects uniques)
-    const totalRdvForShowRate = rdvBookedContactIds.size;
+    // Dénominateur = même base que RDV réservés
+    const totalRdvForShowRate = totalRdvBooked;
 
     return {
       totalProspects,
