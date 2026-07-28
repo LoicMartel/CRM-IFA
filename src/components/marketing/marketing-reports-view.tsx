@@ -721,15 +721,20 @@ function SettingReport({
             <span style={{ transition: "transform 0.2s", display: "inline-block", transform: showSourceDetail ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
             {showSourceDetail ? "Masquer" : "Voir"} le détail par source
           </button>
-          {showSourceDetail && stats.sourceStats.map((s, i) => (
-            <FunnelRow
-              key={s.source}
-              label={`Contactés / ${s.source}`}
-              num={s.contacted}
-              den={s.total}
-              color={SOURCE_COLORS[i % SOURCE_COLORS.length]}
-            />
-          ))}
+          {showSourceDetail && (
+            <div style={{ paddingLeft: 16, borderLeft: "2px solid #dce8f0", display: "flex", flexDirection: "column", gap: 10 }}>
+              {stats.sourceStats.map((s, i) => (
+                <FunnelRow
+                  key={s.source}
+                  label={s.source}
+                  num={s.contacted}
+                  den={s.total}
+                  color={SOURCE_COLORS[i % SOURCE_COLORS.length]}
+                  small
+                />
+              ))}
+            </div>
+          )}
           {/* Contactés / Qualifiés + Not Reached */}
           <FunnelRow
             label="Contactés / Qualifiés + Not Reached"
@@ -764,18 +769,20 @@ function SettingReport({
   );
 }
 
-function FunnelRow({ label, num, den, color }: { label: string; num: number; den: number; color: string }) {
+function FunnelRow({ label, num, den, color, small }: { label: string; num: number; den: number; color: string; small?: boolean }) {
   const pctVal = den > 0 ? (num / den) * 100 : 0;
   const pctStr = den > 0 ? fmtNum(pctVal) + " %" : "—";
+  const fontSize = small ? 11 : 13;
+  const barHeight = small ? 5 : 8;
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-        <span style={{ fontWeight: 600, color: "#1a2a3a" }}>{label}</span>
-        <span style={{ fontWeight: 700, color }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize, marginBottom: 3 }}>
+        <span style={{ fontWeight: small ? 500 : 600, color: small ? "#5a6f80" : "#1a2a3a" }}>{label}</span>
+        <span style={{ fontWeight: small ? 600 : 700, color }}>
           {num} / {den} — {pctStr}
         </span>
       </div>
-      <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ height: barHeight, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${Math.min(pctVal, 100)}%`, background: color, borderRadius: 4, transition: "width 0.3s" }} />
       </div>
     </div>
