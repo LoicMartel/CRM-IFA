@@ -500,6 +500,7 @@ function SettingReport({
   });
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [showSourceDetail, setShowSourceDetail] = useState(false);
 
   function inPeriod(dateStr: string) {
     if (periodMode === "month") return dateStr.startsWith(filterMonth);
@@ -695,8 +696,21 @@ function SettingReport({
             den={stats.totalProspects}
             color="#1a6b9c"
           />
-          {/* Contactés par source */}
-          {stats.sourceStats.map((s, i) => (
+          {/* Toggle détail par source */}
+          <button
+            type="button"
+            onClick={() => setShowSourceDetail(!showSourceDetail)}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              fontSize: 12, color: "#1a6b9c", fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 4,
+              padding: 0, marginTop: -4, marginBottom: -4,
+            }}
+          >
+            <span style={{ transition: "transform 0.2s", display: "inline-block", transform: showSourceDetail ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+            {showSourceDetail ? "Masquer" : "Voir"} le détail par source
+          </button>
+          {showSourceDetail && stats.sourceStats.map((s, i) => (
             <FunnelRow
               key={s.source}
               label={`Contactés / ${s.source}`}
