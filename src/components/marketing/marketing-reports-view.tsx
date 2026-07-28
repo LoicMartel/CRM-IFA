@@ -736,7 +736,7 @@ function SettingReport({
           )}
           {/* Taux de qualification des leads contactés */}
           <FunnelRow
-            label="Taux de qualification des leads contactés"
+            label="Taux de qualification des leads contactés (contactés qualifiés / total contactés)"
             num={stats.totalContactedQualifies}
             den={stats.totalContacted}
             color="#9c27b0"
