@@ -481,12 +481,10 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                     const memberTokens = oauthTokens.filter(t => t.team_member_id === mid);
                     const hasGoogle = memberTokens.some(t => t.provider === "google");
                     const hasMicrosoft = memberTokens.some(t => t.provider === "microsoft");
-                    const hasZoom = memberTokens.some(t => t.provider === "zoom");
                     const hasSlack = memberTokens.some(t => t.provider === "slack");
                     const syncs = [
                       { label: "Google", on: hasGoogle },
                       { label: "Microsoft", on: hasMicrosoft },
-                      { label: "Zoom", on: hasZoom },
                       { label: "Slack", on: hasSlack },
                     ];
                     return (

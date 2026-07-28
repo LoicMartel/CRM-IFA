@@ -397,10 +397,14 @@ export function SettingsView() {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
                 📹 Visioconférence
               </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <OAuthConnectButton provider="zoom" label="Zoom" memberId={memberId} token={oauthTokens.find(t => t.provider === "zoom")} onDisconnect={handleDisconnectOAuth} />
-                <OAuthConnectButton provider="google" label="Google Meet" memberId={memberId} token={oauthTokens.find(t => t.provider === "google")} onDisconnect={handleDisconnectOAuth} />
-                <OAuthConnectButton provider="microsoft" label="Microsoft Teams" memberId={memberId} token={oauthTokens.find(t => t.provider === "microsoft")} onDisconnect={handleDisconnectOAuth} />
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Lien de visio personnel (Zoom, Google Meet, Teams...)</label>
+                  <input type="url" value={zoomLink} onChange={(e) => setZoomLink(e.target.value)}
+                    placeholder="https://zoom.us/j/... ou https://meet.google.com/..."
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                  <p style={{ fontSize: 11, color: "#8399a9" }}>Ce lien sera utilisé dans les emails de confirmation des RDV et sessions de formation.</p>
+                </div>
               </div>
             </div>
 
@@ -408,11 +412,6 @@ export function SettingsView() {
             <details style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12 }}>
               <summary style={{ fontSize: 12, fontWeight: 600, color: "#8399a9", cursor: "pointer" }}>Configuration manuelle (avancé)</summary>
               <div className="space-y-4" style={{ marginTop: 12 }}>
-                <div className="space-y-2">
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Lien Zoom personnel</label>
-                  <input type="url" value={zoomLink} onChange={(e) => setZoomLink(e.target.value)}
-                    placeholder="https://zoom.us/j/..." className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
-                </div>
                 <div className="space-y-2">
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Slack User ID</label>
                   <input type="text" value={slackUserId} onChange={(e) => setSlackUserId(e.target.value)}
