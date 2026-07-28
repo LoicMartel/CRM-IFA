@@ -746,9 +746,9 @@ function SettingReport({
               ))}
             </div>
           )}
-          {/* Contactés / Qualifiés + Not Reached */}
+          {/* Contactés qualifiés / Qualifiés + Not Reached */}
           <FunnelRow
-            label="Contactés / Qualifiés + Not Reached"
+            label="Contactés qualifiés / Qualifiés + Not Reached"
             num={stats.totalContactedQualifies}
             den={stats.qualifiesAndNotReached}
             color="#6a1b9a"
