@@ -1060,6 +1060,7 @@ export function DealsBoard({
           dealName={planModalDeal.name}
           dealAmount={planModalDeal.amount != null ? Number(planModalDeal.amount) : null}
           defaultClientName={planModalDeal.companies?.name ?? planModalDeal.name}
+          companyId={planModalDeal.company_id}
           onClose={() => setPlanModalDeal(null)}
           onDone={() => { setPlanModalDeal(null); router.refresh(); }}
         />

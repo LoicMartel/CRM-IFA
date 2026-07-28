@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface Line { id: string; month: string; amount: string; }
 
 export function BillingPlanModal({
-  dealId, dealName, dealAmount, defaultClientName, onClose, onDone,
+  dealId, dealName, dealAmount, defaultClientName, companyId, onClose, onDone,
 }: {
   dealId: string;
   dealName: string;
   dealAmount: number | null;
   defaultClientName: string;
+  companyId?: string | null;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -22,6 +24,20 @@ export function BillingPlanModal({
     { id: crypto.randomUUID(), month: thisMonth, amount: dealAmount ? String(dealAmount) : "" },
   ]);
   const [saving, setSaving] = useState(false);
+
+  // Raisons sociales dropdown
+  const [raisonsSociales, setRaisonsSociales] = useState<{ id: string; name: string }[]>([]);
+  const [rsDropdownOpen, setRsDropdownOpen] = useState(false);
+  const [rsLoaded, setRsLoaded] = useState(false);
+
+  async function loadRaisonsSociales() {
+    if (rsLoaded || !companyId) return;
+    const supabase = createClient();
+    const { data } = await supabase.from("company_raisons_sociales").select("id, name").eq("company_id", companyId).order("name");
+    setRaisonsSociales(data ?? []);
+    setRsLoaded(true);
+  }
+  if (!rsLoaded && companyId) loadRaisonsSociales();
 
   const sum = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
   const mismatch = dealAmount != null && Math.abs(sum - dealAmount) > 0.01;
@@ -63,7 +79,35 @@ export function BillingPlanModal({
         <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>{dealName}</p>
 
         <label htmlFor="bpm-client-name" style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Raison sociale</label>
-        <input id="bpm-client-name" value={clientName} onChange={(e) => setClientName(e.target.value)} style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6, marginBottom: 12 }} />
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <input
+            id="bpm-client-name" value={clientName}
+            onChange={(e) => { setClientName(e.target.value); setRsDropdownOpen(true); }}
+            onFocus={() => { if (raisonsSociales.length > 0) setRsDropdownOpen(true); }}
+            onBlur={() => { setTimeout(() => setRsDropdownOpen(false), 200); }}
+            style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6 }}
+          />
+          {rsDropdownOpen && raisonsSociales.length > 0 && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+              background: "white", border: "1px solid #e8ecf1", borderRadius: 8,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: 180, overflowY: "auto", marginTop: 4,
+            }}>
+              {raisonsSociales
+                .filter((rs) => !clientName || rs.name.toLowerCase().includes(clientName.toLowerCase()))
+                .map((rs) => (
+                  <div key={rs.id} onClick={() => { setClientName(rs.name); setRsDropdownOpen(false); }}
+                    style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f0f4f8" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#f0f7ff"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "white"; }}
+                  >{rs.name}</div>
+                ))}
+              {raisonsSociales.filter((rs) => !clientName || rs.name.toLowerCase().includes(clientName.toLowerCase())).length === 0 && (
+                <div style={{ padding: "8px 12px", fontSize: 12, color: "#8399a9" }}>Aucune correspondance</div>
+              )}
+            </div>
+          )}
+        </div>
 
         <label htmlFor="bpm-funding-type" style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Type de financement</label>
         <select id="bpm-funding-type" value={fundingType} onChange={(e) => setFundingType(e.target.value)} style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6, marginBottom: 16 }}>

@@ -158,6 +158,21 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [saving, setSaving] = useState(false);
   const [companySort, setCompanySort] = useState<"asc" | "desc" | null>(null);
 
+  // Raisons sociales for selected company
+  const [companyRaisonsSociales, setCompanyRaisonsSociales] = useState<{ id: string; name: string }[]>([]);
+  const [rsDropdownOpen, setRsDropdownOpen] = useState(false);
+
+  async function loadCompanyRaisonsSociales(companyId: string) {
+    if (!companyId) { setCompanyRaisonsSociales([]); return; }
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("company_raisons_sociales")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .order("name");
+    setCompanyRaisonsSociales(data ?? []);
+  }
+
   // Company edit panel state
   const [companyEditOpen, setCompanyEditOpen] = useState(false);
   const [companyEditId, setCompanyEditId] = useState<string | null>(null);
@@ -386,6 +401,8 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     setFormClientName("");
     setFormFundingType("");
     setFormMonthlyFill("");
+    setCompanyRaisonsSociales([]);
+    setRsDropdownOpen(false);
     const months: Record<string, { amount: string; status: string }> = {};
     for (const m of fiscalMonthsFull) months[m.key] = { amount: "", status: "" };
     setFormMonths(months);
@@ -399,6 +416,9 @@ export function BillingGrid({ entries, companies, deals }: Props) {
     setFormClientName(entry.client_name);
     setFormFundingType(entry.funding_type ?? "");
     setFormMonthlyFill("");
+    setRsDropdownOpen(false);
+    if (entry.company_id) loadCompanyRaisonsSociales(entry.company_id);
+    else setCompanyRaisonsSociales([]);
     const months: Record<string, { amount: string; status: string }> = {};
     for (const m of fiscalMonthsFull) {
       const existing = entry.billing_months.find((bm) => bm.month === m.key);
@@ -1056,6 +1076,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                 value={formCompanyId}
                 onChange={(e) => {
                   setFormCompanyId(e.target.value);
+                  loadCompanyRaisonsSociales(e.target.value);
                   if (!formClientName && e.target.value) {
                     const c = companies.find((c) => c.id === e.target.value);
                     if (c) setFormClientName(c.name);
@@ -1104,12 +1125,49 @@ export function BillingGrid({ entries, companies, deals }: Props) {
             {/* Raison sociale */}
             <div className="space-y-2">
               <Label>Raison sociale *</Label>
-              <Input
-                value={formClientName}
-                onChange={(e) => setFormClientName(e.target.value)}
-                placeholder="Ex: anglais@marseille, WSE Rennes..."
-              />
-              <p style={{ fontSize: 11, color: "#8399a9" }}>Champ libre — peut être différent du nom de la société</p>
+              <div style={{ position: "relative" }}>
+                <Input
+                  value={formClientName}
+                  onChange={(e) => { setFormClientName(e.target.value); setRsDropdownOpen(true); }}
+                  onFocus={() => { if (companyRaisonsSociales.length > 0) setRsDropdownOpen(true); }}
+                  onBlur={() => { setTimeout(() => setRsDropdownOpen(false), 200); }}
+                  placeholder="Ex: anglais@marseille, WSE Rennes..."
+                />
+                {rsDropdownOpen && companyRaisonsSociales.length > 0 && (
+                  <div
+                    style={{
+                      position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+                      background: "white", border: "1px solid #e8ecf1", borderRadius: 8,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)", maxHeight: 200, overflowY: "auto", marginTop: 4,
+                    }}
+                  >
+                    {companyRaisonsSociales
+                      .filter((rs) => !formClientName || rs.name.toLowerCase().includes(formClientName.toLowerCase()))
+                      .map((rs) => (
+                        <div
+                          key={rs.id}
+                          onClick={() => { setFormClientName(rs.name); setRsDropdownOpen(false); }}
+                          style={{
+                            padding: "8px 12px", cursor: "pointer", fontSize: 13,
+                            borderBottom: "1px solid #f0f4f8",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#f0f7ff"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "white"; }}
+                        >
+                          {rs.name}
+                        </div>
+                      ))}
+                    {companyRaisonsSociales.filter((rs) => !formClientName || rs.name.toLowerCase().includes(formClientName.toLowerCase())).length === 0 && (
+                      <div style={{ padding: "8px 12px", fontSize: 12, color: "#8399a9" }}>Aucune correspondance</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p style={{ fontSize: 11, color: "#8399a9" }}>
+                {companyRaisonsSociales.length > 0
+                  ? "Sélectionnez une raison sociale existante ou saisissez un texte libre"
+                  : "Champ libre — peut être différent du nom de la société"}
+              </p>
             </div>
 
             {/* Funding type */}

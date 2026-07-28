@@ -17,6 +17,7 @@ import {
   ExternalLink, Users, GraduationCap, Receipt, CalendarCheck, Handshake,
   CreditCard, Video, PhoneCall, MapPinIcon, Clock, Trash2, ArrowLeft,
   X, Upload, FileText, Download, Calendar, ChevronDown, ChevronRight,
+  Plus, Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone, fmtDuration } from "@/lib/utils";
@@ -125,6 +126,81 @@ export function CompanyDetail({
   const [companyDocs, setCompanyDocs] = useState<DocRow[]>([]);
   const [uploadingCompanyDoc, setUploadingCompanyDoc] = useState(false);
   const [companyDocType, setCompanyDocType] = useState("autre");
+
+  // Raisons sociales state
+  type RaisonSocialeRow = { id: string; name: string; siret: string | null; address: string | null; created_at: string; learner_ids: string[] };
+  const [raisonsSociales, setRaisonsSociales] = useState<RaisonSocialeRow[]>([]);
+  const [rsModalOpen, setRsModalOpen] = useState(false);
+  const [rsSaving, setRsSaving] = useState(false);
+  const [rsForm, setRsForm] = useState({ name: "", siret: "", address: s(company.address) || "" });
+  const [rsSelectedLearners, setRsSelectedLearners] = useState<Set<string>>(new Set());
+  const [rsEditId, setRsEditId] = useState<string | null>(null);
+
+  const loadRaisonsSociales = async () => {
+    const supabase = createClient();
+    const companyId = s(company.id);
+    const { data: rs } = await supabase
+      .from("company_raisons_sociales")
+      .select("*, raison_sociale_learners(learner_id)")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+    setRaisonsSociales(
+      (rs ?? []).map((r: any) => ({
+        id: r.id, name: r.name, siret: r.siret, address: r.address, created_at: r.created_at,
+        learner_ids: (r.raison_sociale_learners ?? []).map((rl: any) => rl.learner_id),
+      }))
+    );
+  };
+  useState(() => { loadRaisonsSociales(); });
+
+  function openRsModal(rs?: RaisonSocialeRow) {
+    if (rs) {
+      setRsEditId(rs.id);
+      setRsForm({ name: rs.name, siret: rs.siret ?? "", address: rs.address ?? "" });
+      setRsSelectedLearners(new Set(rs.learner_ids));
+    } else {
+      setRsEditId(null);
+      setRsForm({ name: "", siret: "", address: s(company.address) || "" });
+      setRsSelectedLearners(new Set());
+    }
+    setRsModalOpen(true);
+  }
+
+  async function handleSaveRs() {
+    if (!rsForm.name.trim()) return;
+    setRsSaving(true);
+    const supabase = createClient();
+    const companyId = s(company.id);
+    try {
+      let rsId = rsEditId;
+      if (rsEditId) {
+        await supabase.from("company_raisons_sociales").update({
+          name: rsForm.name.trim(), siret: rsForm.siret.trim() || null, address: rsForm.address.trim() || null, updated_at: new Date().toISOString(),
+        }).eq("id", rsEditId);
+        // Remove old learner links, re-insert
+        await supabase.from("raison_sociale_learners").delete().eq("raison_sociale_id", rsEditId);
+      } else {
+        const { data } = await supabase.from("company_raisons_sociales").insert({
+          company_id: companyId, name: rsForm.name.trim(), siret: rsForm.siret.trim() || null, address: rsForm.address.trim() || null,
+        }).select("id").single();
+        rsId = data?.id ?? null;
+      }
+      if (rsId && rsSelectedLearners.size > 0) {
+        await supabase.from("raison_sociale_learners").insert(
+          Array.from(rsSelectedLearners).map((lid) => ({ raison_sociale_id: rsId!, learner_id: lid }))
+        );
+      }
+      setRsModalOpen(false);
+      await loadRaisonsSociales();
+    } catch { /* ignore */ } finally { setRsSaving(false); }
+  }
+
+  async function handleDeleteRs(id: string) {
+    if (!confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette raison sociale ?")) return;
+    const supabase = createClient();
+    await supabase.from("company_raisons_sociales").delete().eq("id", id);
+    await loadRaisonsSociales();
+  }
 
   // Load company documents + deal documents on mount
   const loadAllDocs = async () => {
@@ -544,6 +620,7 @@ export function CompanyDetail({
               <TabsTrigger value="service-plans">Plans de formation ({servicePlans.length})</TabsTrigger>
               <TabsTrigger value="learners">Apprenants ({learners.length})</TabsTrigger>
               <TabsTrigger value="documents">Documents ({companyDocs.length})</TabsTrigger>
+              <TabsTrigger value="raisons-sociales">Raisons Sociales ({raisonsSociales.length})</TabsTrigger>
             </TabsList>
 
             {/* --- Vue d'ensemble --- */}
@@ -1267,6 +1344,72 @@ export function CompanyDetail({
               </div>
             </TabsContent>
 
+            {/* --- Raisons Sociales --- */}
+            <TabsContent value="raisons-sociales" className="mt-4">
+              <div className="lca-card">
+                <div style={{ height: 4, background: "#2e7d32" }} />
+                <div style={{ padding: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a" }}>Raisons Sociales</h3>
+                    <Button onClick={() => openRsModal()} size="sm" style={{ background: "#2e7d32", color: "white" }}>
+                      <Plus className="h-3 w-3 mr-1" /> Ajouter
+                    </Button>
+                  </div>
+                  {raisonsSociales.length === 0 ? (
+                    <p style={{ color: "#7a8bab", fontSize: 13, textAlign: "center", padding: 24 }}>Aucune raison sociale</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>SIRET</TableHead>
+                          <TableHead>Adresse</TableHead>
+                          <TableHead>Effectif</TableHead>
+                          <TableHead style={{ textAlign: "right" }}>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {raisonsSociales.map((rs) => {
+                          const rsLearnerNames = rs.learner_ids
+                            .map((lid) => learners.find((l) => s(l.id) === lid))
+                            .filter(Boolean)
+                            .map((l) => `${s(l!.first_name)} ${s(l!.last_name)}`);
+                          return (
+                            <TableRow key={rs.id}>
+                              <TableCell className="font-medium">{rs.name}</TableCell>
+                              <TableCell style={{ fontSize: 12 }}>{rs.siret || "—"}</TableCell>
+                              <TableCell style={{ fontSize: 12 }}>{rs.address || "—"}</TableCell>
+                              <TableCell>
+                                {rsLearnerNames.length === 0 ? (
+                                  <span style={{ color: "#7a8bab", fontSize: 12 }}>—</span>
+                                ) : (
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                    {rsLearnerNames.map((n, i) => (
+                                      <span key={i} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "#e8f5e9", color: "#2e7d32" }}>{n}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell style={{ textAlign: "right" }}>
+                                <div className="flex items-center justify-end gap-1">
+                                  <button onClick={() => openRsModal(rs)} title="Modifier" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1a6b9c" }}>
+                                    <Edit style={{ width: 14, height: 14 }} />
+                                  </button>
+                                  <button onClick={() => handleDeleteRs(rs.id)} title="Supprimer" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#e74c3c" }}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
             {/* --- Activité (lecture seule, vue 360) --- */}
             <TabsContent value="activity" className="mt-4">
               <div className="lca-card">
@@ -1681,6 +1824,86 @@ export function CompanyDetail({
               >
                 {reportGenerating ? "Génération..." : `Générer le reporting (${reportLearnerIds.size})`}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Raison Sociale Modal */}
+      {rsModalOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget && !rsSaving) setRsModalOpen(false); }}
+        >
+          <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 520, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ fontWeight: 700, fontSize: 18, color: "#1a2a3a", margin: 0 }}>{rsEditId ? "Modifier la raison sociale" : "Ajouter une raison sociale"}</h3>
+              <button onClick={() => setRsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div style={{ padding: 20 }} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nom *</Label>
+                <Input value={rsForm.name} onChange={(e) => setRsForm({ ...rsForm, name: e.target.value })} placeholder="Nom de la raison sociale" />
+              </div>
+              <div className="space-y-2">
+                <Label>SIRET</Label>
+                <Input value={rsForm.siret} onChange={(e) => setRsForm({ ...rsForm, siret: e.target.value })} placeholder="123 456 789 00012" />
+              </div>
+              <div className="space-y-2">
+                <Label>Adresse</Label>
+                <Input value={rsForm.address} onChange={(e) => setRsForm({ ...rsForm, address: e.target.value })} placeholder="Adresse" />
+              </div>
+              <div className="space-y-2">
+                <Label>Effectif</Label>
+                {learners.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "#7a8bab" }}>Aucun apprenant associé à cette entreprise</p>
+                ) : (
+                  <div style={{ border: "1px solid #e8ecf1", borderRadius: 8, maxHeight: 220, overflowY: "auto" }}>
+                    {learners.map((l, i) => {
+                      const lid = s(l.id);
+                      const checked = rsSelectedLearners.has(lid);
+                      return (
+                        <div
+                          key={lid}
+                          onClick={() => {
+                            setRsSelectedLearners((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(lid)) next.delete(lid); else next.add(lid);
+                              return next;
+                            });
+                          }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", cursor: "pointer",
+                            borderBottom: i < learners.length - 1 ? "1px solid #f0f4f8" : "none",
+                            background: checked ? "#e8f5e9" : "transparent",
+                          }}
+                        >
+                          <div style={{
+                            width: 18, height: 18, borderRadius: 4, border: checked ? "none" : "2px solid #c0c8d0",
+                            background: checked ? "#2e7d32" : "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          }}>
+                            {checked && <Check style={{ width: 12, height: 12, color: "white" }} />}
+                          </div>
+                          <div>
+                            <span style={{ fontSize: 13, fontWeight: 500 }}>{s(l.first_name)} {s(l.last_name)}</span>
+                            {s(l.position) && <span style={{ fontSize: 11, color: "#8399a9", marginLeft: 6 }}>— {s(l.position)}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {rsSelectedLearners.size > 0 && (
+                  <p style={{ fontSize: 11, color: "#2e7d32", marginTop: 4 }}>{rsSelectedLearners.size} apprenant{rsSelectedLearners.size > 1 ? "s" : ""} sélectionné{rsSelectedLearners.size > 1 ? "s" : ""}</p>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", paddingTop: 8 }}>
+                <Button variant="outline" onClick={() => setRsModalOpen(false)} disabled={rsSaving}>Annuler</Button>
+                <Button onClick={handleSaveRs} disabled={rsSaving || !rsForm.name.trim()} style={{ background: "#2e7d32", color: "white" }}>
+                  {rsSaving ? "Enregistrement..." : rsEditId ? "Modifier" : "Ajouter"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
