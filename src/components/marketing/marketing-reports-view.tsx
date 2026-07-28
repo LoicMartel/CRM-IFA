@@ -672,11 +672,11 @@ function SettingReport({
             den={stats.totalProspects}
             color="#1a6b9c"
           />
-          {/* Contactés / Qualifiés */}
+          {/* Qualifiés / Contactés */}
           <FunnelRow
-            label="Contactés / Qualifiés"
-            num={stats.totalContacted}
-            den={stats.totalContactedQualifies}
+            label="Qualifiés / Contactés"
+            num={stats.totalContactedQualifies}
+            den={stats.totalContacted}
             color="#6a1b9a"
           />
           {/* RDV réservés / Contactés qualifiés */}
