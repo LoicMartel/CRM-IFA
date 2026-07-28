@@ -57,10 +57,47 @@ const CITY_REGION_MAP: Record<string, string> = {
 };
 const WEEKS_PER_YEAR = 47;
 
+const CALENDAR_OPTIONS = [
+  { value: "", label: "Aucun" },
+  { value: "google_calendar", label: "Google Calendar" },
+  { value: "outlook", label: "Outlook Calendar" },
+];
+const MESSAGING_OPTIONS = [
+  { value: "", label: "Aucune" },
+  { value: "slack", label: "Slack" },
+  { value: "teams", label: "Microsoft Teams" },
+];
+const VISIO_OPTIONS = [
+  { value: "", label: "Aucun" },
+  { value: "zoom", label: "Zoom" },
+  { value: "google_meet", label: "Google Meet" },
+  { value: "teams_visio", label: "Microsoft Teams" },
+];
+
+const INTEGRATION_FIELDS: Record<string, { key: string; label: string; placeholder: string }[]> = {
+  google_calendar: [{ key: "google_calendar_id", label: "ID du calendrier Google", placeholder: "email@gmail.com ou ID du calendrier" }],
+  outlook: [
+    { key: "outlook_email", label: "Email Outlook", placeholder: "email@outlook.com" },
+    { key: "outlook_tenant_id", label: "Tenant ID (optionnel)", placeholder: "ID du tenant Azure AD" },
+  ],
+  slack: [{ key: "slack_user_id", label: "Slack User ID", placeholder: "U0XXXXXXXX" }],
+  teams: [
+    { key: "teams_email", label: "Email Microsoft Teams", placeholder: "email@organisation.com" },
+    { key: "teams_webhook_url", label: "URL du webhook (optionnel)", placeholder: "https://outlook.office.com/webhook/..." },
+  ],
+  zoom: [{ key: "zoom_link", label: "Lien Zoom personnel", placeholder: "https://zoom.us/j/..." }],
+  google_meet: [{ key: "google_meet_email", label: "Email Google", placeholder: "email@gmail.com" }],
+  teams_visio: [{ key: "teams_visio_email", label: "Email Microsoft Teams", placeholder: "email@organisation.com" }],
+};
+
 const emptyForm = {
   first_name: "", last_name: "", email: "", phone: "", role: "sales",
   roles: [] as string[], is_active: true, availability: "", notes: "",
   google_calendar_id: "", zoom_link: "", slack_user_id: "",
+  // Integration providers
+  calendar_provider: "", messaging_provider: "", visio_provider: "",
+  // Integration config (all fields in a flat map)
+  integration_config: {} as Record<string, string>,
   create_account: true, password: "",
   // Expert fields
   expertises: [] as string[], city: "", region: "", tjm: "",
@@ -134,6 +171,16 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
   }
 
   function openEdit(m: R) {
+    // Detect existing providers from saved fields
+    const gcalId = (m.google_calendar_id as string) || "";
+    const zoomLk = (m.zoom_link as string) || "";
+    const slackId = (m.slack_user_id as string) || "";
+    const existingConfig = (m.integration_config as Record<string, string>) ?? {};
+
+    const calProv = existingConfig._calendar_provider || (gcalId ? "google_calendar" : existingConfig.outlook_email ? "outlook" : "");
+    const msgProv = existingConfig._messaging_provider || (slackId ? "slack" : existingConfig.teams_email ? "teams" : "");
+    const visProv = existingConfig._visio_provider || (zoomLk ? "zoom" : existingConfig.google_meet_email ? "google_meet" : existingConfig.teams_visio_email ? "teams_visio" : "");
+
     setForm({
       first_name: (m.first_name as string) || "",
       last_name: (m.last_name as string) || "",
@@ -144,9 +191,13 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
       is_active: m.is_active !== false,
       availability: (m.availability as string) || "",
       notes: (m.notes as string) || "",
-      google_calendar_id: (m.google_calendar_id as string) || "",
-      zoom_link: (m.zoom_link as string) || "",
-      slack_user_id: (m.slack_user_id as string) || "",
+      google_calendar_id: gcalId,
+      zoom_link: zoomLk,
+      slack_user_id: slackId,
+      calendar_provider: calProv,
+      messaging_provider: msgProv,
+      visio_provider: visProv,
+      integration_config: { ...existingConfig, google_calendar_id: gcalId, zoom_link: zoomLk, slack_user_id: slackId },
       create_account: false, password: "",
       expertises: (m.expertises as string[]) ?? [],
       city: (m.city as string) || "",
@@ -174,9 +225,15 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
       is_active: form.is_active,
       availability: form.availability.trim() || null,
       notes: form.notes.trim() || null,
-      google_calendar_id: form.google_calendar_id.trim() || null,
-      zoom_link: form.zoom_link.trim() || null,
-      slack_user_id: form.slack_user_id.trim() || null,
+      google_calendar_id: (form.integration_config.google_calendar_id ?? form.google_calendar_id ?? "").trim() || null,
+      zoom_link: (form.integration_config.zoom_link ?? form.zoom_link ?? "").trim() || null,
+      slack_user_id: (form.integration_config.slack_user_id ?? form.slack_user_id ?? "").trim() || null,
+      integration_config: {
+        ...form.integration_config,
+        _calendar_provider: form.calendar_provider,
+        _messaging_provider: form.messaging_provider,
+        _visio_provider: form.visio_provider,
+      },
       expertises: form.expertises.length > 0 ? form.expertises : null,
       city: form.city.trim() || null,
       region: form.region.trim() || null,
@@ -648,31 +705,41 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
                 </>
               )}
 
-              {/* Intégrations (section repliée pour l'édition) */}
-              {popup === "edit" && (
-                <details style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12 }}>
-                  <summary style={{ fontSize: 12, fontWeight: 700, color: "#8399a9", cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Intégrations
-                  </summary>
-                  <div className="space-y-3 mt-3">
-                    <div className="space-y-1">
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>Google Calendar ID</label>
-                      <input value={form.google_calendar_id} onChange={(e) => setForm({ ...form, google_calendar_id: e.target.value })}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="email@example.com" />
-                    </div>
-                    <div className="space-y-1">
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>Lien Zoom</label>
-                      <input value={form.zoom_link} onChange={(e) => setForm({ ...form, zoom_link: e.target.value })}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="https://zoom.us/j/..." />
-                    </div>
-                    <div className="space-y-1">
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>Slack User ID</label>
-                      <input value={form.slack_user_id} onChange={(e) => setForm({ ...form, slack_user_id: e.target.value })}
-                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" placeholder="U0XXXXXXXX" />
-                    </div>
-                  </div>
-                </details>
-              )}
+              {/* Intégrations */}
+              <div style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 12 }}>
+                  Intégrations
+                </div>
+                <div className="space-y-4">
+                  {/* Agenda */}
+                  <IntegrationPicker
+                    label="Agenda"
+                    options={CALENDAR_OPTIONS}
+                    provider={form.calendar_provider}
+                    onProviderChange={(v) => setForm({ ...form, calendar_provider: v })}
+                    config={form.integration_config}
+                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
+                  />
+                  {/* Messagerie */}
+                  <IntegrationPicker
+                    label="Messagerie"
+                    options={MESSAGING_OPTIONS}
+                    provider={form.messaging_provider}
+                    onProviderChange={(v) => setForm({ ...form, messaging_provider: v })}
+                    config={form.integration_config}
+                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
+                  />
+                  {/* Visioconférence */}
+                  <IntegrationPicker
+                    label="Visioconférence"
+                    options={VISIO_OPTIONS}
+                    provider={form.visio_provider}
+                    onProviderChange={(v) => setForm({ ...form, visio_provider: v })}
+                    config={form.integration_config}
+                    onConfigChange={(c) => setForm({ ...form, integration_config: c })}
+                  />
+                </div>
+              </div>
 
               {/* Notes */}
               <div className="space-y-2">
@@ -824,6 +891,56 @@ export function TeamView({ members, inactiveMembers = [] }: { members: R[]; inac
               </div>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── IntegrationPicker: dropdown + champs dynamiques ── */
+
+function IntegrationPicker({
+  label,
+  options,
+  provider,
+  onProviderChange,
+  config,
+  onConfigChange,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  provider: string;
+  onProviderChange: (v: string) => void;
+  config: Record<string, string>;
+  onConfigChange: (c: Record<string, string>) => void;
+}) {
+  const fields = provider ? (INTEGRATION_FIELDS[provider] ?? []) : [];
+
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>{label}</label>
+      <select
+        value={provider}
+        onChange={(e) => onProviderChange(e.target.value)}
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {fields.length > 0 && (
+        <div className="space-y-2" style={{ marginTop: 8, paddingLeft: 12, borderLeft: "2px solid #dce8f0" }}>
+          {fields.map((f) => (
+            <div key={f.key} className="space-y-1">
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>{f.label}</label>
+              <input
+                value={config[f.key] ?? ""}
+                onChange={(e) => onConfigChange({ ...config, [f.key]: e.target.value })}
+                placeholder={f.placeholder}
+                className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-xs"
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>
