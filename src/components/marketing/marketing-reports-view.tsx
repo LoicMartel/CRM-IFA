@@ -589,9 +589,9 @@ function SettingReport({
     }
     const qualifiesAndNotReached = [...calledIds].filter((id) => !disqualifiedIds.has(id)).length;
 
-    // 6. RDV réservés = meetings créés dans la période pour les prospects du périmètre (hors annulés)
+    // 6. RDV réservés = meetings créés dans la période pour les prospects du périmètre (inclut annulés)
     const meetingsInScope = meetings.filter(
-      (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0]) && m.status !== "cancelled"
+      (m) => prospectIds.has(m.contact_id) && inPeriod(m.created_at.split("T")[0])
     );
     const totalRdvBooked = meetingsInScope.length;
 
