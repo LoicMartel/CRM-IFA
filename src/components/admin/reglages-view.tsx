@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
+import type { FiscalMode } from "@/lib/fiscal-year";
 
 interface NamedItem {
   id: string;
@@ -22,6 +23,7 @@ export function ReglagesView({
   marketingProviders,
   expertises,
   postChannels,
+  fiscalMode: initialFiscalMode = "sep-aug",
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
@@ -30,10 +32,34 @@ export function ReglagesView({
   marketingProviders: NamedItem[];
   expertises: NamedItem[];
   postChannels: { id: string; slug: string; label: string; color_bg: string; color_text: string; is_veille: boolean; display_order: number }[];
+  fiscalMode?: FiscalMode;
 }) {
+  const router = useRouter();
+  const [fiscalMode, setFiscalMode] = useState<FiscalMode>(initialFiscalMode);
+  const [fiscalSaving, setFiscalSaving] = useState(false);
+
+  async function handleFiscalModeChange(newMode: FiscalMode) {
+    setFiscalSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("crm_settings")
+      .update({ value: newMode })
+      .eq("key", "fiscal_year_mode");
+    setFiscalSaving(false);
+    if (error) {
+      alert("Erreur lors de la sauvegarde : " + error.message);
+      return;
+    }
+    setFiscalMode(newMode);
+    router.refresh();
+  }
+
   return (
-    <Tabs defaultValue="sources" className="w-full">
+    <Tabs defaultValue="general" className="w-full">
       <TabsList>
+        <TabsTrigger value="general" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Settings style={{ width: 14, height: 14 }} /> Général
+        </TabsTrigger>
         <TabsTrigger value="sources" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Tag style={{ width: 14, height: 14 }} /> Sources
         </TabsTrigger>
@@ -56,6 +82,51 @@ export function ReglagesView({
           <Hash style={{ width: 14, height: 14 }} /> Canaux
         </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="general" style={{ marginTop: 20 }}>
+        <div className="lca-card" style={{ maxWidth: 500 }}>
+          <div className="lca-bar-gradient" />
+          <div style={{ padding: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <Settings style={{ width: 20, height: 20, color: "#1E2A5A" }} />
+              <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 16, margin: 0 }}>Année fiscale</h3>
+            </div>
+            <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 16 }}>
+              Ce choix s&apos;applique à tous les rapports, graphiques et filtres de période du CRM.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => handleFiscalModeChange("jan-dec")}
+                disabled={fiscalSaving}
+                style={{
+                  flex: 1, padding: "12px 16px", borderRadius: 8, cursor: fiscalSaving ? "wait" : "pointer",
+                  border: fiscalMode === "jan-dec" ? "2px solid #1E2A5A" : "2px solid #dce8f0",
+                  background: fiscalMode === "jan-dec" ? "#f0f4ff" : "white",
+                  fontWeight: fiscalMode === "jan-dec" ? 700 : 500,
+                  color: "#1a2a3a", fontSize: 14,
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>Janvier → Décembre</div>
+                <div style={{ fontSize: 11, color: "#8399a9" }}>Année civile</div>
+              </button>
+              <button
+                onClick={() => handleFiscalModeChange("sep-aug")}
+                disabled={fiscalSaving}
+                style={{
+                  flex: 1, padding: "12px 16px", borderRadius: 8, cursor: fiscalSaving ? "wait" : "pointer",
+                  border: fiscalMode === "sep-aug" ? "2px solid #1E2A5A" : "2px solid #dce8f0",
+                  background: fiscalMode === "sep-aug" ? "#f0f4ff" : "white",
+                  fontWeight: fiscalMode === "sep-aug" ? 700 : 500,
+                  color: "#1a2a3a", fontSize: 14,
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>Septembre → Août</div>
+                <div style={{ fontSize: 11, color: "#8399a9" }}>Année scolaire</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
 
       <TabsContent value="sources" style={{ marginTop: 20 }}>
         <CrudSection
