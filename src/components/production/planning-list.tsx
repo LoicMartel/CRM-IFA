@@ -1380,6 +1380,7 @@ export function PlanningList({
                                 <option value="2">2h</option>
                                 <option value="3">3h</option>
                                 <option value="3.5">3h30</option>
+                                <option value="4">4h</option>
                               </select>
                           </div>
                           )}
