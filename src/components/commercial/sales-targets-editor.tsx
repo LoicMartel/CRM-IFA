@@ -44,8 +44,18 @@ export function SalesTargetsEditor({ targets: initialTargets, annualTarget, fisc
     const { data: fresh } = await supabase.from("sales_targets").select("id, month, target_amount").in("month", months);
     const loaded = (fresh ?? []) as SalesTarget[];
 
-    // Sort by fiscal order
-    loaded.sort((a, b) => months.indexOf(a.month.slice(0, 10)) - months.indexOf(b.month.slice(0, 10)));
+    // Sort by fiscal order — normalize month to YYYY-MM-01 for matching
+    loaded.sort((a, b) => {
+      const aKey = a.month.slice(0, 10);
+      const bKey = b.month.slice(0, 10);
+      const aIdx = months.indexOf(aKey);
+      const bIdx = months.indexOf(bKey);
+      // Fallback to chronological if not found in fiscal months
+      if (aIdx === -1 && bIdx === -1) return aKey.localeCompare(bKey);
+      if (aIdx === -1) return 1;
+      if (bIdx === -1) return -1;
+      return aIdx - bIdx;
+    });
 
     setLiveTargets(loaded);
     const v: Record<string, string> = {};

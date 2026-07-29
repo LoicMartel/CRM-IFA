@@ -31,33 +31,38 @@ function getFiscalMonthKeys(mode: FiscalMode): string[] {
   });
 }
 
-/** Returns the 12 months of a fiscal year as ISO date strings ("YYYY-MM-01"). */
+/** Returns the 12 months of a fiscal year as date strings ("YYYY-MM-01"). */
 export function getFiscalMonths(mode: FiscalMode): string[] {
   const now = new Date();
   const startMonth = getStartMonthIndex(mode);
   const startYear = now.getMonth() >= startMonth ? now.getFullYear() : now.getFullYear() - 1;
   return Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(startYear, startMonth + i, 1);
-    return d.toISOString().slice(0, 10);
+    const m = startMonth + i;
+    const year = startYear + Math.floor(m / 12);
+    const month = (m % 12) + 1; // 1-indexed
+    return `${year}-${String(month).padStart(2, "0")}-01`;
   });
 }
 
-/** Returns the fiscal year date range { start, end } as ISO date strings. */
+/** Returns the fiscal year date range { start, end } as date strings. */
 export function getFiscalRange(mode: FiscalMode): { start: string; end: string } {
   const months = getFiscalMonths(mode);
-  const lastMonth = new Date(months[11]);
-  const end = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
-  return { start: months[0], end: end.toISOString().slice(0, 10) };
+  const last = months[11]; // "YYYY-MM-01"
+  const [y, m] = last.split("-").map(Number);
+  // Last day of the last month
+  const lastDay = new Date(y, m, 0).getDate(); // m is already 1-indexed, Date(y, m, 0) = last day of month m
+  return { start: months[0], end: `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}` };
 }
 
 /** Returns { from, to } for a given fiscal year start year. */
 export function getFiscalYearRange(fyStart: number, mode: FiscalMode = "sep-aug"): { from: string; to: string } {
-  const startMonth = getStartMonthIndex(mode);
-  const from = new Date(fyStart, startMonth, 1);
-  const to = new Date(fyStart, startMonth + 12, 0); // last day of 12th month
+  const startMonth = getStartMonthIndex(mode) + 1; // 1-indexed
+  const endMonth = ((startMonth - 1 + 11) % 12) + 1; // 12th month, 1-indexed
+  const endYear = startMonth > 1 ? fyStart + 1 : fyStart; // crosses year boundary for sep-aug
+  const lastDay = new Date(endYear, endMonth, 0).getDate();
   return {
-    from: from.toISOString().slice(0, 10),
-    to: to.toISOString().slice(0, 10),
+    from: `${fyStart}-${String(startMonth).padStart(2, "0")}-01`,
+    to: `${endYear}-${String(endMonth).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
   };
 }
 
@@ -124,35 +129,31 @@ const MONTH_LABELS_FULL: Record<string, string> = {
 /** Returns 12 fiscal months as date strings for a given FY start year. */
 export function getFiscalMonthDates(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): string[] {
   const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  const keys = getFiscalMonthKeys(mode);
-  const startMonthIdx = getStartMonthIndex(mode) + 1;
-  return keys.map((m) => {
-    const mi = parseInt(m, 10);
-    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
-    return `${yr}-${m}-01`;
+  const startMonthIdx = getStartMonthIndex(mode);
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = startMonthIdx + i;
+    const year = startYear + Math.floor(m / 12);
+    const month = (m % 12) + 1;
+    return `${year}-${String(month).padStart(2, "0")}-01`;
   });
 }
 
 /** Returns 12 fiscal months with short labels. */
 export function getFiscalMonthsWithLabels(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): { key: string; label: string; date: string }[] {
-  const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  const keys = getFiscalMonthKeys(mode);
-  const startMonthIdx = getStartMonthIndex(mode) + 1;
-  return keys.map((m) => {
-    const mi = parseInt(m, 10);
-    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
-    return { key: m, label: `${MONTH_LABELS_SHORT[m]} ${String(yr).slice(-2)}`, date: `${yr}-${m}-01` };
+  const dates = getFiscalMonthDates(fyKeyOrStart, mode);
+  return dates.map((d) => {
+    const m = d.slice(5, 7);
+    const yr = d.slice(0, 4);
+    return { key: m, label: `${MONTH_LABELS_SHORT[m]} ${yr.slice(-2)}`, date: d };
   });
 }
 
 /** Returns 12 fiscal months with full labels. */
 export function getFiscalMonthsFull(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): { key: string; label: string; date: string }[] {
-  const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  const keys = getFiscalMonthKeys(mode);
-  const startMonthIdx = getStartMonthIndex(mode) + 1;
-  return keys.map((m) => {
-    const mi = parseInt(m, 10);
-    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
-    return { key: m, label: `${MONTH_LABELS_FULL[m]} ${yr}`, date: `${yr}-${m}-01` };
+  const dates = getFiscalMonthDates(fyKeyOrStart, mode);
+  return dates.map((d) => {
+    const m = d.slice(5, 7);
+    const yr = d.slice(0, 4);
+    return { key: m, label: `${MONTH_LABELS_FULL[m]} ${yr}`, date: d };
   });
 }
