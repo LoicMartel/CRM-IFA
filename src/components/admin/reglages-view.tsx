@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 
 interface NamedItem {
@@ -25,60 +26,78 @@ export function ReglagesView({
   fundingTypes: NamedItem[];
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <SourcesSection leadSources={leadSources} />
-      <CrudSection
-        icon={<GraduationCap style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
-        title="Parcours de formation"
-        description="Gérez les parcours de formation disponibles dans les plans de formation."
-        placeholder="Nom du nouveau parcours..."
-        table="training_programs"
-        uniqueKey="training_programs_name_key"
-        duplicateMessage="Ce parcours existe déjà."
-        emptyMessage="Aucun parcours défini"
-        items={trainingPrograms}
-      />
-      <CrudSection
-        icon={<BookOpen style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
-        title="Types de formation"
-        description="Gérez les types de formation utilisés dans les plans de formation."
-        placeholder="Nom du nouveau type..."
-        table="training_types"
-        uniqueKey="training_types_name_key"
-        duplicateMessage="Ce type existe déjà."
-        emptyMessage="Aucun type défini"
-        items={trainingTypes}
-      />
-      <CrudSection
-        icon={<Receipt style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
-        title="Types de financement"
-        description="Gérez les types de financement disponibles dans la facturation."
-        placeholder="Nom du nouveau type de financement..."
-        table="funding_types"
-        uniqueKey="funding_types_name_key"
-        duplicateMessage="Ce type de financement existe déjà."
-        emptyMessage="Aucun type de financement défini"
-        items={fundingTypes}
-      />
-    </div>
-  );
-}
+    <Tabs defaultValue="sources" className="w-full">
+      <TabsList>
+        <TabsTrigger value="sources" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Tag style={{ width: 14, height: 14 }} /> Sources
+        </TabsTrigger>
+        <TabsTrigger value="parcours" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <GraduationCap style={{ width: 14, height: 14 }} /> Parcours de formation
+        </TabsTrigger>
+        <TabsTrigger value="types-formation" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <BookOpen style={{ width: 14, height: 14 }} /> Types de formation
+        </TabsTrigger>
+        <TabsTrigger value="financement" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Receipt style={{ width: 14, height: 14 }} /> Types de financement
+        </TabsTrigger>
+      </TabsList>
 
-/* ── Sources ── */
+      <TabsContent value="sources" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<Tag style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          title="Sources"
+          description="Gérez les sources utilisées pour les leads, prospects et clients."
+          placeholder="Nom de la nouvelle source..."
+          table="lead_sources"
+          uniqueKey="lead_sources_name_key"
+          duplicateMessage="Cette source existe déjà."
+          emptyMessage="Aucune source définie"
+          items={leadSources}
+        />
+      </TabsContent>
 
-function SourcesSection({ leadSources }: { leadSources: NamedItem[] }) {
-  return (
-    <CrudSection
-      icon={<Tag style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
-      title="Sources"
-      description="Gérez les sources utilisées pour les leads, prospects et clients."
-      placeholder="Nom de la nouvelle source..."
-      table="lead_sources"
-      uniqueKey="lead_sources_name_key"
-      duplicateMessage="Cette source existe déjà."
-      emptyMessage="Aucune source définie"
-      items={leadSources}
-    />
+      <TabsContent value="parcours" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<GraduationCap style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          title="Parcours de formation"
+          description="Gérez les parcours de formation disponibles dans les plans de formation."
+          placeholder="Nom du nouveau parcours..."
+          table="training_programs"
+          uniqueKey="training_programs_name_key"
+          duplicateMessage="Ce parcours existe déjà."
+          emptyMessage="Aucun parcours défini"
+          items={trainingPrograms}
+        />
+      </TabsContent>
+
+      <TabsContent value="types-formation" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<BookOpen style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          title="Types de formation"
+          description="Gérez les types de formation utilisés dans les plans de formation."
+          placeholder="Nom du nouveau type..."
+          table="training_types"
+          uniqueKey="training_types_name_key"
+          duplicateMessage="Ce type existe déjà."
+          emptyMessage="Aucun type défini"
+          items={trainingTypes}
+        />
+      </TabsContent>
+
+      <TabsContent value="financement" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<Receipt style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          title="Types de financement"
+          description="Gérez les types de financement disponibles dans la facturation."
+          placeholder="Nom du nouveau type de financement..."
+          table="funding_types"
+          uniqueKey="funding_types_name_key"
+          duplicateMessage="Ce type de financement existe déjà."
+          emptyMessage="Aucun type de financement défini"
+          items={fundingTypes}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
 
