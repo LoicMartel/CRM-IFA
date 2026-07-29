@@ -65,6 +65,11 @@ export function SettingsView() {
   const [savingEmail, setSavingEmail] = useState(false);
   const [emailSaved, setEmailSaved] = useState(false);
 
+  // Email signature
+  const [emailSignature, setEmailSignature] = useState("");
+  const [savingSignature, setSavingSignature] = useState(false);
+  const [signatureSaved, setSignatureSaved] = useState(false);
+
   // Calendar mapping
   interface CalendarItem { id: string; summary: string; primary: boolean; backgroundColor: string | null }
   const [googleCalendars, setGoogleCalendars] = useState<CalendarItem[]>([]);
@@ -98,7 +103,7 @@ export function SettingsView() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email ?? "");
-        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id, google_calendar_id_commercial, google_calendar_id_presentiel, google_calendar_id_tasks, integration_config")
+        const { data: member } = await supabase.from("team_members").select("id, first_name, last_name, avatar_url, zoom_link, slack_user_id, google_calendar_id, google_calendar_id_commercial, google_calendar_id_presentiel, google_calendar_id_tasks, integration_config, email_signature")
           .or(`auth_user_id.eq.${user.id},email.eq.${user.email}`).limit(1).single();
         if (member) {
           setMemberName(`${member.first_name} ${member.last_name}`);
@@ -123,6 +128,7 @@ export function SettingsView() {
           setResendApiKey(ic.resend_api_key ?? "");
           setResendFromEmail(ic.resend_from_email ?? "");
           setResendFromName(ic.resend_from_name ?? "");
+          setEmailSignature((member as any).email_signature ?? "");
 
           // Fetch OAuth tokens for this member
           const { data: tokens } = await supabase
@@ -422,6 +428,64 @@ export function SettingsView() {
             </div>
           </div>
         </div>
+        {/* Signature email */}
+        <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ height: 4, background: "linear-gradient(90deg, #FF6B35 0%, #e65100 100%)" }} />
+          <div style={{ padding: "20px 24px" }}>
+            <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <Mail className="h-5 w-5" style={{ color: "#FF6B35" }} /> Signature email
+            </h3>
+            <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 12, lineHeight: 1.5 }}>
+              Collez votre signature au format HTML. Elle sera ajoutée automatiquement à chaque email envoyé depuis le CRM.
+            </p>
+            <textarea
+              value={emailSignature}
+              onChange={(e) => setEmailSignature(e.target.value)}
+              placeholder="<table>...</table>"
+              style={{
+                width: "100%", minHeight: 160, borderRadius: 8, border: "1px solid #dce8f0",
+                padding: 12, fontSize: 12, fontFamily: "monospace", color: "#1a2a3a",
+                lineHeight: 1.5, resize: "vertical", outline: "none", background: "#fafbfc",
+              }}
+            />
+
+            {/* Aperçu */}
+            {emailSignature.trim() && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", textTransform: "uppercase", marginBottom: 8 }}>Aperçu</div>
+                <div
+                  style={{
+                    padding: 16, background: "white", borderRadius: 8,
+                    border: "1px solid #e8ecf1", overflow: "auto",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: emailSignature }}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={async () => {
+                setSavingSignature(true);
+                const supabase = createClient();
+                await supabase.from("team_members").update({
+                  email_signature: emailSignature.trim() || null,
+                }).eq("id", memberId);
+                setSavingSignature(false);
+                setSignatureSaved(true);
+                setTimeout(() => setSignatureSaved(false), 2000);
+              }}
+              disabled={savingSignature}
+              style={{
+                marginTop: 14, width: "100%", height: 40, borderRadius: 8, border: "none",
+                background: signatureSaved ? "#2e7d32" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              {savingSignature ? "Sauvegarde..." : signatureSaved ? "Signature sauvegardée !" : "Sauvegarder la signature"}
+            </button>
+          </div>
+        </div>
+
         {/* Intégrations — connexion OAuth */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ height: 4, background: "linear-gradient(90deg, #1a6b9c 0%, #00695c 100%)" }} />
