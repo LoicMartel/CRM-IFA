@@ -527,6 +527,26 @@ CREATE TABLE public."funding_types" (
   CONSTRAINT "funding_types_name_key" UNIQUE ("name")
 );
 
+CREATE TABLE public."crm_settings" (
+  "key" text NOT NULL,
+  "value" text NOT NULL,
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("key")
+);
+
+CREATE TABLE public."post_channels" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "slug" text NOT NULL,
+  "label" text NOT NULL,
+  "color_bg" text NOT NULL DEFAULT '#e3f2fd',
+  "color_text" text NOT NULL DEFAULT '#1565c0',
+  "is_veille" boolean NOT NULL DEFAULT false,
+  "display_order" int NOT NULL DEFAULT 0,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "post_channels_slug_key" UNIQUE ("slug")
+);
+
 CREATE TABLE public."expertises" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "name" text NOT NULL,

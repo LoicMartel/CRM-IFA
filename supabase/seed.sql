@@ -153,6 +153,19 @@ INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "des
 INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "description", "step_type", "step_order", "is_active", "config", "created_at", "updated_at") VALUES ('f9810fac-11ae-4958-8a97-d5578fde429c', 'dd3e8cbf-c5ef-445e-9647-929a9195fdd3', 'create-update-contact', 'Creer contact lead marketing', 'Lifecycle: lead_marketing, lead_status: lead', 'data', 2, TRUE, '{}'::jsonb, '2026-04-11T08:30:09.199Z', '2026-04-11T08:30:09.199Z') ON CONFLICT DO NOTHING;
 INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "description", "step_type", "step_order", "is_active", "config", "created_at", "updated_at") VALUES ('fa1e4d5a-e144-4b50-8744-0f8681911012', '66100f22-b7ad-4564-9d7e-5fe17292cd9b', 'trigger-notifications', 'Declencher notifications', 'Appel au pipeline /api/meetings/notify', 'notification', 4, TRUE, '{}'::jsonb, '2026-04-11T08:29:41.551Z', '2026-04-11T08:29:41.551Z') ON CONFLICT DO NOTHING;
 
+-- CRM Settings
+INSERT INTO public."crm_settings" (key, value) VALUES ('fiscal_year_mode', 'jan-dec') ON CONFLICT DO NOTHING;
+
+-- Post channels (Fil d'actualite)
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('annonces_generales', 'Annonces Générales', '#e3f2fd', '#1565c0', false, 1) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('commercial', 'Commercial', '#e8f5e9', '#2e7d32', false, 2) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('pedagogie', 'Pédagogie', '#f3e5f5', '#6a1b9a', false, 3) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('admin', 'Admin', '#fce4ec', '#c62828', false, 4) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('projets_en_cours', 'Projets en cours', '#fff8e1', '#f57f17', false, 5) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('veille_reglementaire', 'Réglementaire', '#e8eaf6', '#283593', true, 6) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('veille_metiers', 'Métiers', '#efebe9', '#4e342e', true, 7) ON CONFLICT DO NOTHING;
+INSERT INTO public."post_channels" (slug, label, color_bg, color_text, is_veille, display_order) VALUES ('veille_pedagogie', 'Pédagogie (Veille)', '#fce4ec', '#880e4f', true, 8) ON CONFLICT DO NOTHING;
+
 -- Expertises (configurable depuis Réglages)
 INSERT INTO public."expertises" (name) VALUES ('Inbound') ON CONFLICT DO NOTHING;
 INSERT INTO public."expertises" (name) VALUES ('Outbound') ON CONFLICT DO NOTHING;
