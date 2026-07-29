@@ -301,7 +301,7 @@ export function PostsView({
         <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
           {/* Category / Tag manager panels */}
           {showCategoryManager && isAdmin && (
-            <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} />
+            <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} allCategories={ALL_CATEGORIES} channelLabels={channelLabels} channelColors={channelColors} />
           )}
           {showTagManager && isAdmin && (
             <TagManagerPanel projectTags={projectTags} onRefresh={handleRefresh} />
@@ -448,10 +448,17 @@ function sidebarBtnStyle(active: boolean): React.CSSProperties {
 function CategoryManagerPanel({
   teamMembers,
   onRefresh,
+  allCategories,
+  channelLabels,
+  channelColors,
 }: {
   teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onRefresh: () => void;
+  allCategories: string[];
+  channelLabels: Record<string, string>;
+  channelColors: Record<string, { bg: string; text: string }>;
 }) {
+  const ALL_CATEGORIES = allCategories;
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [loaded, setLoaded] = useState(false);
 
