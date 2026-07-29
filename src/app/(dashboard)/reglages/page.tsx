@@ -7,16 +7,21 @@ export const metadata = { title: "Réglages" };
 export default async function ReglagesPage() {
   const supabase = await createClient();
 
-  const { data: leadSources } = await supabase
-    .from("lead_sources")
-    .select("id, name, created_at")
-    .order("name");
+  const [{ data: leadSources }, { data: trainingPrograms }, { data: trainingTypes }] = await Promise.all([
+    supabase.from("lead_sources").select("id, name, created_at").order("name"),
+    supabase.from("training_programs").select("id, name, created_at").order("name"),
+    supabase.from("training_types").select("id, name, created_at").order("name"),
+  ]);
 
   return (
     <>
       <Header title="Réglages" />
       <div className="p-6 space-y-6">
-        <ReglagesView leadSources={leadSources ?? []} />
+        <ReglagesView
+          leadSources={leadSources ?? []}
+          trainingPrograms={trainingPrograms ?? []}
+          trainingTypes={trainingTypes ?? []}
+        />
       </div>
     </>
   );
