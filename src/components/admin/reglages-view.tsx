@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,12 +20,14 @@ export function ReglagesView({
   trainingTypes,
   fundingTypes,
   marketingProviders,
+  expertises,
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
   trainingTypes: NamedItem[];
   fundingTypes: NamedItem[];
   marketingProviders: NamedItem[];
+  expertises: NamedItem[];
 }) {
   return (
     <Tabs defaultValue="sources" className="w-full">
@@ -44,6 +46,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="prestataires" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Megaphone style={{ width: 14, height: 14 }} /> Prestataires marketing
+        </TabsTrigger>
+        <TabsTrigger value="expertises" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Award style={{ width: 14, height: 14 }} /> Expertises
         </TabsTrigger>
       </TabsList>
 
@@ -114,6 +119,20 @@ export function ReglagesView({
           duplicateMessage="Ce prestataire existe deja."
           emptyMessage="Aucun prestataire defini"
           items={marketingProviders}
+        />
+      </TabsContent>
+
+      <TabsContent value="expertises" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<Award style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
+          title="Expertises"
+          description="Gerez les expertises disponibles lors de la creation ou modification d'un membre de l'equipe."
+          placeholder="Nom de la nouvelle expertise..."
+          table="expertises"
+          uniqueKey="expertises_name_key"
+          duplicateMessage="Cette expertise existe deja."
+          emptyMessage="Aucune expertise definie"
+          items={expertises}
         />
       </TabsContent>
     </Tabs>

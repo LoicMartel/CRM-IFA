@@ -39,7 +39,8 @@ const TABS = [
   { key: "inactive", label: "Membres inactifs" },
 ];
 
-const ALL_EXPERTISES = ["Inbound", "Outbound", "Stratégie", "Management", "Financements", "Fidélisation", "Pilotage", "Time Management", "Objections"];
+// Expertises loaded dynamically from DB (fallback to empty array)
+const ALL_EXPERTISES_FALLBACK: string[] = [];
 const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 const CITY_REGION_MAP: Record<string, string> = {
   "Paris": "Île-de-France", "Mérignac": "Nouvelle-Aquitaine", "Bordeaux": "Nouvelle-Aquitaine",
@@ -107,12 +108,13 @@ const emptyForm = {
 
 interface OAuthToken { team_member_id: string; provider: string; provider_email: string | null }
 
-export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { members: R[]; inactiveMembers?: R[]; oauthTokens?: OAuthToken[] }) {
+export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expertisesList = [] }: { members: R[]; inactiveMembers?: R[]; oauthTokens?: OAuthToken[]; expertisesList?: string[] }) {
   const router = useRouter();
   const { isAdmin } = useCurrentRoles();
   const [activeTab, setActiveTab] = useState("all");
   const [popup, setPopup] = useState<"create" | "edit" | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
+  const ALL_EXPERTISES = expertisesList.length > 0 ? expertisesList : ALL_EXPERTISES_FALLBACK;
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
