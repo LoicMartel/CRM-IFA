@@ -95,7 +95,7 @@ export async function sendQuoteSignature(args: {
   if (!email) throw new AdvQuoteDocError("Contact email manquant — impossible d'envoyer le devis.");
   const sr = await createAndSendSigningRequest({
     name: buildDevisName(args.quoteNumber, args.companyName ?? "Client"),
-    description: "Devis — IFA Formatio. Bon pour accord.",
+    description: "Devis — IFA Formation. Bon pour accord.",
     documentBase64: args.pdfBase64,
     recipient: {
       firstName: args.contact.first_name ?? "Client",

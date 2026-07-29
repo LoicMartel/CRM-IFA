@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
 
         <div style={{ padding: "14px 36px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", textAlign: "center" }}>
           <p style={{ fontSize: 11, color: "#8399a9" }}>
-            © {new Date().getFullYear()} IFA Formatio® — CRM interne
+            © {new Date().getFullYear()} IFA Formation® — CRM interne
           </p>
         </div>
       </div>

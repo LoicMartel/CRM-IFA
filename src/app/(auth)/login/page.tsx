@@ -127,7 +127,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="login-title">
-                  IFA Formatio
+                  IFA Formation
                 </p>
                 <p className="login-subtitle">
                   Formez-vous aux metiers du transport qui recrutent
@@ -301,7 +301,7 @@ export default function LoginPage() {
             textAlign: "center",
           }}>
             <p style={{ fontSize: 11, color: "#8399a9" }}>
-              © {new Date().getFullYear()} IFA Formatio® — CRM interne
+              © {new Date().getFullYear()} IFA Formation® — CRM interne
             </p>
           </div>
         </div>

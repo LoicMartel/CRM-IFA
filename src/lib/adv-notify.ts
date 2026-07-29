@@ -34,7 +34,7 @@ export async function notifyPieceToValidate(
     }
     await sendSessionEmail({
       to: resolveRecipientEmail(NAZNINE_EMAIL),
-      subject: `${typeLabel} à valider — IFA Formatio`,
+      subject: `${typeLabel} à valider — IFA Formation`,
       body: `Bonjour,\n\nUn(e) ${typeLabel.toLowerCase()} est prêt(e) à être validé(e) : "${piece.label}".\n\nPrévisualise et valide avant envoi : https://crm-lca.vercel.app/a-valider`,
     });
   } catch (err) {

@@ -159,7 +159,7 @@ function ConfirmationReservationContent() {
             En attendant notre échange...
           </h2>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 10 }}>
-            Prenez 2 minutes pour découvrir le témoignage d&apos;un dirigeant accompagné par la IFA Formatio.
+            Prenez 2 minutes pour découvrir le témoignage d&apos;un dirigeant accompagné par la IFA Formation.
           </p>
           <p style={{ fontSize: 16, color: "#1a2a3a", fontWeight: 600, lineHeight: 1.7, marginBottom: 10 }}>
             Il est passé de 1,5 M€ à 2,7 M€ de chiffre d&apos;affaires en 12 mois après avoir structuré son approche commerciale.
@@ -176,7 +176,7 @@ function ConfirmationReservationContent() {
           }}>
             <iframe
               src="https://www.youtube.com/embed/qxPHiC96_ss"
-              title="Témoignage - IFA Formatio"
+              title="Témoignage - IFA Formation"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               style={{

@@ -49,7 +49,7 @@ const testimonials = [
     company: "ADREC",
     photo: "/temoins/Camille.jpeg",
     quote:
-      "Un Bootcamp au top grâce à Rafi et Alexandre de la IFA Formatio : un contenu riche, des recommandations précises et un accompagnement personnalisé de grande qualité. Si vous aspirez à exceller dans le closing, je recommande vivement cette équipe d\u2019experts passionnés.",
+      "Un Bootcamp au top grâce à Rafi et Alexandre de la IFA Formation : un contenu riche, des recommandations précises et un accompagnement personnalisé de grande qualité. Si vous aspirez à exceller dans le closing, je recommande vivement cette équipe d\u2019experts passionnés.",
   },
   {
     name: "Nicholas Galtos",
@@ -143,7 +143,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-5">
               <Image
                 src="/lca-white-logo.png"
-                alt="IFA Formatio"
+                alt="IFA Formation"
                 width={110}
                 height={82}
                 className="w-[110px] h-auto"
@@ -315,7 +315,7 @@ export default function LandingPage() {
               <div className="relative h-[450px] w-[320px] overflow-hidden rounded-2xl bg-[#EFF5F9]">
                 <Image
                   src="/photo-rafi.png"
-                  alt="Rafi Mouhamad - IFA Formatio"
+                  alt="Rafi Mouhamad - IFA Formation"
                   width={320}
                   height={450}
                   className="h-full w-full object-cover object-top"
@@ -330,9 +330,9 @@ export default function LandingPage() {
             {/* Text */}
             <div>
               <p className="mb-1 text-[12px] font-semibold text-[#2e7ab5]">Qui sommes-nous ?</p>
-              <h3 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">IFA Formatio ®</h3>
+              <h3 className="mb-3 text-[22px] font-bold text-[#1a2a3a]">IFA Formation ®</h3>
               <p className="mb-5 text-[14px] leading-[1.7] text-[#555]">
-                IFA Formatio ® est le fruit de plus de 25 ans d&apos;accompagnement d&apos;entrepreneurs, de dirigeants, de managers et de commerciaux sur + 20 pays.
+                IFA Formation ® est le fruit de plus de 25 ans d&apos;accompagnement d&apos;entrepreneurs, de dirigeants, de managers et de commerciaux sur + 20 pays.
               </p>
               <button
                 onClick={scrollToTop}

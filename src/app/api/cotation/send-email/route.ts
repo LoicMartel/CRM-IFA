@@ -17,7 +17,7 @@ function defaultSignature(member: { first_name: string; last_name: string; email
     <table style="font-family:Arial,sans-serif;font-size:13px;color:#1a2a3a"><tr>
       <td style="vertical-align:top;padding-right:16px;border-right:2px solid #df7e0d">
         <strong style="font-size:14px">${member.first_name} ${member.last_name}</strong><br>
-        <span style="color:#5a6f80">IFA Formatio ®</span>
+        <span style="color:#5a6f80">IFA Formation ®</span>
       </td>
       <td style="vertical-align:top;padding-left:16px;font-size:12px">
         ${member.phone ? `📞 ${member.phone}<br>` : ""}
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       : `${member.first_name.toLowerCase()}@ifagroupe.com`;
 
     // QW-1 (demande Rafi/Loïc) : sujet court. À valider Loïc.
-    const subject = `Votre devis — IFA Formatio®`;
+    const subject = `Votre devis — IFA Formation®`;
 
     const greeting = contactFirstName ? `Bonjour ${contactFirstName},` : "Bonjour,";
 

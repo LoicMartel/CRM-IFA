@@ -86,7 +86,7 @@ export function CampaignsListView({
   const [form, setForm] = useState({
     name: "",
     subject: "",
-    from_name: "IFA Formatio",
+    from_name: "IFA Formation",
     from_email: "contact@ifagroupe.com",
     html_content: "",
     list_id: "",
@@ -141,7 +141,7 @@ export function CampaignsListView({
 
     setSaving(false);
     setOpen(false);
-    setForm({ name: "", subject: "", from_name: "IFA Formatio", from_email: "contact@ifagroupe.com", html_content: "", list_id: "" });
+    setForm({ name: "", subject: "", from_name: "IFA Formation", from_email: "contact@ifagroupe.com", html_content: "", list_id: "" });
     router.refresh();
   }
 

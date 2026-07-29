@@ -320,7 +320,7 @@ export async function POST(request: Request) {
             "",
             "À très bientôt,",
             "",
-            "L'équipe IFA Formatio",
+            "L'équipe IFA Formation",
           ].join("\n"),
           attachments: [{ filename: "Book-Financements-2026.pdf", content: pdfContent, contentType: "application/pdf" }],
         });

@@ -497,7 +497,7 @@ export default function BookingPage() {
 
       {/* Footer */}
       <p style={{ fontSize: 11, color: "#8399a9", marginTop: 30 }}>
-        © {new Date().getFullYear()} IFA Formatio® — Tous droits réservés
+        © {new Date().getFullYear()} IFA Formation® — Tous droits réservés
       </p>
     </div>
     </>

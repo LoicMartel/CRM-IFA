@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
         <p>Bonjour <strong>${firstName}</strong>,</p>
 
-        <p>Bienvenue au sein de <strong>IFA Formatio</strong> !</p>
+        <p>Bienvenue au sein de <strong>IFA Formation</strong> !</p>
 
         <p>Votre espace membre est désormais actif. Vous pouvez y accéder dès maintenant pour suivre vos contacts, gérer votre pipeline commercial et consulter vos rendez-vous.</p>
 
@@ -46,18 +46,18 @@ export async function POST(req: NextRequest) {
         <p>Si vous avez la moindre question, n'hésitez pas à nous contacter.</p>
 
         <p>À très bientôt,</p>
-        <p><strong>L'équipe IFA Formatio</strong></p>
+        <p><strong>L'équipe IFA Formation</strong></p>
 
         <hr style="border: none; border-top: 2px solid #E8732A; margin: 30px 0;">
         <p style="font-size: 11px; color: #8399a9; text-align: center;">
-          © ${new Date().getFullYear()} IFA Formatio® — Tous droits réservés
+          © ${new Date().getFullYear()} IFA Formation® — Tous droits réservés
         </p>
       </div>
     `;
 
-    const subject = "Bienvenue sur votre espace CRM — IFA Formatio";
+    const subject = "Bienvenue sur votre espace CRM — IFA Formation";
     const { error } = await resend.emails.send({
-      from: "IFA Formatio <noreply@ifagroupe.com>",
+      from: "IFA Formation <noreply@ifagroupe.com>",
       to: [email],
       subject,
       html,

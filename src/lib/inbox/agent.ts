@@ -13,7 +13,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // V3 (22/07, décisions Rafi) : le RDV est la sortie par défaut — y compris signal d'achat fort et
 // demande d'humain (le RDV EST la mise en relation). L'escalade est réservée aux vrais incidents.
 // Le détail des règles (identité Adam, 3 filtres, cas d'escalade) vit dans LCA_CONTEXT.
-const SYSTEM_BASE = `Tu es « Adam », l'assistant IA de Rafi à IFA Formatio. Tu converses avec un NOUVEAU lead entrant et tu te présentes toujours comme un assistant IA.
+const SYSTEM_BASE = `Tu es « Adam », l'assistant IA de Rafi à IFA Formation. Tu converses avec un NOUVEAU lead entrant et tu te présentes toujours comme un assistant IA.
 Objectif: comprendre brièvement son besoin (1-2 questions max) puis l'amener à réserver un rendez-vous de 15 minutes avec un de nos experts via le lien de réservation.
 Style: français, court, professionnel et chaleureux (un emoji léger est bienvenu). Pas de promesse d'horaire ferme (le lien gère les créneaux).
 Le rendez-vous est TOUJOURS ta sortie préférée: signal d'achat fort, gros compte, sujet complexe (appel d'offres, financement) ou demande de parler à un humain → "send_booking_link" avec le cadrage « rendez-vous de 15 minutes avec un de nos experts ».
@@ -33,7 +33,7 @@ const DM_STYLE = `STYLE DM (canal chat — Instagram/WhatsApp/Messenger) — rem
 - Si le lead demande d'emblée un rendez-vous ou les prix, applique les règles du bloc CONTEXTE (prix → message type + RDV).
 - Pas de signature formelle en fin de message (c'est un chat, pas un email).`;
 
-const INSTAGRAM_IDENTITY = `IDENTITÉ SUR CE CANAL (compte Instagram de la marque) : présente-toi comme « Adam, l'assistant IA de IFA Formatio » (pas « de Rafi » — tu parles au nom de la marque).`;
+const INSTAGRAM_IDENTITY = `IDENTITÉ SUR CE CANAL (compte Instagram de la marque) : présente-toi comme « Adam, l'assistant IA de IFA Formation » (pas « de Rafi » — tu parles au nom de la marque).`;
 
 // System prompt = base rules + LCA grounding context (positioning + offer catalogue, so the
 // agent stops hallucinating a generic B2C pitch) + channel style + optional voice profile.
@@ -58,7 +58,7 @@ const TOOLS: Anthropic.Tool[] = [
     }, required: ["reason", "summary"] } },
 ];
 
-const EMAIL_SUBJECT = "Votre demande — IFA Formatio";
+const EMAIL_SUBJECT = "Votre demande — IFA Formation";
 const BOOK_SUBJECT = "Votre Book Financements 2026 est prêt !";
 const APP_BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://crm-lca.vercel.app";
 const BOOK_PDF_URL = `${APP_BASE}/book-financement-gratuit.pdf`;
@@ -87,14 +87,14 @@ async function deliver(channel: Channel, accountId: string | null, chatId: strin
 /**
  * Message d'accueil fixe (lead "fiche"). Speed-to-lead: contact immédiat + lien RDV, sans latence IA.
  * Persona-driven (signature + booking link résolus par owner/compte). Aligné sur le modèle de
- * greeting de référence fourni par l'équipe (09/06). Défaut LCA = "Rafi, Expert IFA Formatio".
+ * greeting de référence fourni par l'équipe (09/06). Défaut LCA = "Rafi, Expert IFA Formation".
  */
 function buildGreeting(firstName: string, persona: InboxPersona): string {
   const hello = firstName ? `Bonjour ${firstName},` : "Bonjour,";
   return [
     hello,
     "",
-    "Enchanté, je suis Adam, l'assistant IA de Rafi à IFA Formatio 😊",
+    "Enchanté, je suis Adam, l'assistant IA de Rafi à IFA Formation 😊",
     "Je viens de prendre connaissance de votre demande de renseignements.",
     "Comment puis-je vous aider ?",
     "",
@@ -110,7 +110,7 @@ function buildBookGreeting(firstName: string, persona: InboxPersona): string {
   return [
     hello,
     "",
-    "Enchanté, je suis Adam, l'assistant IA de IFA Formatio 😊",
+    "Enchanté, je suis Adam, l'assistant IA de IFA Formation 😊",
     "Merci pour votre intérêt ! Voici votre Book Financements édition 2026 :",
     BOOK_PDF_URL,
     "",

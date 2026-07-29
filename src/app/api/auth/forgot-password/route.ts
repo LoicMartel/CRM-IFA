@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const resetLink = `${appUrl}/auth/callback?token_hash=${data.properties.hashed_token}&type=recovery`;
 
-    const subject = "Réinitialisation de votre mot de passe — IFA Formatio";
+    const subject = "Réinitialisation de votre mot de passe — IFA Formation";
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; color: #1a2a3a; line-height: 1.7;">
         <div style="text-align: center; padding: 30px 0 20px;">
@@ -60,13 +60,13 @@ export async function POST(req: NextRequest) {
 
         <hr style="border: none; border-top: 2px solid #E8732A; margin: 30px 0;">
         <p style="font-size: 11px; color: #8399a9; text-align: center;">
-          © ${new Date().getFullYear()} IFA Formatio® — Tous droits réservés
+          © ${new Date().getFullYear()} IFA Formation® — Tous droits réservés
         </p>
       </div>
     `;
 
     const { error: sendError } = await resend.emails.send({
-      from: "IFA Formatio <noreply@ifagroupe.com>",
+      from: "IFA Formation <noreply@ifagroupe.com>",
       to: [email],
       subject,
       html,

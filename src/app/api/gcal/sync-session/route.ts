@@ -161,9 +161,9 @@ export async function POST(req: NextRequest) {
       "",
       "Belle journée,",
       "",
-      "L'équipe IFA Formatio",
+      "L'équipe IFA Formation",
       "",
-      "IFA Formatio ®",
+      "IFA Formation ®",
       "✉️ contact@ifagroupe.com",
       "🔗 www.ifagroupe.com",
     ].filter(Boolean).join("\n");

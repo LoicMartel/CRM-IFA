@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     }
 
     const primaryTrainer = (trainerMembers ?? [])[0];
-    const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "IFA Formatio";
+    const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "IFA Formation";
     const primaryOrganizerEmail = primaryTrainer?.email ?? "noreply@ifagroupe.com";
     // Single Zoom link for the whole session (first trainer that has one)
     const sessionZoomLink = (trainerMembers ?? []).find(t => t.zoom_link)?.zoom_link ?? "";
@@ -264,7 +264,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe IFA Formatio",
+          "L'équipe IFA Formation",
         ].filter(Boolean).join("\n");
 
         const emailResult = await sendSessionEmail({
@@ -320,7 +320,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe IFA Formatio",
+          "L'équipe IFA Formation",
         ].filter(Boolean).join("\n");
 
         const emailResult = await sendSessionEmail({
@@ -420,7 +420,7 @@ export async function POST(req: NextRequest) {
             "",
             "Belle journée,",
             "",
-            "L'équipe IFA Formatio",
+            "L'équipe IFA Formation",
           ].filter(Boolean).join("\n");
           const emailRes = await sendSessionEmail({
             to: trainer.email,
@@ -455,7 +455,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe IFA Formatio",
+          "L'équipe IFA Formation",
         ].filter(Boolean).join("\n");
         const emailRes = await sendSessionEmail({
           to: learner.email,

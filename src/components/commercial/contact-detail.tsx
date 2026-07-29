@@ -2495,7 +2495,7 @@ export function ContactDetail({
                   ) : (
                     <div style={{ fontSize: 12, color: "#5a6f80" }}>
                       <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
-                      IFA Formatio ®<br />
+                      IFA Formation ®<br />
                       {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
                       ✉️ {senderInfo.email}
                     </div>

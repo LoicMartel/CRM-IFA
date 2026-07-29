@@ -24,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const voiceBlock = persona.voiceProfile ? `\n\nVOICE PROFILE — rédige en respectant ce style:\n${persona.voiceProfile}` : "";
   const res = await anthropic.messages.create({
     model: "claude-sonnet-4-6", max_tokens: 500,
-    system: `Rédige au nom de ${persona.displayName} (IFA Formatio) une réponse courte, pro et chaleureuse en français. Signe "${persona.signature}".${voiceBlock}`,
+    system: `Rédige au nom de ${persona.displayName} (IFA Formation) une réponse courte, pro et chaleureuse en français. Signe "${persona.signature}".${voiceBlock}`,
     messages: [{ role: "user", content: `Échange:\n${transcript}\n\nRédige la réponse.` }],
   });
   const text = res.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n").trim();

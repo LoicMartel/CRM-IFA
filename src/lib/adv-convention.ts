@@ -106,7 +106,7 @@ export async function sendConventionSignature(args: {
 
   const sr = await createAndSendSigningRequest({
     name: buildConventionName(companyName ?? "Client"),
-    description: "Convention de formation professionnelle — IFA Formatio.",
+    description: "Convention de formation professionnelle — IFA Formation.",
     documentBase64: pdfBase64,
     recipient: {
       firstName: contact.first_name ?? "Client",

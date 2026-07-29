@@ -161,7 +161,7 @@ export async function sendSessionEmail({
       html: string;
       attachments?: { filename: string; content: string; contentType: string }[];
     } = {
-      from: "L'équipe IFA Formatio <noreply@ifagroupe.com>",
+      from: "L'équipe IFA Formation <noreply@ifagroupe.com>",
       to,
       subject,
       ...(bcc && bcc.length > 0 ? { bcc } : {}),
@@ -172,8 +172,8 @@ export async function sendSessionEmail({
           <table style="width: 100%;">
             <tr>
               <td style="vertical-align: top; padding-right: 20px; border-right: 2px solid #E8732A;">
-                <strong style="font-size: 16px;">L'équipe IFA Formatio</strong><br>
-                <span style="color: #5a6f80;">IFA Formatio</span>
+                <strong style="font-size: 16px;">L'équipe IFA Formation</strong><br>
+                <span style="color: #5a6f80;">IFA Formation</span>
               </td>
               <td style="vertical-align: top; padding-left: 20px;">
                 ✉️ contact@ifagroupe.com<br>

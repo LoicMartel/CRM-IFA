@@ -57,7 +57,7 @@ export function generateICS({
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//IFA Formatio//CRM//FR",
+    "PRODID:-//IFA Formation//CRM//FR",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
     VTIMEZONE_PARIS,

@@ -158,7 +158,7 @@ export function AppSidebar() {
           </div>
           <div>
             <p style={{ fontWeight: 700, fontSize: 20, color: "white", fontFamily: "var(--font-caveat), 'Caveat', cursive", whiteSpace: "nowrap" }}>
-              IFA Formatio
+              IFA Formation
             </p>
             <p style={{ fontSize: 17, color: "rgba(255,255,255,0.6)", marginTop: 2, fontFamily: "var(--font-caveat), 'Caveat', cursive", fontStyle: "italic" }}>
               Formez-vous aux metiers du transport

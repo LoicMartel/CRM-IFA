@@ -1,4 +1,4 @@
-// Types principaux du CRM IFA Formatio
+// Types principaux du CRM IFA Formation
 import type { QuoteLineDraft } from "@/lib/adv-quote";
 
 export type TeamMemberRole = "admin" | "sales" | "trainer" | "account_manager" | "finance";

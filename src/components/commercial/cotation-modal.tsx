@@ -756,7 +756,7 @@ ${activeRows.length > 0 ? `
 ${form.notes ? `<h2>Notes</h2><p style="color:#5a6f80;">${form.notes}</p>` : ""}
 
 <div style="margin-top:30px;padding-top:16px;border-top:1px solid #e8ecf1;text-align:center;font-size:10px;color:#8399a9;">
-  IFA Formatio® — Document généré le ${new Date().toLocaleDateString("fr-FR")}
+  IFA Formation® — Document généré le ${new Date().toLocaleDateString("fr-FR")}
 </div>
 </body></html>`;
 }
