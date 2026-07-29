@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,11 +19,13 @@ export function ReglagesView({
   trainingPrograms,
   trainingTypes,
   fundingTypes,
+  marketingProviders,
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
   trainingTypes: NamedItem[];
   fundingTypes: NamedItem[];
+  marketingProviders: NamedItem[];
 }) {
   return (
     <Tabs defaultValue="sources" className="w-full">
@@ -39,6 +41,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="financement" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Receipt style={{ width: 14, height: 14 }} /> Types de financement
+        </TabsTrigger>
+        <TabsTrigger value="prestataires" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Megaphone style={{ width: 14, height: 14 }} /> Prestataires marketing
         </TabsTrigger>
       </TabsList>
 
@@ -95,6 +100,20 @@ export function ReglagesView({
           duplicateMessage="Ce type de financement existe déjà."
           emptyMessage="Aucun type de financement défini"
           items={fundingTypes}
+        />
+      </TabsContent>
+
+      <TabsContent value="prestataires" style={{ marginTop: 20 }}>
+        <CrudSection
+          icon={<Megaphone style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
+          title="Prestataires marketing"
+          description="Gerez les prestataires marketing disponibles dans les menus deroulants (depenses, suivi, rapports)."
+          placeholder="Nom du nouveau prestataire..."
+          table="marketing_providers"
+          uniqueKey="marketing_providers_name_key"
+          duplicateMessage="Ce prestataire existe deja."
+          emptyMessage="Aucun prestataire defini"
+          items={marketingProviders}
         />
       </TabsContent>
     </Tabs>

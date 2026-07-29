@@ -7,7 +7,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone, PhoneCall } from "lucide-react";
+import { Search, ArrowUpDown, UserPlus, BookOpen, Megaphone, PhoneCall, Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/utils";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { ExportButton } from "@/components/ui/export-button";
@@ -63,6 +64,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(1);
   const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [addForm, setAddForm] = useState({ first_name: "", last_name: "", email: "", phone: "", company: "" });
+  const [addSaving, setAddSaving] = useState(false);
   const PAGE_SIZE = 25;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
@@ -215,7 +219,64 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           ],
           "leads-marketing", fmt
         )} />
+        <Button onClick={() => setShowAddLead(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Plus className="h-4 w-4" /> Ajouter un lead
+        </Button>
       </div>
+
+      {/* Modal ajout lead */}
+      {showAddLead && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setShowAddLead(false)}>
+          <div style={{ background: "white", borderRadius: 16, padding: 28, width: 440, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a" }}>Ajouter un lead</h3>
+              <button onClick={() => setShowAddLead(false)} style={{ background: "none", border: "none", cursor: "pointer" }}><X style={{ width: 20, height: 20, color: "#8399a9" }} /></button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Prenom *</label>
+                  <Input value={addForm.first_name} onChange={(e) => setAddForm(f => ({ ...f, first_name: e.target.value }))} placeholder="Prenom" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Nom *</label>
+                  <Input value={addForm.last_name} onChange={(e) => setAddForm(f => ({ ...f, last_name: e.target.value }))} placeholder="Nom" />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Email</label>
+                <Input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="email@exemple.com" />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Telephone</label>
+                <Input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="06 12 34 56 78" />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Entreprise</label>
+                <Input value={addForm.company} onChange={(e) => setAddForm(f => ({ ...f, company: e.target.value }))} placeholder="Nom de l'entreprise" />
+              </div>
+              <Button disabled={addSaving || !addForm.first_name.trim() || !addForm.last_name.trim()} onClick={async () => {
+                setAddSaving(true);
+                const supabase = (await import("@/lib/supabase/client")).createClient();
+                const { error } = await supabase.from("contacts").insert({
+                  first_name: addForm.first_name.trim(),
+                  last_name: addForm.last_name.trim(),
+                  email: addForm.email.trim() || null,
+                  phone: addForm.phone.trim() || null,
+                  lifecycle_stage: "lead_marketing",
+                  lead_status: "lead",
+                  was_lead_marketing: true,
+                });
+                if (error) { alert("Erreur : " + error.message); }
+                else { setShowAddLead(false); setAddForm({ first_name: "", last_name: "", email: "", phone: "", company: "" }); router.refresh(); }
+                setAddSaving(false);
+              }} style={{ marginTop: 8 }}>
+                {addSaving ? "Enregistrement..." : "Ajouter le lead"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-md border" style={{ overflowX: "hidden" }}>
         <Table style={{ tableLayout: "fixed", width: "100%" }}>
