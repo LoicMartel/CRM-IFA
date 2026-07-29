@@ -409,7 +409,7 @@ CREATE TABLE public."email_log" (
   "created_at" timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY ("id"),
   CONSTRAINT "email_log_status_check" CHECK ((status = ANY (ARRAY['sent'::text, 'failed'::text]))),
-  CONSTRAINT "email_log_transporter_chk" CHECK ((transporter = ANY (ARRAY['resend'::text, 'ionos'::text, 'pennylane'::text, 'firma'::text, 'unipile'::text])))
+  CONSTRAINT "email_log_transporter_chk" CHECK ((transporter = ANY (ARRAY['resend'::text, 'ionos'::text, 'pennylane'::text, 'firma'::text, 'unipile'::text, 'gmail'::text, 'outlook'::text])))
 );
 
 CREATE TABLE public."engagements" (

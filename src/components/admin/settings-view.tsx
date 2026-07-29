@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { KeyRound, User, Mail, Check, Camera, Link, MessageSquare, Calendar, ChevronDown, ChevronRight, Copy } from "lucide-react";
+import { KeyRound, User, Mail, Check, Camera, Link, MessageSquare, Calendar, ChevronDown, ChevronRight, Copy, Send } from "lucide-react";
 import Cropper from "react-easy-crop";
 
 interface CropArea { x: number; y: number; width: number; height: number; }
@@ -57,6 +57,14 @@ export function SettingsView() {
   // OAuth tokens
   const [oauthTokens, setOauthTokens] = useState<{ provider: string; provider_email: string | null }[]>([]);
 
+  // Email provider config
+  const [emailProvider, setEmailProvider] = useState<string>("");
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [resendFromEmail, setResendFromEmail] = useState("");
+  const [resendFromName, setResendFromName] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
+
   // Calendar mapping
   interface CalendarItem { id: string; summary: string; primary: boolean; backgroundColor: string | null }
   const [googleCalendars, setGoogleCalendars] = useState<CalendarItem[]>([]);
@@ -109,6 +117,13 @@ export function SettingsView() {
             slack: member.slack_user_id ?? "",
             gcal: member.google_calendar_id ?? "",
           });
+          // Load email provider config from integration_config
+          const ic = (member as any).integration_config ?? {};
+          setEmailProvider(ic.email_provider ?? "");
+          setResendApiKey(ic.resend_api_key ?? "");
+          setResendFromEmail(ic.resend_from_email ?? "");
+          setResendFromName(ic.resend_from_name ?? "");
+
           // Fetch OAuth tokens for this member
           const { data: tokens } = await supabase
             .from("oauth_tokens")
@@ -414,6 +429,119 @@ export function SettingsView() {
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <Link className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Intégrations
             </h3>
+
+            {/* Email */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 10 }}>
+                <Send className="h-3 w-3" style={{ display: "inline", marginRight: 4 }} /> Email
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 0 }}>
+                <EmailConnectButton
+                  providerKey="gmail"
+                  oauthProvider="google"
+                  label="Gmail"
+                  memberId={memberId}
+                  oauthToken={oauthTokens.find(t => t.provider === "google")}
+                  isActive={emailProvider === "gmail"}
+                  onActivate={async () => {
+                    const supabase = createClient();
+                    const { data: cur } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                    const cfg = (cur?.integration_config as Record<string, unknown>) ?? {};
+                    await supabase.from("team_members").update({ integration_config: { ...cfg, email_provider: "gmail" } }).eq("id", memberId);
+                    setEmailProvider("gmail");
+                  }}
+                  onDeactivate={async () => {
+                    const supabase = createClient();
+                    const { data: cur } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                    const cfg = (cur?.integration_config as Record<string, unknown>) ?? {};
+                    await supabase.from("team_members").update({ integration_config: { ...cfg, email_provider: null } }).eq("id", memberId);
+                    setEmailProvider("");
+                  }}
+                />
+                <EmailConnectButton
+                  providerKey="outlook"
+                  oauthProvider="microsoft"
+                  label="Outlook"
+                  memberId={memberId}
+                  oauthToken={oauthTokens.find(t => t.provider === "microsoft")}
+                  isActive={emailProvider === "outlook"}
+                  onActivate={async () => {
+                    const supabase = createClient();
+                    const { data: cur } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                    const cfg = (cur?.integration_config as Record<string, unknown>) ?? {};
+                    await supabase.from("team_members").update({ integration_config: { ...cfg, email_provider: "outlook" } }).eq("id", memberId);
+                    setEmailProvider("outlook");
+                  }}
+                  onDeactivate={async () => {
+                    const supabase = createClient();
+                    const { data: cur } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                    const cfg = (cur?.integration_config as Record<string, unknown>) ?? {};
+                    await supabase.from("team_members").update({ integration_config: { ...cfg, email_provider: null } }).eq("id", memberId);
+                    setEmailProvider("");
+                  }}
+                />
+              </div>
+
+              {/* Resend — configuration manuelle */}
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ fontSize: 12, fontWeight: 600, color: "#8399a9", cursor: "pointer" }}>Configurer Resend (avancé)</summary>
+                <div style={{ background: "#f8fbfd", borderRadius: 10, padding: 16, border: "1px solid #e3edf5", marginTop: 8 }}>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Clé API Resend</label>
+                      <input type="password" value={resendApiKey} onChange={(e) => setResendApiKey(e.target.value)}
+                        placeholder="re_..." className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Email expéditeur</label>
+                      <input type="email" value={resendFromEmail} onChange={(e) => setResendFromEmail(e.target.value)}
+                        placeholder="vous@votredomaine.com" className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                      <p style={{ fontSize: 11, color: "#8399a9" }}>Le domaine doit être vérifié dans votre compte Resend.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80" }}>Nom expéditeur (optionnel)</label>
+                      <input type="text" value={resendFromName} onChange={(e) => setResendFromName(e.target.value)}
+                        placeholder={memberName || "Prénom Nom"} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setSavingEmail(true);
+                      const supabase = createClient();
+                      const { data: cur } = await supabase.from("team_members").select("integration_config").eq("id", memberId).single();
+                      const cfg = (cur?.integration_config as Record<string, unknown>) ?? {};
+                      await supabase.from("team_members").update({
+                        integration_config: {
+                          ...cfg,
+                          email_provider: resendApiKey.trim() ? "resend" : null,
+                          resend_api_key: resendApiKey.trim() || null,
+                          resend_from_email: resendFromEmail.trim() || null,
+                          resend_from_name: resendFromName.trim() || null,
+                        },
+                      }).eq("id", memberId);
+                      setEmailProvider(resendApiKey.trim() ? "resend" : "");
+                      setSavingEmail(false);
+                      setEmailSaved(true);
+                      setTimeout(() => setEmailSaved(false), 2000);
+                    }}
+                    disabled={savingEmail}
+                    style={{
+                      marginTop: 12, width: "100%", height: 36, borderRadius: 8, border: "none",
+                      background: emailSaved ? "#2e7d32" : "#1a6b9c", color: "white",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >
+                    {savingEmail ? "Sauvegarde..." : emailSaved ? "Sauvegardé !" : "Sauvegarder"}
+                  </button>
+                </div>
+              </details>
+
+              {!emailProvider && (
+                <p style={{ fontSize: 11, color: "#8399a9", marginTop: 8 }}>
+                  Aucun compte email connecté — les emails sont envoyés depuis votre adresse @closing-academie.com.
+                </p>
+              )}
+            </div>
 
             {/* Agenda */}
             <div style={{ marginBottom: 20 }}>
@@ -748,6 +876,79 @@ function OAuthConnectButton({
     <button
       type="button"
       onClick={() => { window.location.href = `/api/auth/${provider}?memberId=${memberId}`; }}
+      disabled={!memberId}
+      style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+        borderRadius: 8, border: "1px solid #dce8f0", background: "white",
+        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+        transition: "all 0.15s",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
+    >
+      <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ccc", flexShrink: 0 }} />
+      Connecter {label}
+    </button>
+  );
+}
+
+function EmailConnectButton({
+  providerKey, oauthProvider, label, memberId, oauthToken, isActive, onActivate, onDeactivate,
+}: {
+  providerKey: string;
+  oauthProvider: string;
+  label: string;
+  memberId: string;
+  oauthToken?: { provider: string; provider_email: string | null };
+  isActive: boolean;
+  onActivate: () => Promise<void>;
+  onDeactivate: () => Promise<void>;
+}) {
+  const hasOAuth = !!oauthToken;
+
+  // Connecté et activé pour l'email
+  if (hasOAuth && isActive) {
+    return (
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+        borderRadius: 8, border: "1px solid #a5d6a7", background: "#f1f8e9",
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2e7d32", flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
+          {oauthToken.provider_email && <div style={{ fontSize: 11, color: "#5a6f80" }}>{oauthToken.provider_email}</div>}
+        </div>
+        <button type="button" onClick={onDeactivate}
+          style={{ fontSize: 11, color: "#c62828", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+          Désactiver
+        </button>
+      </div>
+    );
+  }
+
+  // OAuth connecté mais pas activé pour l'email → bouton "Utiliser"
+  if (hasOAuth && !isActive) {
+    return (
+      <button type="button" onClick={onActivate}
+        style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
+          borderRadius: 8, border: "1px solid #dce8f0", background: "white",
+          cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+          transition: "all 0.15s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
+      >
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fb8c00", flexShrink: 0 }} />
+        Utiliser {label} ({oauthToken!.provider_email ?? oauthProvider})
+      </button>
+    );
+  }
+
+  // OAuth non connecté → bouton "Connecter"
+  return (
+    <button type="button"
+      onClick={() => { window.location.href = `/api/auth/${oauthProvider}?memberId=${memberId}`; }}
       disabled={!memberId}
       style={{
         display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",

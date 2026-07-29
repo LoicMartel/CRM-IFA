@@ -19,7 +19,7 @@ const PROVIDER_CONFIGS: Record<OAuthProvider, () => OAuthProviderConfig> = {
     clientId: process.env.GOOGLE_CLIENT_ID ?? "",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     scopes:
-      "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email",
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
   }),
@@ -27,7 +27,7 @@ const PROVIDER_CONFIGS: Record<OAuthProvider, () => OAuthProviderConfig> = {
     clientId: process.env.MICROSOFT_CLIENT_ID ?? "",
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET ?? "",
     scopes:
-      "Calendars.ReadWrite OnlineMeetings.ReadWrite User.Read offline_access",
+      "Calendars.ReadWrite OnlineMeetings.ReadWrite User.Read Mail.Send offline_access",
     authUrl:
       "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenUrl:

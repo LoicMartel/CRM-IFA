@@ -245,6 +245,8 @@ export function ContactDetail({
   const [emailForm, setEmailForm] = useState({ subject: "", body: "" });
   const [sendingEmail, setSendingEmail] = useState(false);
   const [senderInfo, setSenderInfo] = useState<{ first_name: string; last_name: string; email: string; phone: string; email_signature: string | null } | null>(null);
+  const [emailProviderLabel, setEmailProviderLabel] = useState<string>("");
+  const [emailSenderAddress, setEmailSenderAddress] = useState<string>("");
   const [emailPreview, setEmailPreview] = useState<{ title: string; description: string } | null>(null);
 
   const [form, setForm] = useState({
@@ -271,12 +273,36 @@ export function ContactDetail({
   const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm((f) => ({ ...f, notes: t })));
   const emailBodyVoice = useVoiceDictation(() => emailForm.body, (t) => setEmailForm((f) => ({ ...f, body: t })));
 
-  // Load sender info for email composer
+  // Load sender info for email composer + email provider
   useEffect(() => {
     if (!currentMemberId) return;
     const supabase = createClient();
-    supabase.from("team_members").select("first_name, last_name, email, phone, email_signature").eq("id", currentMemberId).single()
-      .then(({ data }) => { if (data) setSenderInfo(data as any); });
+    (async () => {
+      const { data } = await supabase.from("team_members")
+        .select("first_name, last_name, email, phone, email_signature, integration_config")
+        .eq("id", currentMemberId).single();
+      if (!data) return;
+      setSenderInfo(data as any);
+      const ic = (data as any).integration_config ?? {};
+      const prov = ic.email_provider ?? "";
+      if (prov === "gmail") {
+        setEmailProviderLabel("via Gmail");
+        const { data: tok } = await supabase.from("oauth_tokens").select("provider_email")
+          .eq("team_member_id", currentMemberId).eq("provider", "google").maybeSingle();
+        setEmailSenderAddress(tok?.provider_email ?? data.email);
+      } else if (prov === "outlook") {
+        setEmailProviderLabel("via Outlook");
+        const { data: tok } = await supabase.from("oauth_tokens").select("provider_email")
+          .eq("team_member_id", currentMemberId).eq("provider", "microsoft").maybeSingle();
+        setEmailSenderAddress(tok?.provider_email ?? data.email);
+      } else if (prov === "resend" && ic.resend_from_email) {
+        setEmailProviderLabel("via Resend");
+        setEmailSenderAddress(ic.resend_from_email);
+      } else {
+        setEmailProviderLabel("");
+        setEmailSenderAddress(data.email);
+      }
+    })();
   }, [currentMemberId]);
 
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
@@ -2408,9 +2434,14 @@ export function ContactDetail({
               {/* From */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a6f80", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
                 <span style={{ fontWeight: 600, color: "#8399a9", minWidth: 30 }}>De :</span>
-                <span style={{ fontWeight: 600, color: "#1a2a3a" }}>
-                  {senderInfo ? `${senderInfo.first_name} ${senderInfo.last_name} <${senderInfo.email}>` : "Chargement..."}
+                <span style={{ fontWeight: 600, color: "#1a2a3a", flex: 1 }}>
+                  {senderInfo ? `${senderInfo.first_name} ${senderInfo.last_name} <${emailSenderAddress || senderInfo.email}>` : "Chargement..."}
                 </span>
+                {emailProviderLabel && (
+                  <span style={{ fontSize: 11, color: "#1a6b9c", background: "#e3f0fa", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
+                    {emailProviderLabel}
+                  </span>
+                )}
               </div>
 
               {/* To */}
