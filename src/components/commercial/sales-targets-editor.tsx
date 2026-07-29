@@ -13,8 +13,23 @@ interface SalesTarget {
   target_amount: number;
 }
 
+type FiscalMode = "jan-dec" | "sep-aug";
+
 function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
+}
+
+function getFiscalYear(mode: FiscalMode): string[] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startMonth = mode === "jan-dec" ? 0 : 8; // 0=Jan, 8=Sep
+  const startYear = mode === "sep-aug" && now.getMonth() < 8 ? year - 1 : year;
+  const months: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(startYear, startMonth + i, 1);
+    months.push(d.toISOString().slice(0, 10));
+  }
+  return months;
 }
 
 export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTarget[]; annualTarget: number }) {
@@ -22,24 +37,59 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [fiscalMode, setFiscalMode] = useState<FiscalMode>("jan-dec");
+  const [loadingFiscal, setLoadingFiscal] = useState(false);
 
-  function openEditor() {
+  const fiscalMonths = getFiscalYear(fiscalMode);
+
+  // Filter targets to show only the selected fiscal year
+  const visibleTargets = targets.filter(t => fiscalMonths.includes(t.month.slice(0, 10)));
+  // Sort by fiscal year order
+  visibleTargets.sort((a, b) => fiscalMonths.indexOf(a.month.slice(0, 10)) - fiscalMonths.indexOf(b.month.slice(0, 10)));
+
+  async function openEditor() {
     const v: Record<string, string> = {};
+    // Ensure all fiscal months exist
+    setLoadingFiscal(true);
+    const supabase = createClient();
+    const { data: existing } = await supabase.from("sales_targets").select("month").in("month", fiscalMonths);
+    const existingSet = new Set((existing ?? []).map((e: any) => (e.month as string).slice(0, 10)));
+    const missing = fiscalMonths.filter(m => !existingSet.has(m));
+    if (missing.length > 0) {
+      await supabase.from("sales_targets").insert(missing.map(m => ({ month: m, target_amount: 0 })));
+      router.refresh();
+    }
+    setLoadingFiscal(false);
+
     targets.forEach(t => { v[t.id] = String(t.target_amount); });
     setValues(v);
     setOpen(true);
+  }
+
+  async function handleFiscalChange(mode: FiscalMode) {
+    setFiscalMode(mode);
+    // Ensure months exist for new fiscal mode
+    const months = getFiscalYear(mode);
+    const supabase = createClient();
+    const { data: existing } = await supabase.from("sales_targets").select("month").in("month", months);
+    const existingSet = new Set((existing ?? []).map((e: any) => (e.month as string).slice(0, 10)));
+    const missing = months.filter(m => !existingSet.has(m));
+    if (missing.length > 0) {
+      await supabase.from("sales_targets").insert(missing.map(m => ({ month: m, target_amount: 0 })));
+    }
+    router.refresh();
   }
 
   function updateValue(id: string, val: string) {
     setValues(prev => ({ ...prev, [id]: val }));
   }
 
-  const currentTotal = Object.values(values).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  const currentTotal = visibleTargets.reduce((s, t) => s + (parseFloat(values[t.id] ?? String(t.target_amount)) || 0), 0);
 
   async function handleSave() {
     setSaving(true);
     const supabase = createClient();
-    for (const t of targets) {
+    for (const t of visibleTargets) {
       const newAmount = parseFloat(values[t.id] ?? "0") || 0;
       if (newAmount !== t.target_amount) {
         await supabase.from("sales_targets").update({ target_amount: newAmount }).eq("id", t.id);
@@ -49,6 +99,8 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
     setOpen(false);
     router.refresh();
   }
+
+  const fiscalLabel = fiscalMode === "jan-dec" ? "Janvier — Décembre" : "Septembre — Août";
 
   return (
     <>
@@ -80,10 +132,36 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
 
             {/* Body */}
             <div style={{ padding: 20 }}>
+              {/* Fiscal year selector */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <button
+                  onClick={() => handleFiscalChange("jan-dec")}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    background: fiscalMode === "jan-dec" ? "#1E2A5A" : "white",
+                    color: fiscalMode === "jan-dec" ? "white" : "#5a6f80",
+                    border: fiscalMode === "jan-dec" ? "none" : "1px solid #dce8f0",
+                  }}
+                >
+                  Janvier — Decembre
+                </button>
+                <button
+                  onClick={() => handleFiscalChange("sep-aug")}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    background: fiscalMode === "sep-aug" ? "#1E2A5A" : "white",
+                    color: fiscalMode === "sep-aug" ? "white" : "#5a6f80",
+                    border: fiscalMode === "sep-aug" ? "none" : "1px solid #dce8f0",
+                  }}
+                >
+                  Septembre — Aout
+                </button>
+              </div>
+
               {/* Annual total */}
               <div style={{ background: "#f0f7fb", borderRadius: 10, padding: 14, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Objectif annuel (total)</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Objectif annuel ({fiscalLabel})</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a", marginTop: 2 }}>{fmt(currentTotal)}</div>
                 </div>
                 <div style={{ fontSize: 12, color: "#8399a9" }}>Somme des 12 mois</div>
@@ -91,7 +169,7 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
 
               {/* Monthly targets */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {targets.map(t => {
+                {visibleTargets.map(t => {
                   const monthLabel = format(new Date(t.month), "MMMM yyyy", { locale: fr });
                   return (
                     <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -99,7 +177,7 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
                       <div style={{ position: "relative" }}>
                         <input
                           type="number"
-                          value={values[t.id] ?? ""}
+                          value={values[t.id] ?? String(t.target_amount)}
                           onChange={(e) => updateValue(t.id, e.target.value)}
                           style={{
                             height: 34, width: 140, borderRadius: 8, border: "1px solid #dce8f0",
@@ -112,6 +190,11 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
                     </div>
                   );
                 })}
+                {visibleTargets.length === 0 && (
+                  <p style={{ color: "#8399a9", fontSize: 13, textAlign: "center", padding: 20 }}>
+                    {loadingFiscal ? "Chargement..." : "Rafraichissez la page pour voir les objectifs"}
+                  </p>
+                )}
               </div>
             </div>
 

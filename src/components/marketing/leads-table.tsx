@@ -65,8 +65,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [page, setPage] = useState(1);
   const [activityLeadId, setActivityLeadId] = useState<string | null>(null);
   const [showAddLead, setShowAddLead] = useState(false);
-  const [addForm, setAddForm] = useState({ first_name: "", last_name: "", email: "", phone: "", company: "" });
+  const [addForm, setAddForm] = useState({ first_name: "", last_name: "", email: "", phone: "", company: "", source_id: "" });
   const [addSaving, setAddSaving] = useState(false);
+  const [availableSources, setAvailableSources] = useState<{ id: string; name: string }[]>([]);
   const PAGE_SIZE = 25;
 
   const sourceNames = Array.from(new Set(leads.map((l) => getName(l.lead_sources)).filter(Boolean) as string[])).sort();
@@ -219,7 +220,12 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
           ],
           "leads-marketing", fmt
         )} />
-        <Button onClick={() => setShowAddLead(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <Button onClick={async () => {
+          const supabase = (await import("@/lib/supabase/client")).createClient();
+          const { data } = await supabase.from("lead_sources").select("id, name").order("name");
+          setAvailableSources(data ?? []);
+          setShowAddLead(true);
+        }} style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Plus className="h-4 w-4" /> Ajouter un lead
         </Button>
       </div>
@@ -255,6 +261,19 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                 <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Entreprise</label>
                 <Input value={addForm.company} onChange={(e) => setAddForm(f => ({ ...f, company: e.target.value }))} placeholder="Nom de l'entreprise" />
               </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Source</label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                  value={addForm.source_id}
+                  onChange={(e) => setAddForm(f => ({ ...f, source_id: e.target.value }))}
+                >
+                  <option value="">-- Selectionner une source --</option>
+                  {availableSources.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
               <Button disabled={addSaving || !addForm.first_name.trim() || !addForm.last_name.trim()} onClick={async () => {
                 setAddSaving(true);
                 const supabase = (await import("@/lib/supabase/client")).createClient();
@@ -263,12 +282,13 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   last_name: addForm.last_name.trim(),
                   email: addForm.email.trim() || null,
                   phone: addForm.phone.trim() || null,
+                  source_id: addForm.source_id || null,
                   lifecycle_stage: "lead_marketing",
                   lead_status: "lead",
                   was_lead_marketing: true,
                 });
                 if (error) { alert("Erreur : " + error.message); }
-                else { setShowAddLead(false); setAddForm({ first_name: "", last_name: "", email: "", phone: "", company: "" }); router.refresh(); }
+                else { setShowAddLead(false); setAddForm({ first_name: "", last_name: "", email: "", phone: "", company: "", source_id: "" }); router.refresh(); }
                 setAddSaving(false);
               }} style={{ marginTop: 8 }}>
                 {addSaving ? "Enregistrement..." : "Ajouter le lead"}
