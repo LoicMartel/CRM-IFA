@@ -153,7 +153,7 @@ export function AppSidebar() {
               textAlign: "center", fontFamily: "var(--font-montserrat), 'Montserrat', sans-serif",
               letterSpacing: "-0.02em",
             }}>
-              IFA<br />FORMATIO
+              IFA<br />FORMATION
             </span>
           </div>
           <div>
