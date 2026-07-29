@@ -24,7 +24,7 @@ describe("isSystemSender", () => {
 describe("shouldSkipScoring", () => {
   it("still silences the wider noise set (marketing/newsletter/internal)", () => {
     assert.equal(shouldSkipScoring("marketing@acme.com", "Promo", "body"), true);
-    assert.equal(shouldSkipScoring("rafi@closing-academie.com", "RE", "body"), true);
+    assert.equal(shouldSkipScoring("rafi@ifagroupe.com", "RE", "body"), true);
     assert.equal(shouldSkipScoring("hello@acme.com", "News", "Pour ne plus recevoir nos emails"), true);
   });
 

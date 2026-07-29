@@ -7,7 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveRecipientEmail } from "@/lib/adv-quote";
 import { sendSessionEmail } from "@/lib/send-email";
 
-const NAZNINE_EMAIL = "naznine@closing-academie.com";
+const NAZNINE_EMAIL = "naznine@ifagroupe.com";
 
 export async function notifyPieceToValidate(
   supabase: SupabaseClient,
@@ -34,7 +34,7 @@ export async function notifyPieceToValidate(
     }
     await sendSessionEmail({
       to: resolveRecipientEmail(NAZNINE_EMAIL),
-      subject: `${typeLabel} à valider — La Closing Académie`,
+      subject: `${typeLabel} à valider — IFA Formatio`,
       body: `Bonjour,\n\nUn(e) ${typeLabel.toLowerCase()} est prêt(e) à être validé(e) : "${piece.label}".\n\nPrévisualise et valide avant envoi : https://crm-lca.vercel.app/a-valider`,
     });
   } catch (err) {

@@ -134,7 +134,7 @@ function sourceToProvider(sourceName: string): string {
   return ""; // source non marketing (Renouvellement, Prospection, etc.)
 }
 
-const SOURCE_COLORS = ["#1a6b9c", "#e65100", "#6a1b9a", "#2e7d32", "#c62828", "#0d4f7a", "#f57c00", "#4a148c"];
+const SOURCE_COLORS = ["#1E2A5A", "#e65100", "#6a1b9a", "#2e7d32", "#c62828", "#161f45", "#f57c00", "#4a148c"];
 
 function getMonthKey(dateStr: string): string {
   return dateStr.slice(0, 7);
@@ -328,7 +328,7 @@ export function MarketingReportsView({
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Leads générés</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalLeads}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{totalLeads}</div>
           </div>
           <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -398,10 +398,10 @@ export function MarketingReportsView({
                 <div key={month}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
                     <span style={{ fontWeight: 600, color: "#1a2a3a", textTransform: "capitalize" }}>{fmtMonthLabel(month)}</span>
-                    <span style={{ fontWeight: 700, color: "#1a6b9c" }}>{count}</span>
+                    <span style={{ fontWeight: 700, color: "#1E2A5A" }}>{count}</span>
                   </div>
                   <div style={{ height: 8, background: "#f0f0f0", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${(count / maxMonthCount) * 100}%`, background: "#1a6b9c", borderRadius: 4 }} />
+                    <div style={{ height: "100%", width: `${(count / maxMonthCount) * 100}%`, background: "#1E2A5A", borderRadius: 4 }} />
                   </div>
                 </div>
               ))}
@@ -429,7 +429,7 @@ export function MarketingReportsView({
                       </div>
                       <div>
                         <div style={{ color: "#8399a9" }}>Leads</div>
-                        <div style={{ fontWeight: 700, color: "#1a6b9c" }}>{data.leads}</div>
+                        <div style={{ fontWeight: 700, color: "#1E2A5A" }}>{data.leads}</div>
                       </div>
                       <div>
                         <div style={{ color: "#8399a9" }}>CPL</div>
@@ -650,7 +650,7 @@ function SettingReport({
         <div className="lca-card" style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Prospects appelés</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{stats.totalProspects}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{stats.totalProspects}</div>
           </div>
           <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -695,7 +695,7 @@ function SettingReport({
             label="Contactés / Total prospects"
             num={stats.totalContacted}
             den={stats.totalLeadsCreated}
-            color="#1a6b9c"
+            color="#1E2A5A"
           />
           {/* Toggle détail par source */}
           <button
@@ -703,7 +703,7 @@ function SettingReport({
             onClick={() => setShowSourceDetail(!showSourceDetail)}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              fontSize: 12, color: "#1a6b9c", fontWeight: 600,
+              fontSize: 12, color: "#1E2A5A", fontWeight: 600,
               display: "flex", alignItems: "center", gap: 4,
               padding: 0, marginTop: -4, marginBottom: -4,
             }}

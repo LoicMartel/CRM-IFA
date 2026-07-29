@@ -86,7 +86,7 @@ export function ActivityTimeline({ activities }: { activities: ActivityItem[] })
             )}
             {emailHtml && (
               <details style={{ marginTop: 6 }}>
-                <summary style={{ cursor: "pointer", fontSize: 12, color: "#1a6b9c" }}>
+                <summary style={{ cursor: "pointer", fontSize: 12, color: "#1E2A5A" }}>
                   Voir l&apos;email
                 </summary>
                 <div

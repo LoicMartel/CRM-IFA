@@ -297,7 +297,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
         {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <Calculator style={{ width: 18, height: 18, color: "#1a6b9c" }} />
+            <Calculator style={{ width: 18, height: 18, color: "#1E2A5A" }} />
             {editQuotation ? "Modifier la cotation" : "Nouvelle cotation"}
           </h3>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
@@ -310,7 +310,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
 
           {/* ═══ Zone A: Client Info ═══ */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
               Informations client
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "end" }}>
@@ -383,7 +383,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                           alert("Deal créé !");
                         }
                       }}
-                      style={{ height: 36, borderRadius: 8, border: "1px solid #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 11, fontWeight: 600, padding: "0 10px", cursor: "pointer", whiteSpace: "nowrap" }}
+                      style={{ height: 36, borderRadius: 8, border: "1px solid #1E2A5A", background: "white", color: "#1E2A5A", fontSize: 11, fontWeight: 600, padding: "0 10px", cursor: "pointer", whiteSpace: "nowrap" }}
                     >
                       + Deal
                     </button>
@@ -406,9 +406,9 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
 
           {/* ═══ Zone B: Monthly Grid with dynamic rows ═══ */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               Grille mensuelle
-              <button onClick={addRow} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "1px solid #1a6b9c", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 600, color: "#1a6b9c", cursor: "pointer" }}>
+              <button onClick={addRow} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "1px solid #1E2A5A", borderRadius: 6, padding: "3px 10px", fontSize: 11, fontWeight: 600, color: "#1E2A5A", cursor: "pointer" }}>
                 <Plus style={{ width: 12, height: 12 }} /> Ajouter une ligne
               </button>
             </div>
@@ -418,7 +418,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                   <tr>
                     <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#5a6f80", fontSize: 11, width: 180 }}></th>
                     {MONTH_KEYS.map(k => (
-                      <th key={k} style={{ padding: "8px 2px", textAlign: "center", fontWeight: 700, fontSize: 10, color: monthTotal(k) > 0 ? "#1a6b9c" : "#8399a9" }}>
+                      <th key={k} style={{ padding: "8px 2px", textAlign: "center", fontWeight: 700, fontSize: 10, color: monthTotal(k) > 0 ? "#1E2A5A" : "#8399a9" }}>
                         {MONTH_LABELS[k]}
                       </th>
                     ))}
@@ -429,7 +429,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                 <tbody>
                   {form.rows.map((row) => {
                     const isPres = row.type === "presentiel";
-                    const color = isPres ? "#1a6b9c" : "#27ae60";
+                    const color = isPres ? "#1E2A5A" : "#27ae60";
                     const bgActive = isPres ? "#e8f0fe" : "#e8f5e9";
                     const total = rowTotal(row);
                     return (
@@ -504,7 +504,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
           {/* ═══ Zone C: Results ═══ */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={{ padding: 20, borderRadius: 12, background: "#f8fbfd", border: "1px solid #e8ecf1" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 14 }}>Volume d&apos;heures</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", marginBottom: 14 }}>Volume d&apos;heures</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {results.presentielHours > 0 && <ResultRow label="Heures présentiel" value={`${fmtN(results.presentielHours, 0)}h`} />}
                 {results.vtHours > 0 && <ResultRow label="Heures VT" value={`${fmtN(results.vtHours, 0)}h`} />}
@@ -517,7 +517,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
               </div>
             </div>
             <div style={{ padding: 20, borderRadius: 12, background: "#f8fbfd", border: "1px solid #e8ecf1" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 14 }}>Synthèse financière</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", marginBottom: 14 }}>Synthèse financière</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {results.costPresentielLca > 0 && <ResultRow label="Présentiel LCA" value={fmtE(results.costPresentielLca)} />}
                 {results.costVtLca > 0 && <ResultRow label="VT LCA" value={fmtE(results.costVtLca)} />}
@@ -526,7 +526,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                 {results.costPresentielClient > 0 && <ResultRow label={`THR (${results.totalPresentielDays}j × ${fmtE(form.costPerDayPresentiel)}/j)`} value={fmtE(results.costPresentielClient)} />}
                 {results.costFournitures > 0 && <ResultRow label={`Fournitures (${form.nbLearners} × ${fmtE(form.costFournituresPerLearner)})`} value={fmtE(results.costFournitures)} />}
                 {form.nbRiseUp > 0 && <ResultRow label={`Rise Up (${form.nbRiseUp} × ${fmtE(form.riseUpCostPerLicense)})`} value={fmtE(results.costRiseUp)} />}
-                <div style={{ borderTop: "2px solid #1a6b9c", margin: "4px 0" }} />
+                <div style={{ borderTop: "2px solid #1E2A5A", margin: "4px 0" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: "#1a2a3a" }}>Total HT</span>
                   <span style={{ fontSize: 22, fontWeight: 800, color: "#27ae60" }}>{fmtE(results.totalHt)}</span>
@@ -579,7 +579,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={onClose} style={{ height: 40, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 20px", border: "none", cursor: "pointer" }}>Annuler</button>
-            <button onClick={handleExportPdf} disabled={results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "1px solid #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: results.totalHt === 0 ? 0.4 : 1 }}>
+            <button onClick={handleExportPdf} disabled={results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "1px solid #1E2A5A", background: "white", color: "#1E2A5A", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: results.totalHt === 0 ? 0.4 : 1 }}>
               <FileDown style={{ width: 14, height: 14 }} /> Exporter PDF
             </button>
             <button onClick={handleSendEmail} disabled={sendingEmail || results.totalHt === 0 || !form.contactName} style={{ height: 40, borderRadius: 8, border: "1px solid #27ae60", background: "white", color: "#27ae60", fontSize: 13, fontWeight: 600, padding: "0 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (sendingEmail || results.totalHt === 0 || !form.contactName) ? 0.4 : 1 }}>
@@ -599,7 +599,7 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
                 </button>
               );
             })()}
-            <button onClick={handleSave} disabled={saving || results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "none", padding: "0 24px", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (saving || results.totalHt === 0) ? 0.5 : 1 }}>
+            <button onClick={handleSave} disabled={saving || results.totalHt === 0} style={{ height: 40, borderRadius: 8, border: "none", padding: "0 24px", background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, opacity: (saving || results.totalHt === 0) ? 0.5 : 1 }}>
               {saving ? <Loader2 style={{ width: 14, height: 14, animation: "spin 1s linear infinite" }} /> : <Save style={{ width: 14, height: 14 }} />}
               {saving ? "Enregistrement..." : "Sauvegarder"}
             </button>
@@ -674,7 +674,7 @@ function generatePrintHtml(
 
   const rowsHtml = activeRows.map(row => {
     const isPres = row.type === "presentiel";
-    const color = isPres ? "#1a6b9c" : "#27ae60";
+    const color = isPres ? "#1E2A5A" : "#27ae60";
     const label = row.title || (isPres ? "Présentiel" : "Visio Training");
     const total = rowTotal(row);
     const cells = keys.map(k => {
@@ -687,10 +687,10 @@ function generatePrintHtml(
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cotation — ${form.companyName || "Client"}</title>
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a2a3a; padding: 30px; max-width: 900px; margin: 0 auto; }
-  h1 { font-size: 20px; color: #1a6b9c; margin-bottom: 4px; }
-  h2 { font-size: 14px; color: #1a6b9c; text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 10px; border-bottom: 2px solid #1a6b9c; padding-bottom: 4px; }
+  h1 { font-size: 20px; color: #1E2A5A; margin-bottom: 4px; }
+  h2 { font-size: 14px; color: #1E2A5A; text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 10px; border-bottom: 2px solid #1E2A5A; padding-bottom: 4px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  th { background: #f0f6fa; padding: 8px 6px; font-size: 11px; text-transform: uppercase; color: #1a6b9c; border: 1px solid #ddd; }
+  th { background: #f0f6fa; padding: 8px 6px; font-size: 11px; text-transform: uppercase; color: #1E2A5A; border: 1px solid #ddd; }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
   .info-item { background: #f8fbfd; padding: 10px 14px; border-radius: 8px; }
   .info-label { font-size: 10px; text-transform: uppercase; color: #8399a9; font-weight: 700; }
@@ -699,13 +699,13 @@ function generatePrintHtml(
   .result-box { background: #f8fbfd; padding: 16px; border-radius: 8px; border: 1px solid #e8ecf1; }
   .result-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; }
   .result-row.bold { font-weight: 800; font-size: 13px; }
-  .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 18px; font-weight: 800; border-top: 2px solid #1a6b9c; margin-top: 8px; }
+  .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 18px; font-weight: 800; border-top: 2px solid #1E2A5A; margin-top: 8px; }
   .total-value { color: #27ae60; }
   @media print { body { padding: 10px; } }
 </style></head><body>
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-  <div style="width:50px;height:50px;border:2px solid #0a3d5f;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-    <span style="font-size:8px;font-weight:700;text-align:center;line-height:1.2;color:#0a3d5f;">LA<br>CLOSING<br>ACADÉMIE®</span>
+  <div style="width:50px;height:50px;border:2px solid #0f1630;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+    <span style="font-size:8px;font-weight:700;text-align:center;line-height:1.2;color:#0f1630;">LA<br>CLOSING<br>ACADÉMIE®</span>
   </div>
   <div>
     <h1>Cotation — ${form.companyName || "Client"}</h1>
@@ -731,7 +731,7 @@ ${activeRows.length > 0 ? `
 <h2>Synthèse</h2>
 <div class="results-grid">
   <div class="result-box">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a6b9c;margin-bottom:10px;">Volume d'heures</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1E2A5A;margin-bottom:10px;">Volume d'heures</div>
     <div class="result-row"><span>Heures formation</span><span style="font-weight:700;">${fN(results.formationHours, 0)}h</span></div>
     <div class="result-row"><span>Heures préparation</span><span>${fN(results.prepHours, 1)}h</span></div>
     ${results.travelHours > 0 ? `<div class="result-row"><span>Heures déplacement</span><span>${fN(results.travelHours, 1)}h</span></div>` : ""}
@@ -739,7 +739,7 @@ ${activeRows.length > 0 ? `
     <div class="result-row bold"><span>Heures mobilisation</span><span>${fN(results.mobilisationHours, 1)}h</span></div>
   </div>
   <div class="result-box">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1a6b9c;margin-bottom:10px;">Détail financier</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1E2A5A;margin-bottom:10px;">Détail financier</div>
     ${results.costPresentielLca > 0 ? `<div class="result-row"><span>Présentiel LCA</span><span>${fE(results.costPresentielLca)}</span></div>` : ""}
     ${results.costVtLca > 0 ? `<div class="result-row"><span>VT LCA</span><span>${fE(results.costVtLca)}</span></div>` : ""}
     <div class="result-row"><span>Préparation</span><span>${fE(results.costPrep)}</span></div>
@@ -756,7 +756,7 @@ ${activeRows.length > 0 ? `
 ${form.notes ? `<h2>Notes</h2><p style="color:#5a6f80;">${form.notes}</p>` : ""}
 
 <div style="margin-top:30px;padding-top:16px;border-top:1px solid #e8ecf1;text-align:center;font-size:10px;color:#8399a9;">
-  La Closing Académie® — Document généré le ${new Date().toLocaleDateString("fr-FR")}
+  IFA Formatio® — Document généré le ${new Date().toLocaleDateString("fr-FR")}
 </div>
 </body></html>`;
 }

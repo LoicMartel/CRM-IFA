@@ -161,11 +161,11 @@ export async function POST(req: NextRequest) {
       "",
       "Belle journée,",
       "",
-      "L'équipe La Closing Académie",
+      "L'équipe IFA Formatio",
       "",
-      "La Closing Académie ®",
-      "✉️ contact@closing-academie.com",
-      "🔗 www.closing-academie.com",
+      "IFA Formatio ®",
+      "✉️ contact@ifagroupe.com",
+      "🔗 www.ifagroupe.com",
     ].filter(Boolean).join("\n");
 
     // Store the sync data for later use

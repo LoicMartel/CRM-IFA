@@ -57,10 +57,10 @@ export function SalesChart({ data }: { data: SalesChartData[] }) {
               type="monotone"
               dataKey="objectifCumule"
               name="Objectif cumulé"
-              stroke="#FF6B35"
+              stroke="#E8732A"
               strokeWidth={2}
               strokeDasharray="8 4"
-              dot={{ fill: "#FF6B35", r: 4 }}
+              dot={{ fill: "#E8732A", r: 4 }}
               animationDuration={1200}
               animationBegin={200}
               animationEasing="ease-out"
@@ -69,9 +69,9 @@ export function SalesChart({ data }: { data: SalesChartData[] }) {
               type="monotone"
               dataKey="realiseCumule"
               name="Réalisé cumulé"
-              stroke="#1a6b9c"
+              stroke="#1E2A5A"
               strokeWidth={3}
-              dot={{ fill: "#1a6b9c", r: 5 }}
+              dot={{ fill: "#1E2A5A", r: 5 }}
               animationDuration={1500}
               animationBegin={400}
               animationEasing="ease-out"

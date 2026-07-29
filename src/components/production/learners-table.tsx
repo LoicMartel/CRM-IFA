@@ -42,7 +42,7 @@ interface Ref { id: string; name: string; }
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   actuel: { bg: "#e8f8f0", text: "#27ae60", label: "Actuel" },
   ancien: { bg: "#f0f0f0", text: "#666", label: "Ancien" },
-  futur: { bg: "#e6f0f7", text: "#1a6b9c", label: "Futur" },
+  futur: { bg: "#e6f0f7", text: "#1E2A5A", label: "Futur" },
 };
 
 interface Expert { id: string; first_name: string; last_name: string; }
@@ -228,7 +228,7 @@ export function LearnersTable({
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Futurs</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{futurCount}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{futurCount}</div>
           </div>
           <UserPlus style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -298,7 +298,7 @@ export function LearnersTable({
                 {deleting ? "Suppression..." : `Supprimer (${selectedIds.size})`}
               </Button>
             )}
-            <Button onClick={() => setOpen(true)} style={{ background: "#FF6B35", color: "white" }}>
+            <Button onClick={() => setOpen(true)} style={{ background: "#E8732A", color: "white" }}>
               <Plus className="h-4 w-4 mr-2" /> Nouvel apprenant
             </Button>
           </>
@@ -366,7 +366,7 @@ export function LearnersTable({
                       <Link
                         href={`/clients/${l.company_id}`}
                         className="block px-4 py-2 no-underline"
-                        style={{ color: "#1a6b9c", textDecoration: "underline" }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline" }}
                       >
                         {l.companies.name}
                       </Link>
@@ -476,7 +476,7 @@ export function LearnersTable({
                 <Label>Notes</Label>
                 <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="learners" />
               </div>
-              <Button onClick={handleSave} disabled={saving || !form.first_name.trim() || !form.last_name.trim()} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
+              <Button onClick={handleSave} disabled={saving || !form.first_name.trim() || !form.last_name.trim()} className="w-full" style={{ background: "#E8732A", color: "white" }}>
                 {saving ? "Enregistrement..." : "Créer l'apprenant"}
               </Button>
             </div>

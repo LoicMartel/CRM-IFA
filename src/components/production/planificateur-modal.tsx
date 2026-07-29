@@ -485,7 +485,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
         {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-            <CalendarPlus style={{ width: 18, height: 18, color: "#1a6b9c" }} />
+            <CalendarPlus style={{ width: 18, height: 18, color: "#1E2A5A" }} />
             Planificateur intelligent
             {step === "experts" && <span style={{ fontSize: 12, fontWeight: 500, color: "#8399a9" }}> — Sélection des formateurs</span>}
             {step === "scheduling" && <span style={{ fontSize: 12, fontWeight: 500, color: "#8399a9" }}> — Planification des sessions</span>}
@@ -501,7 +501,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
             {/* Plan selector */}
             {plans.length > 0 && !initialPlanId && (
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                   Client / Plan de formation
                 </div>
                 <select
@@ -537,7 +537,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* Jours disponibles */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Disponibilités du client
               </div>
               <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 6 }}>Jours disponibles</label>
@@ -549,9 +549,9 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     onClick={() => toggleDay(day)}
                     style={{
                       padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      border: form.clientAvailableDays.includes(day) ? "2px solid #1a6b9c" : "1px solid #dce8f0",
+                      border: form.clientAvailableDays.includes(day) ? "2px solid #1E2A5A" : "1px solid #dce8f0",
                       background: form.clientAvailableDays.includes(day) ? "#e8f0fe" : "white",
-                      color: form.clientAvailableDays.includes(day) ? "#1a6b9c" : "#5a6f80",
+                      color: form.clientAvailableDays.includes(day) ? "#1E2A5A" : "#5a6f80",
                       textTransform: "capitalize",
                     }}
                   >
@@ -563,7 +563,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* VT config */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Visio Training (VT)
               </div>
               <div className="grid grid-cols-5 gap-3">
@@ -601,7 +601,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* Journée config */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Journées présentielles
               </div>
               <div className="grid grid-cols-5 gap-3">
@@ -639,7 +639,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* Critères expert */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Critères de sélection expert
               </div>
               <div className="grid grid-cols-4 gap-4">
@@ -676,7 +676,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
             {/* Période */}
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginBottom: 12 }}>
                 Période de formation
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -704,7 +704,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 title={journeeLocationMissing ? SESSION_LOCATION_REQUIRED_MESSAGE : undefined}
                 style={{
                   height: 40, borderRadius: 8, border: "none", padding: "0 24px",
-                  background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                  background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
                   opacity: (expertLoading || !form.startDate || !form.endDate || (!(parseInt(form.vtCount) > 0) && !(parseInt(form.daysCount) > 0)) || journeeLocationMissing) ? 0.5 : 1,
                 }}
@@ -815,7 +815,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                   disabled={selectedTrainerIds.size === 0}
                   style={{
                     height: 40, borderRadius: 8, border: "none", padding: "0 24px",
-                    background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                    background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                     color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
                     opacity: selectedTrainerIds.size === 0 ? 0.5 : 1,
                   }}
@@ -853,12 +853,12 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                       <thead>
                         <tr style={{ background: "#f8fbfd" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>#</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
-                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Heure</th>
-                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Durée</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>#</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Type</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Heure</th>
+                          <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Durée</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Expert</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -870,7 +870,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                               <span style={{
                                 fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
                                 background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
-                                color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                                color: s.session_type === "vt" ? "#1E2A5A" : "#e65100",
                               }}>
                                 {s.session_type === "vt" ? "VT" : "Journée"}
                               </span>
@@ -890,7 +890,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                     onClick={handleClose}
                     style={{
                       height: 40, borderRadius: 8, border: "none", padding: "0 24px",
-                      background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                      background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                       color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
                     }}
                   >
@@ -914,7 +914,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         <span style={{
                           fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
                           background: sessionMeta.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
-                          color: sessionMeta.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                          color: sessionMeta.session_type === "vt" ? "#1E2A5A" : "#e65100",
                         }}>
                           {sessionMeta.session_type === "vt" ? `VT (${fmtDuration(sessionMeta.duration_hours)})` : "Journée (8h)"}
                         </span>
@@ -927,7 +927,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                   <div style={{ height: 6, background: "#e8ecf1", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{
                       height: "100%", borderRadius: 3,
-                      background: "linear-gradient(90deg, #1a6b9c, #2e7d32)",
+                      background: "linear-gradient(90deg, #1E2A5A, #2e7d32)",
                       width: totalSessions > 0 ? `${(confirmedSessions.length / totalSessions) * 100}%` : "0%",
                       transition: "width 0.3s ease",
                     }} />
@@ -944,8 +944,8 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                             alignItems: "center", justifyContent: "center",
                             fontSize: 9, fontWeight: 700,
                             background: isConfirmed ? "#e8f5e9" : isCurrent ? "#e8f0fe" : "#f5f5f5",
-                            border: isCurrent ? "2px solid #1a6b9c" : isConfirmed ? "1px solid #c8e6c9" : "1px solid #e8ecf1",
-                            color: isConfirmed ? "#2e7d32" : isCurrent ? "#1a6b9c" : "#8399a9",
+                            border: isCurrent ? "2px solid #1E2A5A" : isConfirmed ? "1px solid #c8e6c9" : "1px solid #e8ecf1",
+                            color: isConfirmed ? "#2e7d32" : isCurrent ? "#1E2A5A" : "#8399a9",
                           }}>
                             {isConfirmed ? "✓" : s.session_type === "vt" ? "V" : "J"}
                           </div>
@@ -958,7 +958,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                 {/* Loading state */}
                 {loadingProposals && (
                   <div style={{ padding: "40px 24px", textAlign: "center" }}>
-                    <Loader2 style={{ width: 32, height: 32, color: "#1a6b9c", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+                    <Loader2 style={{ width: 32, height: 32, color: "#1E2A5A", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
                     <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>Recherche des créneaux disponibles...</p>
                   </div>
                 )}
@@ -1003,7 +1003,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
 
                     {/* Proposal cards */}
                     <div style={{ flex: "1 1 45%", minWidth: 280 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", marginBottom: 12 }}>
                         Créneaux proposés
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1040,7 +1040,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                                   </div>
                                 </div>
                                 <div style={{ textAlign: "right" }}>
-                                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c" }}>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: "#1E2A5A" }}>
                                     {p.trainer_name}
                                   </div>
                                   {p.warning && (
@@ -1111,7 +1111,7 @@ export function PlanificateurModal({ open, onClose, planId: initialPlanId, prefi
                         disabled={selectedProposalIndex === null || savingSession}
                         style={{
                           height: 40, borderRadius: 8, border: "none", padding: "0 24px",
-                          background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                          background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                           color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
                           opacity: (selectedProposalIndex === null || savingSession) ? 0.5 : 1,
                           display: "flex", alignItems: "center", gap: 6,
@@ -1160,7 +1160,7 @@ function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle, showReg
         padding: "12px 16px",
         borderRadius: 10,
         border: isSelected
-          ? (isRecommended ? "2px solid #2e7d32" : "2px solid #1a6b9c")
+          ? (isRecommended ? "2px solid #2e7d32" : "2px solid #1E2A5A")
           : "1px solid #dce8f0",
         background: isSelected
           ? (isRecommended ? "#f1f8f1" : "#f0f7fb")
@@ -1176,7 +1176,7 @@ function ExpertCard({ expert, rank, isRecommended, isSelected, onToggle, showReg
             checked={isSelected}
             onChange={onToggle}
             onClick={(e) => e.stopPropagation()}
-            style={{ width: 16, height: 16, accentColor: isRecommended ? "#2e7d32" : "#1a6b9c" }}
+            style={{ width: 16, height: 16, accentColor: isRecommended ? "#2e7d32" : "#1E2A5A" }}
           />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

@@ -241,9 +241,9 @@ export async function POST(request: Request) {
 
     // 3. Send email notification to Alexandre, Rafi and Loïc
     const LEAD_NOTIFY_EMAILS = [
-      "alexandre@closing-academie.com",
-      "rafi@closing-academie.com",
-      "loic@closing-academie.com",
+      "alexandre@ifagroupe.com",
+      "rafi@ifagroupe.com",
+      "loic@ifagroupe.com",
     ];
 
     const notifSubject = `Nouveau lead marketing — ${firstName} ${lastName}`;
@@ -320,7 +320,7 @@ export async function POST(request: Request) {
             "",
             "À très bientôt,",
             "",
-            "L'équipe La Closing Académie",
+            "L'équipe IFA Formatio",
           ].join("\n"),
           attachments: [{ filename: "Book-Financements-2026.pdf", content: pdfContent, contentType: "application/pdf" }],
         });

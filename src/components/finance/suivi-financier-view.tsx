@@ -132,7 +132,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={() => saveManualField(month, field, parseFloat(editValue) || 0)}
           onKeyDown={(e) => { if (e.key === "Enter") saveManualField(month, field, parseFloat(editValue) || 0); if (e.key === "Escape") setEditingCell(null); }}
-          style={{ width: "100%", height: 24, border: "1px solid #1a6b9c", borderRadius: 4, padding: "0 4px", fontSize: 11, textAlign: "right" }}
+          style={{ width: "100%", height: 24, border: "1px solid #1E2A5A", borderRadius: 4, padding: "0 4px", fontSize: 11, textAlign: "right" }}
         />
       );
     }
@@ -146,7 +146,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
     );
   }
 
-  const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 700, padding: "6px 8px", textAlign: "center", color: "white", background: "#0d4f7a", position: "sticky" as const, top: 0, zIndex: 1 };
+  const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 700, padding: "6px 8px", textAlign: "center", color: "white", background: "#161f45", position: "sticky" as const, top: 0, zIndex: 1 };
   const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, padding: "6px 8px", color: "#1a2a3a", whiteSpace: "nowrap", position: "sticky" as const, left: 0, zIndex: 1, borderBottom: "1px solid #e8ecf1" };
   const cellStyle: React.CSSProperties = { fontSize: 11, padding: "6px 8px", textAlign: "right", whiteSpace: "nowrap", borderBottom: "1px solid #e8ecf1" };
 
@@ -177,7 +177,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
     const bg = color ?? ROW_COLORS[field] ?? "white";
     return (
       <tr>
-        <td style={{ ...labelStyle, background: bg, borderRight: "2px solid #0d4f7a" }}>{label}</td>
+        <td style={{ ...labelStyle, background: bg, borderRight: "2px solid #161f45" }}>{label}</td>
         {values.map((v, i) => (
           <td key={i} style={{ ...cellStyle, background: bg, color: v < 0 ? "#e74c3c" : v === 0 ? "#ccc" : "#1a2a3a" }}>
             {isManual && manualField ? (
@@ -185,7 +185,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
             ) : fmt(v)}
           </td>
         ))}
-        <td style={{ ...cellStyle, background: bg, fontWeight: 800, color: (isCumul ?? 0) < 0 ? "#e74c3c" : "#0d4f7a", borderLeft: "2px solid #0d4f7a" }}>
+        <td style={{ ...cellStyle, background: bg, fontWeight: 800, color: (isCumul ?? 0) < 0 ? "#e74c3c" : "#161f45", borderLeft: "2px solid #161f45" }}>
           {isCumul !== undefined ? fmt(isCumul) : ""}
         </td>
       </tr>
@@ -218,7 +218,7 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
               {monthData.map(m => (
                 <th key={m.mStr} style={{ ...thStyle, minWidth: 95 }}>{m.mLabel}</th>
               ))}
-              <th style={{ ...thStyle, minWidth: 95, background: "#0a3d5f" }}>CUMUL</th>
+              <th style={{ ...thStyle, minWidth: 95, background: "#0f1630" }}>CUMUL</th>
             </tr>
           </thead>
           <tbody>

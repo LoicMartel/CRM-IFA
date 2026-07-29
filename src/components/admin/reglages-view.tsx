@@ -44,7 +44,7 @@ export function ReglagesView({
 
       <TabsContent value="sources" style={{ marginTop: 20 }}>
         <CrudSection
-          icon={<Tag style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          icon={<Tag style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
           title="Sources"
           description="Gérez les sources utilisées pour les leads, prospects et clients."
           placeholder="Nom de la nouvelle source..."
@@ -58,7 +58,7 @@ export function ReglagesView({
 
       <TabsContent value="parcours" style={{ marginTop: 20 }}>
         <CrudSection
-          icon={<GraduationCap style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          icon={<GraduationCap style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
           title="Parcours de formation"
           description="Gérez les parcours de formation disponibles dans les plans de formation."
           placeholder="Nom du nouveau parcours..."
@@ -72,7 +72,7 @@ export function ReglagesView({
 
       <TabsContent value="types-formation" style={{ marginTop: 20 }}>
         <CrudSection
-          icon={<BookOpen style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          icon={<BookOpen style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
           title="Types de formation"
           description="Gérez les types de formation utilisés dans les plans de formation."
           placeholder="Nom du nouveau type..."
@@ -86,7 +86,7 @@ export function ReglagesView({
 
       <TabsContent value="financement" style={{ marginTop: 20 }}>
         <CrudSection
-          icon={<Receipt style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+          icon={<Receipt style={{ width: 20, height: 20, color: "#1E2A5A" }} />}
           title="Types de financement"
           description="Gérez les types de financement disponibles dans la facturation."
           placeholder="Nom du nouveau type de financement..."

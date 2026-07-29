@@ -86,12 +86,12 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
             display: "flex", alignItems: "center", gap: 16,
             transition: "all 0.15s ease", width: 320,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#1a6b9c"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(26,107,156,0.12)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#1E2A5A"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(26,107,156,0.12)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
         >
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+            background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <Calculator style={{ width: 24, height: 24, color: "white" }} />
@@ -114,12 +114,12 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
             display: "flex", alignItems: "center", gap: 16,
             transition: "all 0.15s ease", width: 320, textDecoration: "none",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FF6B35"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,107,53,0.12)"; }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#E8732A"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,107,53,0.12)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
         >
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #e65100 0%, #FF6B35 100%)",
+            background: "linear-gradient(135deg, #e65100 0%, #E8732A 100%)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <Presentation style={{ width: 24, height: 24, color: "white" }} />
@@ -226,14 +226,14 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "#f8fbfd" }}>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Entreprise</th>
-                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
-                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Présentiel</th>
-                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
-                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Rise Up</th>
-                  <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
-                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c", width: 80 }}>Actions</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                  <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Entreprise</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Apprenants</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Présentiel</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>VT</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Rise Up</th>
+                  <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Total HT</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A", width: 80 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +252,7 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
                       <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
                         <button
                           onClick={() => { setEditingQuotation(q); setCotationOpen(true); }}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}
                           title="Modifier"
                         >
                           <Pencil style={{ width: 14, height: 14 }} />

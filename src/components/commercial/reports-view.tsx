@@ -27,8 +27,8 @@ function fmt(n: number | null | undefined) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-const PIE_COLORS = ["#1a6b9c", "#2ecc71", "#FF6B35", "#8399a9", "#1abc9c", "#e74c3c", "#6C5CE7", "#f39c12"];
-const BAR_COLORS = ["#1a6b9c", "#2ecc71", "#FF6B35", "#1abc9c"];
+const PIE_COLORS = ["#1E2A5A", "#2ecc71", "#E8732A", "#8399a9", "#1abc9c", "#e74c3c", "#6C5CE7", "#f39c12"];
+const BAR_COLORS = ["#1E2A5A", "#2ecc71", "#E8732A", "#1abc9c"];
 
 export function ReportsView({
   salesTargets, orders, deals, contacts, activities, meetings, companies, tasks = [],
@@ -214,7 +214,7 @@ export function ReportsView({
     R2: { bg: "#e3f2fd", text: "#1565c0" }, R3: { bg: "#e8f5e9", text: "#2e7d32" },
   };
   const RDV_STATUS_LABELS: Record<string, { bg: string; text: string }> = {
-    booked: { bg: "#e8f0fe", text: "#0d4f7a" }, done: { bg: "#e8f5e9", text: "#2e7d32" },
+    booked: { bg: "#e8f0fe", text: "#161f45" }, done: { bg: "#e8f5e9", text: "#2e7d32" },
     no_show: { bg: "#fce4ec", text: "#c62828" }, cancelled: { bg: "#f5f5f5", text: "#999" },
   };
 
@@ -471,7 +471,7 @@ export function ReportsView({
           {/* 4 KPIs */}
           <div className="grid gap-3 md:grid-cols-4">
             <div className="lca-card">
-              <div style={{ height: 4, background: "#1a6b9c" }} />
+              <div style={{ height: 4, background: "#1E2A5A" }} />
               <div style={{ padding: 14 }}>
                 <div className="lca-label">Objectif annuel</div>
                 <div className="lca-value">{fmt(annualTarget)}</div>
@@ -487,7 +487,7 @@ export function ReportsView({
               </div>
             </div>
             <div className="lca-card">
-              <div style={{ height: 4, background: "#1a6b9c" }} />
+              <div style={{ height: 4, background: "#1E2A5A" }} />
               <div style={{ padding: 14 }}>
                 <div className="lca-label">Obj. cumulé ({currentMonth?.month ?? "—"})</div>
                 <div className="lca-value">{fmt(objCumuleNow)}</div>
@@ -524,7 +524,7 @@ export function ReportsView({
                     className="lca-progress-fill"
                     style={{
                       width: `${Math.min(annualPct, 100)}%`,
-                      background: "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 40%, #1a6b9c 70%, #FF6B35 100%)",
+                      background: "linear-gradient(90deg, #0f1630 0%, #1E2A5A 40%, #1E2A5A 70%, #E8732A 100%)",
                     }}
                   />
                 </div>
@@ -534,7 +534,7 @@ export function ReportsView({
               </div>
               <div className="flex justify-between" style={{ marginTop: 8 }}>
                 <span style={{ fontSize: 12, color: "#8399a9" }}>0 €</span>
-                <span style={{ fontSize: 12, color: "#FF6B35", fontWeight: 700 }}>{fmt(totalOrders)}</span>
+                <span style={{ fontSize: 12, color: "#E8732A", fontWeight: 700 }}>{fmt(totalOrders)}</span>
                 <span style={{ fontSize: 12, color: "#8399a9" }}>{fmt(annualTarget)}</span>
               </div>
               {/* Month labels */}
@@ -585,12 +585,12 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>MOIS</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11, textAlign: "right" }}>OBJ MENSUEL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11, textAlign: "right" }}>RÉALISÉ</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11, textAlign: "right" }}>OBJ CUMULÉ</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11, textAlign: "right" }}>RÉALISÉ CUMULÉ</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11, textAlign: "right" }}>TAUX</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>MOIS</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11, textAlign: "right" }}>OBJ MENSUEL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11, textAlign: "right" }}>RÉALISÉ</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11, textAlign: "right" }}>OBJ CUMULÉ</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11, textAlign: "right" }}>RÉALISÉ CUMULÉ</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11, textAlign: "right" }}>TAUX</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -603,7 +603,7 @@ export function ReportsView({
                             <TableCell style={{ textAlign: "right" }}>{fmt(m.realise)}</TableCell>
                             <TableCell style={{ textAlign: "right", fontWeight: isLast ? 700 : 400 }}>{fmt(m.objCumule)}</TableCell>
                             <TableCell style={{ textAlign: "right", fontWeight: isLast ? 700 : 400 }}>{fmt(m.realiseCumule)}</TableCell>
-                            <TableCell style={{ textAlign: "right", fontWeight: 700, color: m.taux >= 70 ? "#1a6b9c" : "#e74c3c" }}>{m.taux}%</TableCell>
+                            <TableCell style={{ textAlign: "right", fontWeight: 700, color: m.taux >= 70 ? "#1E2A5A" : "#e74c3c" }}>{m.taux}%</TableCell>
                           </TableRow>
                         );
                       })}
@@ -665,8 +665,8 @@ export function ReportsView({
                     />
                     <Tooltip formatter={(v, name) => [name === "montant" ? fmt(Number(v)) : v, name === "montant" ? "Montant (€)" : "Nombre"]} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar yAxisId="left" dataKey="montant" name="Montant (€)" fill="#FF6B35" radius={[6, 6, 0, 0]} animationDuration={1000} animationBegin={200} animationEasing="ease-out" />
-                    <Bar yAxisId="right" dataKey="nombre" name="Nombre" fill="#1a6b9c" radius={[6, 6, 0, 0]} animationDuration={1200} animationBegin={400} animationEasing="ease-out" />
+                    <Bar yAxisId="left" dataKey="montant" name="Montant (€)" fill="#E8732A" radius={[6, 6, 0, 0]} animationDuration={1000} animationBegin={200} animationEasing="ease-out" />
+                    <Bar yAxisId="right" dataKey="nombre" name="Nombre" fill="#1E2A5A" radius={[6, 6, 0, 0]} animationDuration={1200} animationBegin={400} animationEasing="ease-out" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -753,7 +753,7 @@ export function ReportsView({
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{newContacts.filter(c => c.company_id).length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{newContacts.filter(c => c.company_id).length}</div>
                 </div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -774,12 +774,12 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>CRÉÉ LE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>CRÉÉ LE</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -804,7 +804,7 @@ export function ReportsView({
                             <TableCell>{co?.name ?? "—"}</TableCell>
                             <TableCell>
                               {tm ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#161f45", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
                                   {tm.first_name[0]}{tm.last_name[0]}
                                 </span>
                               ) : "—"}
@@ -893,13 +893,13 @@ export function ReportsView({
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total Contacted Not Booked</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{notBookedContacts.length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{notBookedContacts.length}</div>
                 </div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{notBookedContacts.filter(c => c.company_id).length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{notBookedContacts.filter(c => c.company_id).length}</div>
                 </div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -911,19 +911,19 @@ export function ReportsView({
             </div>
 
             <div className="lca-card">
-              <div style={{ height: 4, background: "#FF6B35" }} />
+              <div style={{ height: 4, background: "#E8732A" }} />
               <div style={{ padding: 16 }}>
                 <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Tous les contacts Contactés mais Contacted Not Booked</h3>
                 <div style={{ overflowX: "auto" }}>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>DERNIER CONTACT</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>DERNIER CONTACT</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -948,7 +948,7 @@ export function ReportsView({
                             <TableCell>{co?.name ?? "—"}</TableCell>
                             <TableCell>
                               {tm ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#161f45", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
                                   {tm.first_name[0]}{tm.last_name[0]}
                                 </span>
                               ) : "—"}
@@ -1064,13 +1064,13 @@ export function ReportsView({
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec RDV passé</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{oldContacted.filter(c => contactsWithMeeting.has(c.id as string)).length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{oldContacted.filter(c => contactsWithMeeting.has(c.id as string)).length}</div>
                 </div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Multi-contactés (sans RDV)</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{oldContacted.filter(c => !contactsWithMeeting.has(c.id as string)).length}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{oldContacted.filter(c => !contactsWithMeeting.has(c.id as string)).length}</div>
                 </div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1089,14 +1089,14 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ACTIVITÉS</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>RDV</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>DERNIER CONTACT</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ACTIVITÉS</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>RDV</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>DERNIER CONTACT</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1130,7 +1130,7 @@ export function ReportsView({
                             </TableCell>
                             <TableCell>
                               {tm ? (
-                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#161f45", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>
                                   {tm.first_name[0]}{tm.last_name[0]}
                                 </span>
                               ) : "—"}
@@ -1153,7 +1153,7 @@ export function ReportsView({
         <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
           {(["weekly", "monthly", "yearly"] as const).map(mode => (
             <button key={mode} onClick={() => setInboundMode(mode)}
-              style={{ height: 32, borderRadius: 8, padding: "0 16px", fontSize: 13, fontWeight: inboundMode === mode ? 700 : 500, border: `1px solid ${inboundMode === mode ? "#1a6b9c" : "#dce8f0"}`, background: inboundMode === mode ? "#1a6b9c" : "white", color: inboundMode === mode ? "white" : "#5a6f80", cursor: "pointer" }}>
+              style={{ height: 32, borderRadius: 8, padding: "0 16px", fontSize: 13, fontWeight: inboundMode === mode ? 700 : 500, border: `1px solid ${inboundMode === mode ? "#1E2A5A" : "#dce8f0"}`, background: inboundMode === mode ? "#1E2A5A" : "white", color: inboundMode === mode ? "white" : "#5a6f80", cursor: "pointer" }}>
               {mode === "weekly" ? "Weekly" : mode === "monthly" ? "Monthly" : "Yearly"}
             </button>
           ))}
@@ -1386,11 +1386,11 @@ export function ReportsView({
           return name.split(" ").map(w => w[0]).join("").toUpperCase();
         }
 
-        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1a6b9c", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1a6b9c", lineHeight: 1.2, whiteSpace: "normal" };
+        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1E2A5A", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1E2A5A", lineHeight: 1.2, whiteSpace: "normal" };
         const thH: React.CSSProperties = { ...th, background: "#e6f0f7" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdHL: React.CSSProperties = { ...td, background: "#e6f0f7" };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
@@ -1445,16 +1445,16 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{initials(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
                         {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Monthly Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewCted}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
                         {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewBked}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
                         {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
                         {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
@@ -1478,9 +1478,9 @@ export function ReportsView({
                       <td style={tdB}>{gt.oldDone}</td>
                       <td style={tdB}>{gt.monthlyLeads}</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newCted}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newBkd}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newDone}</td>
                       <td style={tdC}>{gt.monthlyLeads > 0 ? Math.round((gt.monthlyLeadsCted / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={tdB}>{gt.totalDone}</td>
@@ -1743,11 +1743,11 @@ export function ReportsView({
           return name.split(" ").map(w => w[0]).join("").toUpperCase();
         }
 
-        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1a6b9c", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1a6b9c", lineHeight: 1.2, whiteSpace: "normal" };
+        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1E2A5A", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1E2A5A", lineHeight: 1.2, whiteSpace: "normal" };
         const thH: React.CSSProperties = { ...th, background: "#e6f0f7" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdHL: React.CSSProperties = { ...td, background: "#e6f0f7" };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
@@ -1812,16 +1812,16 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{initials(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
                         {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Weekly Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewCted}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
                         {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewBked}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
                         {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
                         {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
@@ -1845,9 +1845,9 @@ export function ReportsView({
                       <td style={tdB}>{gt.oldDone}</td>
                       <td style={tdB}>{gt.monthlyLeads}</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newCted}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newBkd}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newDone}</td>
                       <td style={tdC}>{gt.monthlyLeads > 0 ? Math.round((gt.monthlyLeadsCted / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={tdB}>{gt.totalDone}</td>
@@ -2058,11 +2058,11 @@ export function ReportsView({
           nSigned: a.nSigned + r.nSigned, caHT: a.caHT + r.caHT,
         }), { oldCted: 0, oldBked: 0, oldDone: 0, monthlyLeads: 0, newCted: 0, newBkd: 0, newDone: 0, totalDone: 0, nSigned: 0, caHT: 0 });
 
-        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1a6b9c", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1a6b9c", lineHeight: 1.2, whiteSpace: "normal" };
+        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1E2A5A", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1E2A5A", lineHeight: 1.2, whiteSpace: "normal" };
         const thH: React.CSSProperties = { ...th, background: "#e6f0f7" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdHL: React.CSSProperties = { ...td, background: "#e6f0f7" };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
@@ -2129,16 +2129,16 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{initials(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
                         {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Total Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewCted}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
                         {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{r.pctNewBked}%</td>
+                        <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
                         {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
                         {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
@@ -2161,9 +2161,9 @@ export function ReportsView({
                       <td style={tdB}>{gt.oldDone}</td>
                       <td style={tdB}>{gt.monthlyLeads}</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newCted}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.monthlyLeads > 0 ? Math.round((gt.newCted / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newBkd}</td>
-                      <td style={{ ...tdHL, color: "#1a6b9c", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
+                      <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{gt.newCted > 0 ? Math.round((gt.newBkd / gt.newCted) * 100) : 0}%</td>
                       <td style={{ ...tdHL, fontWeight: 700 }}>{gt.newDone}</td>
                       <td style={tdC}>{gt.monthlyLeads > 0 ? Math.round(((gt.monthlyLeads - (gt.monthlyLeads - gt.oldCted)) / gt.monthlyLeads) * 100) : 0}%</td>
                       <td style={tdB}>{gt.totalDone}</td>
@@ -2190,7 +2190,7 @@ export function ReportsView({
         <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
           {(["weekly", "monthly", "yearly"] as const).map(mode => (
             <button key={mode} onClick={() => setOutboundMode(mode)}
-              style={{ height: 32, borderRadius: 8, padding: "0 16px", fontSize: 13, fontWeight: outboundMode === mode ? 700 : 500, border: `1px solid ${outboundMode === mode ? "#1a6b9c" : "#dce8f0"}`, background: outboundMode === mode ? "#1a6b9c" : "white", color: outboundMode === mode ? "white" : "#5a6f80", cursor: "pointer" }}>
+              style={{ height: 32, borderRadius: 8, padding: "0 16px", fontSize: 13, fontWeight: outboundMode === mode ? 700 : 500, border: `1px solid ${outboundMode === mode ? "#1E2A5A" : "#dce8f0"}`, background: outboundMode === mode ? "#1E2A5A" : "white", color: outboundMode === mode ? "white" : "#5a6f80", cursor: "pointer" }}>
               {mode === "weekly" ? "Weekly" : mode === "monthly" ? "Monthly" : "Yearly"}
             </button>
           ))}
@@ -2383,7 +2383,7 @@ export function ReportsView({
         const th: React.CSSProperties = { fontSize: 8, fontWeight: 700, color: "#1a2a3a", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #dce8f0", lineHeight: 1.2, whiteSpace: "normal" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
         return (
@@ -2411,10 +2411,10 @@ export function ReportsView({
                   <thead>
                     {/* Group headers */}
                     <tr>
-                      <th style={{ ...thGroup, background: "#1a6b9c", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
-                      <th style={{ ...thGroup, background: "#1a6b9c" }} colSpan={6}>Prospection</th>
-                      <th style={{ ...thGroup, background: "#0d4f7a" }} colSpan={7}>RDV</th>
-                      <th style={{ ...thGroup, background: "#FF6B35", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
+                      <th style={{ ...thGroup, background: "#1E2A5A", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
+                      <th style={{ ...thGroup, background: "#1E2A5A" }} colSpan={6}>Prospection</th>
+                      <th style={{ ...thGroup, background: "#161f45" }} colSpan={7}>RDV</th>
+                      <th style={{ ...thGroup, background: "#E8732A", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
                     </tr>
                     {/* Column headers */}
                     <tr>
@@ -2445,7 +2445,7 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{ini(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{ini(r.name)}</td>
                         {/* Prospection */}
                         {drillCell(r.suiviRelances, tdB, `Suivi & Relances — ${r.name}`, (r._repActivities as R[]).filter((a: R) => a.type === "appel").map((a: R) => ({ label: getContactNameFromRecord(a), sublabel: (a.created_at as string).slice(0, 10), href: getContactIdFromRecord(a) ? `/contacts/${getContactIdFromRecord(a)}` : undefined })))}
                         {drillCell(r.ciblesQualifiees, tdB, `Cibles Qualifiées — ${r.name}`, (r._qualifiedContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
@@ -2682,7 +2682,7 @@ export function ReportsView({
         const th: React.CSSProperties = { fontSize: 8, fontWeight: 700, color: "#1a2a3a", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #dce8f0", lineHeight: 1.2, whiteSpace: "normal" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
         return (
@@ -2720,10 +2720,10 @@ export function ReportsView({
                   <thead>
                     {/* Group headers */}
                     <tr>
-                      <th style={{ ...thGroup, background: "#1a6b9c", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
-                      <th style={{ ...thGroup, background: "#1a6b9c" }} colSpan={6}>Prospection</th>
-                      <th style={{ ...thGroup, background: "#0d4f7a" }} colSpan={7}>RDV</th>
-                      <th style={{ ...thGroup, background: "#FF6B35", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
+                      <th style={{ ...thGroup, background: "#1E2A5A", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
+                      <th style={{ ...thGroup, background: "#1E2A5A" }} colSpan={6}>Prospection</th>
+                      <th style={{ ...thGroup, background: "#161f45" }} colSpan={7}>RDV</th>
+                      <th style={{ ...thGroup, background: "#E8732A", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
                     </tr>
                     {/* Column headers */}
                     <tr>
@@ -2754,7 +2754,7 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{ini(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{ini(r.name)}</td>
                         {/* Prospection */}
                         {drillCell(r.suiviRelances, tdB, `Suivi & Relances — ${r.name}`, (r._repActivities as R[]).filter((a: R) => a.type === "appel").map((a: R) => ({ label: getContactNameFromRecord(a), sublabel: (a.created_at as string).slice(0, 10), href: getContactIdFromRecord(a) ? `/contacts/${getContactIdFromRecord(a)}` : undefined })))}
                         {drillCell(r.ciblesQualifiees, tdB, `Cibles Qualifiées — ${r.name}`, (r._qualifiedContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
@@ -2964,12 +2964,12 @@ export function ReportsView({
           };
         });
 
-        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1a6b9c", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1a6b9c", lineHeight: 1.2, whiteSpace: "normal" };
+        const th: React.CSSProperties = { fontSize: 9, fontWeight: 700, color: "#1E2A5A", textAlign: "center", padding: "4px 2px", borderBottom: "2px solid #1E2A5A", lineHeight: 1.2, whiteSpace: "normal" };
         const thH: React.CSSProperties = { ...th, background: "#e6f0f7" };
         const thGroup: React.CSSProperties = { fontSize: 10, fontWeight: 800, textAlign: "center", padding: "6px 4px", lineHeight: 1.2, color: "white" };
         const td: React.CSSProperties = { fontSize: 11, textAlign: "center", padding: "5px 2px", borderBottom: "1px solid #e6f0f7" };
         const tdB: React.CSSProperties = { ...td, fontWeight: 700, color: "#1a2a3a" };
-        const tdC: React.CSSProperties = { ...td, color: "#1a6b9c", fontWeight: 600 };
+        const tdC: React.CSSProperties = { ...td, color: "#1E2A5A", fontWeight: 600 };
         const tdL: React.CSSProperties = { ...td, textAlign: "left", fontWeight: 600, color: "#1a2a3a" };
 
         return (
@@ -3006,10 +3006,10 @@ export function ReportsView({
                 <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
                   <thead>
                     <tr>
-                      <th style={{ ...thGroup, background: "#1a6b9c", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
-                      <th style={{ ...thGroup, background: "#1a6b9c" }} colSpan={6}>Prospection</th>
-                      <th style={{ ...thGroup, background: "#0d4f7a" }} colSpan={7}>RDV</th>
-                      <th style={{ ...thGroup, background: "#FF6B35", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
+                      <th style={{ ...thGroup, background: "#1E2A5A", borderRadius: "6px 0 0 0" }} colSpan={1}></th>
+                      <th style={{ ...thGroup, background: "#1E2A5A" }} colSpan={6}>Prospection</th>
+                      <th style={{ ...thGroup, background: "#161f45" }} colSpan={7}>RDV</th>
+                      <th style={{ ...thGroup, background: "#E8732A", borderRadius: "0 6px 0 0" }} colSpan={5}>Performances</th>
                     </tr>
                     <tr>
                       <th style={{ ...th, textAlign: "left", width: 36, background: "#e6f0f7" }}>Sales<br />Rep</th>
@@ -3036,7 +3036,7 @@ export function ReportsView({
                   <tbody>
                     {reps.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ ...tdL, color: "#1a6b9c" }} title={r.name}>{ini(r.name)}</td>
+                        <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{ini(r.name)}</td>
                         {drillCell(r.suiviRelances, tdB, `Suivi & Relances — ${r.name}`, (r._repActivities as R[]).filter((a: R) => a.type === "appel").map((a: R) => ({ label: getContactNameFromRecord(a), sublabel: (a.created_at as string).slice(0, 10), href: getContactIdFromRecord(a) ? `/contacts/${getContactIdFromRecord(a)}` : undefined })))}
                         {drillCell(r.ciblesQualifiees, tdB, `Cibles Qualifiées — ${r.name}`, (r._qualifiedContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.actionsSortantes, tdB, `Actions Sortantes — ${r.name}`, (r._repActivities as R[]).filter((a: R) => a.type === "appel" || a.type === "email").map((a: R) => ({ label: getContactNameFromRecord(a), sublabel: `${(a.type as string)} — ${(a.created_at as string).slice(0, 10)}`, href: getContactIdFromRecord(a) ? `/contacts/${getContactIdFromRecord(a)}` : undefined })))}
@@ -3134,7 +3134,7 @@ export function ReportsView({
         ];
 
         const COLORS_APPELS = {
-          "Appel": "#FF8C5A",
+          "Appel": "#F08C4A",
           "Relance": "#1abc9c",
         };
 
@@ -3230,7 +3230,7 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Appels + Relances</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF8C5A" }}>{appelCount + relanceCount}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#F08C4A" }}>{appelCount + relanceCount}</div>
               </div>
             </div>
 
@@ -3238,7 +3238,7 @@ export function ReportsView({
             <div className="grid gap-4 md:grid-cols-2">
               {/* Appels */}
               <div className="lca-card">
-                <div style={{ height: 4, background: "#FF8C5A" }} />
+                <div style={{ height: 4, background: "#F08C4A" }} />
                 <div style={{ padding: 20 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic", marginBottom: 16 }}>Appels</h3>
                   <ResponsiveContainer width="100%" height={300}>
@@ -3258,7 +3258,7 @@ export function ReportsView({
 
               {/* Réunions */}
               <div className="lca-card">
-                <div style={{ height: 4, background: "#1a6b9c" }} />
+                <div style={{ height: 4, background: "#1E2A5A" }} />
                 <div style={{ padding: 20 }}>
                   <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic", marginBottom: 16 }}>Réunions</h3>
                   <ResponsiveContainer width="100%" height={300}>
@@ -3279,33 +3279,33 @@ export function ReportsView({
 
             {/* Per Sales Rep Table */}
             <div className="lca-card">
-              <div style={{ height: 4, background: "#1a6b9c" }} />
+              <div style={{ height: 4, background: "#1E2A5A" }} />
               <div style={{ padding: 16 }}>
                 <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontStyle: "italic", marginBottom: 12 }}>Détail par Sales Rep</h3>
                 <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
                   <thead>
                     <tr>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1a6b9c", textAlign: "left", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>Sales Rep</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#FF8C5A", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>Appels</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1abc9c", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>Relances</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#b8a9e8", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>R0</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#e74c3c", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>R1</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#7fb3d8", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>R2</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#27ae60", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>R3</th>
-                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1a2a3a", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1a6b9c" }}>Total</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1E2A5A", textAlign: "left", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>Sales Rep</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#F08C4A", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>Appels</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1abc9c", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>Relances</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#b8a9e8", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>R0</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#e74c3c", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>R1</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#7fb3d8", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>R2</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#27ae60", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>R3</th>
+                      <th style={{ fontSize: 10, fontWeight: 700, color: "#1a2a3a", textAlign: "center", padding: "6px 4px", borderBottom: "2px solid #1E2A5A" }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {repData.map((r) => (
                       <tr key={r.name}>
-                        <td style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "left" }} title={r.name}>{r.initials}</td>
+                        <td style={{ fontSize: 12, fontWeight: 600, color: "#1E2A5A", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "left" }} title={r.name}>{r.initials}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.appel}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.relance}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.r0}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.r1}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.r2}</td>
                         <td style={{ fontSize: 12, fontWeight: 700, color: "#1a2a3a", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.r3}</td>
-                        <td style={{ fontSize: 12, fontWeight: 800, color: "#1a6b9c", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.total}</td>
+                        <td style={{ fontSize: 12, fontWeight: 800, color: "#1E2A5A", padding: "6px 4px", borderBottom: "1px solid #e6f0f7", textAlign: "center" }}>{r.total}</td>
                       </tr>
                     ))}
                     <tr style={{ background: "#e6f0f7" }}>
@@ -3316,7 +3316,7 @@ export function ReportsView({
                       <td style={{ fontSize: 12, fontWeight: 800, color: "#1a2a3a", padding: "6px 4px", textAlign: "center" }}>{repData.reduce((s, r) => s + r.r1, 0)}</td>
                       <td style={{ fontSize: 12, fontWeight: 800, color: "#1a2a3a", padding: "6px 4px", textAlign: "center" }}>{repData.reduce((s, r) => s + r.r2, 0)}</td>
                       <td style={{ fontSize: 12, fontWeight: 800, color: "#1a2a3a", padding: "6px 4px", textAlign: "center" }}>{repData.reduce((s, r) => s + r.r3, 0)}</td>
-                      <td style={{ fontSize: 12, fontWeight: 800, color: "#1a6b9c", padding: "6px 4px", textAlign: "center" }}>{repData.reduce((s, r) => s + r.total, 0)}</td>
+                      <td style={{ fontSize: 12, fontWeight: 800, color: "#1E2A5A", padding: "6px 4px", textAlign: "center" }}>{repData.reduce((s, r) => s + r.total, 0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -3441,11 +3441,11 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>CA Total Généré</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totalCA)}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{fmt(totalCA)}</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Commandes Totales</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{companyData.reduce((s, c) => s + c.orderCount, 0)}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{companyData.reduce((s, c) => s + c.orderCount, 0)}</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Contacts Associés</div>
@@ -3462,16 +3462,16 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>Ville</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>Téléphone</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>Email</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>OPCO</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", textAlign: "center" }}>Propriétaire</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", textAlign: "center" }}>Contacts</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", textAlign: "center" }}>Commandes</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", textAlign: "right" }}>CA Total</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c" }}>Dernière Commande</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>Ville</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>Téléphone</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>Email</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>OPCO</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", textAlign: "center" }}>Propriétaire</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", textAlign: "center" }}>Contacts</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", textAlign: "center" }}>Commandes</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", textAlign: "right" }}>CA Total</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A" }}>Dernière Commande</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -3494,7 +3494,7 @@ export function ReportsView({
                           <TableCell style={{ color: "#5a6f80", fontSize: 13 }}>{c.opco}</TableCell>
                           <TableCell style={{ textAlign: "center" }}>
                             {c.ownerInitials ? (
-                              <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
+                              <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
                                 {c.ownerInitials}
                               </span>
                             ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -3610,11 +3610,11 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>R0 / R1 non fermés</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{overdue.filter((m: R) => m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1").length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{overdue.filter((m: R) => m.meeting_type === "R0" || m.meeting_type === "R1" || m.meeting_type === "R0+R1").length}</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>R2 / R3 non fermés</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{overdue.filter((m: R) => m.meeting_type === "R2" || m.meeting_type === "R3" || m.meeting_type === "R2+R3").length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{overdue.filter((m: R) => m.meeting_type === "R2" || m.meeting_type === "R3" || m.meeting_type === "R2+R3").length}</div>
               </div>
             </div>
 
@@ -3628,15 +3628,15 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date du rdv</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Retard</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Type</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Contact</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Téléphone</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Statut</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Commercial</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}></TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date du rdv</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Retard</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Type</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Contact</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Téléphone</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Statut</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Commercial</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -3650,9 +3650,9 @@ export function ReportsView({
                         const retardLabel = diffDays === 0 ? "Aujourd'hui" : diffDays === 1 ? "1 jour" : `${diffDays} jours`;
 
                         const typeColors: Record<string, { bg: string; text: string }> = {
-                          R0: { bg: "#e8f0fe", text: "#1a6b9c" },
-                          R1: { bg: "#e8f0fe", text: "#1a6b9c" },
-                          R2: { bg: "#fff3e0", text: "#FF6B35" },
+                          R0: { bg: "#e8f0fe", text: "#1E2A5A" },
+                          R1: { bg: "#e8f0fe", text: "#1E2A5A" },
+                          R2: { bg: "#fff3e0", text: "#E8732A" },
                           R3: { bg: "#fde8e8", text: "#e74c3c" },
                         };
                         const tc = typeColors[m.meeting_type as string] ?? { bg: "#f0f0f0", text: "#666" };
@@ -3666,7 +3666,7 @@ export function ReportsView({
                               {format(scheduledAt, "dd MMM yyyy", { locale: fr })}
                             </TableCell>
                             <TableCell>
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#FF6B35" }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#E8732A" }}>
                                 {retardLabel}
                               </span>
                             </TableCell>
@@ -3677,7 +3677,7 @@ export function ReportsView({
                             </TableCell>
                             <TableCell>
                               {contact ? (
-                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                   {contact.first_name} {contact.last_name}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -3689,13 +3689,13 @@ export function ReportsView({
                               {contact?.phone ? formatPhone(contact.phone) : "—"}
                             </TableCell>
                             <TableCell>
-                              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#fff3e0", color: "#FF6B35" }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#fff3e0", color: "#E8732A" }}>
                                 {m.status as string}
                               </span>
                             </TableCell>
                             <TableCell style={{ textAlign: "center" }}>
                               {owner ? (
-                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
+                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
                                   {owner.first_name[0]}{owner.last_name[0]}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -3703,7 +3703,7 @@ export function ReportsView({
                             <TableCell>
                               <button
                                 onClick={() => openRdvPopup(m)}
-                                style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px", whiteSpace: "nowrap" }}
+                                style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px", whiteSpace: "nowrap" }}
                               >
                                 📋 Suivi rdv
                               </button>
@@ -3747,7 +3747,7 @@ export function ReportsView({
                             {pc && (
                               <div className="flex items-center gap-2">
                                 <User style={{ width: 14, height: 14, color: "#8399a9" }} />
-                                <span onClick={() => { setSelectedRdv(null); router.push(`/contacts/${pc.id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                                <span onClick={() => { setSelectedRdv(null); router.push(`/contacts/${pc.id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                                   {pc.first_name} {pc.last_name}
                                 </span>
                               </div>
@@ -3755,7 +3755,7 @@ export function ReportsView({
                             {pc?.companies && (
                               <div className="flex items-center gap-2">
                                 <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
-                                <span onClick={() => { setSelectedRdv(null); router.push(`/clients/${pc.companies!.id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                                <span onClick={() => { setSelectedRdv(null); router.push(`/clients/${pc.companies!.id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                                   {pc.companies.name}
                                 </span>
                               </div>
@@ -3810,7 +3810,7 @@ export function ReportsView({
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Notes du RDV</div>
                               <button onClick={() => isRecording && recordTarget === "notes" ? stopRdvRecording() : startRdvRecording("notes")}
-                                style={{ height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer", background: isRecording && recordTarget === "notes" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", animation: isRecording && recordTarget === "notes" ? "pulse 1.5s infinite" : "none" }}>
+                                style={{ height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer", background: isRecording && recordTarget === "notes" ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", animation: isRecording && recordTarget === "notes" ? "pulse 1.5s infinite" : "none" }}>
                                 {isRecording && recordTarget === "notes" ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                               </button>
                             </div>
@@ -3850,10 +3850,10 @@ export function ReportsView({
                             <div style={{ padding: "10px 14px", background: "#e8f8f0", borderRadius: 8, borderLeft: "4px solid #2ecc71", fontSize: 13, color: "#27ae60", fontWeight: 500 }}>Le contact passera en statut &quot;Signed&quot; et en cycle &quot;Client&quot;.</div>
                           )}
                           {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
-                            <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1a6b9c", fontSize: 13, color: "#0d4f7a", fontWeight: 500 }}>Un deal &quot;Opportunité&quot; sera créé automatiquement.</div>
+                            <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1E2A5A", fontSize: 13, color: "#161f45", fontWeight: 500 }}>Un deal &quot;Opportunité&quot; sera créé automatiquement.</div>
                           )}
                           {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
-                            <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #FF6B35", fontSize: 13, color: "#e65100", fontWeight: 500 }}>Un deal &quot;Devis à envoyer&quot; sera créé automatiquement.</div>
+                            <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #E8732A", fontSize: 13, color: "#e65100", fontWeight: 500 }}>Un deal &quot;Devis à envoyer&quot; sera créé automatiquement.</div>
                           )}
                           {rdvForm.status === "no_show" && (
                             <div style={{ padding: "10px 14px", background: "#fde8e8", borderRadius: 8, borderLeft: "4px solid #e74c3c", fontSize: 13, color: "#c62828", fontWeight: 500 }}>Le prospect ne s&apos;est pas présenté au rendez-vous.</div>
@@ -3864,7 +3864,7 @@ export function ReportsView({
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Résumé / Outcome</div>
                               <button onClick={() => isRecording && recordTarget === "outcome" ? stopRdvRecording() : startRdvRecording("outcome")}
-                                style={{ height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer", background: isRecording && recordTarget === "outcome" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", animation: isRecording && recordTarget === "outcome" ? "pulse 1.5s infinite" : "none" }}>
+                                style={{ height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer", background: isRecording && recordTarget === "outcome" ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", animation: isRecording && recordTarget === "outcome" ? "pulse 1.5s infinite" : "none" }}>
                                 {isRecording && recordTarget === "outcome" ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                               </button>
                             </div>
@@ -3877,7 +3877,7 @@ export function ReportsView({
                         {/* Footer */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                           <button onClick={() => { setSelectedRdv(null); if (pc) router.push(`/contacts/${pc.id}`); }}
-                            style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                            style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                             Voir la fiche contact
                           </button>
                           <div style={{ display: "flex", gap: 10 }}>
@@ -3886,7 +3886,7 @@ export function ReportsView({
                               Annuler
                             </button>
                             <button onClick={handleSaveRdvReport} disabled={rdvSaving}
-                              style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: rdvSaving ? 0.6 : 1 }}>
+                              style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: rdvSaving ? 0.6 : 1 }}>
                               {rdvSaving ? "..." : "Sauvegarder le suivi"}
                             </button>
                           </div>
@@ -3985,14 +3985,14 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date du rdv</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Type</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Contact</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Téléphone</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Mode</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Commercial</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}></TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date du rdv</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Type</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Contact</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Téléphone</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Mode</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Commercial</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -4021,7 +4021,7 @@ export function ReportsView({
                             </TableCell>
                             <TableCell>
                               {contact ? (
-                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                   {contact.first_name} {contact.last_name}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -4037,14 +4037,14 @@ export function ReportsView({
                             </TableCell>
                             <TableCell style={{ textAlign: "center" }}>
                               {owner ? (
-                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
+                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
                                   {owner.first_name[0]}{owner.last_name[0]}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
                             </TableCell>
                             <TableCell>
                               <button onClick={() => openRdvPopup(m)}
-                                style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 30, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 11, fontWeight: 700, padding: "0 14px", whiteSpace: "nowrap" }}>
+                                style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 30, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 11, fontWeight: 700, padding: "0 14px", whiteSpace: "nowrap" }}>
                                 📋 Suivi du RDV
                               </button>
                             </TableCell>
@@ -4134,7 +4134,7 @@ export function ReportsView({
             <div className="grid gap-3 md:grid-cols-3">
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>À faire</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{totalTodo}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{totalTodo}</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>En retard</div>
@@ -4155,13 +4155,13 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Statut</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Titre</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Contact</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Échéance</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Propriétaire</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Statut</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Titre</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Contact</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Échéance</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Propriétaire</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -4183,17 +4183,17 @@ export function ReportsView({
                               ) : isOverdue ? (
                                 <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#fde8e8", color: "#e74c3c" }}>En retard</span>
                               ) : (
-                                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#fff3e0", color: "#FF6B35" }}>À faire</span>
+                                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: "#fff3e0", color: "#E8732A" }}>À faire</span>
                               )}
                             </TableCell>
                             <TableCell>
-                              <span onClick={() => openTaskPopup(t)} style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: isCompleted ? "line-through" : "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                              <span onClick={() => openTaskPopup(t)} style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: isCompleted ? "line-through" : "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                 {t.title as string}
                               </span>
                             </TableCell>
                             <TableCell>
                               {contact ? (
-                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                                <span onClick={() => router.push(`/contacts/${contact.id}`)} style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                   {contact.first_name} {contact.last_name}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -4213,7 +4213,7 @@ export function ReportsView({
                             </TableCell>
                             <TableCell style={{ textAlign: "center" }}>
                               {owner ? (
-                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
+                                <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
                                   {owner.first_name[0]}{owner.last_name[0]}
                                 </span>
                               ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -4249,7 +4249,7 @@ export function ReportsView({
               <div style={{ padding: 20 }} className="space-y-4">
                 {(tc || co || owner) && (
                   <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }} className="space-y-2">
-                    {tc && <div style={{ fontSize: 13, color: "#1a6b9c" }}>👤 {tc.first_name} {tc.last_name}</div>}
+                    {tc && <div style={{ fontSize: 13, color: "#1E2A5A" }}>👤 {tc.first_name} {tc.last_name}</div>}
                     {co && <div style={{ fontSize: 13, color: "#5a6f80" }}>🏢 {co.name}</div>}
                     {owner && <div style={{ fontSize: 12, color: "#8399a9" }}>📋 Propriétaire : {owner.first_name} {owner.last_name}</div>}
                   </div>
@@ -4288,7 +4288,7 @@ export function ReportsView({
                     </button>
                   )}
                   <button onClick={handleSaveTaskEdit} disabled={taskEditSaving || !taskEditForm.title.trim()}
-                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: taskEditSaving || !taskEditForm.title.trim() ? 0.5 : 1 }}>
+                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: taskEditSaving || !taskEditForm.title.trim() ? 0.5 : 1 }}>
                     {taskEditSaving ? "..." : "Enregistrer"}
                   </button>
                 </div>
@@ -4367,7 +4367,7 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{niContacts.filter(c => c.company_id).length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{niContacts.filter(c => c.company_id).length}</div>
               </div>
             </div>
 
@@ -4379,13 +4379,13 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PRÉNOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>CRÉÉ LE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PRÉNOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>CRÉÉ LE</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -4402,7 +4402,7 @@ export function ReportsView({
                             <TableCell>{formatPhone(c.phone as string | null)}</TableCell>
                             <TableCell>{co?.name ?? "—"}</TableCell>
                             <TableCell>
-                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
+                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#161f45", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
                             </TableCell>
                             <TableCell>{fmtDate(c.created_at as string)}</TableCell>
                           </TableRow>
@@ -4485,7 +4485,7 @@ export function ReportsView({
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Avec entreprise</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{clContacts.filter(c => c.company_id).length}</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{clContacts.filter(c => c.company_id).length}</div>
               </div>
             </div>
 
@@ -4497,13 +4497,13 @@ export function ReportsView({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>NOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PRÉNOM</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>EMAIL</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>TÉLÉPHONE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>ENTREPRISE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 11 }}>CRÉÉ LE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>NOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PRÉNOM</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>EMAIL</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>TÉLÉPHONE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>ENTREPRISE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>PROPRIÉTAIRE</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 11 }}>CRÉÉ LE</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -4520,7 +4520,7 @@ export function ReportsView({
                             <TableCell>{formatPhone(c.phone as string | null)}</TableCell>
                             <TableCell>{co?.name ?? "—"}</TableCell>
                             <TableCell>
-                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#0d4f7a", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
+                              {tm ? (<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: "50%", background: "#161f45", color: "white", fontSize: 10, fontWeight: 700 }} title={`${tm.first_name} ${tm.last_name}`}>{tm.first_name[0]}{tm.last_name[0]}</span>) : "—"}
                             </TableCell>
                             <TableCell>{fmtDate(c.created_at as string)}</TableCell>
                           </TableRow>
@@ -4554,7 +4554,7 @@ export function ReportsView({
                     <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f8fbfd", borderRadius: 8 }}>
                       <div>
                         {item.href ? (
-                          <a href={item.href} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "none" }}
+                          <a href={item.href} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", textDecoration: "none" }}
                             onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
                             onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
                           >{item.label}</a>

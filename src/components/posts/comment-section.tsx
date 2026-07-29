@@ -21,7 +21,7 @@ import {
 import { POST_CATEGORY_LABELS, type PostCategory } from "@/types/database";
 
 const REACTION_EMOJIS = [
-  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd" },
+  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1E2A5A", bg: "#e3f2fd" },
   { key: "love", emoji: "\u2764\uFE0F", label: "J'adore", color: "#e74c3c", bg: "#fce4ec" },
   { key: "celebrate", emoji: "\uD83C\uDF89", label: "Bravo", color: "#e67e22", bg: "#fff3e0" },
   { key: "insightful", emoji: "\uD83D\uDCA1", label: "Intéressant", color: "#d4ac0d", bg: "#fffde7" },
@@ -85,7 +85,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     () =>
       Mention.configure({
         HTMLAttributes: {
-          style: "color: #1a6b9c; font-weight: 600; background: #e3f2fd; padding: 1px 4px; border-radius: 4px;",
+          style: "color: #1E2A5A; font-weight: 600; background: #e3f2fd; padding: 1px 4px; border-radius: 4px;",
         },
         renderHTML({ options, node }) {
           return [
@@ -314,7 +314,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
           onClick={() => setShowAll(true)}
           style={{
             background: "none", border: "none", cursor: "pointer",
-            color: "#1a6b9c", fontSize: 12, fontWeight: 600, padding: "4px 0", marginBottom: 8,
+            color: "#1E2A5A", fontSize: 12, fontWeight: 600, padding: "4px 0", marginBottom: 8,
           }}
         >
           Voir les {hiddenCount} commentaire{hiddenCount > 1 ? "s" : ""} précédent{hiddenCount > 1 ? "s" : ""}
@@ -348,7 +348,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
               {pf.preview ? (
                 <img src={pf.preview} alt="" style={{ width: 20, height: 20, borderRadius: 3, objectFit: "cover" }} />
               ) : (
-                <FileText style={{ width: 14, height: 14, color: "#1a6b9c" }} />
+                <FileText style={{ width: 14, height: 14, color: "#1E2A5A" }} />
               )}
               <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#3a4a5a" }}>
                 {pf.file.name}
@@ -397,7 +397,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
           disabled={submitting || (((!commentHtml || commentHtml === "<p></p>") && pendingFiles.length === 0))}
           style={{
             padding: "8px 14px", borderRadius: 8, border: "none",
-            background: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "#1a6b9c" : "#dce8f0",
+            background: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "#1E2A5A" : "#dce8f0",
             color: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "white" : "#8399a9",
             cursor: (commentHtml && commentHtml !== "<p></p>") || pendingFiles.length > 0 ? "pointer" : "default",
             display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600,
@@ -418,7 +418,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
         }
         .tiptap p { margin: 2px 0; }
         .tiptap-content [data-type="mention"] {
-          color: #1a6b9c;
+          color: #1E2A5A;
           font-weight: 600;
           background: #e3f2fd;
           padding: 1px 4px;
@@ -577,7 +577,7 @@ function CommentItem({
               }}
               style={{
                 width: "100%", padding: "6px 10px", borderRadius: 6,
-                border: "1px solid #1a6b9c", background: "#f8fbfd",
+                border: "1px solid #1E2A5A", background: "#f8fbfd",
                 fontSize: 13, lineHeight: 1.5, color: "#1a2a3a",
                 resize: "vertical", minHeight: 40, outline: "none",
                 fontFamily: "inherit",
@@ -589,7 +589,7 @@ function CommentItem({
                 disabled={savingEdit || !editText.trim()}
                 style={{
                   padding: "3px 10px", borderRadius: 6, border: "none",
-                  background: "#1a6b9c", color: "white", fontSize: 11,
+                  background: "#1E2A5A", color: "white", fontSize: 11,
                   fontWeight: 600, cursor: "pointer",
                 }}
               >
@@ -761,7 +761,7 @@ function CommentAttachments({ attachments }: { attachments: any[] }) {
                 display: "flex", alignItems: "center", gap: 5,
                 padding: "5px 10px", borderRadius: 6,
                 border: "1px solid #dce8f0", background: "#f8fbfd",
-                fontSize: 11, color: "#1a6b9c", textDecoration: "none", fontWeight: 500,
+                fontSize: 11, color: "#1E2A5A", textDecoration: "none", fontWeight: 500,
               }}
             >
               <FileText style={{ width: 13, height: 13 }} />

@@ -1,6 +1,6 @@
 /**
  * Email templates for prospect meeting confirmations.
- * Tone: pro-chaleureux, vouvoiement, style La Closing Academie.
+ * Tone: pro-chaleureux, vouvoiement, style IFA Formatio.
  */
 
 interface ProspectEmailParams {
@@ -133,7 +133,7 @@ export function getProspectEmailBody(p: ProspectEmailParams): string {
       "",
       "À très bientôt,",
       "",
-      "L'équipe La Closing Académie",
+      "L'équipe IFA Formatio",
     ].join("\n");
   }
 
@@ -152,7 +152,7 @@ export function getProspectEmailBody(p: ProspectEmailParams): string {
     "",
     "À très bientôt,",
     "",
-    "L'équipe La Closing Académie",
+    "L'équipe IFA Formatio",
   ].join("\n");
 }
 

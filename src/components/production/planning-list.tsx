@@ -121,7 +121,7 @@ const modeLabels: Record<string, string> = {
   mixte: "Mixte",
 };
 const formatColors: Record<string, { bg: string; text: string }> = {
-  individuel: { bg: "#e8f0fe", text: "#0d4f7a" },
+  individuel: { bg: "#e8f0fe", text: "#161f45" },
   collectif: { bg: "#f3e5f5", text: "#6a1b9a" },
   individuel_collectif: { bg: "#ede7f6", text: "#4a148c" },
 };
@@ -132,7 +132,7 @@ const modeColors: Record<string, { bg: string; text: string }> = {
 };
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" },
+  planned: { bg: "#e8f0fe", text: "#161f45", label: "Planifié" },
   done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
   cancelled: { bg: "#fce4ec", text: "#c62828", label: "Annulé" },
   no_show: { bg: "#fff3e0", text: "#e65100", label: "No show" },
@@ -936,11 +936,11 @@ export function PlanningList({
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>VT (réalisées / total)</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{kpiVtDone} / {kpiVtTotal}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{kpiVtDone} / {kpiVtTotal}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Journées (réalisées / total)</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{kpiDaysDone} / {kpiDaysTotal}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{kpiDaysDone} / {kpiDaysTotal}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Apprenants actuels</div>
@@ -1006,7 +1006,7 @@ export function PlanningList({
         <div style={{ flex: 1 }} />
         <button
           onClick={() => setDecisionOpen(true)}
-          style={{ height: 38, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: 700, border: "2px solid #1a6b9c", cursor: "pointer", background: "white", color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+          style={{ height: 38, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: 700, border: "2px solid #1E2A5A", cursor: "pointer", background: "white", color: "#1E2A5A", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
         >
           <HelpCircle className="h-4 w-4" />
           Aide Décision
@@ -1020,7 +1020,7 @@ export function PlanningList({
         </button>
         <button
           onClick={() => { setEditingPlanId(null); setForm(emptyForm); setSelectedLearnerIds([]); setOpen(true); }}
-          style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+          style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
         >
           <Plus className="h-4 w-4" />
           Nouveau plan de formation
@@ -1037,10 +1037,10 @@ export function PlanningList({
             fontWeight: 700,
             cursor: "pointer",
             border: "none",
-            borderBottom: activeTab === "en_cours" ? "2px solid #1a6b9c" : "2px solid transparent",
+            borderBottom: activeTab === "en_cours" ? "2px solid #1E2A5A" : "2px solid transparent",
             marginBottom: -2,
             background: "transparent",
-            color: activeTab === "en_cours" ? "#1a6b9c" : "#8399a9",
+            color: activeTab === "en_cours" ? "#1E2A5A" : "#8399a9",
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -1050,7 +1050,7 @@ export function PlanningList({
           En cours
           <span style={{
             background: activeTab === "en_cours" ? "#e8f0fe" : "#f1f5f9",
-            color: activeTab === "en_cours" ? "#1a6b9c" : "#8399a9",
+            color: activeTab === "en_cours" ? "#1E2A5A" : "#8399a9",
             borderRadius: 10,
             padding: "1px 8px",
             fontSize: 11,
@@ -1148,7 +1148,7 @@ export function PlanningList({
                     <span style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80" }}>— {(plan as any).plan_name}</span>
                   )}
                   {plan.training_programs?.name && (
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#e8f0fe", color: "#0d4f7a" }}>{plan.training_programs.name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#e8f0fe", color: "#161f45" }}>{plan.training_programs.name}</span>
                   )}
                   {plan.training_types?.name && (
                     <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 20, background: "#f5f5f5", color: "#555" }}>{plan.training_types.name}</span>
@@ -1167,8 +1167,8 @@ export function PlanningList({
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: "#5a6f80" }}>
                   <span>{planLearners.length} apprenant{planLearners.length > 1 ? "s" : ""}</span>
-                  <span style={{ fontWeight: 700, color: "#1a6b9c" }}>VT {vtDone}/{vtTotal}</span>
-                  <span style={{ fontWeight: 700, color: "#FF6B35" }}>J {daysDone}/{daysTotal}</span>
+                  <span style={{ fontWeight: 700, color: "#1E2A5A" }}>VT {vtDone}/{vtTotal}</span>
+                  <span style={{ fontWeight: 700, color: "#E8732A" }}>J {daysDone}/{daysTotal}</span>
                   {plan.budget != null && <span style={{ fontWeight: 700, color: "#1a2a3a" }}>{fmt(Number(plan.budget))}</span>}
                 </div>
               </div>
@@ -1194,7 +1194,7 @@ export function PlanningList({
                     </button>}
                     {!isRestrictedExterne && !isReadOnly && <button
                       onClick={() => openEditPlan(plan)}
-                      style={{ height: 32, borderRadius: 6, background: "#e8f0fe", color: "#0d4f7a", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                      style={{ height: 32, borderRadius: 6, background: "#e8f0fe", color: "#161f45", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <Pencil className="h-3.5 w-3.5" /> Modifier le plan
                     </button>}
@@ -1206,17 +1206,17 @@ export function PlanningList({
                     <div style={{ background: "#f8fbfd", borderRadius: 10, padding: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Video className="h-4 w-4" style={{ color: "#1a6b9c" }} />
+                          <Video className="h-4 w-4" style={{ color: "#1E2A5A" }} />
                           <span style={{ fontWeight: 700, fontSize: 14, color: "#1a2a3a" }}>Visio Training (VT)</span>
                         </div>
-                        <span style={{ fontWeight: 800, fontSize: 16, color: "#1a6b9c" }}>{vtDone} / {vtTotal}</span>
+                        <span style={{ fontWeight: 800, fontSize: 16, color: "#1E2A5A" }}>{vtDone} / {vtTotal}</span>
                       </div>
                       <div style={{ height: 8, background: "#e8ecf1", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
-                        <div style={{ height: "100%", width: `${vtPct}%`, background: "#1a6b9c", borderRadius: 4, transition: "width 0.5s" }} />
+                        <div style={{ height: "100%", width: `${vtPct}%`, background: "#1E2A5A", borderRadius: 4, transition: "width 0.5s" }} />
                       </div>
                       <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#5a6f80" }}>
                         <span>Réalisées : <strong style={{ color: "#2ecc71" }}>{vtDone}</strong></span>
-                        <span>Planifiées : <strong style={{ color: "#1a6b9c" }}>{vtPlanned}</strong></span>
+                        <span>Planifiées : <strong style={{ color: "#1E2A5A" }}>{vtPlanned}</strong></span>
                         <span>Restantes : <strong style={{ color: vtRemaining > 0 ? "#e74c3c" : "#2ecc71" }}>{vtRemaining}</strong></span>
                       </div>
                     </div>
@@ -1225,17 +1225,17 @@ export function PlanningList({
                     <div style={{ background: "#fdf8f5", borderRadius: 10, padding: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Building2 className="h-4 w-4" style={{ color: "#FF6B35" }} />
+                          <Building2 className="h-4 w-4" style={{ color: "#E8732A" }} />
                           <span style={{ fontWeight: 700, fontSize: 14, color: "#1a2a3a" }}>Journées</span>
                         </div>
-                        <span style={{ fontWeight: 800, fontSize: 16, color: "#FF6B35" }}>{daysDone} / {daysTotal}</span>
+                        <span style={{ fontWeight: 800, fontSize: 16, color: "#E8732A" }}>{daysDone} / {daysTotal}</span>
                       </div>
                       <div style={{ height: 8, background: "#e8ecf1", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
-                        <div style={{ height: "100%", width: `${daysPct}%`, background: "#FF6B35", borderRadius: 4, transition: "width 0.5s" }} />
+                        <div style={{ height: "100%", width: `${daysPct}%`, background: "#E8732A", borderRadius: 4, transition: "width 0.5s" }} />
                       </div>
                       <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#5a6f80" }}>
                         <span>Réalisées : <strong style={{ color: "#2ecc71" }}>{daysDone}</strong></span>
-                        <span>Planifiées : <strong style={{ color: "#FF6B35" }}>{daysPlannedCount}</strong></span>
+                        <span>Planifiées : <strong style={{ color: "#E8732A" }}>{daysPlannedCount}</strong></span>
                         <span>Restantes : <strong style={{ color: daysRemaining > 0 ? "#e74c3c" : "#2ecc71" }}>{daysRemaining}</strong></span>
                       </div>
                     </div>
@@ -1292,7 +1292,7 @@ export function PlanningList({
                         </div>
                         <div style={{ fontSize: 12, color: "#5a6f80", marginTop: 4 }}>
                           <div>Consommé : <strong style={{ color: "#1a2a3a" }}>{fmt(consumedAmount)}</strong> ({totalHoursDone}h réalisées)</div>
-                          <div>Engagé : <strong style={{ color: "#FF6B35" }}>{fmt(plannedAmount)}</strong> ({totalHoursPlanned}h planifiées)</div>
+                          <div>Engagé : <strong style={{ color: "#E8732A" }}>{fmt(plannedAmount)}</strong> ({totalHoursPlanned}h planifiées)</div>
                           <div style={{ marginTop: 4, borderTop: "1px solid #e8ecf1", paddingTop: 4 }}>
                             Après planifié : <strong style={{ color: (budgetRemaining - plannedAmount) >= 0 ? "#27ae60" : "#e74c3c" }}>{fmt(budgetRemaining - plannedAmount)}</strong>
                           </div>
@@ -1313,7 +1313,7 @@ export function PlanningList({
                       {!isRestrictedExterne && !isReadOnly && (<>
                       <button
                         onClick={() => { setSessionPlanId(plan.id); setEditingSessionId(null); const t = buildSessionTitle(plan.id, "vt", [], []); setSessionForm({ session_type: "vt", session_date: "", session_time: "09:00", session_end_time: "17:00", duration_hours: "1", session_location: "", trainers: [] as string[], is_billable: true, hourly_rate: "", notes: "", learner_ids: [], custom_title: t, send_notifications: true }); }}
-                        style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                        style={{ height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <CalendarPlus className="h-3.5 w-3.5" /> Ajouter une session
                       </button>
@@ -1423,8 +1423,8 @@ export function PlanningList({
                                       display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer",
                                       padding: "4px 10px", borderRadius: 6,
                                       background: checked ? "#e8f0fe" : "white",
-                                      border: `1px solid ${checked ? "#1a6b9c" : "#dce8f0"}`,
-                                      color: checked ? "#0d4f7a" : "#5a6f80",
+                                      border: `1px solid ${checked ? "#1E2A5A" : "#dce8f0"}`,
+                                      color: checked ? "#161f45" : "#5a6f80",
                                       fontWeight: checked ? 600 : 400,
                                     }}
                                   >
@@ -1437,7 +1437,7 @@ export function PlanningList({
                                           : sessionForm.learner_ids.filter(id => id !== l.id);
                                         setSessionForm({ ...sessionForm, learner_ids: ids });
                                       }}
-                                      style={{ accentColor: "#1a6b9c" }}
+                                      style={{ accentColor: "#1E2A5A" }}
                                     />
                                     {l.first_name} {l.last_name}
                                   </label>
@@ -1449,7 +1449,7 @@ export function PlanningList({
                                   const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id));
                                   setSessionForm({ ...sessionForm, learner_ids: allSelected ? [] : allIds });
                                 }}
-                                style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "4px 6px" }}
+                                style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "4px 6px" }}
                               >
                                 {planLearners.every(l => sessionForm.learner_ids.includes(l.id)) ? "Tout désélectionner" : "Tout sélectionner"}
                               </button>
@@ -1471,7 +1471,7 @@ export function PlanningList({
                                     display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer",
                                     padding: "4px 10px", borderRadius: 6,
                                     background: checked ? "#fff3e0" : "white",
-                                    border: `1px solid ${checked ? "#FF6B35" : "#dce8f0"}`,
+                                    border: `1px solid ${checked ? "#E8732A" : "#dce8f0"}`,
                                     color: checked ? "#e65100" : "#5a6f80",
                                     fontWeight: checked ? 600 : 400,
                                   }}
@@ -1485,7 +1485,7 @@ export function PlanningList({
                                         : sessionForm.trainers.filter(x => x !== t);
                                       setSessionForm({ ...sessionForm, trainers });
                                     }}
-                                    style={{ accentColor: "#FF6B35" }}
+                                    style={{ accentColor: "#E8732A" }}
                                   />
                                   {t}
                                 </label>
@@ -1512,7 +1512,7 @@ export function PlanningList({
                           <button
                             onClick={handleAddSession}
                             disabled={savingSession || !sessionForm.session_date}
-                            style={{ height: 34, borderRadius: 6, background: editingSessionId ? "#1a6b9c" : "#2ecc71", color: "white", fontSize: 12, fontWeight: 700, padding: "0 16px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date ? 0.5 : 1 }}
+                            style={{ height: 34, borderRadius: 6, background: editingSessionId ? "#1E2A5A" : "#2ecc71", color: "white", fontSize: 12, fontWeight: 700, padding: "0 16px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date ? 0.5 : 1 }}
                           >
                             {savingSession ? "..." : editingSessionId ? "Mettre à jour" : "Ajouter"}
                           </button>
@@ -1531,15 +1531,15 @@ export function PlanningList({
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Type</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Durée</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Expert(s)</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Apprenants</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Statut</TableHead>
-                              {hourlyRate > 0 && <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>}
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, maxWidth: 150 }}>Notes</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center", whiteSpace: "nowrap" }}>Actions</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Type</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Durée</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Expert(s)</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Apprenants</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Statut</TableHead>
+                              {hourlyRate > 0 && <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>}
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, maxWidth: 150 }}>Notes</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center", whiteSpace: "nowrap" }}>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1561,7 +1561,7 @@ export function PlanningList({
                                       <span style={{
                                         fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
                                         background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0",
-                                        color: s.session_type === "vt" ? "#1a6b9c" : "#FF6B35",
+                                        color: s.session_type === "vt" ? "#1E2A5A" : "#E8732A",
                                       }}>
                                         {s.session_type === "vt" ? "VT" : "Journée"}
                                       </span>
@@ -1586,7 +1586,7 @@ export function PlanningList({
                                               <span
                                                 key={l!.id}
                                                 onClick={(e) => { e.stopPropagation(); openLearnerPopup(l!.id, l!.first_name, l!.last_name); }}
-                                                style={{ fontSize: 12, color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                                                style={{ fontSize: 12, color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                                               >
                                                 {l!.first_name} {l!.last_name}
                                               </span>
@@ -1631,11 +1631,11 @@ export function PlanningList({
                                             onChange={(e) => setEditingRateValue(e.target.value)}
                                             onBlur={() => saveInlineRate(s.id, hourlyRate)}
                                             onKeyDown={(e) => { if (e.key === "Enter") saveInlineRate(s.id, hourlyRate); if (e.key === "Escape") setEditingRateSessionId(null); }}
-                                            style={{ width: 80, height: 28, borderRadius: 6, border: "2px solid #1a6b9c", textAlign: "right", fontSize: 13, fontWeight: 700, padding: "0 6px" }}
+                                            style={{ width: 80, height: 28, borderRadius: 6, border: "2px solid #1E2A5A", textAlign: "right", fontSize: 13, fontWeight: 700, padding: "0 6px" }}
                                             onClick={(e) => e.stopPropagation()}
                                           />
                                         ) : (
-                                          <span style={{ borderBottom: s.hourly_rate != null ? "2px dashed #1a6b9c" : "1px dashed #ccc" }}>
+                                          <span style={{ borderBottom: s.hourly_rate != null ? "2px dashed #1E2A5A" : "1px dashed #ccc" }}>
                                             {fmt((Number(s.duration_hours) || 0) * (s.hourly_rate ?? hourlyRate))}
                                           </span>
                                         )}
@@ -1656,7 +1656,7 @@ export function PlanningList({
                                           {!isRestrictedExterne && !isReadOnly && <>
                                           <button
                                           onClick={() => openEditSession(s, plan.id)}
-                                          style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
+                                          style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}
                                           title="Modifier"
                                         >
                                           <Pencil className="h-3.5 w-3.5" />
@@ -1692,11 +1692,11 @@ export function PlanningList({
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Nom</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Email</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Téléphone</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Poste</TableHead>
-                              <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Statut</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Nom</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Email</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Téléphone</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Poste</TableHead>
+                              <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Statut</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1705,7 +1705,7 @@ export function PlanningList({
                                 <TableCell>
                                   <span
                                     onClick={() => openLearnerPopup(l.id, l.first_name, l.last_name)}
-                                    style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                                    style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                                   >
                                     {l.first_name} {l.last_name}
                                   </span>
@@ -1717,7 +1717,7 @@ export function PlanningList({
                                   <span style={{
                                     fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
                                     background: l.status === "actuel" ? "#e8f5e9" : l.status === "futur" ? "#e8f0fe" : "#f5f5f5",
-                                    color: l.status === "actuel" ? "#2e7d32" : l.status === "futur" ? "#0d4f7a" : "#777",
+                                    color: l.status === "actuel" ? "#2e7d32" : l.status === "futur" ? "#161f45" : "#777",
                                   }}>
                                     {l.status}
                                   </span>
@@ -1758,9 +1758,9 @@ export function PlanningList({
                     onClick={() => setForm({ ...form, plan_type: val, company_id: "", deal_id: "", deal_ids: [], inter_companies: [], budget: "" })}
                     style={{
                       flex: 1, padding: "8px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                      border: form.plan_type === val ? "2px solid #1a6b9c" : "1px solid #dce8f0",
+                      border: form.plan_type === val ? "2px solid #1E2A5A" : "1px solid #dce8f0",
                       background: form.plan_type === val ? "#e8f0fe" : "white",
-                      color: form.plan_type === val ? "#1a6b9c" : "#5a6f80",
+                      color: form.plan_type === val ? "#1E2A5A" : "#5a6f80",
                     }}
                   >
                     {label}
@@ -1857,7 +1857,7 @@ export function PlanningList({
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, inter_companies: [...form.inter_companies, { company_id: "", deal_id: "" }] })}
-                    style={{ height: 36, borderRadius: 8, border: "1px dashed #1a6b9c", background: "white", color: "#1a6b9c", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                    style={{ height: 36, borderRadius: 8, border: "1px dashed #1E2A5A", background: "white", color: "#1E2A5A", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                   >
                     + Ajouter un client
                   </button>
@@ -1915,7 +1915,7 @@ export function PlanningList({
                               setForm({ ...form, format: hasCollectif ? "collectif" : "individuel" });
                             }
                           }}
-                          style={{ accentColor: "#1a6b9c" }}
+                          style={{ accentColor: "#1E2A5A" }}
                         />
                         Individuel
                       </label>
@@ -1931,7 +1931,7 @@ export function PlanningList({
                               setForm({ ...form, format: hasIndividuel ? "individuel" : "collectif" });
                             }
                           }}
-                          style={{ accentColor: "#1a6b9c" }}
+                          style={{ accentColor: "#1E2A5A" }}
                         />
                         Collectif
                       </label>
@@ -2063,7 +2063,7 @@ export function PlanningList({
                                   }, 0);
                                   setForm({ ...form, deal_ids: newIds, deal_id: newIds[0] || "", budget: totalBudget > 0 ? String(totalBudget) : form.budget });
                                 }}
-                                style={{ width: 16, height: 16, accentColor: "#1a6b9c" }}
+                                style={{ width: 16, height: 16, accentColor: "#1E2A5A" }}
                               />
                               <span style={{ fontSize: 13, color: "#1a2a3a" }}>{d.name || "Deal sans nom"}</span>
                               <span style={{ fontSize: 12, color: "#27ae60", fontWeight: 700, marginLeft: "auto" }}>{fmt(Number(d.amount) || 0)}</span>
@@ -2103,8 +2103,8 @@ export function PlanningList({
                                 display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer",
                                 padding: "6px 10px", borderRadius: 6,
                                 background: checked ? "#e8f0fe" : "white",
-                                border: `1px solid ${checked ? "#1a6b9c" : "#dce8f0"}`,
-                                color: checked ? "#0d4f7a" : "#5a6f80",
+                                border: `1px solid ${checked ? "#1E2A5A" : "#dce8f0"}`,
+                                color: checked ? "#161f45" : "#5a6f80",
                                 fontWeight: checked ? 600 : 400,
                               }}
                             >
@@ -2117,13 +2117,13 @@ export function PlanningList({
                                     : selectedLearnerIds.filter(id => id !== l.id)
                                   );
                                 }}
-                                style={{ accentColor: "#1a6b9c" }}
+                                style={{ accentColor: "#1E2A5A" }}
                               />
                               {l.first_name} {l.last_name}
                               <span style={{
                                 marginLeft: "auto", fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10,
                                 background: l.status === "actuel" ? "#e8f5e9" : l.status === "futur" ? "#e8f0fe" : "#f5f5f5",
-                                color: l.status === "actuel" ? "#2e7d32" : l.status === "futur" ? "#0d4f7a" : "#777",
+                                color: l.status === "actuel" ? "#2e7d32" : l.status === "futur" ? "#161f45" : "#777",
                               }}>
                                 {l.status}
                               </span>
@@ -2138,7 +2138,7 @@ export function PlanningList({
                           const allSelected = allIds.every(id => selectedLearnerIds.includes(id));
                           setSelectedLearnerIds(allSelected ? [] : allIds);
                         }}
-                        style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                        style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                       >
                         {compLearners.every(l => selectedLearnerIds.includes(l.id)) ? "Tout désélectionner" : "Tout sélectionner"}
                       </button>
@@ -2185,7 +2185,7 @@ export function PlanningList({
               onClick={handleSave}
               disabled={saving || !form.company_id}
               className="w-full"
-              style={{ background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white" }}
+              style={{ background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white" }}
             >
               {saving ? "Enregistrement..." : editingPlanId ? "Mettre à jour" : importQueue.length > 0
                 ? (importIndex + 1 < importQueue.length ? `Enregistrer et passer au suivant (${importIndex + 2}/${importQueue.length})` : "Enregistrer et terminer l'import")
@@ -2248,7 +2248,7 @@ export function PlanningList({
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                       <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9" }}>Adresse du lieu de formation <span style={{ color: "#e74c3c" }}>*</span></div>
                       {compAddr && (
-                        <button type="button" onClick={() => setSessionForm({ ...sessionForm, session_location: compAddr })} style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                        <button type="button" onClick={() => setSessionForm({ ...sessionForm, session_location: compAddr })} style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
                           Reprendre l&apos;adresse de l&apos;entreprise
                         </button>
                       )}
@@ -2273,14 +2273,14 @@ export function PlanningList({
                     {popupLearners.map(l => {
                       const checked = sessionForm.learner_ids.includes(l.id);
                       return (
-                        <label key={l.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#e8f0fe" : "white", border: `1px solid ${checked ? "#1a6b9c" : "#dce8f0"}`, color: checked ? "#0d4f7a" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
-                          <input type="checkbox" checked={checked} onChange={(e) => { const ids = e.target.checked ? [...sessionForm.learner_ids, l.id] : sessionForm.learner_ids.filter(id => id !== l.id); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", ids, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: ids, custom_title: title }); }} style={{ accentColor: "#1a6b9c" }} />
+                        <label key={l.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#e8f0fe" : "white", border: `1px solid ${checked ? "#1E2A5A" : "#dce8f0"}`, color: checked ? "#161f45" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
+                          <input type="checkbox" checked={checked} onChange={(e) => { const ids = e.target.checked ? [...sessionForm.learner_ids, l.id] : sessionForm.learner_ids.filter(id => id !== l.id); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", ids, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: ids, custom_title: title }); }} style={{ accentColor: "#1E2A5A" }} />
                           {l.first_name} {l.last_name}
                         </label>
                       );
                     })}
                     {popupLearners.length > 1 && (
-                      <button onClick={() => { const allIds = popupLearners.map(l => l.id); const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id)); const newIds = allSelected ? [] : allIds; const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", newIds, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: newIds, custom_title: title }); }} style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                      <button onClick={() => { const allIds = popupLearners.map(l => l.id); const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id)); const newIds = allSelected ? [] : allIds; const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", newIds, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: newIds, custom_title: title }); }} style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                         {popupLearners.every(l => sessionForm.learner_ids.includes(l.id)) ? "Tout désélectionner" : "Tout sélectionner"}
                       </button>
                     )}
@@ -2292,8 +2292,8 @@ export function PlanningList({
                     {TRAINER_LIST.map(t => {
                       const checked = sessionForm.trainers.includes(t);
                       return (
-                        <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#fff3e0" : "white", border: `1px solid ${checked ? "#FF6B35" : "#dce8f0"}`, color: checked ? "#e65100" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
-                          <input type="checkbox" checked={checked} onChange={(e) => { const trainers = e.target.checked ? [...sessionForm.trainers, t] : sessionForm.trainers.filter(x => x !== t); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", sessionForm.learner_ids, trainers); setSessionForm({ ...sessionForm, trainers, custom_title: title }); }} style={{ accentColor: "#FF6B35" }} />
+                        <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#fff3e0" : "white", border: `1px solid ${checked ? "#E8732A" : "#dce8f0"}`, color: checked ? "#e65100" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
+                          <input type="checkbox" checked={checked} onChange={(e) => { const trainers = e.target.checked ? [...sessionForm.trainers, t] : sessionForm.trainers.filter(x => x !== t); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", sessionForm.learner_ids, trainers); setSessionForm({ ...sessionForm, trainers, custom_title: title }); }} style={{ accentColor: "#E8732A" }} />
                           {t}
                         </label>
                       );
@@ -2306,8 +2306,8 @@ export function PlanningList({
                     <span style={{ fontWeight: sessionForm.is_billable ? 600 : 400, color: sessionForm.is_billable ? "#27ae60" : "#8399a9" }}>{sessionForm.is_billable ? "Facturable" : "Non facturable"}</span>
                   </label>
                   <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-                    <input type="checkbox" checked={sessionForm.send_notifications} onChange={(e) => setSessionForm({ ...sessionForm, send_notifications: e.target.checked })} style={{ accentColor: "#1a6b9c" }} />
-                    <span style={{ fontWeight: sessionForm.send_notifications ? 600 : 400, color: sessionForm.send_notifications ? "#1a6b9c" : "#8399a9" }}>{sessionForm.send_notifications ? "Envoyer les notifications" : "Pas de notifications"}</span>
+                    <input type="checkbox" checked={sessionForm.send_notifications} onChange={(e) => setSessionForm({ ...sessionForm, send_notifications: e.target.checked })} style={{ accentColor: "#1E2A5A" }} />
+                    <span style={{ fontWeight: sessionForm.send_notifications ? 600 : 400, color: sessionForm.send_notifications ? "#1E2A5A" : "#8399a9" }}>{sessionForm.send_notifications ? "Envoyer les notifications" : "Pas de notifications"}</span>
                   </label>
                 </div>
                 {sessionForm.is_billable && (
@@ -2319,7 +2319,7 @@ export function PlanningList({
               </div>
               <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button onClick={() => setSessionPlanId(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>Annuler</button>
-                <button onClick={handleAddSession} disabled={savingSession || !sessionForm.session_date || locationMissing} style={{ height: 36, borderRadius: 8, background: editingSessionId ? "#1a6b9c" : "#2ecc71", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date || locationMissing ? 0.5 : 1 }}>
+                <button onClick={handleAddSession} disabled={savingSession || !sessionForm.session_date || locationMissing} style={{ height: 36, borderRadius: 8, background: editingSessionId ? "#1E2A5A" : "#2ecc71", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingSession || !sessionForm.session_date || locationMissing ? 0.5 : 1 }}>
                   {savingSession ? "..." : editingSessionId ? "Mettre à jour" : "Ajouter"}
                 </button>
               </div>
@@ -2372,7 +2372,7 @@ export function PlanningList({
               </button>
               <button
                 onClick={saveNotes}
-                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer" }}
+                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer" }}
               >
                 Enregistrer
               </button>
@@ -2402,7 +2402,7 @@ export function PlanningList({
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
                         background: viewLearner.status === "actuel" ? "#e8f5e9" : viewLearner.status === "futur" ? "#e8f0fe" : "#f5f5f5",
-                        color: viewLearner.status === "actuel" ? "#2e7d32" : viewLearner.status === "futur" ? "#0d4f7a" : "#777",
+                        color: viewLearner.status === "actuel" ? "#2e7d32" : viewLearner.status === "futur" ? "#161f45" : "#777",
                       }}>
                         {viewLearner.status}
                       </span>
@@ -2502,7 +2502,7 @@ export function PlanningList({
               </div>
 
               <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", display: "flex", justifyContent: "flex-end" }}>
-                <button onClick={() => setSyncPopup(null)} style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer" }}>
+                <button onClick={() => setSyncPopup(null)} style={{ height: 38, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer" }}>
                   OK
                 </button>
               </div>
@@ -2604,7 +2604,7 @@ export function PlanningList({
               </div>
 
               <div style={{ padding: 24 }} className="space-y-5">
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
                   Critères du besoin client
                 </div>
                 <div className="grid grid-cols-4 gap-4">
@@ -2640,25 +2640,25 @@ export function PlanningList({
 
                 {nbDays > 0 && (
                   <>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4 }}>
                       Analyse des experts
                     </div>
                     <div style={{ overflowX: "auto" }}>
                       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                         <thead>
                           <tr style={{ background: "#f8fbfd" }}>
-                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Expert</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Expertise</th>
-                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Ville</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Même région</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>TJM</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Coût TJM</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Prépa</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Déplac.</th>
-                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Budget OK</th>
-                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Score</th>
-                            {budgetHT > 0 && <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Marge</th>}
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Expert</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Expertise</th>
+                            <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Ville</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Même région</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Coût TJM</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Prépa</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Déplac.</th>
+                            <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Total HT</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Budget OK</th>
+                            <th style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Score</th>
+                            {budgetHT > 0 && <th style={{ padding: "8px 6px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Marge</th>}
                           </tr>
                         </thead>
                         <tbody>

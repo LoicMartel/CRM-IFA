@@ -176,7 +176,7 @@ export function VisioformationSessionsImportModal({
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Upload style={{ width: 20, height: 20, color: "#1a6b9c" }} />
+            <Upload style={{ width: 20, height: 20, color: "#1E2A5A" }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", margin: 0 }}>
               Importer des sessions depuis Visioformation
             </h2>
@@ -209,7 +209,7 @@ export function VisioformationSessionsImportModal({
                 onClick={() => fileRef.current?.click()}
                 style={{
                   height: 44, borderRadius: 10, padding: "0 24px",
-                  background: "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
                   boxShadow: "0 4px 15px rgba(26,107,156,0.3)",
                 }}
@@ -259,15 +259,15 @@ export function VisioformationSessionsImportModal({
                       <th style={{ padding: "8px 4px", textAlign: "center", width: 30 }}>
                         <input type="checkbox" checked={rows.some((r) => r.servicePlanId) && rows.every((r, i) => !r.servicePlanId || selected.has(i))} onChange={toggleAll} />
                       </th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Titre</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Duree</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Statut</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Formateur</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Entreprise</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c", minWidth: 220 }}>Plan de formation</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Titre</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Duree</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Type</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Statut</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Formateur</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Entreprise</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Apprenants</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A", minWidth: 220 }}>Plan de formation</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -300,7 +300,7 @@ export function VisioformationSessionsImportModal({
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
                               background: row.sessionType === "vt" ? "#e8f0fe" : "#fff3e0",
-                              color: row.sessionType === "vt" ? "#0d4f7a" : "#e65100",
+                              color: row.sessionType === "vt" ? "#161f45" : "#e65100",
                             }}>
                               {row.sessionType === "vt" ? "VT" : "Journee"}
                             </span>
@@ -309,7 +309,7 @@ export function VisioformationSessionsImportModal({
                             <span style={{
                               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
                               background: row.status === "done" ? "#e8f5e9" : "#e8f0fe",
-                              color: row.status === "done" ? "#2e7d32" : "#0d4f7a",
+                              color: row.status === "done" ? "#2e7d32" : "#161f45",
                             }}>
                               {statusLabels[row.status] ?? row.status}
                             </span>
@@ -406,7 +406,7 @@ export function VisioformationSessionsImportModal({
                 disabled={importing || selected.size === 0 || hasSelectedWithoutPlan}
                 style={{
                   height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                  background: (importing || selected.size === 0 || hasSelectedWithoutPlan) ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: (importing || selected.size === 0 || hasSelectedWithoutPlan) ? "#8399a9" : "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 13, fontWeight: 700,
                   cursor: (importing || selected.size === 0 || hasSelectedWithoutPlan) ? "default" : "pointer",
                   boxShadow: (importing || selected.size === 0 || hasSelectedWithoutPlan) ? "none" : "0 4px 15px rgba(26,107,156,0.3)",
@@ -421,7 +421,7 @@ export function VisioformationSessionsImportModal({
               onClick={() => { onClose(); router.refresh(); }}
               style={{
                 height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                background: "#1a6b9c", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                background: "#1E2A5A", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
             >
               Fermer

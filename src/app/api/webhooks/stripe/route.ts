@@ -20,10 +20,10 @@ function getSupabase() {
 }
 
 const NOTIFY_EMAILS = [
-  "rafi@closing-academie.com",
-  "alexandre@closing-academie.com",
-  "loic@closing-academie.com",
-  "naznine@closing-academie.com",
+  "rafi@ifagroupe.com",
+  "alexandre@ifagroupe.com",
+  "loic@ifagroupe.com",
+  "naznine@ifagroupe.com",
 ];
 
 export async function POST(req: NextRequest) {
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
 <p>Ce guide vous donne toutes les clés pour structurer le financement de vos formations. Pour aller encore plus loin et bénéficier d'un accompagnement personnalisé, n'hésitez pas à réserver un appel gratuit avec notre équipe :</p>
 
 <p style="text-align: center; margin: 24px 0;">
-  <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #FF6B35; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
+  <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #E8732A; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
     Réserver un bilan
   </a>
 </p>

@@ -420,7 +420,7 @@ export function PostFormDialog({
                   style={{
                     height: 48,
                     borderRadius: 8,
-                    border: banner === b.key ? "3px solid #1a6b9c" : "2px solid #dce8f0",
+                    border: banner === b.key ? "3px solid #1E2A5A" : "2px solid #dce8f0",
                     cursor: "pointer",
                     position: "relative",
                     overflow: "hidden",
@@ -496,7 +496,7 @@ export function PostFormDialog({
                     border: "1px solid #dce8f0",
                     background: "#f8fbfd",
                     cursor: "pointer",
-                    color: "#1a6b9c",
+                    color: "#1E2A5A",
                     fontWeight: 600,
                     fontSize: 13,
                     display: "flex",
@@ -524,7 +524,7 @@ export function PostFormDialog({
                       padding: "8px 16px",
                       borderRadius: 8,
                       border: "none",
-                      background: newTagName.trim() ? "#1a6b9c" : "#dce8f0",
+                      background: newTagName.trim() ? "#1E2A5A" : "#dce8f0",
                       color: newTagName.trim() ? "white" : "#8399a9",
                       cursor: newTagName.trim() ? "pointer" : "default",
                       fontWeight: 600,
@@ -572,9 +572,9 @@ export function PostFormDialog({
                     }}
                   >
                     {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att.file_name)
-                      ? <ImageIcon style={{ width: 12, height: 12, color: "#1a6b9c" }} />
-                      : <FileText style={{ width: 12, height: 12, color: "#1a6b9c" }} />}
-                    <span style={{ color: "#1a6b9c" }}>{att.file_name}</span>
+                      ? <ImageIcon style={{ width: 12, height: 12, color: "#1E2A5A" }} />
+                      : <FileText style={{ width: 12, height: 12, color: "#1E2A5A" }} />}
+                    <span style={{ color: "#1E2A5A" }}>{att.file_name}</span>
                     <button
                       type="button"
                       onClick={() => removeExistingAttachment(att.id)}
@@ -679,7 +679,7 @@ export function PostFormDialog({
                 padding: "10px 24px",
                 borderRadius: 8,
                 border: "none",
-                background: saving ? "#8399a9" : "#1a6b9c",
+                background: saving ? "#8399a9" : "#1E2A5A",
                 color: "white",
                 cursor: saving ? "wait" : "pointer",
                 fontSize: 14,

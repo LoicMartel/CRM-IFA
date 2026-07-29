@@ -197,7 +197,7 @@ export function DayTimeline({
               {/* Trainer name header */}
               <div style={{
                 height: 28, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 700, color: "#1a6b9c", background: "#f0f7fb",
+                fontSize: 11, fontWeight: 700, color: "#1E2A5A", background: "#f0f7fb",
                 borderBottom: "1px solid #dce8f0",
               }}>
                 {trainer.name}
@@ -272,7 +272,7 @@ export function DayTimeline({
                       position: "absolute", top: block.top, left: 4, right: 4,
                       height: Math.max(block.height, 20), borderRadius: 6,
                       background: block.isSelected ? "#e8f5e9" : "rgba(26, 107, 156, 0.08)",
-                      border: block.isSelected ? "2px solid #2e7d32" : "2px dashed #1a6b9c",
+                      border: block.isSelected ? "2px solid #2e7d32" : "2px dashed #1E2A5A",
                       cursor: "pointer", zIndex: 2,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       transition: "all 0.15s ease",
@@ -280,7 +280,7 @@ export function DayTimeline({
                   >
                     <span style={{
                       fontSize: 10, fontWeight: 700,
-                      color: block.isSelected ? "#2e7d32" : "#1a6b9c",
+                      color: block.isSelected ? "#2e7d32" : "#1E2A5A",
                     }}>
                       {block.time} — {block.duration}h
                     </span>

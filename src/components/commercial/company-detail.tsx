@@ -80,7 +80,7 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 const stageColors: Record<string, { bg: string; text: string }> = {
   opportunities: { bg: "#e3f2fd", text: "#1565c0" }, quote_to_send: { bg: "#fff3e0", text: "#e65100" },
-  quote_sent: { bg: "#f3e5f5", text: "#6a1b9a" }, opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a" },
+  quote_sent: { bg: "#f3e5f5", text: "#6a1b9a" }, opco_deposit: { bg: "#e8f0fe", text: "#161f45" },
   ordered: { bg: "#e8f5e9", text: "#2e7d32" }, closed_won: { bg: "#e8f5e9", text: "#2e7d32" },
   closed_lost: { bg: "#fce4ec", text: "#c62828" },
 };
@@ -339,7 +339,7 @@ export function CompanyDetail({
   const [docType, setDocType] = useState("devis");
 
   const DOC_TYPE_LABELS: Record<string, string> = { devis: "Devis", convention: "Convention", programme: "Programme", convocation: "Convocation", facture: "Facture", emargements: "Émargements", bilan_initial: "Bilan initial", bilan_intermediaire: "Bilan intermédiaire", bilan_final: "Bilan final", autre: "Autre" };
-  const DOC_TYPE_COLORS: Record<string, { bg: string; text: string }> = { devis: { bg: "#fff3e0", text: "#e65100" }, convention: { bg: "#e8f0fe", text: "#0d4f7a" }, programme: { bg: "#e8f5e9", text: "#2e7d32" }, convocation: { bg: "#f3e5f5", text: "#6a1b9a" }, facture: { bg: "#fce4ec", text: "#c62828" }, emargements: { bg: "#e0f2f1", text: "#00695c" }, bilan_initial: { bg: "#e3f2fd", text: "#1565c0" }, bilan_intermediaire: { bg: "#fff8e1", text: "#f57f17" }, bilan_final: { bg: "#fce4ec", text: "#ad1457" }, autre: { bg: "#f5f5f5", text: "#555" } };
+  const DOC_TYPE_COLORS: Record<string, { bg: string; text: string }> = { devis: { bg: "#fff3e0", text: "#e65100" }, convention: { bg: "#e8f0fe", text: "#161f45" }, programme: { bg: "#e8f5e9", text: "#2e7d32" }, convocation: { bg: "#f3e5f5", text: "#6a1b9a" }, facture: { bg: "#fce4ec", text: "#c62828" }, emargements: { bg: "#e0f2f1", text: "#00695c" }, bilan_initial: { bg: "#e3f2fd", text: "#1565c0" }, bilan_intermediaire: { bg: "#fff8e1", text: "#f57f17" }, bilan_final: { bg: "#fce4ec", text: "#ad1457" }, autre: { bg: "#f5f5f5", text: "#555" } };
   const INVOICE_STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = { a_valider: { label: "À valider", bg: "#ffe8b3", text: "#92600a" }, planifie: { label: "Planifié", bg: "#e7e0ff", text: "#5b21b6" }, a_facturer: { label: "À facturer", bg: "#bdd7ee", text: "#1f4e79" }, facture: { label: "Facturé", bg: "#ffc7ce", text: "#9c0006" }, encaisse: { label: "Encaissé", bg: "#c6efce", text: "#006100" }, non_fait: { label: "Non fait", bg: "#f5f5f5", text: "#888" } };
 
   async function openDealPopup(deal: Record<string, unknown>) {
@@ -546,7 +546,7 @@ export function CompanyDetail({
                     if (pc) {
                       return (
                         <span
-                          style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                          style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                           onClick={() => router.push(`/contacts/${s(pc.id)}`)}
                         >
                           {s(pc.first_name)} {s(pc.last_name)}
@@ -631,10 +631,10 @@ export function CompanyDetail({
               <div className="space-y-4">
                 {/* Prochain RDV */}
                 <div className="lca-card">
-                  <div style={{ height: 4, background: "#1a6b9c" }} />
+                  <div style={{ height: 4, background: "#1E2A5A" }} />
                   <div style={{ padding: 16 }}>
                     <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                      <CalendarCheck style={{ width: 16, height: 16, color: "#1a6b9c" }} /> Prochain RDV
+                      <CalendarCheck style={{ width: 16, height: 16, color: "#1E2A5A" }} /> Prochain RDV
                     </h3>
                     {(() => {
                       const nextMeeting = meetings.find((m) => s(m.status) === "booked" && s(m.next_step) !== "completed");
@@ -660,10 +660,10 @@ export function CompanyDetail({
 
                 {/* Derniers deals */}
                 <div className="lca-card">
-                  <div style={{ height: 4, background: "#FF6B35" }} />
+                  <div style={{ height: 4, background: "#E8732A" }} />
                   <div style={{ padding: 16 }}>
                     <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1a2a3a", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                      <Handshake style={{ width: 16, height: 16, color: "#FF6B35" }} /> Deals ({deals.length})
+                      <Handshake style={{ width: 16, height: 16, color: "#E8732A" }} /> Deals ({deals.length})
                     </h3>
                     {deals.length === 0 ? <Empty text="Aucun deal" /> : (
                       <div className="space-y-2">
@@ -672,12 +672,12 @@ export function CompanyDetail({
                           return (
                             <div key={s(d.id)} className="flex items-center justify-between" style={{ padding: "8px 0", borderBottom: "1px solid #e6f0f7" }}>
                               <div>
-                                <div onClick={() => openDealPopup(d)} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{s(d.name)}</div>
+                                <div onClick={() => openDealPopup(d)} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{s(d.name)}</div>
                                 <Badge bg={sc.bg} text={sc.text} label={DEAL_STAGE_LABELS[s(d.stage) as DealStage] ?? s(d.stage)} />
                               </div>
                               <div className="flex items-center gap-2">
                                 <span style={{ fontSize: 14, fontWeight: 700, color: "#27ae60" }}>{fmt(d.amount as number)}</span>
-                                <button onClick={() => openDealPopup(d)} style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                <button onClick={() => openDealPopup(d)} style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit style={{ width: 14, height: 14 }} />
                                 </button>
                               </div>
@@ -765,7 +765,7 @@ export function CompanyDetail({
                           return (
                             <TableRow key={s(c.id)} className="cursor-pointer hover:bg-gray-50" onClick={() => router.push(`/contacts/${s(c.id)}`)}>
                               <TableCell className="font-medium">
-                                <span style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                                <span style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                                   {s(c.first_name)} {s(c.last_name)}
                                 </span>
                               </TableCell>
@@ -810,12 +810,12 @@ export function CompanyDetail({
                           const isInvoiced = !!(d.is_invoiced);
                           return (
                             <TableRow key={s(d.id)}>
-                              <TableCell className="font-medium"><span onClick={() => openDealPopup(d)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{s(d.name)}</span></TableCell>
+                              <TableCell className="font-medium"><span onClick={() => openDealPopup(d)} style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{s(d.name)}</span></TableCell>
                               <TableCell>
                                 {contact && s(d.contact_id) ? (
                                   <span
                                     onClick={() => router.push(`/contacts/${s(d.contact_id)}`)}
-                                    style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                                    style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                                   >
                                     {contact.first_name} {contact.last_name}
                                   </span>
@@ -831,13 +831,13 @@ export function CompanyDetail({
                               </TableCell>
                               <TableCell style={{ textAlign: "center" }}>
                                 {owner ? (
-                                  <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
+                                  <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
                                     {owner.first_name[0]}{owner.last_name[0]}
                                   </span>
                                 ) : <span style={{ color: "#ccc" }}>—</span>}
                               </TableCell>
                               <TableCell>
-                                <button onClick={() => openDealPopup(d)} style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                <button onClick={() => openDealPopup(d)} style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit style={{ width: 14, height: 14 }} />
                                 </button>
                               </TableCell>
@@ -858,12 +858,12 @@ export function CompanyDetail({
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fbfd" }}>
-                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Contact</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Présentiel</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
-                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Contact</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Apprenants</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Présentiel</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>VT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Total HT</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -919,7 +919,7 @@ export function CompanyDetail({
                                 {contact && s(m.contact_id) ? (
                                   <span
                                     onClick={() => router.push(`/contacts/${s(m.contact_id)}`)}
-                                    style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                                    style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                                   >
                                     {contact.first_name} {contact.last_name}
                                   </span>
@@ -928,7 +928,7 @@ export function CompanyDetail({
                               <TableCell><Badge bg={sc.bg} text={sc.text} label={MEETING_STATUS_LABELS[s(m.status) as MeetingStatus] ?? s(m.status)} /></TableCell>
                               <TableCell style={{ textAlign: "center" }}>
                                 {assigned ? (
-                                  <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
+                                  <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
                                     {assigned.first_name[0]}{assigned.last_name[0]}
                                   </span>
                                 ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -1025,7 +1025,7 @@ export function CompanyDetail({
                           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
                             <button
                               onClick={() => setOpenPlanId(s(plan.id))}
-                              style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c", background: "#e8f0fe", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}
+                              style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "#e8f0fe", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}
                             >
                               Ouvrir le plan
                             </button>
@@ -1300,7 +1300,7 @@ export function CompanyDetail({
                         {companyDocs.map(doc => {
                           const typeLabel: Record<string, string> = { reporting: "Reporting", convention: "Convention", programme: "Programme", devis: "Devis", facture: "Facture", emargements: "Émargements", bilan: "Bilan", autre: "Autre" };
                           const typeColor: Record<string, { bg: string; text: string }> = {
-                            reporting: { bg: "#e3f2fd", text: "#0d4f7a" }, convention: { bg: "#e8f0fe", text: "#0d4f7a" },
+                            reporting: { bg: "#e3f2fd", text: "#161f45" }, convention: { bg: "#e8f0fe", text: "#161f45" },
                             programme: { bg: "#e8f5e9", text: "#2e7d32" }, devis: { bg: "#fff3e0", text: "#e65100" },
                             facture: { bg: "#fce4ec", text: "#c62828" }, emargements: { bg: "#e0f2f1", text: "#00695c" },
                             bilan: { bg: "#f3e5f5", text: "#6a1b9a" }, autre: { bg: "#f5f5f5", text: "#555" },
@@ -1327,7 +1327,7 @@ export function CompanyDetail({
                               <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{fmtDate(doc.created_at)}</TableCell>
                               <TableCell style={{ textAlign: "right" }}>
                                 <div className="flex items-center justify-end gap-1">
-                                  <button onClick={() => handleDownloadCompanyDoc(doc)} title="Télécharger" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1a6b9c" }}>
+                                  <button onClick={() => handleDownloadCompanyDoc(doc)} title="Télécharger" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1E2A5A" }}>
                                     <Download className="h-4 w-4" />
                                   </button>
                                   {doc.source === "company" && (
@@ -1395,7 +1395,7 @@ export function CompanyDetail({
                               </TableCell>
                               <TableCell style={{ textAlign: "right" }}>
                                 <div className="flex items-center justify-end gap-1">
-                                  <button onClick={() => openRsModal(rs)} title="Modifier" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1a6b9c" }}>
+                                  <button onClick={() => openRsModal(rs)} title="Modifier" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#1E2A5A" }}>
                                     <Edit style={{ width: 14, height: 14 }} />
                                   </button>
                                   <button onClick={() => handleDeleteRs(rs.id)} title="Supprimer" style={{ padding: 6, background: "none", border: "none", cursor: "pointer", color: "#e74c3c" }}>
@@ -1563,12 +1563,12 @@ export function CompanyDetail({
                 <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
-                    <span style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{s(company.name)}</span>
+                    <span style={{ fontSize: 13, color: "#1E2A5A", fontWeight: 600 }}>{s(company.name)}</span>
                   </div>
                   {contact && (
                     <div className="flex items-center gap-2">
                       <Users style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span onClick={() => { setSelectedDeal(null); router.push(`/contacts/${s(d.contact_id)}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                      <span onClick={() => { setSelectedDeal(null); router.push(`/contacts/${s(d.contact_id)}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                         {contact.first_name} {contact.last_name}
                       </span>
                     </div>
@@ -1653,7 +1653,7 @@ export function CompanyDetail({
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Documents</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                    <label style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
+                    <label style={{ height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
                       <Upload className="h-3.5 w-3.5" />{uploadingDoc ? "Envoi..." : "Importer"}
                       <input type="file" style={{ display: "none" }} disabled={uploadingDoc} onChange={handleUploadDealDoc} />
                     </label>
@@ -1678,7 +1678,7 @@ export function CompanyDetail({
                                 <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10, background: dtc.bg, color: dtc.text }}>{DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}</span>
                               </div>
                             </div>
-                            <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}><Download className="h-4 w-4" /></button>
+                            <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}><Download className="h-4 w-4" /></button>
                             <button onClick={() => handleDeleteDealDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}><Trash2 className="h-3.5 w-3.5" /></button>
                           </div>
                         );
@@ -1700,7 +1700,7 @@ export function CompanyDetail({
               <div style={{ display: "flex", gap: 10, padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                 <button
                   onClick={() => { setSelectedDeal(null); router.push("/deals"); }}
-                  style={{ flex: 1, height: 40, borderRadius: 8, background: "#FF6B35", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ flex: 1, height: 40, borderRadius: 8, background: "#E8732A", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
                   <Edit className="h-4 w-4" /> Modifier le deal
                 </button>
@@ -1772,7 +1772,7 @@ export function CompanyDetail({
                         if (reportLearnerIds.size === learners.length) setReportLearnerIds(new Set());
                         else setReportLearnerIds(new Set(learners.map(l => s(l.id))));
                       }}
-                      style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                      style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                     >
                       {reportLearnerIds.size === learners.length ? "Tout désélectionner" : "Tout sélectionner"}
                     </button>

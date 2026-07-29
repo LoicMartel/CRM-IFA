@@ -11,7 +11,7 @@ export function svc() {
 }
 
 export async function resolveOwnerId(sb: ReturnType<typeof svc>): Promise<string | null> {
-  const email = process.env.INBOX_DEFAULT_OWNER_EMAIL ?? "rafi@closing-academie.com";
+  const email = process.env.INBOX_DEFAULT_OWNER_EMAIL ?? "rafi@ifagroupe.com";
   const { data } = await sb.from("team_members").select("id").ilike("email", email).maybeSingle();
   return data?.id ?? null;
 }

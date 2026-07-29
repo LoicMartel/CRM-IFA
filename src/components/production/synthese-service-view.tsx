@@ -10,9 +10,9 @@ type R = Record<string, unknown>;
 
 const TRAINERS_FALLBACK = ["Alexandre", "Rafi", "Loïc", "Guillaume", "Iman"];
 const TRAINER_COLORS: Record<string, string> = {
-  Alexandre: "#1a6b9c",
+  Alexandre: "#1E2A5A",
   Rafi: "#2ecc71",
-  Loïc: "#FF6B35",
+  Loïc: "#E8732A",
   Guillaume: "#8399a9",
   Iman: "#8e44ad",
 };
@@ -333,11 +333,11 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
     );
   }
 
-  const thStyle = { fontSize: 11, fontWeight: 700 as const, color: "white", padding: "8px 10px", textAlign: "center" as const, background: "#0d4f7a" };
+  const thStyle = { fontSize: 11, fontWeight: 700 as const, color: "white", padding: "8px 10px", textAlign: "center" as const, background: "#161f45" };
   const thStyleLeft = { ...thStyle, textAlign: "left" as const };
   const tdStyle = { fontSize: 13, padding: "8px 10px", textAlign: "center" as const, borderBottom: "1px solid #e8ecf1", color: "#1a2a3a" };
   const tdStyleLeft = { ...tdStyle, textAlign: "left" as const, fontWeight: 600 as const };
-  const totalTdStyle = { ...tdStyle, fontWeight: 800 as const, color: "#0d4f7a", borderTop: "2px solid #0d4f7a" };
+  const totalTdStyle = { ...tdStyle, fontWeight: 800 as const, color: "#161f45", borderTop: "2px solid #161f45" };
 
   return (
     <div className="space-y-6">
@@ -358,7 +358,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
       {/* KPIs */}
       <div className="grid gap-3 md:grid-cols-6">
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#1a6b9c" }} />
+          <div style={{ height: 4, background: "#1E2A5A" }} />
           <div style={{ padding: "12px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Jours planifiés / délivrés</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a" }}>{fmtJ(totalHoursDelivered)} / {fmtJ(totalHoursPlanned)}</div>
@@ -374,7 +374,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
           </div>
         </div>
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#FF6B35" }} />
+          <div style={{ height: 4, background: "#E8732A" }} />
           <div style={{ padding: "12px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Taux moyen journalier</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a" }}>{fmt(avgDailyRate)}</div>
@@ -561,8 +561,8 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
                 <YAxis tick={{ fill: "#8399a9", fontSize: 11 }} tickFormatter={(v) => `${v}j`} />
                 <Tooltip formatter={(v) => `${v}j`} />
                 <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-                <Bar dataKey="Visio" fill="#1a6b9c" radius={[4, 4, 0, 0]} animationDuration={1000} />
-                <Bar dataKey="Présentiel" fill="#FF6B35" radius={[4, 4, 0, 0]} animationDuration={1000} />
+                <Bar dataKey="Visio" fill="#1E2A5A" radius={[4, 4, 0, 0]} animationDuration={1000} />
+                <Bar dataKey="Présentiel" fill="#E8732A" radius={[4, 4, 0, 0]} animationDuration={1000} />
               </BarChart>
             </ResponsiveContainer>
           </div>

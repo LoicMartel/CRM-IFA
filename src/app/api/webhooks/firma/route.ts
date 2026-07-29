@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const NAZNINE_EMAIL = "naznine@closing-academie.com";
+const NAZNINE_EMAIL = "naznine@ifagroupe.com";
 
 /**
  * Webhook Firma — signature de devis complétée (port WF-002b, branche signed).

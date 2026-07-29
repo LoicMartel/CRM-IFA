@@ -1,4 +1,4 @@
-// Types principaux du CRM Closing Académie
+// Types principaux du CRM IFA Formatio
 import type { QuoteLineDraft } from "@/lib/adv-quote";
 
 export type TeamMemberRole = "admin" | "sales" | "trainer" | "account_manager" | "finance";
@@ -470,7 +470,7 @@ export interface Post {
 
 export const POST_BANNERS: { key: string; label: string; style: React.CSSProperties }[] = [
   { key: "none", label: "Aucune", style: {} },
-  { key: "gradient_blue", label: "Bleu", style: { background: "linear-gradient(135deg, #1a6b9c 0%, #4fc3f7 100%)" } },
+  { key: "gradient_blue", label: "Bleu", style: { background: "linear-gradient(135deg, #1E2A5A 0%, #4fc3f7 100%)" } },
   { key: "gradient_green", label: "Vert", style: { background: "linear-gradient(135deg, #2e7d32 0%, #81c784 100%)" } },
   { key: "gradient_orange", label: "Orange", style: { background: "linear-gradient(135deg, #e65100 0%, #ffb74d 100%)" } },
   { key: "gradient_purple", label: "Violet", style: { background: "linear-gradient(135deg, #6a1b9a 0%, #ce93d8 100%)" } },

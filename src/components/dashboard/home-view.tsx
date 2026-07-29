@@ -19,12 +19,12 @@ function fmt(n: number) {
 const MEETING_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   R0: { bg: "#ede7f6", text: "#4a148c", border: "#7c4dff" },
   R1: { bg: "#fce4ec", text: "#c62828", border: "#e74c3c" },
-  R2: { bg: "#e3f2fd", text: "#1565c0", border: "#1a6b9c" },
+  R2: { bg: "#e3f2fd", text: "#1565c0", border: "#1E2A5A" },
   R3: { bg: "#e8f5e9", text: "#2e7d32", border: "#27ae60" },
 };
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
-  booked: { label: "Planifié", bg: "#e8f0fe", text: "#0d4f7a" },
+  booked: { label: "Planifié", bg: "#e8f0fe", text: "#161f45" },
   done: { label: "Effectué", bg: "#e8f5e9", text: "#2e7d32" },
   no_show: { label: "No show", bg: "#fce4ec", text: "#c62828" },
   cancelled: { label: "Annulé", bg: "#f5f5f5", text: "#999" },
@@ -387,7 +387,7 @@ export function HomeView({
             <div>
               <div className="lca-label" style={{ textTransform: "capitalize" }}>Progression du mois — {currentMonthLabel}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{fmt(monthlyCA)}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{fmt(monthlyCA)}</span>
                 <span style={{ fontSize: 13, color: "#8399a9" }}>/ {fmt(monthTarget)}</span>
               </div>
             </div>
@@ -400,8 +400,8 @@ export function HomeView({
                 style={{
                   width: `${Math.min(caPct, 100)}%`,
                   background: caPct > 100
-                    ? "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 25%, #FF6B35 60%, #e74c3c 100%)"
-                    : "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 40%, #1a6b9c 70%, #FF6B35 100%)",
+                    ? "linear-gradient(90deg, #0f1630 0%, #1E2A5A 25%, #E8732A 60%, #e74c3c 100%)"
+                    : "linear-gradient(90deg, #0f1630 0%, #1E2A5A 40%, #1E2A5A 70%, #E8732A 100%)",
                 }}
               />
             </div>
@@ -411,7 +411,7 @@ export function HomeView({
           </div>
           <div className="flex justify-between" style={{ marginTop: 10, fontSize: 12 }}>
             <span style={{ color: "#8399a9" }}>0 €</span>
-            <span style={{ color: "#FF6B35", fontWeight: 700 }}>{fmt(monthlyCA)}</span>
+            <span style={{ color: "#E8732A", fontWeight: 700 }}>{fmt(monthlyCA)}</span>
             <span style={{ color: "#8399a9" }}>{fmt(monthTarget)}</span>
           </div>
           <div style={{ marginTop: 12 }}>
@@ -446,7 +446,7 @@ export function HomeView({
       <div className="grid gap-3 md:grid-cols-4">
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV aujourd&apos;hui</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{todayMeetings.length}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{todayMeetings.length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions aujourd&apos;hui</div>
@@ -454,7 +454,7 @@ export function HomeView({
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Tâches du jour</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{todayTasks.length}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{todayTasks.length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Tâches en retard</div>
@@ -465,10 +465,10 @@ export function HomeView({
       <div className="grid gap-5 md:grid-cols-2">
         {/* ===== RDV du jour ===== */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#1a6b9c" }} />
+          <div style={{ height: 4, background: "#1E2A5A" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <Calendar className="h-4 w-4" style={{ color: "#1a6b9c" }} /> RDV du jour
+              <Calendar className="h-4 w-4" style={{ color: "#1E2A5A" }} /> RDV du jour
             </h3>
             {todayMeetings.length === 0 ? (
               <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV aujourd&apos;hui</p>
@@ -502,7 +502,7 @@ export function HomeView({
                         {(() => { const sc = STATUS_LABELS[m.status as string] ?? STATUS_LABELS.booked; return <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>; })()}
                         {(m.status as string) === "booked" && (
                           <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
                             📋 Suivi rdv
                           </button>
                         )}
@@ -532,9 +532,9 @@ export function HomeView({
                   const plan = s.service_plans as { companies: { name: string } | null; training_programs: { name: string } | null } | null;
                   const trainers = (s.trainers as string[]) ?? [];
                   return (
-                    <div key={s.id as string} onClick={() => openSession(s)} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1a6b9c"}`, cursor: "pointer" }}>
+                    <div key={s.id as string} onClick={() => openSession(s)} style={{ padding: "10px 12px", borderRadius: 8, background: isJournee ? "#fff3e0" : "#e8f0fe", borderLeft: `3px solid ${isJournee ? "#e65100" : "#1E2A5A"}`, cursor: "pointer" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: isJournee ? "#e65100" : "#1a6b9c" }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isJournee ? "#e65100" : "#1E2A5A" }}>
                           {time ? `${time} · ` : ""}{(() => { const p = getSessionProgress((s as any).service_plan_id, s.session_type as string); const label = isJournee ? "Journée" : "VT"; return p ? `${label} ${p.done}/${p.total}` : label; })()}
                         </span>
                         <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
@@ -553,10 +553,10 @@ export function HomeView({
                       {plan?.companies && <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{plan.companies.name}</div>}
                       {trainers.length > 0 && <div style={{ fontSize: 11, color: "#5a6f80" }}>{trainers.join(", ")}</div>}
                       <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
-                        {(() => { const sessionStatusLabels: Record<string, { bg: string; text: string; label: string }> = { planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" }, done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" }, cancelled: { bg: "#f5f5f5", text: "#999", label: "Annulé" }, no_show: { bg: "#fce4ec", text: "#c62828", label: "No show" } }; const sc = sessionStatusLabels[s.status as string] ?? sessionStatusLabels.planned; return <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>; })()}
+                        {(() => { const sessionStatusLabels: Record<string, { bg: string; text: string; label: string }> = { planned: { bg: "#e8f0fe", text: "#161f45", label: "Planifié" }, done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" }, cancelled: { bg: "#f5f5f5", text: "#999", label: "Annulé" }, no_show: { bg: "#fce4ec", text: "#c62828", label: "No show" } }; const sc = sessionStatusLabels[s.status as string] ?? sessionStatusLabels.planned; return <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>; })()}
                         {(s.status as string) === "planned" && (
                           <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
                             📋 Suivi session
                           </button>
                         )}
@@ -571,10 +571,10 @@ export function HomeView({
 
         {/* ===== Tâches du jour ===== */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#FF6B35" }} />
+          <div style={{ height: 4, background: "#E8732A" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <CheckSquare className="h-4 w-4" style={{ color: "#FF6B35" }} /> Tâches du jour
+              <CheckSquare className="h-4 w-4" style={{ color: "#E8732A" }} /> Tâches du jour
             </h3>
             {todayTasks.length === 0 ? (
               <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucune tâche aujourd&apos;hui</p>
@@ -639,10 +639,10 @@ export function HomeView({
       {/* ===== À venir ===== */}
       <div className="grid gap-5 md:grid-cols-2">
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#0d4f7a" }} />
+          <div style={{ height: 4, background: "#161f45" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <TrendingUp className="h-4 w-4" style={{ color: "#0d4f7a" }} /> Prochains RDV
+              <TrendingUp className="h-4 w-4" style={{ color: "#161f45" }} /> Prochains RDV
             </h3>
             {upcomingMeetings.length === 0 ? (
               <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV à venir</p>
@@ -652,7 +652,7 @@ export function HomeView({
                   const contact = m.contacts as { first_name: string; last_name: string } | null;
                   const dateLabel = (() => { try { return format(new Date(m.scheduled_at as string), "EEE d MMM 'à' HH:mm", { locale: fr }); } catch { return ""; } })();
                   return (
-                    <div key={m.id as string} onClick={() => router.push("/agenda-commercial")} style={{ padding: "8px 12px", borderRadius: 8, background: "#f8fbfd", borderLeft: "3px solid #1a6b9c", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div key={m.id as string} onClick={() => router.push("/agenda-commercial")} style={{ padding: "8px 12px", borderRadius: 8, background: "#f8fbfd", borderLeft: "3px solid #1E2A5A", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>{m.meeting_type as string} — {contact ? `${contact.first_name} ${contact.last_name}` : "—"}</span>
                       </div>
@@ -836,12 +836,12 @@ export function HomeView({
                   </div>
                 )}
                 {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
-                  <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1a6b9c", fontSize: 13, color: "#0d4f7a", fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1E2A5A", fontSize: 13, color: "#161f45", fontWeight: 500 }}>
                     Un deal &quot;Opportunité&quot; sera créé automatiquement.
                   </div>
                 )}
                 {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
-                  <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #FF6B35", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #E8732A", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
                     Un deal &quot;Devis à envoyer&quot; sera créé automatiquement.
                   </div>
                 )}
@@ -868,7 +868,7 @@ export function HomeView({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                 <button
                   onClick={() => { stopRecording(); setSelectedMeeting(null); if (m.contact_id) router.push(`/contacts/${m.contact_id}`); }}
-                  style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                  style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                 >
                   Voir la fiche contact
                 </button>
@@ -879,7 +879,7 @@ export function HomeView({
                   <button
                     onClick={handleSaveRdv}
                     disabled={savingRdv}
-                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingRdv ? 0.6 : 1 }}
+                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingRdv ? 0.6 : 1 }}
                   >
                     {savingRdv ? "..." : "Sauvegarder le suivi"}
                   </button>
@@ -906,7 +906,7 @@ export function HomeView({
         const trainers = (s.trainers as string[]) ?? [];
         const learners = ((s as any).training_session_learners ?? []).map((sl: any) => sl.learners).filter(Boolean) as { id: string; first_name: string; last_name: string }[];
         const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-          planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" },
+          planned: { bg: "#e8f0fe", text: "#161f45", label: "Planifié" },
           done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
           no_show: { bg: "#fce4ec", text: "#c62828", label: "No show" },
           cancelled: { bg: "#f5f5f5", text: "#999", label: "Annulé" },
@@ -937,7 +937,7 @@ export function HomeView({
                 {/* Info badges */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: sc.bg, color: sc.text }}>{sc.label}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: isJournee ? "#fff3e0" : "#e8f0fe", color: isJournee ? "#FF6B35" : "#1a6b9c" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: isJournee ? "#fff3e0" : "#e8f0fe", color: isJournee ? "#E8732A" : "#1E2A5A" }}>
                     {Number(s.duration_hours) || 0}h
                   </span>
                   {s.is_billable !== false && hourlyRate > 0 && (
@@ -954,7 +954,7 @@ export function HomeView({
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Expert(s)</div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {trainers.map(t => (
-                        <span key={t} style={{ fontSize: 12, fontWeight: 600, padding: "3px 12px", borderRadius: 20, background: "#e8f0fe", color: "#1a6b9c" }}>{t}</span>
+                        <span key={t} style={{ fontSize: 12, fontWeight: 600, padding: "3px 12px", borderRadius: 20, background: "#e8f0fe", color: "#1E2A5A" }}>{t}</span>
                       ))}
                     </div>
                   </div>
@@ -966,7 +966,7 @@ export function HomeView({
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Apprenants</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {learners.map(l => (
-                        <span key={l.id} onClick={() => router.push(`/learners/${l.id}`)} style={{ fontSize: 12, color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                        <span key={l.id} onClick={() => router.push(`/learners/${l.id}`)} style={{ fontSize: 12, color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}>
                           {l.first_name} {l.last_name}
                         </span>
                       ))}
@@ -1014,7 +1014,7 @@ export function HomeView({
 
               {/* Footer */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
-                <button onClick={() => { stopRecording(); router.push("/planning"); }} style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                <button onClick={() => { stopRecording(); router.push("/planning"); }} style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                   Voir dans Planification
                 </button>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -1024,7 +1024,7 @@ export function HomeView({
                   <button
                     onClick={handleSaveSession}
                     disabled={savingSession}
-                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingSession ? 0.6 : 1 }}
+                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingSession ? 0.6 : 1 }}
                   >
                     {savingSession ? "..." : "Enregistrer"}
                   </button>
@@ -1062,7 +1062,7 @@ export function HomeView({
                     const c = selectedTask.contacts as { first_name: string; last_name: string };
                     return (
                       <div className="flex items-center gap-2">
-                        <span style={{ fontSize: 13, color: "#1a6b9c" }}>{c.first_name} {c.last_name}</span>
+                        <span style={{ fontSize: 13, color: "#1E2A5A" }}>{c.first_name} {c.last_name}</span>
                       </div>
                     );
                   })() : null}
@@ -1119,7 +1119,7 @@ export function HomeView({
                   Accomplie
                 </button>
                 <button onClick={handleSaveTask} disabled={savingTask || !taskForm.title.trim()}
-                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingTask || !taskForm.title.trim() ? 0.5 : 1 }}>
+                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingTask || !taskForm.title.trim() ? 0.5 : 1 }}>
                   {savingTask ? "..." : "Enregistrer"}
                 </button>
               </div>

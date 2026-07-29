@@ -111,7 +111,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
                 {isAll ? (
                   <span style={{
                     width: 24, height: 24, borderRadius: "50%",
-                    background: "linear-gradient(135deg, #1a6b9c 0%, #2196f3 100%)",
+                    background: "linear-gradient(135deg, #1E2A5A 0%, #2196f3 100%)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 700, flexShrink: 0,
                   }}>
@@ -122,7 +122,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
                     width: 24, height: 24, borderRadius: "50%",
                     background: item.avatar_url
                       ? `url(${item.avatar_url}) center/cover`
-                      : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                      : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 700, flexShrink: 0,
                   }}>
@@ -130,7 +130,7 @@ const MentionList = forwardRef<MentionListHandle, MentionListProps>(
                   </span>
                 )}
                 <span style={{ fontWeight: isAll ? 600 : 500, flex: 1 }}>{item.label}</span>
-                {isCat && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1a6b9c", flexShrink: 0 }} />}
+                {isCat && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1E2A5A", flexShrink: 0 }} />}
               </button>
             </div>
           );

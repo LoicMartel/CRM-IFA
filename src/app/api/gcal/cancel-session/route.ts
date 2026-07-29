@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         "",
         "Belle journée,",
         "",
-        "L'équipe La Closing Académie",
+        "L'équipe IFA Formatio",
       ].filter(Boolean).join("\n");
 
       const emailRes = await sendSessionEmail({

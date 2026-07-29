@@ -40,7 +40,7 @@ export async function POST() {
       "tukqgipr5abfsco5a7hql7k0m8@group.calendar.google.com",
     ],
     "Alexandre": [
-      "alexandre@closing-academie.com",
+      "alexandre@ifagroupe.com",
     ],
     "Loïc": [
       "b1d8e8cd626637bb6745ca2df63684a1f4ca9c6f1eef203c4cb97c7969dd8dc1@group.calendar.google.com",

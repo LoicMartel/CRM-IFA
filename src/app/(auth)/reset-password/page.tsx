@@ -63,14 +63,14 @@ export default function ResetPasswordPage() {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 40%, #0d4f7a 70%, #0a3d5f 100%)",
+      background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 40%, #161f45 70%, #0f1630 100%)",
     }}>
       <div style={{
         width: 420, background: "white", borderRadius: 20,
         boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
         overflow: "hidden",
       }}>
-        <div style={{ height: 5, background: "linear-gradient(90deg, #FF6B35, #e65100, #FF6B35)" }} />
+        <div style={{ height: 5, background: "linear-gradient(90deg, #E8732A, #e65100, #E8732A)" }} />
         <div style={{ padding: "36px 36px 28px" }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a", marginBottom: 4 }}>
             Nouveau mot de passe
@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
                 disabled={loading}
                 style={{
                   width: "100%", height: 46, borderRadius: 10, border: "none", cursor: "pointer",
-                  background: loading ? "#8399a9" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                  background: loading ? "#8399a9" : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                   color: "white", fontSize: 15, fontWeight: 700,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   boxShadow: loading ? "none" : "0 4px 15px rgba(255,107,53,0.3)",
@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
 
         <div style={{ padding: "14px 36px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", textAlign: "center" }}>
           <p style={{ fontSize: 11, color: "#8399a9" }}>
-            © {new Date().getFullYear()} La Closing Académie® — CRM interne
+            © {new Date().getFullYear()} IFA Formatio® — CRM interne
           </p>
         </div>
       </div>

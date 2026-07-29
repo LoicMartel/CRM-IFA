@@ -98,7 +98,7 @@ async function enrichWithClaude(
 ): Promise<EnrichedReport> {
   const notesBlock = rawSessions.map(s => `${s.date} (${s.type}, ${s.duration}) : ${s.notes}`).join("\n");
 
-  const prompt = `Tu es un expert en rédaction de reporting de formation professionnelle pour La Closing Académie.
+  const prompt = `Tu es un expert en rédaction de reporting de formation professionnelle pour IFA Formatio.
 
 Voici les notes brutes des sessions de formation de ${learnerName}, ${position} chez ${companyName} :
 
@@ -184,7 +184,7 @@ function buildLearnerSections(
   el.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 100 }, children: [new TextRun({ text: `${position} – ${companyName}`, font: "Arial", size: 24, color: GRAY_DARK })] }));
   el.push(new Paragraph({ spacing: { after: 800 }, children: [] }));
   el.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: "Formateur : Loïc Martel", bold: true, font: "Arial", size: 22, color: BLUE_DARK })] }));
-  el.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: "Consultant Expert – La Closing Académie", font: "Arial", size: 22, color: GRAY_DARK })] }));
+  el.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: "Consultant Expert – IFA Formatio", font: "Arial", size: 22, color: GRAY_DARK })] }));
   el.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [new TextRun({ text: `Document établi le ${todayStr}`, font: "Arial", size: 20, color: "666666" })] }));
   el.push(new Paragraph({ children: [new PageBreak()] }));
 
@@ -199,7 +199,7 @@ function buildLearnerSections(
     columnWidths: icw,
     rows: [
       ["Collaborateur", fullName], ["Poste", position], ["Établissement", companyName],
-      ["Formateur", "Loïc Martel – Consultant Expert, La Closing Académie"],
+      ["Formateur", "Loïc Martel – Consultant Expert, IFA Formatio"],
       ["Période", periodStr], ["Nombre de sessions", `${doneSessions.length} sessions`], ["Format", formatLabel],
     ].map(([l, v], i) => lvRow(l, v, i, icw)),
   }) as unknown as Paragraph);
@@ -262,8 +262,8 @@ function buildLearnerSections(
 
   // ===== Signature =====
   el.push(new Paragraph({ spacing: { before: 800 }, children: [] }));
-  el.push(new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: "Loïc Martel – Consultant Expert – La Closing Académie", bold: true, font: "Arial", size: 21, color: BLUE_DARK })] }));
-  el.push(new Paragraph({ children: [new TextRun({ text: "loic@closing-academie.com", font: "Arial", size: 21, color: BLUE_MED })] }));
+  el.push(new Paragraph({ spacing: { after: 80 }, children: [new TextRun({ text: "Loïc Martel – Consultant Expert – IFA Formatio", bold: true, font: "Arial", size: 21, color: BLUE_DARK })] }));
+  el.push(new Paragraph({ children: [new TextRun({ text: "loic@ifagroupe.com", font: "Arial", size: 21, color: BLUE_MED })] }));
 
   return el;
 }
@@ -377,7 +377,7 @@ export async function POST(req: NextRequest) {
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               border: { top: { style: BorderStyle.SINGLE, size: 1, color: "D5E8F0", space: 4 } },
-              children: [new TextRun({ text: "Loïc Martel – La Closing Académie", font: "Arial", size: 16, color: "666666" })],
+              children: [new TextRun({ text: "Loïc Martel – IFA Formatio", font: "Arial", size: 16, color: "666666" })],
             })],
           }),
         },

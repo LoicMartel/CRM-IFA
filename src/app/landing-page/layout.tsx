@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "La Closing Académie - Landing Page",
+  title: "IFA Formatio - Landing Page",
 };
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {

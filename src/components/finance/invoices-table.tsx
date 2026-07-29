@@ -38,7 +38,7 @@ interface Invoice {
 
 const INVOICE_STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
   facturable: { label: "Facturable", bg: "#fff3e0", text: "#e65100" },
-  facture: { label: "Facturé", bg: "#e8f0fe", text: "#0d4f7a" },
+  facture: { label: "Facturé", bg: "#e8f0fe", text: "#161f45" },
   paye: { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" },
 };
 
@@ -86,7 +86,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
   const [invDocType, setInvDocType] = useState("facture");
 
   const DOC_TYPES: Record<string, string> = { facture: "Facture", avoir: "Avoir", relance: "Relance", pennylane: "Import Pennylane", autre: "Autre" };
-  const DOC_COLORS: Record<string, { bg: string; text: string }> = { facture: { bg: "#e8f0fe", text: "#0d4f7a" }, avoir: { bg: "#fce4ec", text: "#c62828" }, relance: { bg: "#fff3e0", text: "#e65100" }, pennylane: { bg: "#e8f5e9", text: "#2e7d32" }, autre: { bg: "#f5f5f5", text: "#555" } };
+  const DOC_COLORS: Record<string, { bg: string; text: string }> = { facture: { bg: "#e8f0fe", text: "#161f45" }, avoir: { bg: "#fce4ec", text: "#c62828" }, relance: { bg: "#fff3e0", text: "#e65100" }, pennylane: { bg: "#e8f5e9", text: "#2e7d32" }, autre: { bg: "#f5f5f5", text: "#555" } };
 
   async function loadInvoiceDocs(invoiceId: string) {
     setLoadingDocs(true);
@@ -353,7 +353,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
               filtered.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell>
-                    <span onClick={() => { setViewInvoice(inv); loadInvoiceDocs(inv.id); }} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                    <span onClick={() => { setViewInvoice(inv); loadInvoiceDocs(inv.id); }} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                       {inv.invoice_name || inv.client_name}
                     </span>
                   </TableCell>
@@ -361,7 +361,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                     {inv.company_id ? (
                       <span
                         onClick={() => router.push(`/clients/${inv.company_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {inv.client_name}
                       </span>
@@ -390,7 +390,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                       <button
                         onClick={() => openEdit(inv)}
-                        style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}
+                        style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}
                         title="Modifier"
                       >
                         <Pencil style={{ width: 14, height: 14 }} />
@@ -543,8 +543,8 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                             display: "flex", alignItems: "center", gap: 4, fontSize: 12, cursor: "pointer",
                             padding: "4px 10px", borderRadius: 6,
                             background: checked ? "#e8f0fe" : "white",
-                            border: `1px solid ${checked ? "#1a6b9c" : "#dce8f0"}`,
-                            color: checked ? "#0d4f7a" : "#5a6f80",
+                            border: `1px solid ${checked ? "#1E2A5A" : "#dce8f0"}`,
+                            color: checked ? "#161f45" : "#5a6f80",
                             fontWeight: checked ? 600 : 400,
                           }}
                         >
@@ -573,7 +573,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                                 setMonthlyAmounts(newAmounts);
                               }
                             }}
-                            style={{ accentColor: "#1a6b9c" }}
+                            style={{ accentColor: "#1E2A5A" }}
                           />
                           {mLabel}
                         </label>
@@ -681,7 +681,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                   {inv.companies && (
                     <div className="flex items-center gap-2">
                       <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span onClick={() => { setViewInvoice(null); router.push(`/clients/${inv.company_id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                      <span onClick={() => { setViewInvoice(null); router.push(`/clients/${inv.company_id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                         {inv.companies.name}
                       </span>
                     </div>
@@ -689,7 +689,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                   {deal && (
                     <div className="flex items-center gap-2">
                       <Handshake style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span onClick={() => { setViewInvoice(null); router.push("/deals"); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                      <span onClick={() => { setViewInvoice(null); router.push("/deals"); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                         {deal.name}
                       </span>
                     </div>
@@ -724,7 +724,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Documents</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                    <label style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
+                    <label style={{ height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
                       <Upload className="h-3.5 w-3.5" />{uploadingDoc ? "Envoi..." : "Importer"}
                       <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" style={{ display: "none" }} disabled={uploadingDoc} onChange={(e) => { setInvDocType("facture"); handleUploadInvoiceDoc(e, inv.id); }} />
                     </label>
@@ -751,7 +751,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                                 {doc.file_size && <span style={{ fontSize: 11, color: "#8399a9" }}>{doc.file_size < 1024 * 1024 ? `${(doc.file_size / 1024).toFixed(0)} KB` : `${(doc.file_size / (1024 * 1024)).toFixed(1)} MB`}</span>}
                               </div>
                             </div>
-                            <button onClick={() => handleDownloadInvoiceDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }} title="Télécharger"><Download className="h-4 w-4" /></button>
+                            <button onClick={() => handleDownloadInvoiceDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }} title="Télécharger"><Download className="h-4 w-4" /></button>
                             <button onClick={() => handleDeleteInvoiceDoc(doc, inv.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }} title="Supprimer"><Trash2 className="h-3.5 w-3.5" /></button>
                           </div>
                         );
@@ -773,7 +773,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
               <div className="flex gap-2" style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                 <button
                   onClick={() => { setViewInvoice(null); openEdit(inv); }}
-                  style={{ flex: 1, height: 40, borderRadius: 8, background: "#FF6B35", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ flex: 1, height: 40, borderRadius: 8, background: "#E8732A", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
                   <Pencil className="h-4 w-4" /> Modifier la facture
                 </button>

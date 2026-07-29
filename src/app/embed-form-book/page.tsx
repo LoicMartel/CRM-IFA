@@ -36,7 +36,7 @@ export default function EmbedFormBookPage() {
         window.top?.postMessage({ type: "lca-form-success", clientType: form.clientType }, "*");
       }
       const cid = data.contactId || "";
-      window.top!.location.href = `https://www.closing-academie.com/book-financement-2026-typ${cid ? `?cid=${cid}` : ""}`;
+      window.top!.location.href = `https://www.ifagroupe.com/book-financement-2026-typ${cid ? `?cid=${cid}` : ""}`;
     } catch {
       setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {

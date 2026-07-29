@@ -285,8 +285,8 @@ export async function processMeetingNotifications(params: {
           location: meeting.meeting_mode === "visio" ? (zoomLink || "Visioconference") : (meeting.location || ""),
           startDateTime: startDT,
           endDateTime: endDT,
-          organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "La Closing Academie",
-          organizerEmail: primaryManager?.email ?? "noreply@closing-academie.com",
+          organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "IFA Formatio",
+          organizerEmail: primaryManager?.email ?? "noreply@ifagroupe.com",
           attendeeEmail: manager.email!,
           attendeeName: `${manager.first_name} ${manager.last_name}`,
         });
@@ -311,7 +311,7 @@ export async function processMeetingNotifications(params: {
           "",
           "Belle journee,",
           "",
-          "L'equipe La Closing Academie",
+          "L'equipe IFA Formatio",
         ].filter(Boolean).join("\n");
 
         const emailResult = await sendSessionEmail({
@@ -356,8 +356,8 @@ export async function processMeetingNotifications(params: {
           location: prospectLocation,
           startDateTime: startDT,
           endDateTime: endDT,
-          organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "La Closing Academie",
-          organizerEmail: primaryManager?.email ?? "noreply@closing-academie.com",
+          organizerName: primaryManager ? `${primaryManager.first_name} ${primaryManager.last_name}` : "IFA Formatio",
+          organizerEmail: primaryManager?.email ?? "noreply@ifagroupe.com",
           attendeeEmail: ct.email,
           attendeeName: ctName,
         });

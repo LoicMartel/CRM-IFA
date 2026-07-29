@@ -57,12 +57,12 @@ const MEETING_TYPE_LABELS: Record<string, string> = {
 const MEETING_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   R0: { bg: "#ede7f6", text: "#4a148c", border: "#7c4dff" },
   R1: { bg: "#fce4ec", text: "#c62828", border: "#e74c3c" },
-  R2: { bg: "#e3f2fd", text: "#1565c0", border: "#1a6b9c" },
+  R2: { bg: "#e3f2fd", text: "#1565c0", border: "#1E2A5A" },
   R3: { bg: "#e8f5e9", text: "#2e7d32", border: "#27ae60" },
 };
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
-  booked: { label: "Planifié", bg: "#e8f0fe", text: "#0d4f7a" },
+  booked: { label: "Planifié", bg: "#e8f0fe", text: "#161f45" },
   done: { label: "Effectué", bg: "#e8f5e9", text: "#2e7d32" },
   no_show: { label: "No show", bg: "#fce4ec", text: "#c62828" },
   cancelled: { label: "Annulé", bg: "#f5f5f5", text: "#999" },
@@ -193,7 +193,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
   const hasUnassigned = weekDays.some(d => getUnassignedForDay(d).length > 0 || getUnassignedTasksForDay(d).length > 0);
 
   // Member colors (cycle)
-  const memberColors = ["#1a6b9c", "#FF6B35", "#8e44ad", "#27ae60", "#e74c3c", "#f39c12"];
+  const memberColors = ["#1E2A5A", "#E8732A", "#8e44ad", "#27ae60", "#e74c3c", "#f39c12"];
   function getMemberColor(idx: number) {
     const c = memberColors[idx % memberColors.length];
     return { text: c, bg: c + "18", border: c };
@@ -420,7 +420,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
           <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
           {m.status === "booked" && (
             <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
               📋 Suivi rdv
             </button>
           )}
@@ -483,7 +483,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
           <button onClick={() => setWeekStart(addWeeks(weekStart, 1))} style={{ height: 36, width: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <ChevronRight className="h-4 w-4" style={{ color: "#1a2a3a" }} />
           </button>
-          <button onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 14px", fontSize: 13, fontWeight: 600, color: "#1a6b9c", cursor: "pointer" }}>
+          <button onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 14px", fontSize: 13, fontWeight: 600, color: "#1E2A5A", cursor: "pointer" }}>
             Aujourd&apos;hui
           </button>
           <input
@@ -513,7 +513,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Planifiés</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{weekBooked}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{weekBooked}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Effectués</div>
@@ -553,7 +553,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                       padding: "10px 6px", fontSize: 11, fontWeight: 700, textAlign: "center",
                       borderBottom: "2px solid #e8ecf1",
                       background: isToday ? "#e8f0fe" : i >= 5 ? "#fafafa" : "#f8fbfd",
-                      color: isToday ? "#1a6b9c" : "#1a2a3a",
+                      color: isToday ? "#1E2A5A" : "#1a2a3a",
                     }}>
                       <div style={{ textTransform: "capitalize" }}>{format(day, "EEE", { locale: fr })}</div>
                       <div style={{ fontSize: 13, fontWeight: 800 }}>{format(day, "d MMM", { locale: fr })}</div>
@@ -650,7 +650,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   {m.contacts && (
                     <div className="flex items-center gap-2">
                       <User style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span onClick={() => { setSelectedMeeting(null); router.push(`/contacts/${m.contact_id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                      <span onClick={() => { setSelectedMeeting(null); router.push(`/contacts/${m.contact_id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                         {m.contacts.first_name} {m.contacts.last_name}
                       </span>
                     </div>
@@ -658,7 +658,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   {m.companies && (
                     <div className="flex items-center gap-2">
                       <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span onClick={() => { setSelectedMeeting(null); router.push(`/clients/${m.company_id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>
+                      <span onClick={() => { setSelectedMeeting(null); router.push(`/clients/${m.company_id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>
                         {m.companies.name}
                       </span>
                     </div>
@@ -720,7 +720,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                       onClick={() => isRecording && recordTarget === "notes" ? stopRecording() : startRecording("notes")}
                       style={{
                         height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording && recordTarget === "notes" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                        background: isRecording && recordTarget === "notes" ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                         color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                         animation: isRecording && recordTarget === "notes" ? "pulse 1.5s infinite" : "none",
                       }}
@@ -779,12 +779,12 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   </div>
                 )}
                 {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
-                  <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1a6b9c", fontSize: 13, color: "#0d4f7a", fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1E2A5A", fontSize: 13, color: "#161f45", fontWeight: 500 }}>
                     Un deal &quot;Opportunité&quot; sera créé automatiquement.
                   </div>
                 )}
                 {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
-                  <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #FF6B35", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
+                  <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #E8732A", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
                     Un deal &quot;Devis à envoyer&quot; sera créé automatiquement.
                   </div>
                 )}
@@ -802,7 +802,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                       onClick={() => isRecording && recordTarget === "outcome" ? stopRecording() : startRecording("outcome")}
                       style={{
                         height: 30, width: 30, borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: isRecording && recordTarget === "outcome" ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                        background: isRecording && recordTarget === "outcome" ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                         color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                         animation: isRecording && recordTarget === "outcome" ? "pulse 1.5s infinite" : "none",
                       }}
@@ -823,7 +823,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                 <button
                   onClick={() => { setSelectedMeeting(null); if (m.contact_id) router.push(`/contacts/${m.contact_id}`); }}
-                  style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                  style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                 >
                   Voir la fiche contact
                 </button>
@@ -834,7 +834,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   <button
                     onClick={handleSaveRdv}
                     disabled={saving}
-                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
                   >
                     {saving ? "..." : "Sauvegarder le suivi"}
                   </button>
@@ -869,7 +869,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   {selectedTask.contacts && (
                     <div className="flex items-center gap-2">
                       <User style={{ width: 14, height: 14, color: "#8399a9" }} />
-                      <span style={{ fontSize: 13, color: "#1a6b9c" }}>{selectedTask.contacts.first_name} {selectedTask.contacts.last_name}</span>
+                      <span style={{ fontSize: 13, color: "#1E2A5A" }}>{selectedTask.contacts.first_name} {selectedTask.contacts.last_name}</span>
                     </div>
                   )}
                   {selectedTask.companies && (
@@ -923,7 +923,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
                   ✅ Accomplie
                 </button>
                 <button onClick={handleSaveTask} disabled={taskSaving || !taskForm.title.trim()}
-                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: taskSaving || !taskForm.title.trim() ? 0.5 : 1 }}>
+                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: taskSaving || !taskForm.title.trim() ? 0.5 : 1 }}>
                   {taskSaving ? "..." : "Enregistrer"}
                 </button>
               </div>

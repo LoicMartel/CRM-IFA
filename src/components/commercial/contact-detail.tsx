@@ -122,7 +122,7 @@ const dealStageColors: Record<string, { bg: string; text: string; label: string 
   opportunities: { bg: "#e3f2fd", text: "#1565c0", label: "Opportunités" },
   quote_to_send: { bg: "#fff3e0", text: "#e65100", label: "Devis à envoyer" },
   quote_sent: { bg: "#f3e5f5", text: "#6a1b9a", label: "Devis envoyé" },
-  opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a", label: "Dépôt OPCO" },
+  opco_deposit: { bg: "#e8f0fe", text: "#161f45", label: "Dépôt OPCO" },
   ordered: { bg: "#e8f5e9", text: "#2e7d32", label: "Commandé" },
   closed_won: { bg: "#e8f5e9", text: "#2e7d32", label: "Gagné" },
   closed_lost: { bg: "#fce4ec", text: "#c62828", label: "Perdu" },
@@ -1004,7 +1004,7 @@ export function ContactDetail({
                 {(contact as any).is_learner && (
                   <span
                     className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                    style={{ backgroundColor: "#e8f0fe", color: "#0d4f7a" }}
+                    style={{ backgroundColor: "#e8f0fe", color: "#161f45" }}
                   >
                     Apprenant
                   </span>
@@ -1207,7 +1207,7 @@ export function ContactDetail({
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Calendar className="h-4 w-4" style={{ color: "#1a6b9c" }} /> Prochain RDV
+                      <Calendar className="h-4 w-4" style={{ color: "#1E2A5A" }} /> Prochain RDV
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1241,7 +1241,7 @@ export function ContactDetail({
                             RDV prévu le {formatDateTime(nextMeeting.scheduled_at)} — {nextMeeting.duration_minutes || 60} min
                           </div>
                           {nextMeeting.notes && <p style={{ fontSize: 12, color: "#8399a9", marginTop: 4 }}>{nextMeeting.notes}</p>}
-                          <button onClick={() => openEditMeeting(nextMeeting)} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+                          <button onClick={() => openEditMeeting(nextMeeting)} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
                             📋 Suivi rdv
                           </button>
                         </div>
@@ -1268,7 +1268,7 @@ export function ContactDetail({
                             <span style={{ background: mt.bg, color: mt.text, padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{lastDone.meeting_type}</span>
                             <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{formatDateTime(lastDone.scheduled_at)}</span>
                           </div>
-                          {lastDone.outcome && <p style={{ fontSize: 12, color: "#0d4f7a", marginTop: 4, fontWeight: 500 }}>Résultat : {lastDone.outcome}</p>}
+                          {lastDone.outcome && <p style={{ fontSize: 12, color: "#161f45", marginTop: 4, fontWeight: 500 }}>Résultat : {lastDone.outcome}</p>}
                           {lastDone.notes && <TruncatedText text={lastDone.notes} style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }} />}
                         </div>
                       );
@@ -1280,7 +1280,7 @@ export function ContactDetail({
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" style={{ color: "#FF6B35" }} /> Deals ({deals.length + companyDeals.length})
+                      <Briefcase className="h-4 w-4" style={{ color: "#E8732A" }} /> Deals ({deals.length + companyDeals.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1294,7 +1294,7 @@ export function ContactDetail({
                           return (
                             <div key={d.id} className="flex items-center justify-between" style={{ padding: "8px 0", borderBottom: "1px solid #e6f0f7" }}>
                               <div>
-                                <span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span>
+                                <span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span>
                                 <div className="flex items-center gap-2" style={{ marginTop: 2 }}>
                                   <span style={{ background: ds.bg, color: ds.text, padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600 }}>
                                     {(dealStageColors[d.stage] ?? { label: d.stage }).label}
@@ -1387,12 +1387,12 @@ export function ContactDetail({
                             const ds = dealStageColors[d.stage] ?? null;
                             return (
                               <TableRow key={d.id}>
-                                <TableCell className="font-medium"><span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span></TableCell>
+                                <TableCell className="font-medium"><span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span></TableCell>
                                 <TableCell>
                                   {d.companies && d.company_id ? (
                                     <span
                                       onClick={() => router.push(`/clients/${d.company_id}`)}
-                                      style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                                      style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                                     >
                                       {d.companies.name}
                                     </span>
@@ -1456,7 +1456,7 @@ export function ContactDetail({
                               const dealContact = d.contacts as { first_name: string; last_name: string } | null;
                               return (
                                 <TableRow key={d.id}>
-                                  <TableCell className="font-medium"><span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span></TableCell>
+                                  <TableCell className="font-medium"><span onClick={() => router.push(`/deals?edit=${d.id}`)} style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{d.name}</span></TableCell>
                                   <TableCell>{dealContact ? `${dealContact.first_name} ${dealContact.last_name}` : "—"}</TableCell>
                                   <TableCell>
                                     {ds ? (
@@ -1505,7 +1505,7 @@ export function ContactDetail({
                                 style={{
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   width: 24, height: 24, borderRadius: "50%",
-                                  background: "#0d4f7a", color: "white",
+                                  background: "#161f45", color: "white",
                                   fontSize: 9, fontWeight: 700, marginTop: 4,
                                 }}
                               >
@@ -1547,7 +1547,7 @@ export function ContactDetail({
                               )}
                             </div>
                             {a.type === "email" ? (
-                              <p className="text-sm font-medium" style={{ color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                              <p className="text-sm font-medium" style={{ color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                                 onClick={() => setEmailPreview({ title: a.title, description: a.description ?? "" })}>
                                 {formatActivityTitle(a.title)}
                               </p>
@@ -1572,7 +1572,7 @@ export function ContactDetail({
                             )}
                             <button
                               onClick={() => openEditActivity(a)}
-                              style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}
+                              style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}
                             >
                               <Edit className="h-3.5 w-3.5" />
                             </button>
@@ -1629,7 +1629,7 @@ export function ContactDetail({
                                 })()}
                               </div>
                               <div className="flex items-center gap-1">
-                                <button onClick={() => openEditMeeting(m)} style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                <button onClick={() => openEditMeeting(m)} style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
                                 <button onClick={() => { if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer ce RDV ?")) handleDeleteMeeting(m.id); }} style={{ color: "#e74c3c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
@@ -1644,11 +1644,11 @@ export function ContactDetail({
                               }
                             </div>
                             {m.notes && <TruncatedText text={m.notes} style={{ fontSize: 12, color: "#8399a9", marginTop: 4 }} />}
-                            {m.outcome && <p style={{ fontSize: 12, color: "#0d4f7a", marginTop: 4, fontWeight: 500 }}>Résultat : {m.outcome}</p>}
+                            {m.outcome && <p style={{ fontSize: 12, color: "#161f45", marginTop: 4, fontWeight: 500 }}>Résultat : {m.outcome}</p>}
                             {m.status === "booked" && m.next_step !== "completed" && (
                               <button
                                 onClick={() => openEditMeeting(m)}
-                                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}
+                                style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}
                               >
                                 📋 Suivi rdv
                               </button>
@@ -1669,12 +1669,12 @@ export function ContactDetail({
                   <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: "#f8fbfd" }}>
-                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Entreprise</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>Présentiel</th>
-                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
-                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1a6b9c" }}>Total HT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                        <th style={{ padding: "10px 14px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Entreprise</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Apprenants</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>Présentiel</th>
+                        <th style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#1E2A5A" }}>VT</th>
+                        <th style={{ padding: "10px 14px", textAlign: "right", fontWeight: 700, color: "#1E2A5A" }}>Total HT</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1742,18 +1742,18 @@ export function ContactDetail({
                                   <span style={{
                                     fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
                                     background: sess.session_type === "journee" ? "#fff3e0" : "#e8f0fe",
-                                    color: sess.session_type === "journee" ? "#FF6B35" : "#1a6b9c",
+                                    color: sess.session_type === "journee" ? "#E8732A" : "#1E2A5A",
                                   }}>
                                     {sess.session_type === "journee" ? "Journée" : "VT"}
                                   </span>
                                 </TableCell>
                                 <TableCell>
                                   {sp?.id ? (
-                                    <button onClick={() => setOpenPlanId(String(sp.id))} style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
+                                    <button onClick={() => setOpenPlanId(String(sp.id))} style={{ fontSize: 13, color: "#1E2A5A", fontWeight: 600, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
                                       {company?.name ?? "—"}
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 13, color: "#1a6b9c", fontWeight: 600 }}>{company?.name ?? "—"}</span>
+                                    <span style={{ fontSize: 13, color: "#1E2A5A", fontWeight: 600 }}>{company?.name ?? "—"}</span>
                                   )}
                                 </TableCell>
                                 <TableCell style={{ fontSize: 12, color: "#5a6f80" }}>{program?.name ?? "—"}</TableCell>
@@ -1856,7 +1856,7 @@ export function ContactDetail({
                                   </button>
                                 )}
                                 <button onClick={() => openEditActivity(a)}
-                                  style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                  style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
                                 <button onClick={() => { if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
@@ -2145,7 +2145,7 @@ export function ContactDetail({
               onClick={handleLogActivity}
               disabled={saving || !activityForm.title.trim()}
               className="w-full"
-              style={{ background: "#FF6B35", color: "white" }}
+              style={{ background: "#E8732A", color: "white" }}
             >
               {saving ? "Enregistrement..." : (editingActivityId ? "Sauvegarder" : "Enregistrer l'activité")}
             </Button>
@@ -2182,7 +2182,7 @@ export function ContactDetail({
             <div className="space-y-2">
               <Label>Contacts participants</Label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                <span style={{ background: "#e3f2fd", color: "#1a6b9c", padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                <span style={{ background: "#e3f2fd", color: "#1E2A5A", padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
                   {contact.first_name} {contact.last_name} (principal)
                 </span>
                 {selectedContactIds.filter(id => id !== contact.id).map(id => {
@@ -2309,9 +2309,9 @@ export function ContactDetail({
                 type="checkbox"
                 checked={rdvForm.send_notifications}
                 onChange={(e) => setRdvForm({ ...rdvForm, send_notifications: e.target.checked })}
-                style={{ accentColor: "#1a6b9c" }}
+                style={{ accentColor: "#1E2A5A" }}
               />
-              <span style={{ fontWeight: rdvForm.send_notifications ? 600 : 400, color: rdvForm.send_notifications ? "#1a6b9c" : "#8399a9" }}>
+              <span style={{ fontWeight: rdvForm.send_notifications ? 600 : 400, color: rdvForm.send_notifications ? "#1E2A5A" : "#8399a9" }}>
                 {rdvForm.send_notifications ? "Envoyer un email de confirmation au client" : "Pas d'email de confirmation"}
               </span>
             </label>
@@ -2368,13 +2368,13 @@ export function ContactDetail({
             )}
 
             {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
-              <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1a6b9c", fontSize: 13, color: "#0d4f7a", fontWeight: 500 }}>
+              <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1E2A5A", fontSize: 13, color: "#161f45", fontWeight: 500 }}>
                 Un deal sera créé automatiquement et vous serez redirigé vers sa page.
               </div>
             )}
 
             {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
-              <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #FF6B35", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
+              <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #E8732A", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
                 Un deal &quot;Devis à envoyer&quot; sera créé et vous serez redirigé vers sa page.
               </div>
             )}
@@ -2401,7 +2401,7 @@ export function ContactDetail({
               onClick={handleSaveRdv}
               disabled={saving || !rdvForm.scheduled_at}
               className="w-full"
-              style={{ background: "#FF6B35", color: "white" }}
+              style={{ background: "#E8732A", color: "white" }}
             >
               {saving ? "Enregistrement..." : (editingMeetingId ? "Sauvegarder le RDV" : "Créer le RDV")}
             </Button>
@@ -2438,7 +2438,7 @@ export function ContactDetail({
           onClick={(e) => { if (e.target === e.currentTarget) setEmailOpen(false); }}>
           <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
             {/* Header */}
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <MailPlus className="h-4 w-4" style={{ color: "white" }} />
                 <span style={{ fontWeight: 700, fontSize: 14, color: "white" }}>Nouvel email</span>
@@ -2455,7 +2455,7 @@ export function ContactDetail({
                   {senderInfo ? `${senderInfo.first_name} ${senderInfo.last_name} <${emailSenderAddress || senderInfo.email}>` : "Chargement..."}
                 </span>
                 {emailProviderLabel && (
-                  <span style={{ fontSize: 11, color: "#1a6b9c", background: "#e3f0fa", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, color: "#1E2A5A", background: "#e3f0fa", padding: "2px 8px", borderRadius: 4, fontWeight: 600 }}>
                     {emailProviderLabel}
                   </span>
                 )}
@@ -2495,7 +2495,7 @@ export function ContactDetail({
                   ) : (
                     <div style={{ fontSize: 12, color: "#5a6f80" }}>
                       <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
-                      La Closing Académie ®<br />
+                      IFA Formatio ®<br />
                       {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
                       ✉️ {senderInfo.email}
                     </div>
@@ -2541,7 +2541,7 @@ export function ContactDetail({
                 disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() || !contact.email}
                 style={{
                   height: 36, borderRadius: 8, fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer",
-                  background: sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() ? "#dce8f0" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                  background: sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() ? "#dce8f0" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                   color: "white", display: "flex", alignItems: "center", gap: 6,
                 }}
               >

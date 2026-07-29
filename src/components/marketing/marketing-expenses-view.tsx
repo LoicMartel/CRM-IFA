@@ -390,7 +390,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV faits</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalRdvDone}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{totalRdvDone}</div>
           </div>
           <Calendar style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -514,7 +514,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
                     <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>{e.description ?? "—"}</TableCell>
                     <TableCell>
                       {!isAuto && (e.marketing_expense_documents ?? []).length > 0 ? (
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1a6b9c" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A" }}>
                           <FileText className="h-3.5 w-3.5 inline mr-1" />
                           {(e.marketing_expense_documents ?? []).length}
                         </span>
@@ -525,7 +525,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
                     <TableCell>
                       {!isAuto ? (
                         <div style={{ display: "flex", gap: 4 }}>
-                          <button onClick={() => openEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}>
+                          <button onClick={() => openEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}>
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button onClick={() => handleDelete(e.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}>
@@ -547,7 +547,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
                 <td style={{ padding: "8px 16px" }}>TOTAL</td>
                 <td></td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#e74c3c" }}>{fmt(totalAmount)}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px", color: "#1a6b9c" }}>{totalRdvDone}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px", color: "#1E2A5A" }}>{totalRdvDone}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px", color: "#27ae60" }}>{fmt(totalRevenue)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{totalRdvDone > 0 && totalRevenue > 0 ? fmt(totalRevenue / totalRdvDone) : "—"}</td>
                 <td colSpan={2}></td>
@@ -602,7 +602,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
             {form.provider_name && form.period && (
               <div className="space-y-2">
                 <Label>Leads (auto — leads créés ce mois avec cette source)</Label>
-                <div style={{ padding: "8px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontWeight: 700, color: "#1a6b9c", fontSize: 15 }}>
+                <div style={{ padding: "8px 12px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 6, fontWeight: 700, color: "#1E2A5A", fontSize: 15 }}>
                   {getComputedLeadCount(form.provider_name, form.period + "-01")}
                 </div>
               </div>
@@ -632,10 +632,10 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {editDocs.map(doc => (
                     <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#f7f8fa", borderRadius: 8, padding: "6px 10px" }}>
-                      <FileText className="h-4 w-4" style={{ color: "#1a6b9c", flexShrink: 0 }} />
+                      <FileText className="h-4 w-4" style={{ color: "#1E2A5A", flexShrink: 0 }} />
                       <span style={{ fontSize: 12, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</span>
                       {doc.file_size && <span style={{ fontSize: 10, color: "#8399a9" }}>{(doc.file_size / 1024).toFixed(0)}KB</span>}
-                      <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 2 }}>
+                      <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 2 }}>
                         <Download className="h-3.5 w-3.5" />
                       </button>
                       <button onClick={() => handleDeleteDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 2 }}>
@@ -644,7 +644,7 @@ export function MarketingExpensesView({ expenses, tunnelStats = [], wonDeals = [
                     </div>
                   ))}
                 </div>
-                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: "#1a6b9c", fontWeight: 600, marginTop: 4 }}>
+                <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: "#1E2A5A", fontWeight: 600, marginTop: 4 }}>
                   <Upload className="h-4 w-4" />
                   {uploadingDoc ? "Upload en cours..." : "Ajouter un document"}
                   <input

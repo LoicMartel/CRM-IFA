@@ -36,7 +36,7 @@ function renderTextWithLinks(text: string) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#1a6b9c", textDecoration: "underline", wordBreak: "break-all" }}
+          style={{ color: "#1E2A5A", textDecoration: "underline", wordBreak: "break-all" }}
         >
           {part}
         </a>
@@ -106,7 +106,7 @@ export function RichNotes({
                 style={{
                   display: "flex", alignItems: "center", gap: 6, padding: "4px 10px",
                   borderRadius: 6, border: "1px solid #dce8f0", background: "#f8fbfd",
-                  fontSize: 11, color: "#1a6b9c", textDecoration: "none",
+                  fontSize: 11, color: "#1E2A5A", textDecoration: "none",
                 }}
               >
                 {att.type === "image" ? <ImageIcon style={{ width: 12, height: 12 }} /> : <FileText style={{ width: 12, height: 12 }} />}
@@ -149,8 +149,8 @@ export function RichNotes({
                 fontSize: 11,
               }}
             >
-              {att.type === "image" ? <ImageIcon style={{ width: 12, height: 12, color: "#1a6b9c" }} /> : <FileText style={{ width: 12, height: 12, color: "#1a6b9c" }} />}
-              <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ color: "#1a6b9c", textDecoration: "none" }}>{att.name}</a>
+              {att.type === "image" ? <ImageIcon style={{ width: 12, height: 12, color: "#1E2A5A" }} /> : <FileText style={{ width: 12, height: 12, color: "#1E2A5A" }} />}
+              <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ color: "#1E2A5A", textDecoration: "none" }}>{att.name}</a>
               <button onClick={() => removeAttachment(att)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 0, display: "flex" }}>
                 <X style={{ width: 12, height: 12 }} />
               </button>

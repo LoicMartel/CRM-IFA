@@ -33,7 +33,7 @@ export function VoiceButton({
         disabled={isFormatting}
         style={{
           height: 36, width: 36, borderRadius: "50%", border: "none", cursor: isFormatting ? "wait" : "pointer",
-          background: isFormatting ? "#95a5a6" : isRecording ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+          background: isFormatting ? "#95a5a6" : isRecording ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
           color: "white", display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: isRecording ? "0 0 0 4px rgba(231,76,60,0.2)" : "none",
           animation: isRecording ? "pulse 1.5s infinite" : "none",

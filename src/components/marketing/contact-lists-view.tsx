@@ -278,7 +278,7 @@ export function ContactListsView({
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4 overflow-y-auto max-h-[calc(100vh-120px)]">
             {/* Current members */}
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1a6b9c", textTransform: "uppercase" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1E2A5A", textTransform: "uppercase" }}>
               Membres actuels ({currentMembers.length})
             </div>
             {currentMembers.length > 0 && (
@@ -298,7 +298,7 @@ export function ContactListsView({
             )}
 
             {/* Search and add */}
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#1a6b9c", textTransform: "uppercase", marginTop: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#1E2A5A", textTransform: "uppercase", marginTop: 16 }}>
               Ajouter des contacts
             </div>
             <div className="relative">
@@ -311,7 +311,7 @@ export function ContactListsView({
                   <div>
                     <span style={{ fontWeight: 600 }}>{c.first_name} {c.last_name}</span>
                     <span style={{ color: "#8399a9", marginLeft: 8, fontSize: 12 }}>{c.email}</span>
-                    {getCompanyName(c) && <span style={{ color: "#1a6b9c", marginLeft: 8, fontSize: 11 }}>{getCompanyName(c)}</span>}
+                    {getCompanyName(c) && <span style={{ color: "#1E2A5A", marginLeft: 8, fontSize: 11 }}>{getCompanyName(c)}</span>}
                   </div>
                   <Button size="sm" variant="outline" onClick={() => handleAddMember(c.id)} disabled={adding} style={{ height: 28, fontSize: 11 }}>
                     <Plus className="h-3 w-3" />
@@ -362,7 +362,7 @@ export function ContactListsView({
                   disabled={importing || !importListId}
                   style={{
                     height: 40, borderRadius: 8, padding: "0 20px", fontSize: 13, fontWeight: 600,
-                    border: "1px solid #dce8f0", background: "white", color: "#1a6b9c",
+                    border: "1px solid #dce8f0", background: "white", color: "#1E2A5A",
                     cursor: importing || !importListId ? "not-allowed" : "pointer",
                     display: "flex", alignItems: "center", gap: 8,
                     opacity: importing || !importListId ? 0.5 : 1,
@@ -385,7 +385,7 @@ export function ContactListsView({
                 Lancer l'import
               </Button>
             )}
-            {importing && <p style={{ fontSize: 13, color: "#1a6b9c" }}>Import en cours...</p>}
+            {importing && <p style={{ fontSize: 13, color: "#1E2A5A" }}>Import en cours...</p>}
             {importResult && (
               <div style={{ padding: 12, borderRadius: 8, background: "#f8fbfd", fontSize: 13 }}>
                 <p style={{ fontWeight: 600, color: "#27ae60" }}>{importResult.added} contacts ajoutés</p>

@@ -110,7 +110,7 @@ export function PiecesAValiderView() {
                             if (!res.ok) { alert(`Échec : ${j.error ?? "erreur"}`); return; }
                             window.open(j.url, "_blank");
                           }}
-                          style={{ padding: "8px 16px", border: "1px solid #1a6b9c", borderRadius: 6, background: "white", color: "#1a6b9c", cursor: "pointer" }}
+                          style={{ padding: "8px 16px", border: "1px solid #1E2A5A", borderRadius: 6, background: "white", color: "#1E2A5A", cursor: "pointer" }}
                         >
                           Télécharger le Word
                         </button>

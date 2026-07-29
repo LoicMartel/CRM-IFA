@@ -110,7 +110,7 @@ export function CampaignDetailView({
       </div>
 
       {/* Stats KPIs */}
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#1a6b9c" }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#1E2A5A" }}>
         Envoyé à {total}, remis à {delivered}
       </div>
       <div className="grid gap-3 md:grid-cols-4">

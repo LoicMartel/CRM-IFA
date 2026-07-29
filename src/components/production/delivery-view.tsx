@@ -129,7 +129,7 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures délivrées</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalHours.toFixed(1)}h</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{totalHours.toFixed(1)}h</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures facturables</div>
@@ -141,7 +141,7 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Non facturable</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{fmt(totalNonBillable)}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{fmt(totalNonBillable)}</div>
         </div>
       </div>
 
@@ -207,15 +207,15 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Type</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Thème</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Mode</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Expert</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Participants</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Type</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Thème</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Mode</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Expert</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Participants</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -244,7 +244,7 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
                       <span style={{
                         fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20,
                         background: sessionType === "vt" ? "#e8f0fe" : "#fff3e0",
-                        color: sessionType === "vt" ? "#1a6b9c" : "#FF6B35",
+                        color: sessionType === "vt" ? "#1E2A5A" : "#E8732A",
                       }}>
                         {sessionType === "vt" ? "VT" : "Journée"}
                       </span>
@@ -253,7 +253,7 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
                       {s.companies ? (
                         <span
                           onClick={() => router.push(`/clients/${s.companies!.id}`)}
-                          style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                          style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                         >
                           {s.companies.name}
                         </span>
@@ -285,7 +285,7 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
                     <TableCell style={{ textAlign: "right", fontWeight: 700, fontSize: 13 }}>
                       {s.is_billable === false ? (
                         nonBillableAmount > 0 ? (
-                          <span style={{ color: "#FF6B35", fontWeight: 600 }}>{fmt(nonBillableAmount)}</span>
+                          <span style={{ color: "#E8732A", fontWeight: 600 }}>{fmt(nonBillableAmount)}</span>
                         ) : (
                           <span style={{ color: "#999", fontStyle: "italic", fontWeight: 400 }}>Non fact.</span>
                         )

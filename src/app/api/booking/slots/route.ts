@@ -23,9 +23,9 @@ const MEMBERS = [
     id: "9bcd91e5-0c11-44ba-9bc8-1de4bad9c040",
     name: "Naznine MOUHAMAD",
     calendarIds: [
-      "naznine@closing-academie.com", // will be updated with proper calendar ID
+      "naznine@ifagroupe.com", // will be updated with proper calendar ID
     ],
-    bookingCalendarId: "naznine@closing-academie.com",
+    bookingCalendarId: "naznine@ifagroupe.com",
   },
 ];
 

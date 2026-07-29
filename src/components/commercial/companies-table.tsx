@@ -332,7 +332,7 @@ export function CompaniesTable({
                             style={{
                               display: "inline-flex", alignItems: "center", justifyContent: "center",
                               width: 28, height: 28, borderRadius: "50%",
-                              background: "#0d4f7a", color: "white",
+                              background: "#161f45", color: "white",
                               fontSize: 10, fontWeight: 700,
                             }}
                             title={`${c.team_members.first_name} ${c.team_members.last_name}`}

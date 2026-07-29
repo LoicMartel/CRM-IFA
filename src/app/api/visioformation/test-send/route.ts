@@ -42,7 +42,7 @@ function buildSamplePayload(): VisioformationPayload {
     meta: { source: "CRM-LCA", event: "adf.formation.push", environment: "preprod", sent_at: new Date().toISOString(), external_reference: "LCA-PLAN-TEST-0001" },
     formation: { titre: "Performance B2B Outbound", mode: "mixte", lieu: "Paris — 70 rue Jean-Pierre Timbaud", vt_prevues: 6, journees_prevues: 3, duree_totale_heures: 14, date_debut: "2026-08-25", date_fin: "2026-09-08" },
     entreprise: { raison_sociale: "DIVERSIDEES (TEST)", siret: "52474839900012", adresse: "70 RUE JEAN-PIERRE TIMBAUD", ville: "PARIS" },
-    formateur: { nom: "Dupont", prenom: "Alexandre", email: "alexandre@closing-academie.com" },
+    formateur: { nom: "Dupont", prenom: "Alexandre", email: "alexandre@ifagroupe.com" },
     // VT sans lieu (le CRM le force à null) + journée localisée : lieu PAR créneau, multi-sites
     // possible (Iman 13/07). Un créneau déjà passé porte "done" — VF reçoit des statuts mêlés.
     sessions: [

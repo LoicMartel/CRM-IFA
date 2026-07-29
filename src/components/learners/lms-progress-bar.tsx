@@ -66,7 +66,7 @@ export function LmsProgressBar({ learnerId }: { learnerId: string }) {
                   {p.completion_pct === 100 ? (
                     <Trophy size={18} style={{ color: "#2ecc71" }} />
                   ) : (
-                    <BookOpen size={18} style={{ color: "#1a6b9c" }} />
+                    <BookOpen size={18} style={{ color: "#1E2A5A" }} />
                   )}
                 </div>
                 <div>
@@ -75,12 +75,12 @@ export function LmsProgressBar({ learnerId }: { learnerId: string }) {
                   </p>
                   <div className="flex items-center gap-3" style={{ marginTop: 2 }}>
                     {p.current_step && (
-                      <span style={{ fontSize: 11, color: "#FF6B35", fontWeight: 600 }}>
+                      <span style={{ fontSize: 11, color: "#E8732A", fontWeight: 600 }}>
                         Step {p.current_step.number} en cours
                       </span>
                     )}
                     {p.avg_score !== null && (
-                      <span style={{ fontSize: 11, color: "#1a6b9c", fontWeight: 600 }}>
+                      <span style={{ fontSize: 11, color: "#1E2A5A", fontWeight: 600 }}>
                         Score moy. {p.avg_score}%
                       </span>
                     )}
@@ -95,7 +95,7 @@ export function LmsProgressBar({ learnerId }: { learnerId: string }) {
               <div className="text-right">
                 <p style={{
                   fontSize: 22, fontWeight: 800, lineHeight: 1,
-                  color: p.completion_pct >= 80 ? "#2ecc71" : p.completion_pct >= 40 ? "#FF6B35" : "#1a6b9c",
+                  color: p.completion_pct >= 80 ? "#2ecc71" : p.completion_pct >= 40 ? "#E8732A" : "#1E2A5A",
                 }}>
                   {p.completion_pct}%
                 </p>
@@ -115,8 +115,8 @@ export function LmsProgressBar({ learnerId }: { learnerId: string }) {
                     p.completion_pct >= 80
                       ? "linear-gradient(90deg, #2ecc71, #27ae60)"
                       : p.completion_pct >= 40
-                        ? "linear-gradient(90deg, #FF6B35, #e85d2a)"
-                        : "linear-gradient(90deg, #1a6b9c, #0d4f7a)",
+                        ? "linear-gradient(90deg, #E8732A, #e85d2a)"
+                        : "linear-gradient(90deg, #1E2A5A, #161f45)",
                 }}
               />
             </div>
@@ -128,7 +128,7 @@ export function LmsProgressBar({ learnerId }: { learnerId: string }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1"
-                style={{ fontSize: 11, color: "#1a6b9c", fontWeight: 600, textDecoration: "none" }}
+                style={{ fontSize: 11, color: "#1E2A5A", fontWeight: 600, textDecoration: "none" }}
               >
                 Voir sur le LMS <ExternalLink size={10} />
               </a>

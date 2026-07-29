@@ -45,7 +45,7 @@ export function generateICS({
   attendeeEmail?: string;
   attendeeName?: string;
 }): string {
-  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@closing-academie.com`;
+  const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@ifagroupe.com`;
   const now = formatICSDate(new Date().toISOString());
   const dtStart = formatICSDate(startDateTime);
   const dtEnd = formatICSDate(endDateTime);
@@ -57,7 +57,7 @@ export function generateICS({
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//La Closing Académie//CRM//FR",
+    "PRODID:-//IFA Formatio//CRM//FR",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
     VTIMEZONE_PARIS,

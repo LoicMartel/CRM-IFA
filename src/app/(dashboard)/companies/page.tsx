@@ -44,7 +44,7 @@ export default async function CompaniesPage() {
           <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Prospects / Leads</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{prospects}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{prospects}</div>
             </div>
             <Building2 style={{ width: 16, height: 16, color: "#8399a9" }} />
           </div>

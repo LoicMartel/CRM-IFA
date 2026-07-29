@@ -76,7 +76,7 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 
 const DOC_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   devis: { bg: "#fff3e0", text: "#e65100" },
-  convention: { bg: "#e8f0fe", text: "#0d4f7a" },
+  convention: { bg: "#e8f0fe", text: "#161f45" },
   programme: { bg: "#e8f5e9", text: "#2e7d32" },
   convocation: { bg: "#f3e5f5", text: "#6a1b9a" },
   facture: { bg: "#fce4ec", text: "#c62828" },
@@ -93,10 +93,10 @@ function fmt(n: number | null | undefined) {
 }
 
 const stageColors: Record<string, { bg: string; text: string; bar: string }> = {
-  opportunities: { bg: "#e3f2fd", text: "#1565c0", bar: "#1a6b9c" },
-  quote_to_send: { bg: "#fff3e0", text: "#e65100", bar: "#FF6B35" },
+  opportunities: { bg: "#e3f2fd", text: "#1565c0", bar: "#1E2A5A" },
+  quote_to_send: { bg: "#fff3e0", text: "#e65100", bar: "#E8732A" },
   quote_sent: { bg: "#f3e5f5", text: "#6a1b9a", bar: "#8e44ad" },
-  opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a", bar: "#0d4f7a" },
+  opco_deposit: { bg: "#e8f0fe", text: "#161f45", bar: "#161f45" },
   quote_signed: { bg: "#e0f2f1", text: "#00695c", bar: "#1abc9c" },
   closed_won: { bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" },
   closed_lost: { bg: "#fce4ec", text: "#c62828", bar: "#e74c3c" },
@@ -496,12 +496,12 @@ export function DealsBoard({
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Opportunités</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totalOpportunities)}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{fmt(totalOpportunities)}</div>
             <div style={{ fontSize: 11, color: "#8399a9" }}>{opportunityDeals.length} opportunité{opportunityDeals.length > 1 ? "s" : ""}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Pipe</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{fmt(totalPipe)}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{fmt(totalPipe)}</div>
             <div style={{ fontSize: 11, color: "#8399a9" }}>{pipeDisplayDeals.length} deal{pipeDisplayDeals.length > 1 ? "s" : ""}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
@@ -532,7 +532,7 @@ export function DealsBoard({
                 background: dragOverStage === stage ? "#e6f0f7" : "#f5f7fa",
                 borderRadius: 8,
                 padding: 12,
-                border: dragOverStage === stage ? "2px dashed #1a6b9c" : "2px solid transparent",
+                border: dragOverStage === stage ? "2px dashed #1E2A5A" : "2px solid transparent",
                 transition: "all 0.2s ease",
                 minWidth: 220,
                 flex: "1 0 220px",
@@ -588,7 +588,7 @@ export function DealsBoard({
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); openEditDeal(deal); }}
-                        style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 1 }}
+                        style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 1 }}
                       >
                         <Edit style={{ width: 10, height: 10 }} />
                       </button>
@@ -609,7 +609,7 @@ export function DealsBoard({
                       <div style={{ fontSize: 10, marginTop: 1 }}>
                         <span
                           onClick={(e) => { e.stopPropagation(); router.push(`/clients/${deal.company_id}`); }}
-                          style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                          style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                         >
                           {deal.companies.name}
                         </span>
@@ -731,7 +731,7 @@ export function DealsBoard({
               onClick={handleSaveAndOpenCotation}
               disabled={saving || !form.name.trim()}
               className="w-full"
-              style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
+              style={{ color: "#1E2A5A", borderColor: "#1E2A5A" }}
             >
               <Calculator className="h-4 w-4 mr-2" />
               {editingDealId ? "Sauvegarder et créer une cotation" : "Créer le deal et la cotation"}
@@ -772,7 +772,7 @@ export function DealsBoard({
                       <Building2 style={{ width: 14, height: 14, color: "#8399a9" }} />
                       <span
                         onClick={() => router.push(`/clients/${selectedDeal.company_id}`)}
-                        style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {selectedDeal.companies.name}
                       </span>
@@ -783,7 +783,7 @@ export function DealsBoard({
                       <User style={{ width: 14, height: 14, color: "#8399a9" }} />
                       <span
                         onClick={() => router.push(`/contacts/${selectedDeal.contact_id}`)}
-                        style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {selectedDeal.contacts.first_name} {selectedDeal.contacts.last_name}
                       </span>
@@ -918,7 +918,7 @@ export function DealsBoard({
                   {/* Upload */}
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
                     <label style={{
-                      height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600,
+                      height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600,
                       padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer",
                       opacity: uploadingDoc ? 0.6 : 1,
                     }}>
@@ -960,7 +960,7 @@ export function DealsBoard({
                             </div>
                             <button
                               onClick={() => handleDownloadDoc(doc)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}
                               title="Télécharger"
                             >
                               <Download className="h-4 w-4" />
@@ -1009,7 +1009,7 @@ export function DealsBoard({
                 <div className="flex gap-2">
                   <Button
                     onClick={() => { setSelectedDeal(null); openEditDeal(selectedDeal); }}
-                    style={{ background: "#FF6B35", color: "white", flex: 1 }}
+                    style={{ background: "#E8732A", color: "white", flex: 1 }}
                   >
                     <Edit className="h-4 w-4 mr-2" /> Modifier le deal
                   </Button>
@@ -1020,7 +1020,7 @@ export function DealsBoard({
                       setSelectedDeal(null);
                       setCotationOpen(true);
                     }}
-                    style={{ color: "#1a6b9c", borderColor: "#1a6b9c" }}
+                    style={{ color: "#1E2A5A", borderColor: "#1E2A5A" }}
                   >
                     <Calculator className="h-4 w-4 mr-2" /> Cotation
                   </Button>

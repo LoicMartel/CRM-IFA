@@ -122,7 +122,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
     return upTo.some(m => m.commandes > 0 || m.encaisse > 0 || m.delivre > 0);
   });
 
-  const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 700, padding: "6px 6px", textAlign: "center", color: "white", background: "#0d4f7a", whiteSpace: "nowrap" };
+  const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 700, padding: "6px 6px", textAlign: "center", color: "white", background: "#161f45", whiteSpace: "nowrap" };
   const tdStyle: React.CSSProperties = { fontSize: 11, padding: "5px 6px", textAlign: "right", whiteSpace: "nowrap", borderBottom: "1px solid #e8ecf1" };
   const tdLabelStyle: React.CSSProperties = { ...tdStyle, textAlign: "left", fontWeight: 700, color: "#1a2a3a", position: "sticky" as const, left: 0, background: "white", zIndex: 1 };
 
@@ -168,7 +168,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
             onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
             style={{
               width: 80, height: 24, fontSize: 11, textAlign: "right",
-              border: "1px solid #1a6b9c", borderRadius: 4, padding: "0 4px",
+              border: "1px solid #1E2A5A", borderRadius: 4, padding: "0 4px",
               outline: "none", background: saving ? "#f0f7fb" : "white",
             }}
           />
@@ -206,7 +206,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
       {/* 6 KPI Cards */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#1a6b9c" }} />
+          <div style={{ height: 4, background: "#1E2A5A" }} />
           <div style={{ padding: "12px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Commandes totales</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{fmt(tot.commandes)}</div>
@@ -214,7 +214,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
           </div>
         </div>
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#0d4f7a" }} />
+          <div style={{ height: 4, background: "#161f45" }} />
           <div style={{ padding: "12px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Facturable ADV</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{fmt(tot.facturableADV)}</div>
@@ -238,7 +238,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
           </div>
         </div>
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#FF6B35" }} />
+          <div style={{ height: 4, background: "#E8732A" }} />
           <div style={{ padding: "12px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Décaissé total</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: "#1a2a3a" }}>{fmt(tot.decaisse)}</div>
@@ -269,10 +269,10 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <YAxis tick={{ fill: "#8399a9", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}K €`} />
                 <Tooltip formatter={(v) => fmt(Number(v))} />
                 <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
-                <Bar dataKey="commandes" name="Commandes" fill="#1a6b9c" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="commandes" name="Commandes" fill="#1E2A5A" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="delivre" name="Délivré" fill="#2ecc71" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="facture" name="Facturé" fill="#e74c3c" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="encaisse" name="Encaissé" fill="#FF6B35" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="encaisse" name="Encaissé" fill="#E8732A" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -290,7 +290,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <YAxis tick={{ fill: "#8399a9", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}K €`} />
                 <Tooltip formatter={(v) => fmt(Number(v))} />
                 <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
-                <Area type="monotone" dataKey="solde" name="Solde du compte" stroke="#1a6b9c" fill="#e8f0fe" strokeWidth={2} />
+                <Area type="monotone" dataKey="solde" name="Solde du compte" stroke="#1E2A5A" fill="#e8f0fe" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -312,7 +312,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <Tooltip formatter={(v) => fmt(Number(v))} />
                 <Bar dataKey="ebitda" name="EBITDA" radius={[3, 3, 0, 0]} animationDuration={1000}>
                   {chartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.ebitda >= 0 ? "#1a6b9c" : "#fce4ec"} stroke={entry.ebitda < 0 ? "#e74c3c" : "none"} strokeWidth={entry.ebitda < 0 ? 1 : 0} />
+                    <Cell key={i} fill={entry.ebitda >= 0 ? "#1E2A5A" : "#fce4ec"} stroke={entry.ebitda < 0 ? "#e74c3c" : "none"} strokeWidth={entry.ebitda < 0 ? 1 : 0} />
                   ))}
                 </Bar>
               </BarChart>
@@ -350,27 +350,27 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
                 <tr>
                   <th style={{ ...thStyle, textAlign: "left", position: "sticky", left: 0, zIndex: 2, minWidth: 150 }}>INDICATEUR</th>
                   {monthsWithCum.map(m => <th key={m.mStr} style={thStyle}>{m.label.toUpperCase()}</th>)}
-                  <th style={{ ...thStyle, background: "#0a3d5f" }}>TOTAL</th>
+                  <th style={{ ...thStyle, background: "#0f1630" }}>TOTAL</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Commandes */}
-                <tr><td style={tdLabelStyle}>Commandes</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.commandes} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.commandes)}</td></tr>
-                <tr><td style={tdLabelStyle}>Délivré</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.delivre} color="#1a6b9c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.delivre)}</td></tr>
-                <tr><td style={tdLabelStyle}>Facturable / Delivery</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableDelivery} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facturableDelivery)}</td></tr>
-                <tr><td style={tdLabelStyle}>Facturable / ADV</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableADV} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facturableADV)}</td></tr>
-                <tr><td style={tdLabelStyle}>Facturés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facture} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.facture)}</td></tr>
-                <tr><td style={tdLabelStyle}>Encaissés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encaisse} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.encaisse)}</td></tr>
+                <tr><td style={tdLabelStyle}>Commandes</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.commandes} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.commandes)}</td></tr>
+                <tr><td style={tdLabelStyle}>Délivré</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.delivre} color="#1E2A5A" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.delivre)}</td></tr>
+                <tr><td style={tdLabelStyle}>Facturable / Delivery</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableDelivery} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.facturableDelivery)}</td></tr>
+                <tr><td style={tdLabelStyle}>Facturable / ADV</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facturableADV} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.facturableADV)}</td></tr>
+                <tr><td style={tdLabelStyle}>Facturés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.facture} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.facture)}</td></tr>
+                <tr><td style={tdLabelStyle}>Encaissés</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.encaisse} color="#27ae60" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.encaisse)}</td></tr>
                 <tr><td style={tdLabelStyle}>Encours Clients</td>{monthsWithCum.map(m => <TdEditableEncours key={m.mStr} v={m.encours} mStr={m.mStr} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#e74c3c" }}>{fmt(tot.encours)}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
-                <tr><td style={tdLabelStyle}>Décaissé</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.decaisse} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.decaisse)}</td></tr>
-                <tr><td style={tdLabelStyle}>Remb. emprunt</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.rbstEmprunt} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#0d4f7a" }}>{fmt(tot.rbstEmprunt)}</td></tr>
+                <tr><td style={tdLabelStyle}>Décaissé</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.decaisse} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.decaisse)}</td></tr>
+                <tr><td style={tdLabelStyle}>Remb. emprunt</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.rbstEmprunt} />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#161f45" }}>{fmt(tot.rbstEmprunt)}</td></tr>
                 <tr><td style={tdLabelStyle}>Charges</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.charges} color="#e74c3c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#e74c3c" }}>{fmt(tot.charges)}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>
                 <tr><td style={tdLabelStyle}>Flux de trésorerie</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.fluxTreso} />)}<td style={{ ...tdStyle, fontWeight: 800, color: tot.fluxTreso >= 0 ? "#27ae60" : "#e74c3c" }}>{fmt(tot.fluxTreso)}</td></tr>
-                <tr><td style={tdLabelStyle}>Solde du compte</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.solde} color="#1a6b9c" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#1a6b9c" }}>{lastSolde ? fmt(lastSolde.solde) : "—"}</td></tr>
+                <tr><td style={tdLabelStyle}>Solde du compte</td>{monthsWithCum.map(m => <TdVal key={m.mStr} v={m.solde} color="#1E2A5A" />)}<td style={{ ...tdStyle, fontWeight: 800, color: "#1E2A5A" }}>{lastSolde ? fmt(lastSolde.solde) : "—"}</td></tr>
                 <tr><td style={tdLabelStyle}>Cash Management</td>{monthsWithCum.map(m => <TdPct key={m.mStr} v={m.cashMgmt} />)}<td style={{ ...tdStyle, fontWeight: 800 }}>{tot.decaisse > 0 ? (tot.fluxTreso / tot.decaisse * 100).toFixed(2) + "%" : "—"}</td></tr>
                 {/* Separator */}
                 <tr><td colSpan={14} style={{ height: 2, background: "#dce8f0" }} /></tr>

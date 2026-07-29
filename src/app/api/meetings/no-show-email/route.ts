@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const bookingUrl = "https://crm-lca.vercel.app/booking";
 
     const htmlBody = `
-<h2 style="color: #FF6B35; margin-bottom: 20px;">On s'est manqués !</h2>
+<h2 style="color: #E8732A; margin-bottom: 20px;">On s'est manqués !</h2>
 
 <p>Bonjour ${contact.first_name},</p>
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 <p>Je pense qu'un événement imprévu est arrivé qui vous a fait manquer notre bilan. Pour sélectionner un nouveau créneau et ne pas perdre cette opportunité, cliquez ci-dessous :</p>
 
 <p style="text-align: center; margin: 24px 0;">
-  <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #FF6B35; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
+  <a href="${bookingUrl}" style="display: inline-block; padding: 14px 28px; border-radius: 8px; background: #E8732A; color: white; font-size: 14px; font-weight: 700; text-decoration: none;">
     Réserver un nouveau bilan
   </a>
 </p>

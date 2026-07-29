@@ -110,7 +110,7 @@ export function PostsView({
             count={countByCategory.all}
             active={categoryFilter === "all"}
             onClick={() => { setCategoryFilter("all"); setProjectTagFilter("all"); setExpandProjects(false); }}
-            dotColor="#1a6b9c"
+            dotColor="#1E2A5A"
           />
 
           {MAIN_CATEGORIES.map((cat) => {
@@ -258,7 +258,7 @@ export function PostsView({
               style={{
                 display: "flex", alignItems: "center", gap: 5,
                 padding: "6px 14px", borderRadius: 6, border: "none",
-                background: "#1a6b9c", color: "white", cursor: "pointer",
+                background: "#1E2A5A", color: "white", cursor: "pointer",
                 fontSize: 12, fontWeight: 600,
               }}
             >
@@ -330,21 +330,21 @@ function ChannelItem({ label, count, active, onClick, dotColor, expanded, onTogg
         display: "flex", alignItems: "center", gap: 8, width: "100%",
         padding: "8px 16px", border: "none", cursor: "pointer", textAlign: "left",
         background: active ? "#e8f0fe" : "transparent",
-        borderLeft: active ? "3px solid #1a6b9c" : "3px solid transparent",
+        borderLeft: active ? "3px solid #1E2A5A" : "3px solid transparent",
         transition: "all 0.12s",
       }}
     >
       <Hash style={{ width: 13, height: 13, color: dotColor, flexShrink: 0 }} />
       <span style={{
         fontSize: 13, fontWeight: active ? 600 : 400,
-        color: active ? "#1a6b9c" : "#3a4a5a", flex: 1, overflow: "hidden",
+        color: active ? "#1E2A5A" : "#3a4a5a", flex: 1, overflow: "hidden",
         textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
         {label}
       </span>
       {count > 0 && (
         <span style={{
-          fontSize: 10, color: active ? "#1a6b9c" : "#8399a9",
+          fontSize: 10, color: active ? "#1E2A5A" : "#8399a9",
           fontWeight: 600, minWidth: 18, textAlign: "right",
         }}>
           {count}
@@ -376,11 +376,11 @@ function SubChannelItem({ label, active, onClick }: { label: string; active: boo
         display: "flex", alignItems: "center", gap: 6, width: "100%",
         padding: "5px 16px 5px 12px", border: "none", cursor: "pointer", textAlign: "left",
         background: active ? "#e8f0fe" : "transparent",
-        fontSize: 12, color: active ? "#1a6b9c" : "#5a6f80",
+        fontSize: 12, color: active ? "#1E2A5A" : "#5a6f80",
         fontWeight: active ? 600 : 400, transition: "all 0.12s",
       }}
     >
-      <span style={{ width: 4, height: 4, borderRadius: "50%", background: active ? "#1a6b9c" : "#b0bec5", flexShrink: 0 }} />
+      <span style={{ width: 4, height: 4, borderRadius: "50%", background: active ? "#1E2A5A" : "#b0bec5", flexShrink: 0 }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
     </button>
   );
@@ -409,7 +409,7 @@ function sidebarBtnStyle(active: boolean): React.CSSProperties {
     padding: "5px 8px", borderRadius: 6, fontSize: 11, fontWeight: 500,
     border: "1px solid #dce8f0", cursor: "pointer",
     background: active ? "#e8f0fe" : "white",
-    color: active ? "#1a6b9c" : "#5a6f80",
+    color: active ? "#1E2A5A" : "#5a6f80",
     justifyContent: "center",
   };
 }
@@ -451,7 +451,7 @@ function CategoryManagerPanel({
       const el = document.getElementById(hash);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
-        el.style.boxShadow = "0 0 0 3px #FF6B35";
+        el.style.boxShadow = "0 0 0 3px #E8732A";
         setTimeout(() => { el.style.boxShadow = ""; }, 2000);
       }
     }, 500);
@@ -563,7 +563,7 @@ function TagManagerPanel({
         <button onClick={handleCreate} disabled={!newName.trim()}
           style={{
             padding: "8px 16px", borderRadius: 8, border: "none",
-            background: newName.trim() ? "#1a6b9c" : "#dce8f0",
+            background: newName.trim() ? "#1E2A5A" : "#dce8f0",
             color: newName.trim() ? "white" : "#8399a9",
             cursor: newName.trim() ? "pointer" : "default", fontWeight: 600, fontSize: 13,
           }}

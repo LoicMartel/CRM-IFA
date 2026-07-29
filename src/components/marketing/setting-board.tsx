@@ -289,7 +289,7 @@ export function SettingBoard({
                           style={{
                             display: "inline-flex", alignItems: "center", gap: 2,
                             padding: "2px 6px", borderRadius: 4, border: "1px solid #dce8f0",
-                            background: "white", color: "#1a6b9c", fontSize: 10, fontWeight: 600,
+                            background: "white", color: "#1E2A5A", fontSize: 10, fontWeight: 600,
                             cursor: "pointer", whiteSpace: "nowrap",
                           }}
                         >
@@ -303,7 +303,7 @@ export function SettingBoard({
                         {lead.first_name} {lead.last_name}
                       </div>
                       {getName(lead.companies) && (
-                        <div style={{ fontSize: 10, color: "#1a6b9c", marginTop: 1 }}>
+                        <div style={{ fontSize: 10, color: "#1E2A5A", marginTop: 1 }}>
                           {getName(lead.companies)}
                         </div>
                       )}
@@ -384,7 +384,7 @@ export function SettingBoard({
               {/* Name (clickable → contact page) */}
               <Link
                 href={`/contacts/${lead.id}?from=setting`}
-                style={{ fontSize: 18, fontWeight: 700, color: "#1a6b9c", textDecoration: "underline", textUnderlineOffset: 2 }}
+                style={{ fontSize: 18, fontWeight: 700, color: "#1E2A5A", textDecoration: "underline", textUnderlineOffset: 2 }}
               >
                 {lead.first_name} {lead.last_name}
               </Link>
@@ -423,7 +423,7 @@ export function SettingBoard({
                 style={{
                   marginTop: 20, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "10px 0", borderRadius: 8, border: "none",
-                  background: "#FF6B35", color: "white", fontSize: 14, fontWeight: 600,
+                  background: "#E8732A", color: "white", fontSize: 14, fontWeight: 600,
                   cursor: "pointer",
                 }}
               >

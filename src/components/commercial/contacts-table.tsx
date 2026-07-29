@@ -283,8 +283,8 @@ export function ContactsTable({
             style={{
               height: 36, borderRadius: 8, padding: "0 20px", fontSize: 14,
               fontWeight: contactTypeTab === tab ? 700 : 500,
-              border: `1px solid ${contactTypeTab === tab ? "#1a6b9c" : "#dce8f0"}`,
-              background: contactTypeTab === tab ? "#1a6b9c" : "white",
+              border: `1px solid ${contactTypeTab === tab ? "#1E2A5A" : "#dce8f0"}`,
+              background: contactTypeTab === tab ? "#1E2A5A" : "white",
               color: contactTypeTab === tab ? "white" : "#5a6f80",
               cursor: "pointer",
             }}
@@ -481,7 +481,7 @@ export function ContactsTable({
                             style={{
                               display: "inline-flex", alignItems: "center", justifyContent: "center",
                               width: 28, height: 28, borderRadius: "50%",
-                              background: "#0d4f7a", color: "white",
+                              background: "#161f45", color: "white",
                               fontSize: 10, fontWeight: 700,
                             }}
                             title={`${c.team_members.first_name} ${c.team_members.last_name}`}

@@ -196,7 +196,7 @@ export default async function DashboardPage() {
           <ProgressBar pct={d.annualPct} />
           <div className="flex justify-between" style={{ marginTop: 10, fontSize: 12 }}>
             <span style={{ color: "#8399a9" }}>0 €</span>
-            <span style={{ color: "#FF6B35", fontWeight: 700 }}>{fmt(d.totalCA)}</span>
+            <span style={{ color: "#E8732A", fontWeight: 700 }}>{fmt(d.totalCA)}</span>
             <span style={{ color: "#8399a9" }}>{fmt(d.annualTarget)}</span>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
             <ProgressBar pct={d.monthPct} />
             <div className="flex justify-between" style={{ marginTop: 10, fontSize: 12 }}>
               <span style={{ color: "#8399a9" }}>0 €</span>
-              <span style={{ color: "#FF6B35", fontWeight: 700 }}>{fmt(d.monthActual)}</span>
+              <span style={{ color: "#E8732A", fontWeight: 700 }}>{fmt(d.monthActual)}</span>
               <span style={{ color: "#8399a9" }}>{fmt(d.monthTarget)}</span>
             </div>
           </div>
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
           <div style={{ padding: 20 }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
               <h3 style={{ fontWeight: 700, color: "#1a2a3a" }}>Dernières commandes</h3>
-              <Link href="/orders" style={{ color: "#FF6B35", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              <Link href="/orders" style={{ color: "#E8732A", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
                 Voir tout <ArrowRight style={{ width: 12, height: 12 }} />
               </Link>
             </div>
@@ -290,8 +290,8 @@ export default async function DashboardPage() {
       {/* Accès rapides */}
       <div className="grid gap-3 md:grid-cols-4">
         {[
-          { href: "/leads", Icon: Target, color: "#1a6b9c", bg: "#edf4fc", label: "Sales Reports", sub: "Rapports commerciaux" },
-          { href: "/deals", Icon: TrendingUp, color: "#FF6B35", bg: "#fef0ea", label: "Pipeline", sub: `${fmt(d.totalPipeAmount)} en cours` },
+          { href: "/leads", Icon: Target, color: "#1E2A5A", bg: "#edf4fc", label: "Sales Reports", sub: "Rapports commerciaux" },
+          { href: "/deals", Icon: TrendingUp, color: "#E8732A", bg: "#fef0ea", label: "Pipeline", sub: `${fmt(d.totalPipeAmount)} en cours` },
           { href: "/delivery", Icon: GraduationCap, color: "#8e44ad", bg: "#f5eef8", label: "Delivery", sub: `${d.sessionsCount} sessions réalisées` },
           { href: "/synthese-service", Icon: Wallet, color: "#27ae60", bg: "#eaf7ef", label: "Synthèse Service", sub: `Facturable : ${fmt(d.totalFacturable)}` },
         ].map((item) => (
@@ -313,7 +313,7 @@ export default async function DashboardPage() {
 }
 
 function KpiCard({ bar, label, value, sub, subGreen }: { bar: string; label: string; value: string; sub?: string; subGreen?: boolean }) {
-  const barColors: Record<string, string> = { green: "#27ae60", blue: "#1a6b9c", orange: "#FF6B35" };
+  const barColors: Record<string, string> = { green: "#27ae60", blue: "#1E2A5A", orange: "#E8732A" };
   return (
     <div className="lca-card">
       <div style={{ height: 5, background: barColors[bar] }} />
@@ -337,8 +337,8 @@ function ProgressBar({ pct }: { pct: number }) {
           style={{
             width: `${w}%`,
             background: over
-              ? "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 25%, #FF6B35 60%, #e74c3c 100%)"
-              : "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 40%, #1a6b9c 70%, #FF6B35 100%)",
+              ? "linear-gradient(90deg, #0f1630 0%, #1E2A5A 25%, #E8732A 60%, #e74c3c 100%)"
+              : "linear-gradient(90deg, #0f1630 0%, #1E2A5A 40%, #1E2A5A 70%, #E8732A 100%)",
           }}
         />
       </div>

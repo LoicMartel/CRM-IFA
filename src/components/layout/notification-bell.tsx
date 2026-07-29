@@ -207,7 +207,7 @@ export function NotificationBell() {
             }}
           >
             <strong style={{ fontSize: 14, color: "#1a2a3a" }}>
-              Notifications {unreadCount > 0 && <span style={{ color: "#FF6B35" }}>({unreadCount})</span>}
+              Notifications {unreadCount > 0 && <span style={{ color: "#E8732A" }}>({unreadCount})</span>}
             </strong>
             {unreadCount > 0 && (
               <button
@@ -242,7 +242,7 @@ export function NotificationBell() {
                     width: "100%", padding: "12px 16px",
                     borderBottom: "1px solid #f5f7fa",
                     background: n.read_at ? "transparent" : "#fff7f3",
-                    border: "none", borderLeft: n.read_at ? "none" : "3px solid #FF6B35",
+                    border: "none", borderLeft: n.read_at ? "none" : "3px solid #E8732A",
                     cursor: n.link_url ? "pointer" : "default", textAlign: "left",
                     transition: "background 0.15s",
                   }}

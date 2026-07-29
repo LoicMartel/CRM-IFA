@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       if (!account) throw new Error("no email account (set UNIPILE_DEFAULT_EMAIL_ACCOUNT_ID)");
       const thread = await resolveEmailReply(sb, id);
       const toName = `${c?.first_name ?? ""} ${c?.last_name ?? ""}`.trim() || null;
-      ext = await sendEmail({ accountId: account, to, toName, subject: thread.subject ?? "Re: votre demande — La Closing Académie", body: parsed.data.body, replyTo: thread.replyTo });
+      ext = await sendEmail({ accountId: account, to, toName, subject: thread.subject ?? "Re: votre demande — IFA Formatio", body: parsed.data.body, replyTo: thread.replyTo });
     } else {
       if (!conv.external_chat_id) throw new Error("no chat id");
       ext = await sendChatMessage(conv.external_chat_id, parsed.data.body);

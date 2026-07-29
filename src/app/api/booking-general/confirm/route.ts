@@ -136,6 +136,6 @@ export async function POST(request: Request) {
     success: true,
     contactId: contact?.id,
     meetingId,
-    assignedName: assignedName || "La Closing Académie",
+    assignedName: assignedName || "IFA Formatio",
   });
 }

@@ -67,7 +67,7 @@ export async function logEmail(entry: EmailLogEntry): Promise<void> {
   }
 }
 
-// Couture transporteur. IONOS (SMTP transactionnel non-sensible, vrai @closing-academie.com)
+// Couture transporteur. IONOS (SMTP transactionnel non-sensible, vrai @ifagroupe.com)
 // n'est PAS encore câblé : activation = `npm i nodemailer` + IONOS_SMTP_* en env + helper d'envoi.
 // Tant que ce n'est pas le cas, tout part via Resend. Exposé pour brancher le routage futur
 // sans toucher aux call sites. ⚠️ Périmètre : devis/conventions (Firma) + factures (Pennylane)
@@ -161,23 +161,23 @@ export async function sendSessionEmail({
       html: string;
       attachments?: { filename: string; content: string; contentType: string }[];
     } = {
-      from: "L'équipe La Closing Académie <noreply@closing-academie.com>",
+      from: "L'équipe IFA Formatio <noreply@ifagroupe.com>",
       to,
       subject,
       ...(bcc && bcc.length > 0 ? { bcc } : {}),
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; color: #1a2a3a; line-height: 1.6;">
           ${htmlBody}
-          <hr style="border: none; border-top: 2px solid #FF6B35; margin: 30px 0;">
+          <hr style="border: none; border-top: 2px solid #E8732A; margin: 30px 0;">
           <table style="width: 100%;">
             <tr>
-              <td style="vertical-align: top; padding-right: 20px; border-right: 2px solid #FF6B35;">
-                <strong style="font-size: 16px;">L'équipe La Closing Académie</strong><br>
-                <span style="color: #5a6f80;">La Closing Académie ®</span>
+              <td style="vertical-align: top; padding-right: 20px; border-right: 2px solid #E8732A;">
+                <strong style="font-size: 16px;">L'équipe IFA Formatio</strong><br>
+                <span style="color: #5a6f80;">IFA Formatio</span>
               </td>
               <td style="vertical-align: top; padding-left: 20px;">
-                ✉️ contact@closing-academie.com<br>
-                🔗 www.closing-academie.com
+                ✉️ contact@ifagroupe.com<br>
+                🔗 www.ifagroupe.com
               </td>
             </tr>
           </table>

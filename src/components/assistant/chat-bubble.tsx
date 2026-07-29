@@ -102,7 +102,7 @@ export function ChatBubble() {
             position: "fixed", bottom: bubbleBottom, right: 24, zIndex: 9998,
             width: 60, height: 60, borderRadius: "50%", border: "none",
             cursor: dragging.current ? "grabbing" : "pointer",
-            background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+            background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
             boxShadow: "0 4px 20px rgba(10, 61, 95, 0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 28, transition: dragging.current ? "none" : "transform 0.2s",
@@ -128,7 +128,7 @@ export function ChatBubble() {
           {/* Header */}
           <div style={{
             padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between",
-            background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+            background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 24 }}>🧙‍♂️</span>
@@ -160,7 +160,7 @@ export function ChatBubble() {
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center", marginTop: 16 }}>
                   {["Combien de leads ?", "Crée un contact", "Où voir le pipeline ?", "Conseils pour closer"].map(q => (
                     <button key={q} onClick={() => { setInput(q); }}
-                      style={{ fontSize: 11, padding: "6px 12px", borderRadius: 20, border: "1px solid #dce8f0", background: "#f8fbfd", color: "#1a6b9c", cursor: "pointer", fontWeight: 500 }}>
+                      style={{ fontSize: 11, padding: "6px 12px", borderRadius: 20, border: "1px solid #dce8f0", background: "#f8fbfd", color: "#1E2A5A", cursor: "pointer", fontWeight: 500 }}>
                       {q}
                     </button>
                   ))}
@@ -171,7 +171,7 @@ export function ChatBubble() {
               <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
                 <div style={{
                   maxWidth: "85%", padding: "10px 14px", borderRadius: 12,
-                  background: msg.role === "user" ? "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" : "#f0f4f8",
+                  background: msg.role === "user" ? "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)" : "#f0f4f8",
                   color: msg.role === "user" ? "white" : "#1a2a3a",
                   fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word",
                 }}>
@@ -210,7 +210,7 @@ export function ChatBubble() {
               disabled={loading || !input.trim()}
               style={{
                 width: 40, height: 40, borderRadius: 10, border: "none", cursor: "pointer",
-                background: loading || !input.trim() ? "#dce8f0" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                background: loading || !input.trim() ? "#dce8f0" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                 color: "white", display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >

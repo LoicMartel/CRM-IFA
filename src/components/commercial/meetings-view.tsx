@@ -225,7 +225,7 @@ export function MeetingsView({
                     {m.contacts && m.contact_id ? (
                       <span
                         onClick={() => router.push(`/contacts/${m.contact_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {m.contacts.first_name} {m.contacts.last_name}
                       </span>
@@ -235,7 +235,7 @@ export function MeetingsView({
                     {m.companies && m.company_id ? (
                       <span
                         onClick={() => router.push(`/clients/${m.company_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {m.companies.name}
                       </span>

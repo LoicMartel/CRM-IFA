@@ -90,7 +90,7 @@ export default function LoginPage() {
   return (
     <div className="login-page" style={{
       minHeight: "100vh", display: "flex",
-      background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 40%, #0d4f7a 70%, #0a3d5f 100%)",
+      background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 40%, #161f45 70%, #0f1630 100%)",
       position: "relative", overflow: "hidden",
     }}>
       {/* Left side - Branding with powder explosion */}
@@ -122,15 +122,15 @@ export default function LoginPage() {
                   textAlign: "center", fontFamily: "var(--font-montserrat), 'Montserrat', sans-serif",
                   letterSpacing: "-0.02em",
                 }}>
-                  LA<br />CLOSING<br />ACADÉMIE<span style={{ fontSize: 8, verticalAlign: "super" }}>®</span>
+                  IFA<br />FORMATIO
                 </span>
               </div>
               <div>
                 <p className="login-title">
-                  La Closing Académie
+                  IFA Formatio
                 </p>
                 <p className="login-subtitle">
-                  Vendez comme vous êtes
+                  Formez-vous aux metiers du transport qui recrutent
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function LoginPage() {
           overflow: "hidden",
         }}>
           {/* Card gradient bar */}
-          <div style={{ height: 5, background: "linear-gradient(90deg, #FF6B35, #e65100, #FF6B35)" }} />
+          <div style={{ height: 5, background: "linear-gradient(90deg, #E8732A, #e65100, #E8732A)" }} />
 
           <div style={{ padding: "36px 36px 28px" }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a", marginBottom: 4 }}>
@@ -193,7 +193,7 @@ export default function LoginPage() {
                     transition: "border-color 0.2s, box-shadow 0.2s",
                     background: "#f8fbfd",
                   }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "#1a6b9c"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(26,107,156,0.1)"; }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "#1E2A5A"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(26,107,156,0.1)"; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "none"; }}
                 />
               </div>
@@ -215,7 +215,7 @@ export default function LoginPage() {
                       transition: "border-color 0.2s, box-shadow 0.2s",
                       background: "#f8fbfd",
                     }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "#1a6b9c"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(26,107,156,0.1)"; }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "#1E2A5A"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(26,107,156,0.1)"; }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "none"; }}
                   />
                   <button
@@ -237,7 +237,7 @@ export default function LoginPage() {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: "#1a6b9c", cursor: "pointer" }}
+                    style={{ width: 16, height: 16, accentColor: "#1E2A5A", cursor: "pointer" }}
                   />
                   Rester connecté
                 </label>
@@ -246,7 +246,7 @@ export default function LoginPage() {
                   onClick={() => { setForgotMode(true); setForgotEmail(email); }}
                   style={{
                     background: "none", border: "none", cursor: "pointer",
-                    fontSize: 13, color: "#1a6b9c", fontWeight: 600,
+                    fontSize: 13, color: "#1E2A5A", fontWeight: 600,
                     textDecoration: "underline",
                   }}
                 >
@@ -269,7 +269,7 @@ export default function LoginPage() {
                 disabled={loading}
                 style={{
                   width: "100%", height: 46, borderRadius: 10, border: "none", cursor: "pointer",
-                  background: loading ? "#8399a9" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                  background: loading ? "#8399a9" : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                   color: "white", fontSize: 15, fontWeight: 700,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   boxShadow: loading ? "none" : "0 4px 15px rgba(255,107,53,0.3)",
@@ -301,7 +301,7 @@ export default function LoginPage() {
             textAlign: "center",
           }}>
             <p style={{ fontSize: 11, color: "#8399a9" }}>
-              © {new Date().getFullYear()} La Closing Académie® — CRM interne
+              © {new Date().getFullYear()} IFA Formatio® — CRM interne
             </p>
           </div>
         </div>
@@ -322,7 +322,7 @@ export default function LoginPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ height: 5, background: "linear-gradient(90deg, #1a6b9c, #0d4f7a, #1a6b9c)" }} />
+            <div style={{ height: 5, background: "linear-gradient(90deg, #1E2A5A, #161f45, #1E2A5A)" }} />
             <div style={{ padding: "36px 36px 28px" }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a", marginBottom: 4 }}>
                 Mot de passe oublié
@@ -381,7 +381,7 @@ export default function LoginPage() {
                       disabled={forgotLoading}
                       style={{
                         flex: 1, height: 46, borderRadius: 10, border: "none", cursor: "pointer",
-                        background: forgotLoading ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                        background: forgotLoading ? "#8399a9" : "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                         color: "white", fontSize: 14, fontWeight: 700,
                         boxShadow: forgotLoading ? "none" : "0 4px 15px rgba(26,107,156,0.3)",
                       }}
@@ -567,7 +567,7 @@ export default function LoginPage() {
         /* Separator */
         .login-separator {
           width: 60px; height: 3px; border-radius: 2px;
-          background: linear-gradient(90deg, transparent, #FF6B35, transparent);
+          background: linear-gradient(90deg, transparent, #E8732A, transparent);
           margin-bottom: 28px;
           animation: separatorGrow 1.2s ease-out 0.5s forwards;
           opacity: 0; transform: scaleX(0);

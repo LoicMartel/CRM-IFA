@@ -137,7 +137,7 @@ export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Pipeline en cours</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totalPipe)}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{fmt(totalPipe)}</div>
           <div style={{ fontSize: 11, color: "#8399a9" }}>{pipe.length} deals actifs</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
@@ -160,7 +160,7 @@ export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
       {/* Monthly breakdown + Sources */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="lca-card">
-          <div style={{ height: 4, background: "#1a6b9c" }} />
+          <div style={{ height: 4, background: "#1E2A5A" }} />
           <div style={{ padding: 16 }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Suivi mensuel</h3>
             <div className="space-y-2">
@@ -172,7 +172,7 @@ export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: m.pct >= 100 ? "#27ae60" : "#1a2a3a" }}>{fmt(m.actual)}</div>
-                    <div style={{ fontSize: 11, color: m.pct >= 100 ? "#27ae60" : m.pct > 0 ? "#FF6B35" : "#8399a9", fontWeight: 600 }}>
+                    <div style={{ fontSize: 11, color: m.pct >= 100 ? "#27ae60" : m.pct > 0 ? "#E8732A" : "#8399a9", fontWeight: 600 }}>
                       {m.pct}%
                     </div>
                   </div>
@@ -184,14 +184,14 @@ export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
 
         <div className="space-y-4">
           <div className="lca-card">
-            <div style={{ height: 4, background: "#FF6B35" }} />
+            <div style={{ height: 4, background: "#E8732A" }} />
             <div style={{ padding: 16 }}>
               <h3 style={{ fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>Par source</h3>
               <div className="space-y-2">
                 {sourceData.map(([name, amount]) => (
                   <div key={name} className="flex items-center justify-between" style={{ padding: "4px 0", borderBottom: "1px solid #e6f0f7" }}>
                     <span style={{ fontSize: 13, color: "#1a2a3a" }}>{name}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#FF6B35" }}>{fmt(amount)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#E8732A" }}>{fmt(amount)}</span>
                   </div>
                 ))}
                 {sourceData.length === 0 && <p style={{ fontSize: 13, color: "#8399a9" }}>Aucune donnée</p>}

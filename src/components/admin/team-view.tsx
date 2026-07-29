@@ -20,8 +20,8 @@ const ALL_ROLES = [
 
 const badgeColors: Record<string, { bg: string; text: string }> = {
   Admin: { bg: "#fce4ec", text: "#c62828" },
-  Expert: { bg: "#e8f0fe", text: "#0d4f7a" },
-  Experte: { bg: "#e8f0fe", text: "#0d4f7a" },
+  Expert: { bg: "#e8f0fe", text: "#161f45" },
+  Experte: { bg: "#e8f0fe", text: "#161f45" },
   "Account Manager": { bg: "#fff3e0", text: "#e65100" },
   Dirigeant: { bg: "#f3e5f5", text: "#6a1b9a" },
   "Coordinatrice Pédagogique": { bg: "#e8f5e9", text: "#2e7d32" },
@@ -354,8 +354,8 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                 onClick={() => setActiveTab(tab.key)}
                 style={{
                   height: 32, borderRadius: 8, padding: "0 14px", fontSize: 13, fontWeight: isActive ? 700 : 500,
-                  border: `1px solid ${isActive ? "#1a6b9c" : "#dce8f0"}`,
-                  background: isActive ? "#1a6b9c" : "white",
+                  border: `1px solid ${isActive ? "#1E2A5A" : "#dce8f0"}`,
+                  background: isActive ? "#1E2A5A" : "white",
                   color: isActive ? "white" : "#5a6f80",
                   cursor: "pointer", transition: "all 0.2s",
                 }}
@@ -373,7 +373,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
               style={{
                 display: "inline-flex", alignItems: "center", gap: 8, height: 38, borderRadius: 10,
                 padding: "0 20px", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer",
-                background: "#FF6B35", color: "white",
+                background: "#E8732A", color: "white",
               }}
             >
               <Plus className="h-4 w-4" /> Nouveau membre
@@ -389,7 +389,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
           const initials = `${(member.first_name as string)?.[0] ?? ""}${(member.last_name as string)?.[0] ?? ""}`;
           return (
             <div key={member.id as string} className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ height: 4, background: "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
+              <div style={{ height: 4, background: "linear-gradient(90deg, #0f1630 0%, #1E2A5A 50%, #E8732A 100%)" }} />
               <div style={{ padding: "16px 20px", display: "flex", alignItems: "flex-start", gap: 14 }}>
                 {(member.avatar_url as string) ? (
                   <img
@@ -400,7 +400,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                 ) : (
                   <div style={{
                     width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
-                    background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                    background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 16, fontWeight: 700,
                   }}>
@@ -419,12 +419,12 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                         {member.is_active ? "Actif" : "Inactif"}
                       </span>
                       {isAdmin && (
-                        <button onClick={() => openPerms(member)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#0d4f7a" }} title="Gérer les permissions">
+                        <button onClick={() => openPerms(member)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#161f45" }} title="Gérer les permissions">
                           <Shield className="h-3.5 w-3.5" />
                         </button>
                       )}
                       {isAdmin && !!(member.auth_user_id) && (
-                        <button onClick={() => { setPasswordPopup(member); setNewPassword(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#1a6b9c" }} title="Changer le mot de passe">
+                        <button onClick={() => { setPasswordPopup(member); setNewPassword(""); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "#1E2A5A" }} title="Changer le mot de passe">
                           <KeyRound className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -630,7 +630,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
               {/* Section Expert (si Expert/Experte) */}
               {isExpert && (
                 <>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF6B35", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#E8732A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 8 }}>
                     Profil Expert
                   </div>
 
@@ -645,7 +645,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                             onClick={() => setForm(f => ({ ...f, expertises: selected ? f.expertises.filter(e => e !== exp) : [...f.expertises, exp] }))}
                             style={{
                               fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 20, cursor: "pointer",
-                              border: selected ? "2px solid #FF6B35" : "2px solid #dce8f0",
+                              border: selected ? "2px solid #E8732A" : "2px solid #dce8f0",
                               background: selected ? "#fff3e0" : "white", color: selected ? "#e65100" : "#8399a9",
                             }}
                           >{exp}</button>
@@ -707,7 +707,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                             onClick={() => setForm(f => ({ ...f, preferred_days: selected ? f.preferred_days.filter(d => d !== day) : [...f.preferred_days, day] }))}
                             style={{
                               fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: 8, cursor: "pointer",
-                              border: selected ? "2px solid #1a6b9c" : "2px solid #dce8f0",
+                              border: selected ? "2px solid #1E2A5A" : "2px solid #dce8f0",
                               background: selected ? "#e3f2fd" : "white", color: selected ? "#1565c0" : "#8399a9",
                             }}
                           >{day.slice(0, 3)}</button>
@@ -751,7 +751,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                 disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
                 style={{
                   width: "100%", height: 40, borderRadius: 10, border: "none", cursor: "pointer",
-                  background: "#FF6B35", color: "white", fontSize: 14, fontWeight: 700,
+                  background: "#E8732A", color: "white", fontSize: 14, fontWeight: 700,
                   opacity: saving || !form.first_name.trim() || !form.last_name.trim() ? 0.5 : 1,
                 }}
               >
@@ -781,7 +781,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                   Annuler
                 </button>
                 <button onClick={handleChangePassword} disabled={savingPassword || !newPassword.trim()}
-                  style={{ height: 36, borderRadius: 8, background: "#FF6B35", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingPassword || !newPassword.trim() ? 0.5 : 1 }}>
+                  style={{ height: 36, borderRadius: 8, background: "#E8732A", color: "white", fontSize: 13, fontWeight: 700, padding: "0 18px", border: "none", cursor: "pointer", opacity: savingPassword || !newPassword.trim() ? 0.5 : 1 }}>
                   {savingPassword ? "..." : "Modifier"}
                 </button>
               </div>
@@ -794,10 +794,10 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={(e) => { if (e.target === e.currentTarget) setPermsMember(null); }}>
           <div style={{ background: "white", borderRadius: 16, width: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            <div style={{ height: 4, background: "linear-gradient(90deg, #0d4f7a 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
+            <div style={{ height: 4, background: "linear-gradient(90deg, #161f45 0%, #1E2A5A 50%, #E8732A 100%)" }} />
             <div style={{ padding: "24px 28px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-                <Shield style={{ width: 20, height: 20, color: "#0d4f7a" }} />
+                <Shield style={{ width: 20, height: 20, color: "#161f45" }} />
                 <div>
                   <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>
                     Permissions — {permsMember.first_name as string} {permsMember.last_name as string}
@@ -828,7 +828,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                         type="checkbox"
                         checked={permsForm[key]}
                         onChange={(e) => setPermsForm({ ...permsForm, [key]: e.target.checked })}
-                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1a6b9c", cursor: "pointer" }}
+                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1E2A5A", cursor: "pointer" }}
                       />
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
@@ -849,7 +849,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                         type="checkbox"
                         checked={permsForm[key]}
                         onChange={(e) => setPermsForm({ ...permsForm, [key]: e.target.checked })}
-                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1a6b9c", cursor: "pointer" }}
+                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1E2A5A", cursor: "pointer" }}
                       />
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
@@ -881,7 +881,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [] }: { 
                   Annuler
                 </button>
                 {!((permsMember.roles as string[]) ?? []).includes("Admin") && (
-                  <button onClick={handleSavePerms} disabled={savingPerms} style={{ height: 38, borderRadius: 8, padding: "0 18px", border: "none", background: savingPerms ? "#8399a9" : "#1a6b9c", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  <button onClick={handleSavePerms} disabled={savingPerms} style={{ height: 38, borderRadius: 8, padding: "0 18px", border: "none", background: savingPerms ? "#8399a9" : "#1E2A5A", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     {savingPerms ? "Enregistrement..." : "Enregistrer"}
                   </button>
                 )}

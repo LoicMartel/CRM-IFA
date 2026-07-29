@@ -14,8 +14,8 @@ import { fr } from "date-fns/locale";
 const TRAINERS_FALLBACK = ["Alexandre", "Rafi", "Iman", "Guillaume", "Loïc"];
 
 const TRAINER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  Alexandre: { bg: "#e8f0fe", text: "#0d4f7a", border: "#1a6b9c" },
-  Rafi: { bg: "#fff3e0", text: "#e65100", border: "#FF6B35" },
+  Alexandre: { bg: "#e8f0fe", text: "#161f45", border: "#1E2A5A" },
+  Rafi: { bg: "#fff3e0", text: "#e65100", border: "#E8732A" },
   Iman: { bg: "#f3e5f5", text: "#6a1b9a", border: "#8e44ad" },
   Guillaume: { bg: "#e8f5e9", text: "#2e7d32", border: "#27ae60" },
   Loïc: { bg: "#fce4ec", text: "#c62828", border: "#e74c3c" },
@@ -55,7 +55,7 @@ function fmt(n: number) {
 }
 
 const statusLabels: Record<string, { label: string; bg: string; text: string }> = {
-  planned: { label: "Planifié", bg: "#e8f0fe", text: "#0d4f7a" },
+  planned: { label: "Planifié", bg: "#e8f0fe", text: "#161f45" },
   done: { label: "Réalisé", bg: "#e8f5e9", text: "#2e7d32" },
   cancelled: { label: "Annulé", bg: "#fce4ec", text: "#c62828" },
   no_show: { label: "No show", bg: "#fff3e0", text: "#e65100" },
@@ -242,12 +242,12 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         style={{
           padding: "8px 10px", borderRadius: 8, cursor: "pointer",
           background: isVT ? "#f0f7fb" : "#fdf8f5",
-          borderLeft: `3px solid ${isVT ? "#1a6b9c" : "#FF6B35"}`,
+          borderLeft: `3px solid ${isVT ? "#1E2A5A" : "#E8732A"}`,
           fontSize: 12, marginBottom: 4,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-          {isVT ? <Video className="h-3 w-3" style={{ color: "#1a6b9c" }} /> : <Building2 className="h-3 w-3" style={{ color: "#FF6B35" }} />}
+          {isVT ? <Video className="h-3 w-3" style={{ color: "#1E2A5A" }} /> : <Building2 className="h-3 w-3" style={{ color: "#E8732A" }} />}
           <span style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 11 }}>{s.session_time ? String(s.session_time).slice(0, 5) + " · " : ""}{isVT ? (progress ? `VT ${progress.done}/${progress.total}` : "VT") : (progress ? `Journée ${progress.done}/${progress.total}` : "Journée")} — {Number(s.duration_hours) || 0}h</span>
           <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
             <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
@@ -292,7 +292,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
           {currentStatus === "planned" && (
             <button onClick={(e) => { e.stopPropagation(); openSession(s); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
               📋 Suivi
             </button>
           )}
@@ -323,7 +323,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
           </button>
           <button
             onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 14px", fontSize: 13, fontWeight: 600, color: "#1a6b9c", cursor: "pointer" }}
+            style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 14px", fontSize: 13, fontWeight: 600, color: "#1E2A5A", cursor: "pointer" }}
           >
             Aujourd&apos;hui
           </button>
@@ -360,11 +360,11 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>VT</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{weekSessions.filter(s => s.session_type === "vt").length}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{weekSessions.filter(s => s.session_type === "vt").length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Journées</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{weekSessions.filter(s => s.session_type === "journee").length}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{weekSessions.filter(s => s.session_type === "journee").length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures totales</div>
@@ -392,7 +392,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                         padding: "10px 6px", fontSize: 11, fontWeight: 700, textAlign: "center",
                         borderBottom: "2px solid #e8ecf1",
                         background: isToday ? "#e8f0fe" : i >= 5 ? "#fafafa" : "#f8fbfd",
-                        color: isToday ? "#1a6b9c" : "#1a2a3a",
+                        color: isToday ? "#1E2A5A" : "#1a2a3a",
                       }}
                     >
                       <div style={{ textTransform: "capitalize" }}>{dayName}</div>
@@ -496,7 +496,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                 {/* Info cards */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: sc.bg, color: sc.text }}>{sc.label}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0", color: s.session_type === "vt" ? "#1a6b9c" : "#FF6B35" }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: s.session_type === "vt" ? "#e8f0fe" : "#fff3e0", color: s.session_type === "vt" ? "#1E2A5A" : "#E8732A" }}>
                     {Number(s.duration_hours) || 0}h
                   </span>
                   {s.is_billable && hourlyRate > 0 && (
@@ -529,7 +529,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                         <span
                           key={l!.id}
                           onClick={() => { openLearnerPopup(l!.id, l!.first_name, l!.last_name); }}
-                          style={{ fontSize: 12, color: "#1a6b9c", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
+                          style={{ fontSize: 12, color: "#1E2A5A", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted" }}
                         >
                           {l!.first_name} {l!.last_name}
                         </span>
@@ -565,7 +565,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Lien visio</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f5f7fa", borderRadius: 8, padding: "8px 12px" }}>
-                      <a href={s.session_location} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.session_location}</a>
+                      <a href={s.session_location} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.session_location}</a>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(s.session_location!);
@@ -624,7 +624,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
                 <button
                   onClick={() => router.push("/planning")}
-                  style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+                  style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
                 >
                   Voir dans Planification
                 </button>
@@ -638,7 +638,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                   <button
                     onClick={handleSaveSession}
                     disabled={savingNotes}
-                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingNotes ? 0.6 : 1 }}
+                    style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingNotes ? 0.6 : 1 }}
                   >
                     {savingNotes ? "..." : "Enregistrer"}
                   </button>
@@ -660,7 +660,7 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
               {loadingLearner ? <div style={{ textAlign: "center", color: "#8399a9", padding: 20 }}>Chargement...</div> : (
                 <>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {viewLearner.status && <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: viewLearner.status === "actuel" ? "#e8f5e9" : viewLearner.status === "futur" ? "#e8f0fe" : "#f5f5f5", color: viewLearner.status === "actuel" ? "#2e7d32" : viewLearner.status === "futur" ? "#0d4f7a" : "#777" }}>{viewLearner.status}</span>}
+                    {viewLearner.status && <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: viewLearner.status === "actuel" ? "#e8f5e9" : viewLearner.status === "futur" ? "#e8f0fe" : "#f5f5f5", color: viewLearner.status === "actuel" ? "#2e7d32" : viewLearner.status === "futur" ? "#161f45" : "#777" }}>{viewLearner.status}</span>}
                     {viewLearner.company_name && <span style={{ fontSize: 12, color: "#8399a9" }}>{viewLearner.company_name}</span>}
                   </div>
                   <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>

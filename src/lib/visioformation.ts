@@ -98,7 +98,7 @@ export function extractEmailDomain(email: string): string {
 }
 
 export function extractDomainName(domain: string): string {
-  // "leyton.com" -> "leyton", "closing-academie.com" -> "closing-academie"
+  // "leyton.com" -> "leyton", "ifagroupe.com" -> "ifagroupe"
   const parts = domain.split(".");
   if (parts.length < 2) return domain;
   return parts[0];

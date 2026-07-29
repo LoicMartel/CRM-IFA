@@ -120,9 +120,9 @@ function BookFinancementTypContent() {
         textAlign: "center", fontSize: 11, color: "#8399a9",
         display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions g&eacute;n&eacute;rales de vente</a>
-        <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialit&eacute;</a>
-        <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions l&eacute;gales</a>
+        <a href="https://www.ifagroupe.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions g&eacute;n&eacute;rales de vente</a>
+        <a href="https://www.ifagroupe.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialit&eacute;</a>
+        <a href="https://www.ifagroupe.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions l&eacute;gales</a>
       </footer>
     </div>
   );

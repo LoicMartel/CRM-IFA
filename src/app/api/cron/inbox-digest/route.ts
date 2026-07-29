@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const digest = `📥 Inbox — ${lines.length} conversation(s) à traiter :\n${lines.join("\n")}`;
 
   // Destinataire (Rafi par défaut) résolu avec id (cloche) ET email (récap) en une requête.
-  const ownerEmail = process.env.INBOX_DEFAULT_OWNER_EMAIL ?? "rafi@closing-academie.com";
+  const ownerEmail = process.env.INBOX_DEFAULT_OWNER_EMAIL ?? "rafi@ifagroupe.com";
   const { data: owner } = await sb.from("team_members").select("id, email").ilike("email", ownerEmail).maybeSingle();
 
   if (!owner?.id) {

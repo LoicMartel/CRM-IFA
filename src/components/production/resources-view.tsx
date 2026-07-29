@@ -208,10 +208,10 @@ function getFileIcon(fileType: string | null, size: "sm" | "lg" = "lg") {
   if (t.includes("pptx") || t.includes("ppt") || t.includes("presentation") || t.includes("powerpoint") || t.includes("pages"))
     return <FileText className={cls} style={{ color: "#e65100" }} />;
   if (t.includes("doc") || t.includes("word"))
-    return <FileText className={cls} style={{ color: "#1a6b9c" }} />;
+    return <FileText className={cls} style={{ color: "#1E2A5A" }} />;
   if (t.includes("xls") || t.includes("sheet") || t.includes("excel"))
     return <FileText className={cls} style={{ color: "#2e7d32" }} />;
-  return <FileText className={cls} style={{ color: "#1a6b9c" }} />;
+  return <FileText className={cls} style={{ color: "#1E2A5A" }} />;
 }
 
 function isImageType(fileType: string | null, name: string): boolean {
@@ -565,7 +565,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Dossiers</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{allFolders.length}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{allFolders.length}</div>
           </div>
           <Folder style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -637,13 +637,13 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                         display: "flex", alignItems: "center", gap: 10, width: "100%",
                         padding: "8px 12px", border: "none", borderRadius: 6,
                         background: sortMode === opt.value ? "#f0f7ff" : "transparent",
-                        cursor: "pointer", fontSize: 13, color: sortMode === opt.value ? "#1a6b9c" : "#1a2a3a",
+                        cursor: "pointer", fontSize: 13, color: sortMode === opt.value ? "#1E2A5A" : "#1a2a3a",
                         fontWeight: sortMode === opt.value ? 600 : 400,
                       }}
                     >
-                      <span style={{ color: sortMode === opt.value ? "#1a6b9c" : "#8399a9" }}>{opt.icon}</span>
+                      <span style={{ color: sortMode === opt.value ? "#1E2A5A" : "#8399a9" }}>{opt.icon}</span>
                       {opt.label}
-                      {sortMode === opt.value && <span style={{ marginLeft: "auto", fontSize: 11, color: "#1a6b9c" }}>✓</span>}
+                      {sortMode === opt.value && <span style={{ marginLeft: "auto", fontSize: 11, color: "#1E2A5A" }}>✓</span>}
                     </button>
                   ))}
                 </div>
@@ -723,7 +723,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                           </div>
                         </div>
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(r); }} style={{
-                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
+                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1E2A5A",
                           padding: "6px 10px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
                           fontSize: 12, fontWeight: 500,
                         }} title="Télécharger">
@@ -731,7 +731,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                           <span className="hidden sm:inline">Télécharger</span>
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); openMove(r); }} style={{
-                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
+                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1E2A5A",
                           padding: "6px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
                           fontSize: 12, fontWeight: 500,
                         }} title="Déplacer">
@@ -758,7 +758,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
             {currentPath.length > 0 && (
               <button onClick={navigateBack} style={{
                 background: "none", border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 4, color: "#1a6b9c",
+                display: "flex", alignItems: "center", gap: 4, color: "#1E2A5A",
                 padding: "4px 8px", borderRadius: 6, marginRight: 4,
               }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f7ff")}
@@ -771,7 +771,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
             <button onClick={() => setCurrentPath([])} style={{
               background: "none", border: "none", cursor: "pointer",
               fontWeight: currentPath.length === 0 ? 700 : 500,
-              color: currentPath.length === 0 ? "#1a2a3a" : "#1a6b9c",
+              color: currentPath.length === 0 ? "#1a2a3a" : "#1E2A5A",
               padding: "4px 6px", borderRadius: 4,
             }}
               onMouseEnter={(e) => { if (currentPath.length > 0) e.currentTarget.style.background = "#f0f7ff"; }}
@@ -785,7 +785,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                 <button onClick={() => navigateToBreadcrumb(i + 1)} style={{
                   background: "none", border: "none", cursor: "pointer",
                   fontWeight: i === currentPath.length - 1 ? 700 : 500,
-                  color: i === currentPath.length - 1 ? "#1a2a3a" : "#1a6b9c",
+                  color: i === currentPath.length - 1 ? "#1a2a3a" : "#1E2A5A",
                   padding: "4px 6px", borderRadius: 4,
                 }}
                   onMouseEnter={(e) => { if (i < currentPath.length - 1) e.currentTarget.style.background = "#f0f7ff"; }}
@@ -866,14 +866,14 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                     </div>
                     <div data-actions="" style={{ display: "flex", gap: 3, marginTop: 2, opacity: 0, transition: "opacity 0.15s" }}>
                       <button onClick={(e) => { e.stopPropagation(); handleDownload(r); }} style={{
-                        background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
+                        background: "#1E2A5A", border: "none", cursor: "pointer", color: "white",
                         padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
                         fontSize: 10, fontWeight: 600,
                       }} title="Télécharger">
                         <Download className="h-3 w-3" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); openMove(r); }} style={{
-                        background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1a6b9c",
+                        background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1E2A5A",
                         padding: "4px 7px", borderRadius: 5, display: "flex", alignItems: "center", gap: 3,
                         fontSize: 10, fontWeight: 600,
                       }} title="Déplacer vers un autre dossier">
@@ -918,7 +918,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
             </div>
 
             {uploadPath.length > 0 && (
-              <div style={{ padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, fontSize: 12, color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, fontSize: 12, color: "#1E2A5A", display: "flex", alignItems: "center", gap: 6 }}>
                 <Folder className="h-3.5 w-3.5" style={{ flexShrink: 0 }} />
                 <span>Destination : <strong>{uploadPath.join(" › ")}</strong></span>
               </div>
@@ -934,7 +934,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
               <input ref={fileRef} type="file" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files ?? []))} style={{ display: "none" }} />
               <button type="button" onClick={() => fileRef.current?.click()} style={{
                 height: 48, borderRadius: 10, padding: "0 20px", fontSize: 13, fontWeight: 600,
-                border: "2px dashed #dce8f0", background: "#fafcfd", color: "#1a6b9c", width: "100%",
+                border: "2px dashed #dce8f0", background: "#fafcfd", color: "#1E2A5A", width: "100%",
                 cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}>
                 <Upload className="h-4 w-4" />
@@ -1008,7 +1008,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
             </div>
 
             {movePath.length > 0 && (
-              <div style={{ padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, fontSize: 12, color: "#1a6b9c", display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, fontSize: 12, color: "#1E2A5A", display: "flex", alignItems: "center", gap: 6 }}>
                 <Folder className="h-3.5 w-3.5" style={{ flexShrink: 0 }} />
                 <span>Déplacer vers : <strong>{movePath.join(" › ")}</strong></span>
               </div>
@@ -1059,7 +1059,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                 {previewUrl && (
                   <>
                     <button onClick={() => handleDownload(previewResource)} style={{
-                      background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1a6b9c",
+                      background: "#f0f7ff", border: "1px solid #dce8f0", cursor: "pointer", color: "#1E2A5A",
                       padding: "7px 14px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6,
                       fontSize: 12, fontWeight: 600,
                     }}>
@@ -1067,7 +1067,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                       Télécharger
                     </button>
                     <button onClick={() => window.open(previewUrl, "_blank")} style={{
-                      background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
+                      background: "#1E2A5A", border: "none", cursor: "pointer", color: "white",
                       padding: "7px 14px", borderRadius: 8, display: "flex", alignItems: "center", gap: 6,
                       fontSize: 12, fontWeight: 600,
                     }}>
@@ -1128,7 +1128,7 @@ export function ResourcesView({ resources }: { resources: Resource[] }) {
                     Aperçu non disponible pour ce type de fichier
                   </div>
                   <button onClick={() => window.open(previewUrl, "_blank")} style={{
-                    background: "#1a6b9c", border: "none", cursor: "pointer", color: "white",
+                    background: "#1E2A5A", border: "none", cursor: "pointer", color: "white",
                     padding: "10px 24px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 8,
                     fontSize: 13, fontWeight: 600,
                   }}>

@@ -28,7 +28,7 @@ function VSLContent() {
           <div className="mb-3 flex justify-center">
             <Image
               src="/lca-white-logo.png"
-              alt="La Closing Académie"
+              alt="IFA Formatio"
               width={120}
               height={90}
               className="w-[120px] h-auto"
@@ -56,7 +56,7 @@ function VSLContent() {
             <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
               <iframe
                 src="https://www.youtube.com/embed/q3Dpr2ydjkU?rel=0&modestbranding=1"
-                title="VSL - La Closing Académie"
+                title="VSL - IFA Formatio"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 className="absolute inset-0 w-full h-full rounded-xl"

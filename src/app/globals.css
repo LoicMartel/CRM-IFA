@@ -48,12 +48,12 @@
 }
 
 :root {
-  /* LCA exact brand palette */
-  --lca-blue: #1a6b9c;
-  --lca-blue-dark: #0d4f7a;
-  --lca-blue-deeper: #0a3d5f;
-  --lca-orange: #FF6B35;
-  --lca-orange-light: #FF8C5A;
+  /* IFA Formatio brand palette */
+  --lca-blue: #1E2A5A;
+  --lca-blue-dark: #161f45;
+  --lca-blue-deeper: #0f1630;
+  --lca-orange: #E8732A;
+  --lca-orange-light: #F08C4A;
   --lca-green: #2ecc71;
   --lca-green-dark: #27ae60;
   --lca-red: #e74c3c;
@@ -73,32 +73,32 @@
   --card-foreground: #1a2a3a;
   --popover: #ffffff;
   --popover-foreground: #1a2a3a;
-  --primary: #1a6b9c;
+  --primary: #1E2A5A;
   --primary-foreground: #ffffff;
   --secondary: #EFF5F9;
   --secondary-foreground: #1a2a3a;
   --muted: #edf2f7;
   --muted-foreground: #8399a9;
-  --accent: #FF6B35;
+  --accent: #E8732A;
   --accent-foreground: #ffffff;
   --destructive: #e74c3c;
   --border: #dce8f0;
   --input: #dce8f0;
-  --ring: #1a6b9c;
-  --chart-1: #1a6b9c;
-  --chart-2: #FF6B35;
+  --ring: #1E2A5A;
+  --chart-1: #1E2A5A;
+  --chart-2: #E8732A;
   --chart-3: #2ecc71;
   --chart-4: #f39c12;
   --chart-5: #6C5CE7;
   --radius: 0.875rem;
-  --sidebar: #0a3d5f;
+  --sidebar: #0f1630;
   --sidebar-foreground: #8399a9;
-  --sidebar-primary: #FF6B35;
+  --sidebar-primary: #E8732A;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #0d4f7a;
+  --sidebar-accent: #161f45;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255,255,255,0.1);
-  --sidebar-ring: #1a6b9c;
+  --sidebar-ring: #1E2A5A;
 }
 
 .dark {
@@ -108,26 +108,26 @@
   --card-foreground: #e0e0e0;
   --popover: #0d2137;
   --popover-foreground: #e0e0e0;
-  --primary: #1a6b9c;
+  --primary: #1E2A5A;
   --primary-foreground: #ffffff;
   --secondary: #0d2137;
   --secondary-foreground: #e0e0e0;
   --muted: #0d2137;
   --muted-foreground: #8399a9;
-  --accent: #FF6B35;
+  --accent: #E8732A;
   --accent-foreground: #ffffff;
   --destructive: #e74c3c;
   --border: rgba(255,255,255,0.1);
   --input: rgba(255,255,255,0.1);
-  --ring: #1a6b9c;
+  --ring: #1E2A5A;
   --sidebar: #071422;
   --sidebar-foreground: #8399a9;
-  --sidebar-primary: #FF6B35;
+  --sidebar-primary: #E8732A;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #0a1929;
   --sidebar-accent-foreground: #e0e0e0;
   --sidebar-border: rgba(255,255,255,0.08);
-  --sidebar-ring: #1a6b9c;
+  --sidebar-ring: #1E2A5A;
 }
 
 @layer base {
@@ -144,7 +144,7 @@
 
 /* Sidebar active menu item - orange */
 [data-slot="sidebar-inner"] [data-active="true"] {
-  background: #FF6B35 !important;
+  background: #E8732A !important;
   color: white !important;
   font-weight: 600 !important;
   box-shadow: 0 2px 8px rgba(255,107,53,0.3);
@@ -152,7 +152,7 @@
 }
 
 [data-slot="sidebar-inner"] [data-active="true"]:hover {
-  background: #FF8C5A !important;
+  background: #F08C4A !important;
 }
 
 /* Cursor pointer on all clickable elements */
@@ -168,14 +168,14 @@ label:has(input), .lca-card-hover {
 .lca-handwritten {
   font-family: var(--font-caveat), 'Caveat', cursive;
   font-weight: 700;
-  color: #0d4f7a;
+  color: #161f45;
 }
 
 /* ========================================
    LCA Sidebar Gradient
    ======================================== */
 [data-slot="sidebar-inner"] {
-  background: linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 60%, #0d4f7a 100%) !important;
+  background: linear-gradient(135deg, #0f1630 0%, #1E2A5A 60%, #161f45 100%) !important;
   color: rgba(255,255,255,0.75) !important;
 }
 
@@ -235,11 +235,11 @@ label:has(input), .lca-card-hover {
 
 /* Top border bars */
 .lca-bar-green { height: 5px; background: #2ecc71; }
-.lca-bar-blue { height: 5px; background: #1a6b9c; }
-.lca-bar-orange { height: 5px; background: #FF6B35; }
+.lca-bar-blue { height: 5px; background: #1E2A5A; }
+.lca-bar-orange { height: 5px; background: #E8732A; }
 .lca-bar-red { height: 5px; background: #e74c3c; }
-.lca-bar-gradient { height: 5px; background: linear-gradient(90deg, #1a6b9c, #FF6B35); }
-.lca-bar-gradient-hot { height: 5px; background: linear-gradient(90deg, #FF6B35, #e74c3c); }
+.lca-bar-gradient { height: 5px; background: linear-gradient(90deg, #1E2A5A, #E8732A); }
+.lca-bar-gradient-hot { height: 5px; background: linear-gradient(90deg, #E8732A, #e74c3c); }
 
 /* ========================================
    LCA Typography
@@ -265,7 +265,7 @@ label:has(input), .lca-card-hover {
 .lca-big-pct {
   font-size: 34px;
   font-weight: 800;
-  color: #1a6b9c;
+  color: #1E2A5A;
   line-height: 1;
 }
 
@@ -303,13 +303,13 @@ label:has(input), .lca-card-hover {
   height: 40px;
   border-radius: 50%;
   background: white;
-  border: 3px solid #FF6B35;
+  border: 3px solid #E8732A;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   font-weight: 800;
-  color: #FF6B35;
+  color: #E8732A;
   z-index: 10;
   opacity: 0;
   transform: translateY(-50%) scale(0.5);
@@ -343,7 +343,7 @@ label:has(input), .lca-card-hover {
   padding: 12px;
   background: #fff8ed;
   border-radius: 10px;
-  border-left: 4px solid #FF6B35;
+  border-left: 4px solid #E8732A;
 }
 
 .lca-alert-success {
@@ -387,7 +387,7 @@ label:has(input), .lca-card-hover {
   padding: 5px 14px;
   border-radius: 999px;
   background: #fff0e6;
-  color: #FF6B35;
+  color: #E8732A;
   font-size: 12px;
   font-weight: 700;
   border: 1px solid #ffc9a8;

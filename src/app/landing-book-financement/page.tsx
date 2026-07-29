@@ -485,11 +485,11 @@ export default function LandingBookFinancement() {
       <footer className="bg-white border-t border-gray-100">
         <div className="mx-auto max-w-[960px] px-6 py-6 text-center text-[12px] text-[#999]">
           <div className="mb-2 flex flex-wrap justify-center gap-4">
-            <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Conditions g&eacute;n&eacute;rales de vente</a>
+            <a href="https://www.ifagroupe.com/cgv" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Conditions g&eacute;n&eacute;rales de vente</a>
             <span>|</span>
-            <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Politique de confidentialit&eacute;</a>
+            <a href="https://www.ifagroupe.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Politique de confidentialit&eacute;</a>
             <span>|</span>
-            <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Mentions l&eacute;gales</a>
+            <a href="https://www.ifagroupe.com/mentions-legales" target="_blank" rel="noopener noreferrer" className="transition hover:text-[#555]">Mentions l&eacute;gales</a>
           </div>
         </div>
       </footer>

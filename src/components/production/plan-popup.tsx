@@ -12,7 +12,7 @@ function fmt(n: number) {
 }
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  planned: { bg: "#e8f0fe", text: "#0d4f7a", label: "Planifié" },
+  planned: { bg: "#e8f0fe", text: "#161f45", label: "Planifié" },
   done: { bg: "#e8f5e9", text: "#2e7d32", label: "Réalisé" },
   cancelled: { bg: "#fce4ec", text: "#c62828", label: "Annulé" },
   no_show: { bg: "#fff3e0", text: "#e65100", label: "No show" },
@@ -193,17 +193,17 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
             <div style={{ background: "#f8fbfd", borderRadius: 10, padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Video className="h-3.5 w-3.5" style={{ color: "#1a6b9c" }} />
+                  <Video className="h-3.5 w-3.5" style={{ color: "#1E2A5A" }} />
                   <span style={{ fontWeight: 700, fontSize: 13, color: "#1a2a3a" }}>VT</span>
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 15, color: "#1a6b9c" }}>{vtDone} / {vtTotal}</span>
+                <span style={{ fontWeight: 800, fontSize: 15, color: "#1E2A5A" }}>{vtDone} / {vtTotal}</span>
               </div>
               <div style={{ height: 6, background: "#e8ecf1", borderRadius: 4, overflow: "hidden", marginBottom: 6 }}>
-                <div style={{ height: "100%", width: `${vtPct}%`, background: "#1a6b9c", borderRadius: 4, transition: "width 0.5s" }} />
+                <div style={{ height: "100%", width: `${vtPct}%`, background: "#1E2A5A", borderRadius: 4, transition: "width 0.5s" }} />
               </div>
               <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#5a6f80" }}>
                 <span>Réalisées : <strong style={{ color: "#2ecc71" }}>{vtDone}</strong></span>
-                <span>Planifiées : <strong style={{ color: "#1a6b9c" }}>{vtPlanned}</strong></span>
+                <span>Planifiées : <strong style={{ color: "#1E2A5A" }}>{vtPlanned}</strong></span>
                 <span>Restantes : <strong style={{ color: vtRemaining > 0 ? "#e74c3c" : "#2ecc71" }}>{vtRemaining}</strong></span>
               </div>
             </div>
@@ -211,17 +211,17 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
             <div style={{ background: "#fdf8f5", borderRadius: 10, padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Building2 className="h-3.5 w-3.5" style={{ color: "#FF6B35" }} />
+                  <Building2 className="h-3.5 w-3.5" style={{ color: "#E8732A" }} />
                   <span style={{ fontWeight: 700, fontSize: 13, color: "#1a2a3a" }}>Journées</span>
                 </div>
-                <span style={{ fontWeight: 800, fontSize: 15, color: "#FF6B35" }}>{daysDone} / {daysTotal}</span>
+                <span style={{ fontWeight: 800, fontSize: 15, color: "#E8732A" }}>{daysDone} / {daysTotal}</span>
               </div>
               <div style={{ height: 6, background: "#e8ecf1", borderRadius: 4, overflow: "hidden", marginBottom: 6 }}>
-                <div style={{ height: "100%", width: `${daysPct}%`, background: "#FF6B35", borderRadius: 4, transition: "width 0.5s" }} />
+                <div style={{ height: "100%", width: `${daysPct}%`, background: "#E8732A", borderRadius: 4, transition: "width 0.5s" }} />
               </div>
               <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#5a6f80" }}>
                 <span>Réalisées : <strong style={{ color: "#2ecc71" }}>{daysDone}</strong></span>
-                <span>Planifiées : <strong style={{ color: "#FF6B35" }}>{daysPlannedCount}</strong></span>
+                <span>Planifiées : <strong style={{ color: "#E8732A" }}>{daysPlannedCount}</strong></span>
                 <span>Restantes : <strong style={{ color: daysRemaining > 0 ? "#e74c3c" : "#2ecc71" }}>{daysRemaining}</strong></span>
               </div>
             </div>
@@ -292,10 +292,10 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
                       <div key={s.id} style={{
                         padding: "8px 12px", borderRadius: 8,
                         background: isVT ? "#f8fbfd" : "#fdf8f5",
-                        borderLeft: `3px solid ${isVT ? "#1a6b9c" : "#FF6B35"}`,
+                        borderLeft: `3px solid ${isVT ? "#1E2A5A" : "#E8732A"}`,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: isVT ? "#1a6b9c" : "#FF6B35" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: isVT ? "#1E2A5A" : "#E8732A" }}>
                             {dateStr} · {isVT ? "VT" : "Journée"} — {Number(s.duration_hours) || 0}h
                           </span>
                           <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
@@ -359,7 +359,7 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
                               <button
                                 onClick={() => handleSaveNotes(s.id)}
                                 disabled={savingNotes}
-                                style={{ height: 28, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 600, padding: "0 12px", border: "none", cursor: "pointer" }}
+                                style={{ height: 28, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 600, padding: "0 12px", border: "none", cursor: "pointer" }}
                               >
                                 {savingNotes ? "..." : "Sauvegarder"}
                               </button>
@@ -384,7 +384,7 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
           <button
             onClick={() => { onClose(); router.push("/planning"); }}
-            style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+            style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
           >
             Voir dans Planification
           </button>

@@ -147,9 +147,9 @@ export async function POST(req: NextRequest) {
 
     // Send email + in-app notifications to Alexandre, Rafi and Loïc
     const LEAD_NOTIFY_EMAILS = [
-      "alexandre@closing-academie.com",
-      "rafi@closing-academie.com",
-      "loic@closing-academie.com",
+      "alexandre@ifagroupe.com",
+      "rafi@ifagroupe.com",
+      "loic@ifagroupe.com",
     ];
 
     const notifSubject = `Nouveau lead marketing — ${firstName} ${lastName}`;

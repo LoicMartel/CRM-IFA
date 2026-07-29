@@ -304,7 +304,7 @@ export function ActivityModal({
             onClick={handleSave}
             disabled={saving || !form.title.trim()}
             className="w-full"
-            style={{ background: "#FF6B35", color: "white" }}
+            style={{ background: "#E8732A", color: "white" }}
           >
             {saving ? "Enregistrement..." : "Enregistrer l'activité"}
           </Button>

@@ -316,10 +316,10 @@ export function SettingsView() {
       <div className="space-y-6">
         {/* Photo de profil */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
+          <div style={{ height: 4, background: "linear-gradient(90deg, #0f1630 0%, #1E2A5A 50%, #E8732A 100%)" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Camera className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Photo de profil
+              <Camera className="h-5 w-5" style={{ color: "#1E2A5A" }} /> Photo de profil
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <div style={{ position: "relative" }}>
@@ -328,7 +328,7 @@ export function SettingsView() {
                 ) : (
                   <div style={{
                     width: 80, height: 80, borderRadius: "50%", border: "3px solid #e8ecf1",
-                    background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                    background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 24, fontWeight: 700,
                   }}>
@@ -339,7 +339,7 @@ export function SettingsView() {
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     position: "absolute", bottom: -2, right: -2, width: 28, height: 28, borderRadius: "50%",
-                    background: "#1a6b9c", border: "2px solid white", color: "white",
+                    background: "#1E2A5A", border: "2px solid white", color: "white",
                     display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
                   }}
                 >
@@ -351,7 +351,7 @@ export function SettingsView() {
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{memberName}</p>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => fileInputRef.current?.click()}
-                    style={{ height: 32, borderRadius: 8, background: "#1a6b9c", color: "white", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "0 14px" }}>
+                    style={{ height: 32, borderRadius: 8, background: "#1E2A5A", color: "white", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "0 14px" }}>
                     Changer la photo
                   </button>
                   {(pendingAvatarPreview || (!pendingRemoveAvatar && avatarUrl)) && (
@@ -369,10 +369,10 @@ export function SettingsView() {
 
         {/* Profil */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "linear-gradient(90deg, #0a3d5f 0%, #1a6b9c 50%, #FF6B35 100%)" }} />
+          <div style={{ height: 4, background: "linear-gradient(90deg, #0f1630 0%, #1E2A5A 50%, #E8732A 100%)" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <User className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Mon profil
+              <User className="h-5 w-5" style={{ color: "#1E2A5A" }} /> Mon profil
             </h3>
             <div className="space-y-3">
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#f5f7fa", borderRadius: 8 }}>
@@ -395,10 +395,10 @@ export function SettingsView() {
 
         {/* Changer le mot de passe */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "#FF6B35" }} />
+          <div style={{ height: 4, background: "#E8732A" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <KeyRound className="h-5 w-5" style={{ color: "#FF6B35" }} /> Changer le mot de passe
+              <KeyRound className="h-5 w-5" style={{ color: "#E8732A" }} /> Changer le mot de passe
             </h3>
             {message && (
               <div style={{
@@ -430,10 +430,10 @@ export function SettingsView() {
         </div>
         {/* Signature email */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "linear-gradient(90deg, #FF6B35 0%, #e65100 100%)" }} />
+          <div style={{ height: 4, background: "linear-gradient(90deg, #E8732A 0%, #e65100 100%)" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Mail className="h-5 w-5" style={{ color: "#FF6B35" }} /> Signature email
+              <Mail className="h-5 w-5" style={{ color: "#E8732A" }} /> Signature email
             </h3>
             <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 12, lineHeight: 1.5 }}>
               Collez votre signature au format HTML. Elle sera ajoutée automatiquement à chaque email envoyé depuis le CRM.
@@ -477,7 +477,7 @@ export function SettingsView() {
               disabled={savingSignature}
               style={{
                 marginTop: 14, width: "100%", height: 40, borderRadius: 8, border: "none",
-                background: signatureSaved ? "#2e7d32" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                background: signatureSaved ? "#2e7d32" : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                 color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
             >
@@ -488,10 +488,10 @@ export function SettingsView() {
 
         {/* Intégrations — connexion OAuth */}
         <div className="lca-card" style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ height: 4, background: "linear-gradient(90deg, #1a6b9c 0%, #00695c 100%)" }} />
+          <div style={{ height: 4, background: "linear-gradient(90deg, #1E2A5A 0%, #00695c 100%)" }} />
           <div style={{ padding: "20px 24px" }}>
             <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <Link className="h-5 w-5" style={{ color: "#1a6b9c" }} /> Intégrations
+              <Link className="h-5 w-5" style={{ color: "#1E2A5A" }} /> Intégrations
             </h3>
 
             {/* Email */}
@@ -591,7 +591,7 @@ export function SettingsView() {
                     disabled={savingEmail}
                     style={{
                       marginTop: 12, width: "100%", height: 36, borderRadius: 8, border: "none",
-                      background: emailSaved ? "#2e7d32" : "#1a6b9c", color: "white",
+                      background: emailSaved ? "#2e7d32" : "#1E2A5A", color: "white",
                       fontSize: 13, fontWeight: 700, cursor: "pointer",
                     }}
                   >
@@ -602,7 +602,7 @@ export function SettingsView() {
 
               {!emailProvider && (
                 <p style={{ fontSize: 11, color: "#8399a9", marginTop: 8 }}>
-                  Aucun compte email connecté — les emails sont envoyés depuis votre adresse @closing-academie.com.
+                  Aucun compte email connecté — les emails sont envoyés depuis votre adresse @ifagroupe.com.
                 </p>
               )}
             </div>
@@ -646,7 +646,7 @@ export function SettingsView() {
                     disabled={savingCals}
                     style={{
                       marginTop: 14, width: "100%", height: 36, borderRadius: 8, border: "none",
-                      background: calsSaved ? "#2e7d32" : "#1a6b9c", color: "white",
+                      background: calsSaved ? "#2e7d32" : "#1E2A5A", color: "white",
                       fontSize: 13, fontWeight: 700, cursor: "pointer",
                     }}
                   >
@@ -842,7 +842,7 @@ export function SettingsView() {
             disabled={saving || (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal)}
             style={{
               width: "100%", height: 44, borderRadius: 10, border: "none", cursor: "pointer",
-              background: (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal) ? "#e8ecf1" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+              background: (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal) ? "#e8ecf1" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
               color: (!hasChanges && !newPassword && !confirmPassword && zoomLink === initialIntegrations.zoom && slackUserId === initialIntegrations.slack && googleCalendarId === initialIntegrations.gcal) ? "#8399a9" : "white",
               fontSize: 15, fontWeight: 700,
               opacity: saving ? 0.6 : 1,
@@ -891,7 +891,7 @@ export function SettingsView() {
                   Annuler
                 </button>
                 <button onClick={handleCropSave} disabled={uploadingAvatar}
-                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: uploadingAvatar ? 0.6 : 1 }}>
+                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: uploadingAvatar ? 0.6 : 1 }}>
                   {uploadingAvatar ? "Upload..." : "Enregistrer"}
                 </button>
               </div>
@@ -944,10 +944,10 @@ function OAuthConnectButton({
       style={{
         display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
         borderRadius: 8, border: "1px solid #dce8f0", background: "white",
-        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1E2A5A",
         transition: "all 0.15s",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1E2A5A"; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
     >
       <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ccc", flexShrink: 0 }} />
@@ -997,10 +997,10 @@ function EmailConnectButton({
         style={{
           display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
           borderRadius: 8, border: "1px solid #dce8f0", background: "white",
-          cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+          cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#1E2A5A",
           transition: "all 0.15s",
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1E2A5A"; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
       >
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fb8c00", flexShrink: 0 }} />
@@ -1017,10 +1017,10 @@ function EmailConnectButton({
       style={{
         display: "flex", alignItems: "center", gap: 8, padding: "8px 14px",
         borderRadius: 8, border: "1px solid #dce8f0", background: "white",
-        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1a6b9c",
+        cursor: memberId ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, color: "#1E2A5A",
         transition: "all 0.15s",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1a6b9c"; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f7ff"; e.currentTarget.style.borderColor = "#1E2A5A"; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#dce8f0"; }}
     >
       <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ccc", flexShrink: 0 }} />

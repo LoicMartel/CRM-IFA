@@ -10,7 +10,7 @@ const TEAM = [
     firstName: "Alexandre",
     name: "Alexandre MANDEREAU",
     photo: "/photo-alexandre.jpeg",
-    calendarIds: ["alexandre@closing-academie.com"],
+    calendarIds: ["alexandre@ifagroupe.com"],
   },
   {
     id: "b52b6563-1991-46e8-b718-0c16c641b21a",
@@ -18,7 +18,7 @@ const TEAM = [
     name: "Loïc MARTEL",
     photo: "/photo-loic.jpeg",
     calendarIds: [
-      "loic@closing-academie.com",                                                              // Principal
+      "loic@ifagroupe.com",                                                              // Principal
       "5bd3cd57ce9939882f7db28b02bde52d2b4df03a0d1e857915e5ee8cf0b02ae2@group.calendar.google.com", // Admin
       "9277b4288fcbd2196a510de4772e430281e76afe5ee51eed82138455ae568a41@group.calendar.google.com", // Déjeuner
       "bbe2caa62aed64819928102ede03fa32096f7768c33a165a52c8306c18de59d2@group.calendar.google.com", // Fin de journée

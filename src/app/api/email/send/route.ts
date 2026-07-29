@@ -26,12 +26,12 @@ function defaultSignature(member: { first_name: string; last_name: string; email
     <table style="font-family:Arial,sans-serif;font-size:13px;color:#1a2a3a"><tr>
       <td style="vertical-align:top;padding-right:16px;border-right:2px solid #df7e0d">
         <strong style="font-size:14px">${member.first_name} ${member.last_name}</strong><br>
-        <span style="color:#5a6f80">La Closing Académie ®</span>
+        <span style="color:#5a6f80">IFA Formatio ®</span>
       </td>
       <td style="vertical-align:top;padding-left:16px;font-size:12px">
         ${member.phone ? `📞 ${member.phone}<br>` : ""}
         ✉️ ${member.email}<br>
-        🔗 www.closing-academie.com
+        🔗 www.ifagroupe.com
       </td>
     </tr></table>`;
 }
@@ -136,9 +136,9 @@ export async function POST(req: NextRequest) {
     } else {
       // ── Resend par défaut (clé plateforme) ──
       transporter = "resend";
-      const senderEmail = member.email.includes("@closing-academie.com")
+      const senderEmail = member.email.includes("@ifagroupe.com")
         ? member.email
-        : `${member.first_name.toLowerCase()}@closing-academie.com`;
+        : `${member.first_name.toLowerCase()}@ifagroupe.com`;
 
       const { data: emailData, error } = await resend.emails.send({
         from: `${member.first_name} ${member.last_name} <${senderEmail}>`,

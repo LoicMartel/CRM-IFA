@@ -10,7 +10,7 @@
 // Automated / non-lead sender local-parts (the bit before @). Exported: the mailbox triage (chantier C)
 // reuses the same noise heuristics (source unique) for its deterministic upstream.
 export const NOISE_LOCAL = /^(no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounce|newsletter|notifications?|mailing|marketing)\b/i;
-const INTERNAL_DOMAIN = "@closing-academie.com";
+const INTERNAL_DOMAIN = "@ifagroupe.com";
 // Newsletter/marketing body footers (conservative content heuristic).
 export const NEWSLETTER_BODY = /se d[ée]sinscrire|unsubscribe|voir (?:cet?|ce) (?:e?-?mail|message) dans (?:votre|le) navigateur|ne plus recevoir (?:nos|ces|cet)/i;
 

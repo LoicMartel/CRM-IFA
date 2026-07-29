@@ -60,7 +60,7 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
       >
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Objectif annuel</div>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#1a2a3a" }}>{fmt(annualTarget)}</div>
-        <div style={{ fontSize: 11, color: "#1a6b9c", fontWeight: 600 }}>Cliquer pour modifier</div>
+        <div style={{ fontSize: 11, color: "#1E2A5A", fontWeight: 600 }}>Cliquer pour modifier</div>
       </div>
 
       {/* Popup */}
@@ -123,7 +123,7 @@ export function SalesTargetsEditor({ targets, annualTarget }: { targets: SalesTa
               <button
                 onClick={handleSave}
                 disabled={saving}
-                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
               >
                 {saving ? "..." : "Enregistrer"}
               </button>

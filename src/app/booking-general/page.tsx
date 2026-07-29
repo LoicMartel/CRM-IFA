@@ -154,11 +154,11 @@ function BookingGeneralContent() {
       <div style={{ display: "flex", alignItems: "center", gap: 0, marginBottom: 24 }}>
         {[1, 2, 3].map((s, i) => (
           <div key={s} style={{ display: "flex", alignItems: "center" }}>
-            {i > 0 && <div className="booking-step-connector" style={{ width: 60, height: 2, background: step >= s ? "#FF6B35" : "#dce8f0", margin: "0 0 20px 0" }} />}
+            {i > 0 && <div className="booking-step-connector" style={{ width: 60, height: 2, background: step >= s ? "#E8732A" : "#dce8f0", margin: "0 0 20px 0" }} />}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               <div style={{
                 width: 28, height: 28, borderRadius: "50%",
-                background: step >= s ? "#FF6B35" : "#dce8f0",
+                background: step >= s ? "#E8732A" : "#dce8f0",
                 color: step >= s ? "white" : "#8399a9", display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 12, fontWeight: 700,
               }}>
@@ -176,12 +176,12 @@ function BookingGeneralContent() {
       {step < 3 && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 24 }}>
           <div style={{
-            width: 56, height: 56, border: "2px solid #0a3d5f", borderRadius: 10,
+            width: 56, height: 56, border: "2px solid #0f1630", borderRadius: 10,
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: "4px 6px",
           }}>
             <span style={{
-              color: "#0a3d5f", fontSize: 8, fontWeight: 700, lineHeight: 1.2,
+              color: "#0f1630", fontSize: 8, fontWeight: 700, lineHeight: 1.2,
               textAlign: "center", fontFamily: "'Montserrat', sans-serif",
               letterSpacing: "-0.02em",
             }}>
@@ -208,7 +208,7 @@ function BookingGeneralContent() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8, margin: "0 0 14px 0" }}>
               {["Nombre de leads / de cibles", "Nombre de RDVs r\u00e9alis\u00e9s", "Nombre de signatures", "Chiffre d\u2019affaires"].map((item) => (
                 <div key={item} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#f0f6fa", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FF6B35", flexShrink: 0 }} />
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8732A", flexShrink: 0 }} />
                   {item}
                 </div>
               ))}
@@ -224,13 +224,13 @@ function BookingGeneralContent() {
 
             {/* Month nav */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "16px 0" }}>
-              <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#1a6b9c" }}>
+              <button onClick={prevMonth} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#1E2A5A" }}>
                 <ChevronLeft style={{ width: 20, height: 20 }} />
               </button>
               <span style={{ fontSize: 16, fontWeight: 700, color: "#1a2a3a", textTransform: "capitalize" }}>
                 {MONTHS[viewMonth]} {viewYear}
               </span>
-              <button onClick={nextMonth} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#1a6b9c" }}>
+              <button onClick={nextMonth} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#1E2A5A" }}>
                 <ChevronRight style={{ width: 20, height: 20 }} />
               </button>
             </div>
@@ -261,9 +261,9 @@ function BookingGeneralContent() {
                     onClick={() => selectDate(day)}
                     style={{
                       width: "100%", aspectRatio: "1", borderRadius: 10,
-                      border: isSelected ? "2px solid #1a6b9c" : isToday ? "2px solid #FF6B35" : "1px solid transparent",
+                      border: isSelected ? "2px solid #1E2A5A" : isToday ? "2px solid #E8732A" : "1px solid transparent",
                       background: isSelected ? "#e8f0fe" : "transparent",
-                      color: disabled ? "#ccc" : isSelected ? "#1a6b9c" : "#1a2a3a",
+                      color: disabled ? "#ccc" : isSelected ? "#1E2A5A" : "#1a2a3a",
                       fontSize: 14, fontWeight: isSelected || isToday ? 700 : 500,
                       cursor: disabled ? "default" : "pointer",
                       transition: "all 0.2s",
@@ -298,9 +298,9 @@ function BookingGeneralContent() {
                   onClick={() => setMode("phone")}
                   style={{
                     flex: 1, height: 36, borderRadius: 8,
-                    border: `2px solid ${mode === "phone" ? "#1a6b9c" : "#dce8f0"}`,
+                    border: `2px solid ${mode === "phone" ? "#1E2A5A" : "#dce8f0"}`,
                     background: mode === "phone" ? "#e8f0fe" : "white",
-                    color: mode === "phone" ? "#1a6b9c" : "#8399a9",
+                    color: mode === "phone" ? "#1E2A5A" : "#8399a9",
                     fontSize: 12, fontWeight: 600, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   }}
@@ -311,9 +311,9 @@ function BookingGeneralContent() {
                   onClick={() => setMode("visio")}
                   style={{
                     flex: 1, height: 36, borderRadius: 8,
-                    border: `2px solid ${mode === "visio" ? "#1a6b9c" : "#dce8f0"}`,
+                    border: `2px solid ${mode === "visio" ? "#1E2A5A" : "#dce8f0"}`,
                     background: mode === "visio" ? "#e8f0fe" : "white",
-                    color: mode === "visio" ? "#1a6b9c" : "#8399a9",
+                    color: mode === "visio" ? "#1E2A5A" : "#8399a9",
                     fontSize: 12, fontWeight: 600, cursor: "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   }}
@@ -354,8 +354,8 @@ function BookingGeneralContent() {
                         onClick={() => setSelectedSlot(slot)}
                         style={{
                           height: 42, borderRadius: 8,
-                          border: `2px solid ${isActive ? "#1a6b9c" : "#dce8f0"}`,
-                          background: isActive ? "#1a6b9c" : "white",
+                          border: `2px solid ${isActive ? "#1E2A5A" : "#dce8f0"}`,
+                          background: isActive ? "#1E2A5A" : "white",
                           color: isActive ? "white" : "#1a2a3a",
                           fontSize: 15, fontWeight: 600, cursor: "pointer",
                           transition: "all 0.2s",
@@ -371,7 +371,7 @@ function BookingGeneralContent() {
                     onClick={() => setStep(2)}
                     style={{
                       width: "100%", height: 44, borderRadius: 10, border: "none",
-                      background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                      background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                       color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer",
                       marginTop: 16, boxShadow: "0 4px 15px rgba(255,107,53,0.3)",
                     }}
@@ -398,7 +398,7 @@ function BookingGeneralContent() {
           </p>
           <p style={{ fontSize: 12, color: "#8399a9", marginBottom: 20 }}>
             <MapPin style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> {mode === "visio" ? "Visioconf\u00e9rence" : "Appel t\u00e9l\u00e9phonique"}
-            <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#1a6b9c", fontWeight: 600, cursor: "pointer", marginLeft: 8, fontSize: 12 }}>Modifier</button>
+            <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#1E2A5A", fontWeight: 600, cursor: "pointer", marginLeft: 8, fontSize: 12 }}>Modifier</button>
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -459,7 +459,7 @@ function BookingGeneralContent() {
               disabled={submitting || !form.firstName || !form.lastName || !form.email || !form.phone || !form.company || !form.source}
               style={{
                 flex: 2, height: 44, borderRadius: 10, border: "none",
-                background: submitting ? "#8399a9" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+                background: submitting ? "#8399a9" : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
                 color: "white", fontSize: 15, fontWeight: 700, cursor: submitting ? "default" : "pointer",
                 boxShadow: submitting ? "none" : "0 4px 15px rgba(255,107,53,0.3)",
               }}

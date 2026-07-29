@@ -53,8 +53,8 @@ export function TablePagination({ currentPage, totalItems, pageSize, onPageChang
             onClick={() => onPageChange(p)}
             style={{
               height: 32, minWidth: 32, padding: "0 8px",
-              borderRadius: 6, border: p === currentPage ? "1px solid #0d4f7a" : "1px solid #dce8f0",
-              background: p === currentPage ? "#0d4f7a" : "white",
+              borderRadius: 6, border: p === currentPage ? "1px solid #161f45" : "1px solid #dce8f0",
+              background: p === currentPage ? "#161f45" : "white",
               color: p === currentPage ? "white" : "#1a2a3a",
               cursor: "pointer", fontSize: 13, fontWeight: p === currentPage ? 700 : 500,
               display: "inline-flex", alignItems: "center", justifyContent: "center",

@@ -93,8 +93,8 @@ export async function POST(req: NextRequest) {
     }
 
     const primaryTrainer = (trainerMembers ?? [])[0];
-    const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "La Closing Académie";
-    const primaryOrganizerEmail = primaryTrainer?.email ?? "noreply@closing-academie.com";
+    const primaryOrganizerName = primaryTrainer ? `${primaryTrainer.first_name} ${primaryTrainer.last_name}` : "IFA Formatio";
+    const primaryOrganizerEmail = primaryTrainer?.email ?? "noreply@ifagroupe.com";
     // Single Zoom link for the whole session (first trainer that has one)
     const sessionZoomLink = (trainerMembers ?? []).find(t => t.zoom_link)?.zoom_link ?? "";
     // Shared map across iterations so trainers don't overwrite each other
@@ -264,7 +264,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe La Closing Académie",
+          "L'équipe IFA Formatio",
         ].filter(Boolean).join("\n");
 
         const emailResult = await sendSessionEmail({
@@ -320,7 +320,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe La Closing Académie",
+          "L'équipe IFA Formatio",
         ].filter(Boolean).join("\n");
 
         const emailResult = await sendSessionEmail({
@@ -420,7 +420,7 @@ export async function POST(req: NextRequest) {
             "",
             "Belle journée,",
             "",
-            "L'équipe La Closing Académie",
+            "L'équipe IFA Formatio",
           ].filter(Boolean).join("\n");
           const emailRes = await sendSessionEmail({
             to: trainer.email,
@@ -455,7 +455,7 @@ export async function POST(req: NextRequest) {
           "",
           "Belle journée,",
           "",
-          "L'équipe La Closing Académie",
+          "L'équipe IFA Formatio",
         ].filter(Boolean).join("\n");
         const emailRes = await sendSessionEmail({
           to: learner.email,

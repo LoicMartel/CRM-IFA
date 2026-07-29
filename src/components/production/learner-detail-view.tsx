@@ -110,7 +110,7 @@ const activityTypeLabels: Record<string, string> = {
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   actuel: { bg: "#e8f8f0", text: "#27ae60", label: "Actuel" },
   ancien: { bg: "#f0f0f0", text: "#666", label: "Ancien" },
-  futur: { bg: "#e6f0f7", text: "#1a6b9c", label: "Futur" },
+  futur: { bg: "#e6f0f7", text: "#1E2A5A", label: "Futur" },
 };
 
 const sessionStatusColors: Record<string, { bg: string; text: string; label: string }> = {
@@ -384,7 +384,7 @@ export function LearnerDetailView({
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #1a6b9c, #0d4f7a)",
+                    background: "linear-gradient(135deg, #1E2A5A, #161f45)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -445,7 +445,7 @@ export function LearnerDetailView({
                     <span className="text-xs text-muted-foreground block">Entreprise</span>
                     <button
                       className="text-sm underline text-left"
-                      style={{ color: "#1a6b9c" }}
+                      style={{ color: "#1E2A5A" }}
                       onClick={() => router.push(`/clients/${learner.companies!.id}`)}
                     >
                       {learner.companies.name}
@@ -479,7 +479,7 @@ export function LearnerDetailView({
                   <User className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
                     <span className="text-xs text-muted-foreground block">Expert assigné</span>
-                    <span className="text-sm" style={{ color: "#1a6b9c", fontWeight: 600 }}>{learner.team_members.first_name} {learner.team_members.last_name}</span>
+                    <span className="text-sm" style={{ color: "#1E2A5A", fontWeight: 600 }}>{learner.team_members.first_name} {learner.team_members.last_name}</span>
                   </div>
                 </div>
               )}
@@ -533,7 +533,7 @@ export function LearnerDetailView({
                       {learner.companies ? (
                         <button
                           onClick={() => router.push(`/clients/${learner.companies!.id}`)}
-                          style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", fontWeight: 700 }}
+                          style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer", background: "none", border: "none", padding: 0, font: "inherit", fontWeight: 700 }}
                         >
                           {learner.companies.name}
                         </button>
@@ -566,7 +566,7 @@ export function LearnerDetailView({
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Calendar className="h-4 w-4" style={{ color: "#1a6b9c" }} /> Dernieres sessions
+                      <Calendar className="h-4 w-4" style={{ color: "#1E2A5A" }} /> Dernieres sessions
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -582,7 +582,7 @@ export function LearnerDetailView({
                                 <span style={{ fontSize: 11, color: "#8399a9", width: 80, flexShrink: 0 }}>{formatDate(s.session_date)}</span>
                                 <span style={{
                                   background: s.session_type === "vt" ? "#e6f0f7" : "#fff3e0",
-                                  color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                                  color: s.session_type === "vt" ? "#1E2A5A" : "#e65100",
                                   padding: "1px 8px", borderRadius: 999, fontSize: 10, fontWeight: 600,
                                 }}>
                                   {s.session_type === "vt" ? "VT" : "Journee"}
@@ -591,7 +591,7 @@ export function LearnerDetailView({
                                   {ssc.label}
                                 </span>
                                 {s.service_plan_id ? (
-                                  <button onClick={() => setOpenPlanId(s.service_plan_id)} style={{ fontSize: 12, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
+                                  <button onClick={() => setOpenPlanId(s.service_plan_id)} style={{ fontSize: 12, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
                                     {s.service_plans?.companies?.name ?? ""}
                                   </button>
                                 ) : (
@@ -614,7 +614,7 @@ export function LearnerDetailView({
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm flex items-center gap-2">
-                        <ClipboardList className="h-4 w-4" style={{ color: "#FF6B35" }} /> Plans de formation ({typedPlans.length})
+                        <ClipboardList className="h-4 w-4" style={{ color: "#E8732A" }} /> Plans de formation ({typedPlans.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -625,7 +625,7 @@ export function LearnerDetailView({
                             <div key={plan.id} style={{ padding: "8px 0", borderBottom: "1px solid #e6f0f7" }}>
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <button onClick={() => setOpenPlanId(plan.id)} style={{ fontSize: 13, fontWeight: 600, color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
+                                  <button onClick={() => setOpenPlanId(plan.id)} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textDecorationStyle: "dotted", padding: 0 }}>
                                     {plan.companies?.name ?? "\u2014"}
                                   </button>
                                   {plan.training_programs?.name && (
@@ -645,7 +645,7 @@ export function LearnerDetailView({
                                     <span>{prog.pct}%</span>
                                   </div>
                                   <div style={{ height: 6, borderRadius: 3, background: "#f0f0f0", overflow: "hidden" }}>
-                                    <div style={{ height: "100%", borderRadius: 3, background: prog.pct >= 80 ? "#e74c3c" : prog.pct >= 50 ? "#FF6B35" : "#27ae60", width: `${prog.pct}%`, transition: "width 0.3s" }} />
+                                    <div style={{ height: "100%", borderRadius: 3, background: prog.pct >= 80 ? "#e74c3c" : prog.pct >= 50 ? "#E8732A" : "#27ae60", width: `${prog.pct}%`, transition: "width 0.3s" }} />
                                   </div>
                                 </div>
                               )}
@@ -676,7 +676,7 @@ export function LearnerDetailView({
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <ClipboardList className="h-4 w-4" style={{ color: "#FF6B35" }} />
+                              <ClipboardList className="h-4 w-4" style={{ color: "#E8732A" }} />
                               <span>{plan.companies?.name ?? "\u2014"}</span>
                               {plan.training_programs?.name && (
                                 <span style={{ fontSize: 11, color: "#8399a9", fontWeight: 400 }}>
@@ -688,7 +688,7 @@ export function LearnerDetailView({
                               variant="ghost"
                               size="sm"
                               onClick={() => setOpenPlanId(plan.id)}
-                              style={{ fontSize: 11, color: "#1a6b9c" }}
+                              style={{ fontSize: 11, color: "#1E2A5A" }}
                             >
                               Ouvrir le plan
                             </Button>
@@ -702,7 +702,7 @@ export function LearnerDetailView({
                             </div>
                             <div>
                               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9" }}>Consomme</div>
-                              <div style={{ fontSize: 16, fontWeight: 800, color: "#FF6B35" }}>{fmt(prog.consumed)}</div>
+                              <div style={{ fontSize: 16, fontWeight: 800, color: "#E8732A" }}>{fmt(prog.consumed)}</div>
                             </div>
                             <div>
                               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9" }}>Restant</div>
@@ -710,7 +710,7 @@ export function LearnerDetailView({
                             </div>
                             <div>
                               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#8399a9" }}>Heures</div>
-                              <div style={{ fontSize: 16, fontWeight: 800, color: "#1a6b9c" }}>{prog.hoursConsumed}h</div>
+                              <div style={{ fontSize: 16, fontWeight: 800, color: "#1E2A5A" }}>{prog.hoursConsumed}h</div>
                             </div>
                           </div>
 
@@ -724,7 +724,7 @@ export function LearnerDetailView({
                               <div style={{
                                 height: "100%",
                                 borderRadius: 4,
-                                background: prog.pct >= 80 ? "#e74c3c" : prog.pct >= 50 ? "#FF6B35" : "#27ae60",
+                                background: prog.pct >= 80 ? "#e74c3c" : prog.pct >= 50 ? "#E8732A" : "#27ae60",
                                 width: `${prog.pct}%`,
                                 transition: "width 0.3s",
                               }} />
@@ -779,7 +779,7 @@ export function LearnerDetailView({
                                 <TableCell>
                                   <span style={{
                                     background: s.session_type === "vt" ? "#e6f0f7" : "#fff3e0",
-                                    color: s.session_type === "vt" ? "#1a6b9c" : "#e65100",
+                                    color: s.session_type === "vt" ? "#1E2A5A" : "#e65100",
                                     padding: "2px 10px", borderRadius: 999, fontSize: 11, fontWeight: 600,
                                   }}>
                                     {s.session_type === "vt" ? "VT" : "Journee"}
@@ -909,7 +909,7 @@ export function LearnerDetailView({
                                   </button>
                                 )}
                                 <button onClick={() => openEditActivity(a)}
-                                  style={{ color: "#1a6b9c", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                                  style={{ color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
                                   <Edit className="h-3.5 w-3.5" />
                                 </button>
                                 <button onClick={() => { if (confirmDelete(isRestrictedExterne || isReadOnly, "Supprimer cette tâche ?")) handleDeleteActivity(a.id); }}
@@ -992,7 +992,7 @@ export function LearnerDetailView({
                 onClick={handleLogActivity}
                 disabled={saving || !activityForm.title.trim()}
                 className="w-full"
-                style={{ background: "#FF6B35", color: "white" }}
+                style={{ background: "#E8732A", color: "white" }}
               >
                 {saving ? "Enregistrement..." : (editingActivityId ? "Sauvegarder" : "Enregistrer l\u0027activité")}
               </Button>
@@ -1078,7 +1078,7 @@ export function LearnerDetailView({
                 <RichNotes value={form.notes} onChange={(v) => setForm({ ...form, notes: v })} storageFolder="learners" />
                 <VoiceButton isRecording={notesVoice.isRecording} isFormatting={notesVoice.isFormatting} onClick={notesVoice.toggleRecording} tone={notesVoice.tone} onToneChange={notesVoice.setTone} />
               </div>
-              <Button onClick={handleSave} disabled={saving || (!form.first_name.trim() && !form.last_name.trim())} className="w-full" style={{ background: "#FF6B35", color: "white" }}>
+              <Button onClick={handleSave} disabled={saving || (!form.first_name.trim() && !form.last_name.trim())} className="w-full" style={{ background: "#E8732A", color: "white" }}>
                 {saving ? "Enregistrement..." : "Enregistrer les modifications"}
               </Button>
             </div>
@@ -1093,7 +1093,7 @@ export function LearnerDetailView({
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={(e) => { if (e.target === e.currentTarget) setEmailOpen(false); }}>
           <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 640, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <MailPlus className="h-4 w-4" style={{ color: "white" }} />
                 <span style={{ fontWeight: 700, fontSize: 14, color: "white" }}>Nouvel email</span>
@@ -1134,7 +1134,7 @@ export function LearnerDetailView({
                   ) : (
                     <div style={{ fontSize: 12, color: "#5a6f80" }}>
                       <strong style={{ color: "#1a2a3a" }}>{senderInfo.first_name} {senderInfo.last_name}</strong><br />
-                      La Closing Académie ®<br />
+                      IFA Formatio ®<br />
                       {senderInfo.phone && <>📞 {senderInfo.phone}<br /></>}
                       ✉️ {senderInfo.email}
                     </div>
@@ -1176,7 +1176,7 @@ export function LearnerDetailView({
                 disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
                 style={{
                   height: 36, borderRadius: 8, border: "none", padding: "0 24px",
-                  background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                  background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
                   opacity: sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim() ? 0.5 : 1,
                 }}

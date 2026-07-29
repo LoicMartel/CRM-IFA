@@ -326,7 +326,7 @@ export function OrdersTable({
                     {order.company_id ? (
                       <span
                         onClick={() => router.push(`/clients/${order.company_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                       >
                         {order.client_name}
                       </span>
@@ -336,7 +336,7 @@ export function OrdersTable({
                     {order.contacts ? (
                       <span
                         onClick={() => router.push(`/contacts/${order.contact_id}`)}
-                        style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer", fontSize: 13 }}
+                        style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer", fontSize: 13 }}
                       >
                         {order.contacts.first_name} {order.contacts.last_name}
                       </span>
@@ -379,7 +379,7 @@ export function OrdersTable({
                         fontSize: 13, color: "#8399a9", padding: "2px 4px",
                         borderBottom: "1px dashed #dce8f0", outline: "none",
                       }}
-                      onFocus={(e) => { e.target.style.borderBottom = "1px solid #1a6b9c"; e.target.style.color = "#1a2a3a"; }}
+                      onFocus={(e) => { e.target.style.borderBottom = "1px solid #1E2A5A"; e.target.style.color = "#1a2a3a"; }}
                     />
                   </TableCell>
                   <TableCell>

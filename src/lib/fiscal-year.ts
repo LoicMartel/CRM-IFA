@@ -1,5 +1,5 @@
 /**
- * Fiscal year utilities for La Closing Académie.
+ * Fiscal year utilities for IFA Formatio.
  * Fiscal year runs September (09) to August (08).
  * Example: FY 2025/2026 = Sept 2025 → Aug 2026.
  */

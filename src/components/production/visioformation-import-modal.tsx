@@ -146,7 +146,7 @@ export function VisioformationImportModal({
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Upload style={{ width: 20, height: 20, color: "#1a6b9c" }} />
+            <Upload style={{ width: 20, height: 20, color: "#1E2A5A" }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", margin: 0 }}>
               Importer depuis Visioformation
             </h2>
@@ -179,7 +179,7 @@ export function VisioformationImportModal({
                 onClick={() => fileRef.current?.click()}
                 style={{
                   height: 44, borderRadius: 10, padding: "0 24px",
-                  background: "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
                   boxShadow: "0 4px 15px rgba(26,107,156,0.3)",
                 }}
@@ -213,11 +213,11 @@ export function VisioformationImportModal({
                       <th style={{ padding: "8px 4px", textAlign: "center", width: 30 }}>
                         <input type="checkbox" checked={selected.size === rows.length} onChange={toggleAll} />
                       </th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Action</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Nom</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Email</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Téléphone</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c", minWidth: 200 }}>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Action</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Nom</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Email</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Téléphone</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A", minWidth: 200 }}>
                         <Building2 style={{ width: 12, height: 12, display: "inline", verticalAlign: "middle" }} /> Entreprise
                       </th>
                     </tr>
@@ -342,7 +342,7 @@ export function VisioformationImportModal({
                 disabled={importing || selected.size === 0}
                 style={{
                   height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                  background: importing ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: importing ? "#8399a9" : "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: importing ? "default" : "pointer",
                   boxShadow: importing ? "none" : "0 4px 15px rgba(26,107,156,0.3)",
                 }}
@@ -356,7 +356,7 @@ export function VisioformationImportModal({
               onClick={() => { onClose(); router.refresh(); }}
               style={{
                 height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                background: "#1a6b9c", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                background: "#1E2A5A", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
               }}
             >
               Fermer

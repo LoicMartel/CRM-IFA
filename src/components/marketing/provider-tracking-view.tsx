@@ -242,8 +242,8 @@ export function ProviderTrackingView({
           style={{
             height: 36, borderRadius: 8, padding: "0 20px", fontSize: 14,
             fontWeight: activeTab === "global" ? 700 : 500,
-            border: `1px solid ${activeTab === "global" ? "#1a6b9c" : "#dce8f0"}`,
-            background: activeTab === "global" ? "#1a6b9c" : "white",
+            border: `1px solid ${activeTab === "global" ? "#1E2A5A" : "#dce8f0"}`,
+            background: activeTab === "global" ? "#1E2A5A" : "white",
             color: activeTab === "global" ? "white" : "#5a6f80",
             cursor: "pointer",
           }}
@@ -257,8 +257,8 @@ export function ProviderTrackingView({
             style={{
               height: 36, borderRadius: 8, padding: "0 20px", fontSize: 14,
               fontWeight: activeTab === p.id ? 700 : 500,
-              border: `1px solid ${activeTab === p.id ? "#1a6b9c" : "#dce8f0"}`,
-              background: activeTab === p.id ? "#1a6b9c" : "white",
+              border: `1px solid ${activeTab === p.id ? "#1E2A5A" : "#dce8f0"}`,
+              background: activeTab === p.id ? "#1E2A5A" : "white",
               color: activeTab === p.id ? "white" : "#5a6f80",
               cursor: "pointer",
             }}
@@ -280,7 +280,7 @@ export function ProviderTrackingView({
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Leads</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalLeads}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{totalLeads}</div>
           </div>
           <Users style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -428,7 +428,7 @@ export function ProviderTrackingView({
                     )}
                     <TableCell style={{ textAlign: "right", fontWeight: 600 }}>{fmt(Number(s.expenses))}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{s.page_visits}</TableCell>
-                    <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#1a6b9c" }}>{s.leads}</TableCell>
+                    <TableCell style={{ textAlign: "right", fontWeight: 600, color: "#1E2A5A" }}>{s.leads}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{fmtPct(m.txConversion)}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{s.leads > 0 ? fmt(m.cpl) : "—"}</TableCell>
                     <TableCell style={{ textAlign: "right" }}>{s.r0_booked}</TableCell>
@@ -451,7 +451,7 @@ export function ProviderTrackingView({
                     </TableCell>
                     <TableCell>
                       <div style={{ display: "flex", gap: 4 }}>
-                        <button onClick={() => openEdit(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}>
+                        <button onClick={() => openEdit(s)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => handleDelete(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}>
@@ -473,7 +473,7 @@ export function ProviderTrackingView({
                 {activeTab === "global" && <td></td>}
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{fmt(totalExpenses)}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>{filtered.reduce((a, s) => a + s.page_visits, 0)}</td>
-                <td style={{ textAlign: "right", padding: "8px 16px", color: "#1a6b9c" }}>{totalLeads}</td>
+                <td style={{ textAlign: "right", padding: "8px 16px", color: "#1E2A5A" }}>{totalLeads}</td>
                 <td style={{ textAlign: "right", padding: "8px 16px" }}>
                   {fmtPct(filtered.reduce((a, s) => a + s.page_visits, 0) > 0 ? totalLeads / filtered.reduce((a, s) => a + s.page_visits, 0) : 0)}
                 </td>
@@ -534,7 +534,7 @@ export function ProviderTrackingView({
             </div>
 
             {/* Acquisition */}
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
               Acquisition
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -553,7 +553,7 @@ export function ProviderTrackingView({
             </div>
 
             {/* RDV */}
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
               Rendez-vous
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -588,7 +588,7 @@ export function ProviderTrackingView({
             </div>
 
             {/* Ventes */}
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a6b9c", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1E2A5A", borderBottom: "1px solid #dce8f0", paddingBottom: 4, marginTop: 16 }}>
               Ventes
             </div>
             <div className="grid grid-cols-2 gap-4">

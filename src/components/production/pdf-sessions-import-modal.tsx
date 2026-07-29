@@ -275,7 +275,7 @@ export function PDFSessionsImportModal({
         {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <FileText style={{ width: 20, height: 20, color: "#1a6b9c" }} />
+            <FileText style={{ width: 20, height: 20, color: "#1E2A5A" }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", margin: 0 }}>Importer des sessions depuis un PDF Visioformation</h2>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
@@ -299,7 +299,7 @@ export function PDFSessionsImportModal({
                 </div>
               )}
               <input ref={fileRef} type="file" accept=".pdf" onChange={handleFile} style={{ display: "none" }} />
-              <button onClick={() => fileRef.current?.click()} style={{ height: 44, borderRadius: 10, padding: "0 24px", background: "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)", color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 4px 15px rgba(26,107,156,0.3)" }}>
+              <button onClick={() => fileRef.current?.click()} style={{ height: 44, borderRadius: 10, padding: "0 24px", background: "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)", color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer", boxShadow: "0 4px 15px rgba(26,107,156,0.3)" }}>
                 Choisir un fichier PDF
               </button>
             </div>
@@ -310,7 +310,7 @@ export function PDFSessionsImportModal({
             <>
               {/* Info bar */}
               <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <div style={{ padding: "6px 12px", borderRadius: 8, background: "#e8f0fe", fontSize: 12, color: "#0d4f7a" }}>
+                <div style={{ padding: "6px 12px", borderRadius: 8, background: "#e8f0fe", fontSize: 12, color: "#161f45" }}>
                   {pdfFormateurs.join(", ")}
                 </div>
                 <div style={{ padding: "6px 12px", borderRadius: 8, background: "#e8f5e9", fontSize: 12, color: "#2e7d32" }}>
@@ -345,7 +345,7 @@ export function PDFSessionsImportModal({
 
               {/* Merge option */}
               <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, cursor: "pointer", fontSize: 13, color: "#5a6f80" }}>
-                <input type="checkbox" checked={mergeByDay} onChange={(e) => setMergeByDay(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#1a6b9c" }} />
+                <input type="checkbox" checked={mergeByDay} onChange={(e) => setMergeByDay(e.target.checked)} style={{ width: 16, height: 16, accentColor: "#1E2A5A" }} />
                 <Merge style={{ width: 14, height: 14 }} />
                 Regrouper matin + après-midi en 1 session par jour
               </label>
@@ -356,13 +356,13 @@ export function PDFSessionsImportModal({
                   <thead>
                     <tr style={{ borderBottom: "2px solid #dce8f0", background: "white" }}>
                       <th style={{ padding: "8px 4px", width: 30 }}></th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Date</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Début</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Fin</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Durée</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Type</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Jour</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Lieu</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Date</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Début</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Fin</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Durée</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Type</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Jour</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Lieu</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -450,7 +450,7 @@ export function PDFSessionsImportModal({
                 disabled={importing || hasNoPlan || selectedRows.length === 0}
                 style={{
                   height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                  background: (importing || hasNoPlan || selectedRows.length === 0) ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: (importing || hasNoPlan || selectedRows.length === 0) ? "#8399a9" : "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 13, fontWeight: 700, cursor: (importing || hasNoPlan) ? "default" : "pointer",
                   boxShadow: (importing || hasNoPlan) ? "none" : "0 4px 15px rgba(26,107,156,0.3)",
                 }}
@@ -460,7 +460,7 @@ export function PDFSessionsImportModal({
             </>
           )}
           {stage === 3 && (
-            <button onClick={() => { onClose(); router.refresh(); }} style={{ height: 40, borderRadius: 8, padding: "0 24px", border: "none", background: "#1a6b9c", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <button onClick={() => { onClose(); router.refresh(); }} style={{ height: 40, borderRadius: 8, padding: "0 24px", border: "none", background: "#1E2A5A", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
               Fermer
             </button>
           )}

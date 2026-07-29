@@ -70,7 +70,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
 
   const DEAL_STAGE_LABELS: Record<string, string> = { opportunities: "Opportunités", quote_to_send: "Devis à envoyer", quote_sent: "Devis envoyé", opco_deposit: "Dépôt OPCO", quote_signed: "Devis signé", closed_won: "Gagné", closed_lost: "Perdu" };
   const stageColors: Record<string, { bg: string; text: string }> = { closed_won: { bg: "#e8f5e9", text: "#2e7d32" }, closed_lost: { bg: "#fce4ec", text: "#c62828" } };
-  const INV_STATUS: Record<string, { label: string; bg: string; text: string }> = { facturable: { label: "Facturable", bg: "#fff3e0", text: "#e65100" }, facture: { label: "Facturé", bg: "#e8f0fe", text: "#0d4f7a" }, paye: { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" } };
+  const INV_STATUS: Record<string, { label: string; bg: string; text: string }> = { facturable: { label: "Facturable", bg: "#fff3e0", text: "#e65100" }, facture: { label: "Facturé", bg: "#e8f0fe", text: "#161f45" }, paye: { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" } };
 
   async function openDealPopup(deal: Deal) {
     setSelectedDeal(deal);
@@ -247,11 +247,11 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Jours formation vendus</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{totalDays.toFixed(1)}j</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{totalDays.toFixed(1)}j</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Panier moyen</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{filtered.length > 0 ? fmt(totalAmount / filtered.length) : "0 €"}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{filtered.length > 0 ? fmt(totalAmount / filtered.length) : "0 €"}</div>
         </div>
       </div>
 
@@ -313,17 +313,17 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Deal</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Client</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Contact</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Account Manager</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Source</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Jours</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Facturé</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, minWidth: 200 }}>Notes facturation</TableHead>
-                <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, width: 40 }}></TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Deal</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Client</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Contact</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Account Manager</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Source</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Jours</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Facturé</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, minWidth: 200 }}>Notes facturation</TableHead>
+                <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, width: 40 }}></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -337,25 +337,25 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                     {d.close_date ? format(new Date(d.close_date), "dd MMM yyyy", { locale: fr }) : "—"}
                   </TableCell>
                   <TableCell>
-                    <span onClick={() => openDealPopup(d)} style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>{d.name}</span>
+                    <span onClick={() => openDealPopup(d)} style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>{d.name}</span>
                   </TableCell>
                   <TableCell style={{ fontSize: 13 }}>
                     {d.companies ? (
-                      <span onClick={() => router.push(`/clients/${d.companies!.id}`)} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                      <span onClick={() => router.push(`/clients/${d.companies!.id}`)} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                         {d.companies.name}
                       </span>
                     ) : <span style={{ color: "#ccc" }}>—</span>}
                   </TableCell>
                   <TableCell>
                     {d.contacts ? (
-                      <span onClick={() => router.push(`/contacts/${d.contacts!.id}`)} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer", fontSize: 13 }}>
+                      <span onClick={() => router.push(`/contacts/${d.contacts!.id}`)} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer", fontSize: 13 }}>
                         {d.contacts.first_name} {d.contacts.last_name}
                       </span>
                     ) : <span style={{ color: "#ccc" }}>—</span>}
                   </TableCell>
                   <TableCell style={{ textAlign: "center" }}>
                     {d.team_members ? (
-                      <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
+                      <span style={{ display: "inline-block", width: 26, height: 26, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 10, fontWeight: 700, lineHeight: "26px", textAlign: "center" }}>
                         {d.team_members.first_name[0]}{d.team_members.last_name[0]}
                       </span>
                     ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -368,7 +368,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                       const st = d.is_paid
                         ? { label: "Payé", bg: "#e8f5e9", text: "#2e7d32" }
                         : d.is_invoiced
-                          ? { label: "Facturé", bg: "#e8f0fe", text: "#0d4f7a" }
+                          ? { label: "Facturé", bg: "#e8f0fe", text: "#161f45" }
                           : { label: "Non", bg: "#fce4ec", text: "#c62828" };
                       return (
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: st.bg, color: st.text }}>
@@ -391,7 +391,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                   <TableCell style={{ textAlign: "center" }}>
                     <button
                       onClick={() => setEditingId(editingId === d.id ? null : d.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}
                       title="Modifier"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -401,10 +401,10 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
               ))}
               {filtered.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} style={{ fontWeight: 800, color: "#0d4f7a", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>Total</TableCell>
-                  <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#0d4f7a", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totalAmount)}</TableCell>
-                  <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#0d4f7a", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{totalDays.toFixed(1)}j</TableCell>
-                  <TableCell colSpan={3} style={{ borderTop: "2px solid #0d4f7a" }}></TableCell>
+                  <TableCell colSpan={6} style={{ fontWeight: 800, color: "#161f45", fontSize: 13, borderTop: "2px solid #161f45" }}>Total</TableCell>
+                  <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#161f45", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totalAmount)}</TableCell>
+                  <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#161f45", fontSize: 13, borderTop: "2px solid #161f45" }}>{totalDays.toFixed(1)}j</TableCell>
+                  <TableCell colSpan={3} style={{ borderTop: "2px solid #161f45" }}></TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -437,7 +437,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                   onClick={() => isRecording ? stopRecording() : startRecording()}
                   style={{
                     height: 42, width: 42, borderRadius: "50%", border: "none", cursor: "pointer",
-                    background: isRecording ? "#e74c3c" : "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)",
+                    background: isRecording ? "#e74c3c" : "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     boxShadow: isRecording ? "0 0 0 4px rgba(231,76,60,0.2)" : "none",
                     animation: isRecording ? "pulse 1.5s infinite" : "none",
@@ -457,7 +457,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
               <button
                 onClick={saveNotes}
                 disabled={savingNotes}
-                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingNotes ? 0.6 : 1 }}
+                style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: savingNotes ? 0.6 : 1 }}
               >
                 {savingNotes ? "..." : "Enregistrer"}
               </button>
@@ -477,7 +477,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
         const allPaye = dealInvoices.length > 0 && dealInvoices.every(inv => inv.status === "paye");
         const isFullyInvoiced = totalInvoiced >= dealAmount && allFacture;
         const isFullyPaid = totalInvoiced >= dealAmount && allPaye;
-        const statusBadge = isFullyPaid ? { label: "Entièrement payé", bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" } : isFullyInvoiced ? { label: "Entièrement facturé", bg: "#e8f0fe", text: "#0d4f7a", bar: "#1a6b9c" } : { label: "Facturation en cours", bg: "#fff3e0", text: "#e65100", bar: "#FF6B35" };
+        const statusBadge = isFullyPaid ? { label: "Entièrement payé", bg: "#e8f5e9", text: "#2e7d32", bar: "#27ae60" } : isFullyInvoiced ? { label: "Entièrement facturé", bg: "#e8f0fe", text: "#161f45", bar: "#1E2A5A" } : { label: "Facturation en cours", bg: "#fff3e0", text: "#e65100", bar: "#E8732A" };
 
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={(e) => { if (e.target === e.currentTarget) setSelectedDeal(null); }}>
@@ -492,8 +492,8 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                   <span style={{ fontSize: 12, color: "#8399a9" }}>{d.amount ? fmt(Number(d.amount)) : ""}</span>
                 </div>
                 <div style={{ background: "#f5f7fa", borderRadius: 10, padding: 14 }} className="space-y-2">
-                  {d.companies && <div className="flex items-center gap-2"><Building2 style={{ width: 14, height: 14, color: "#8399a9" }} /><span onClick={() => { setSelectedDeal(null); router.push(`/clients/${d.companies!.id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.companies.name}</span></div>}
-                  {d.contacts && <div className="flex items-center gap-2"><User style={{ width: 14, height: 14, color: "#8399a9" }} /><span onClick={() => { setSelectedDeal(null); router.push(`/contacts/${d.contacts!.id}`); }} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}>{d.contacts.first_name} {d.contacts.last_name}</span></div>}
+                  {d.companies && <div className="flex items-center gap-2"><Building2 style={{ width: 14, height: 14, color: "#8399a9" }} /><span onClick={() => { setSelectedDeal(null); router.push(`/clients/${d.companies!.id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{d.companies.name}</span></div>}
+                  {d.contacts && <div className="flex items-center gap-2"><User style={{ width: 14, height: 14, color: "#8399a9" }} /><span onClick={() => { setSelectedDeal(null); router.push(`/contacts/${d.contacts!.id}`); }} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}>{d.contacts.first_name} {d.contacts.last_name}</span></div>}
                   {d.team_members && <div className="flex items-center gap-2"><User style={{ width: 14, height: 14, color: "#8399a9" }} /><span style={{ fontSize: 12, color: "#8399a9" }}>Propriétaire : {d.team_members.first_name} {d.team_members.last_name}</span></div>}
                   {d.close_date && <div className="flex items-center gap-2"><Calendar style={{ width: 14, height: 14, color: "#8399a9" }} /><span style={{ fontSize: 12, color: "#8399a9" }}>Closing : {format(new Date(d.close_date), "d MMMM yyyy", { locale: fr })}</span></div>}
                 </div>
@@ -521,7 +521,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>Documents</div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-                    <label style={{ height: 32, borderRadius: 6, background: "#1a6b9c", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
+                    <label style={{ height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1 }}>
                       <Upload className="h-3.5 w-3.5" />{uploadingDoc ? "Envoi..." : "Importer"}
                       <input type="file" style={{ display: "none" }} disabled={uploadingDoc} onChange={handleUploadDealDoc} />
                     </label>
@@ -533,7 +533,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                         <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#f8fbfd", borderRadius: 8, border: "1px solid #e8ecf1" }}>
                           <FileText className="h-4 w-4" style={{ color: "#8399a9", flexShrink: 0 }} />
                           <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div></div>
-                          <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4 }}><Download className="h-4 w-4" /></button>
+                          <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}><Download className="h-4 w-4" /></button>
                           <button onClick={() => handleDeleteDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }}><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                       ))}
@@ -542,7 +542,7 @@ export function OrdersFromDeals({ deals, teamMembers, sources, invoiceNotes }: {
                 </div>
               </div>
               <div className="flex gap-2" style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd" }}>
-                <button onClick={() => { setSelectedDeal(null); router.push("/deals"); }} style={{ flex: 1, height: 40, borderRadius: 8, background: "#FF6B35", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Edit className="h-4 w-4" /> Modifier le deal</button>
+                <button onClick={() => { setSelectedDeal(null); router.push("/deals"); }} style={{ flex: 1, height: 40, borderRadius: 8, background: "#E8732A", color: "white", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Edit className="h-4 w-4" /> Modifier le deal</button>
               </div>
             </div>
           </div>

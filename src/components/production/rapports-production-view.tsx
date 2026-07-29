@@ -242,7 +242,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Budget total</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totals.budget)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{fmt(totals.budget)}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Consommé</div>
@@ -251,7 +251,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Facturable sur Delivery</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{fmt(totals.facturable)}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{fmt(totals.facturable)}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Reste à planifier</div>
@@ -268,14 +268,14 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Plan de formation</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Budget</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Consommé</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Avancement</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Facturable</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Engagé</TableHead>
-                    <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Reste à planifier</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Plan de formation</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Budget</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Consommé</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Avancement</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Facturable</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Engagé</TableHead>
+                    <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Reste à planifier</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -313,13 +313,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                       <TableRow key={p.planId} className="hover:bg-[#f0f7fb]">
                         {idx === 0 ? (
                           <TableCell rowSpan={planRows.length} style={{ verticalAlign: "top", borderBottom: "2px solid #e8ecf1" }}>
-                            <span onClick={() => router.push(`/clients/${c.companyId}`)} style={{ fontWeight: 700, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                            <span onClick={() => router.push(`/clients/${c.companyId}`)} style={{ fontWeight: 700, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                               {c.companyName}
                             </span>
                           </TableCell>
                         ) : null}
                         <TableCell>
-                          <span onClick={() => router.push("/planning")} style={{ fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                          <span onClick={() => router.push("/planning")} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                             {p.label}
                           </span>
                         </TableCell>
@@ -328,13 +328,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                         <TableCell style={{ textAlign: "center" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
                             <div style={{ width: 60, height: 6, background: "#e8ecf1", borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ height: "100%", width: `${Math.min(p.pct, 100)}%`, background: p.pct >= 80 ? "#e74c3c" : p.pct >= 50 ? "#FF6B35" : "#27ae60", borderRadius: 3 }} />
+                              <div style={{ height: "100%", width: `${Math.min(p.pct, 100)}%`, background: p.pct >= 80 ? "#e74c3c" : p.pct >= 50 ? "#E8732A" : "#27ae60", borderRadius: 3 }} />
                             </div>
                             <span style={{ fontSize: 11, fontWeight: 700, color: "#1a2a3a" }}>{p.pct}%</span>
                           </div>
                         </TableCell>
-                        <TableCell style={{ textAlign: "right", fontSize: 13, color: "#FF6B35", fontWeight: 600 }}>{fmt(p.facturable)}</TableCell>
-                        <TableCell style={{ textAlign: "right", fontSize: 13, color: "#1a6b9c" }}>{fmt(p.engaged)}</TableCell>
+                        <TableCell style={{ textAlign: "right", fontSize: 13, color: "#E8732A", fontWeight: 600 }}>{fmt(p.facturable)}</TableCell>
+                        <TableCell style={{ textAlign: "right", fontSize: 13, color: "#1E2A5A" }}>{fmt(p.engaged)}</TableCell>
                         <TableCell style={{ textAlign: "right" }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: p.remaining > 0 ? "#e74c3c" : "#27ae60" }}>{fmt(p.remaining)}</div>
                           {p.remainingLabel && <div style={{ fontSize: 10, color: "#8399a9" }}>{p.remainingLabel}</div>}
@@ -344,13 +344,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                   })}
                   {activeCompanies.length > 0 && (
                     <TableRow>
-                      <TableCell colSpan={2} style={{ fontWeight: 800, color: "#0d4f7a", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>Total</TableCell>
-                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#0d4f7a", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totals.budget)}</TableCell>
-                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#27ae60", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totals.consumed)}</TableCell>
-                      <TableCell style={{ borderTop: "2px solid #0d4f7a" }}></TableCell>
-                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#FF6B35", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totals.facturable)}</TableCell>
-                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#1a6b9c", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totals.planned)}</TableCell>
-                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#e74c3c", fontSize: 13, borderTop: "2px solid #0d4f7a" }}>{fmt(totalRemaining)}</TableCell>
+                      <TableCell colSpan={2} style={{ fontWeight: 800, color: "#161f45", fontSize: 13, borderTop: "2px solid #161f45" }}>Total</TableCell>
+                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#161f45", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totals.budget)}</TableCell>
+                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#27ae60", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totals.consumed)}</TableCell>
+                      <TableCell style={{ borderTop: "2px solid #161f45" }}></TableCell>
+                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#E8732A", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totals.facturable)}</TableCell>
+                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#1E2A5A", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totals.planned)}</TableCell>
+                      <TableCell style={{ textAlign: "right", fontWeight: 800, color: "#e74c3c", fontSize: 13, borderTop: "2px solid #161f45" }}>{fmt(totalRemaining)}</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -372,7 +372,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                   <YAxis tick={{ fill: "#8399a9", fontSize: 10 }} tickFormatter={(v) => `${Math.round(v / 1000)}K`} />
                   <Tooltip formatter={(v) => fmt(Number(v))} />
                   <Bar dataKey="Consommé" stackId="a" fill="#27ae60" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Engagé" stackId="a" fill="#1a6b9c" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Engagé" stackId="a" fill="#1E2A5A" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="Reste" stackId="a" fill="#e8ecf1" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -457,11 +457,11 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                         <TableCell style={{ fontWeight: 600 }}>{s.session_date ? format(new Date(String(s.session_date)), "dd MMM yyyy", { locale: fr }) : "—"}</TableCell>
                         <TableCell>
                           {company ? (
-                            <span onClick={() => router.push(`/clients/${company.id}`)} style={{ color: "#1a6b9c", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{company.name}</span>
+                            <span onClick={() => router.push(`/clients/${company.id}`)} style={{ color: "#1E2A5A", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{company.name}</span>
                           ) : "—"}
                         </TableCell>
                         <TableCell>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: s.session_type === "journee" ? "#fff3e0" : "#e8f0fe", color: s.session_type === "journee" ? "#FF6B35" : "#1a6b9c" }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: s.session_type === "journee" ? "#fff3e0" : "#e8f0fe", color: s.session_type === "journee" ? "#E8732A" : "#1E2A5A" }}>
                             {s.session_type === "journee" ? "Journée" : "VT"}
                           </span>
                         </TableCell>
@@ -522,7 +522,7 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                   {nonTermines.map(c => (
                     <TableRow key={c.companyId}>
                       <TableCell>
-                        <span onClick={() => router.push(`/clients/${c.companyId}`)} style={{ color: "#1a6b9c", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{c.companyName}</span>
+                        <span onClick={() => router.push(`/clients/${c.companyId}`)} style={{ color: "#1E2A5A", cursor: "pointer", fontWeight: 600, textDecoration: "underline dotted" }}>{c.companyName}</span>
                       </TableCell>
                       <TableCell className="text-center" style={{ fontWeight: 600 }}>{c.doneSessions}</TableCell>
                       <TableCell className="text-center" style={{ fontWeight: 600, color: "#c62828" }}>{c.cancelledSessions}</TableCell>
@@ -556,11 +556,11 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures non fermées</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{totalHours}h</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{totalHours}h</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Montant non fermé</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{fmt(overdue.reduce((sum: number, s: R) => {
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{fmt(overdue.reduce((sum: number, s: R) => {
                   const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
                   return sum + (Number(s.duration_hours) || 0) * rate;
                 }, 0))}</div>
@@ -575,13 +575,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Retard</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Type</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Expert(s)</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Retard</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Type</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Expert(s)</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -604,18 +604,18 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                               {format(sDate, "dd MMM yyyy", { locale: fr })}
                             </TableCell>
                             <TableCell>
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#FF6B35" }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#E8732A" }}>
                                 {retardLabel}
                               </span>
                             </TableCell>
                             <TableCell>
-                              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: isJournee ? "#fff3e0" : "#e8f0fe", color: isJournee ? "#e65100" : "#1a6b9c" }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, background: isJournee ? "#fff3e0" : "#e8f0fe", color: isJournee ? "#e65100" : "#1E2A5A" }}>
                                 {isJournee ? "Journée" : "VT"}
                               </span>
                             </TableCell>
                             <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>
                               {company ? (
-                                <span onClick={(e) => { e.stopPropagation(); router.push(`/clients/${company.id}`); }} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                                <span onClick={(e) => { e.stopPropagation(); router.push(`/clients/${company.id}`); }} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                   {company.name}
                                 </span>
                               ) : "—"}
@@ -657,11 +657,11 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Heures non fermées</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>{totalHours}h</div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{totalHours}h</div>
               </div>
               <div className="lca-card" style={{ padding: "10px 14px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Montant non fermé</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{fmt(overdue.reduce((sum: number, s: R) => {
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{fmt(overdue.reduce((sum: number, s: R) => {
                   const rate = Number((s.service_plans as R)?.hourly_rate) || 0;
                   return sum + (Number(s.duration_hours) || 0) * rate;
                 }, 0))}</div>
@@ -676,13 +676,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Date</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Retard</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Entreprise</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Lieu</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Expert(s)</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
-                        <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Date</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Retard</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Entreprise</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Lieu</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Expert(s)</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Durée</TableHead>
+                        <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -705,13 +705,13 @@ export function RapportsProductionView({ servicePlans, sessions, invoices, deliv
                               {format(sDate, "dd MMM yyyy", { locale: fr })}
                             </TableCell>
                             <TableCell>
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#FF6B35" }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: diffDays > 7 ? "#fde8e8" : "#fff3e0", color: diffDays > 7 ? "#e74c3c" : "#E8732A" }}>
                                 {retardLabel}
                               </span>
                             </TableCell>
                             <TableCell style={{ fontSize: 13, color: "#5a6f80" }}>
                               {company ? (
-                                <span onClick={(e) => { e.stopPropagation(); router.push(`/clients/${company.id}`); }} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
+                                <span onClick={(e) => { e.stopPropagation(); router.push(`/clients/${company.id}`); }} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted", cursor: "pointer" }}>
                                   {company.name}
                                 </span>
                               ) : "—"}

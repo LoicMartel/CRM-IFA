@@ -30,7 +30,7 @@ const stageColors: Record<string, { bg: string; text: string }> = {
   opportunities: { bg: "#e3f2fd", text: "#1565c0" },
   quote_to_send: { bg: "#fff3e0", text: "#e65100" },
   quote_sent: { bg: "#f3e5f5", text: "#6a1b9a" },
-  opco_deposit: { bg: "#e8f0fe", text: "#0d4f7a" },
+  opco_deposit: { bg: "#e8f0fe", text: "#161f45" },
 };
 
 const OPP_STAGES = ["opportunities"];
@@ -89,11 +89,11 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Montant total</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{fmt(totalAmount)}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{fmt(totalAmount)}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Jours formation</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#FF6B35" }}>{totalDays.toFixed(1)}j</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#E8732A" }}>{totalDays.toFixed(1)}j</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Opportunités</div>
@@ -162,14 +162,14 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Deal</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Contact</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Entreprise</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Stage</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Probabilité</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "right", borderBottom: "2px solid #e8ecf1" }}>Montant</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Jours</th>
-                <th style={{ fontSize: 11, fontWeight: 700, color: "#1a6b9c", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Propriétaire</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Deal</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Contact</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #e8ecf1" }}>Entreprise</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Stage</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Probabilité</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "right", borderBottom: "2px solid #e8ecf1" }}>Montant</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Jours</th>
+                <th style={{ fontSize: 11, fontWeight: 700, color: "#1E2A5A", padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #e8ecf1" }}>Propriétaire</th>
               </tr>
             </thead>
             <tbody>
@@ -182,20 +182,20 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
                 return (
                   <tr key={d.id} style={{ borderBottom: "1px solid #e8ecf1" }} className="hover:bg-[#f0f7fb]">
                     <td style={{ padding: "10px 12px" }}>
-                      <Link href="/deals" style={{ fontWeight: 600, fontSize: 13, color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                      <Link href="/deals" style={{ fontWeight: 600, fontSize: 13, color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted" }}>
                         {d.name}
                       </Link>
                     </td>
                     <td style={{ padding: "10px 12px", fontSize: 13 }}>
                       {d.contacts ? (
-                        <Link href={`/contacts/${d.contact_id}`} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                        <Link href={`/contacts/${d.contact_id}`} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted" }}>
                           {d.contacts.first_name} {d.contacts.last_name}
                         </Link>
                       ) : <span style={{ color: "#ccc" }}>—</span>}
                     </td>
                     <td style={{ padding: "10px 12px", fontSize: 13 }}>
                       {d.companies ? (
-                        <Link href={`/clients/${d.companies.id}`} style={{ color: "#1a6b9c", textDecoration: "underline", textDecorationStyle: "dotted" }}>
+                        <Link href={`/clients/${d.companies.id}`} style={{ color: "#1E2A5A", textDecoration: "underline", textDecorationStyle: "dotted" }}>
                           {d.companies.name}
                         </Link>
                       ) : <span style={{ color: "#ccc" }}>—</span>}
@@ -210,7 +210,7 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
                     <td style={{ padding: "10px 12px", textAlign: "center", fontSize: 13, color: "#5a6f80" }}>{d.training_days ? `${Number(d.training_days).toFixed(1)}j` : "—"}</td>
                     <td style={{ padding: "10px 12px", textAlign: "center" }}>
                       {d.team_members ? (
-                        <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1a6b9c", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
+                        <span style={{ display: "inline-block", width: 28, height: 28, borderRadius: "50%", background: "#1E2A5A", color: "white", fontSize: 11, fontWeight: 700, lineHeight: "28px", textAlign: "center" }}>
                           {d.team_members.first_name[0]}{d.team_members.last_name[0]}
                         </span>
                       ) : <span style={{ color: "#ccc" }}>—</span>}

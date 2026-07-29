@@ -116,7 +116,7 @@ function ConfirmationReservationContent() {
               "Définir ensemble comment accroître vos performances",
             ].map((item, i) => (
               <li key={i} style={{ fontSize: 16, color: "#1a2a3a", lineHeight: 1.6, paddingLeft: 20, position: "relative" }}>
-                <span style={{ position: "absolute", left: 0, color: "#FF6B35" }}>—</span>
+                <span style={{ position: "absolute", left: 0, color: "#E8732A" }}>—</span>
                 {item}
               </li>
             ))}
@@ -159,7 +159,7 @@ function ConfirmationReservationContent() {
             En attendant notre échange...
           </h2>
           <p style={{ fontSize: 16, color: "#5a6f80", lineHeight: 1.7, marginBottom: 10 }}>
-            Prenez 2 minutes pour découvrir le témoignage d&apos;un dirigeant accompagné par la Closing Académie.
+            Prenez 2 minutes pour découvrir le témoignage d&apos;un dirigeant accompagné par la IFA Formatio.
           </p>
           <p style={{ fontSize: 16, color: "#1a2a3a", fontWeight: 600, lineHeight: 1.7, marginBottom: 10 }}>
             Il est passé de 1,5 M€ à 2,7 M€ de chiffre d&apos;affaires en 12 mois après avoir structuré son approche commerciale.
@@ -176,7 +176,7 @@ function ConfirmationReservationContent() {
           }}>
             <iframe
               src="https://www.youtube.com/embed/qxPHiC96_ss"
-              title="Témoignage - La Closing Académie"
+              title="Témoignage - IFA Formatio"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               style={{
@@ -196,9 +196,9 @@ function ConfirmationReservationContent() {
         fontSize: 11, color: "#8399a9",
         display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap",
       }}>
-        <a href="https://www.closing-academie.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions générales de vente</a>
-        <a href="https://www.closing-academie.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialité</a>
-        <a href="https://www.closing-academie.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions légales</a>
+        <a href="https://www.ifagroupe.com/cgv" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Conditions générales de vente</a>
+        <a href="https://www.ifagroupe.com/politique-de-confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Politique de confidentialité</a>
+        <a href="https://www.ifagroupe.com/mentions-legales" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "none" }}>Mentions légales</a>
       </footer>
     </div>
     </>

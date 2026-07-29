@@ -86,8 +86,8 @@ export function CampaignsListView({
   const [form, setForm] = useState({
     name: "",
     subject: "",
-    from_name: "La Closing Académie",
-    from_email: "contact@closing-academie.com",
+    from_name: "IFA Formatio",
+    from_email: "contact@ifagroupe.com",
     html_content: "",
     list_id: "",
   });
@@ -141,7 +141,7 @@ export function CampaignsListView({
 
     setSaving(false);
     setOpen(false);
-    setForm({ name: "", subject: "", from_name: "La Closing Académie", from_email: "contact@closing-academie.com", html_content: "", list_id: "" });
+    setForm({ name: "", subject: "", from_name: "IFA Formatio", from_email: "contact@ifagroupe.com", html_content: "", list_id: "" });
     router.refresh();
   }
 
@@ -181,7 +181,7 @@ export function CampaignsListView({
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Total envoyés</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{totalSent}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{totalSent}</div>
           </div>
           <Send style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>

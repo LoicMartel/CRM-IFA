@@ -135,7 +135,7 @@ export function TopNav() {
     <header
       className="topnav-header"
       style={{
-        background: "linear-gradient(135deg, #0a3d5f 0%, #1a6b9c 60%, #0d4f7a 100%)",
+        background: "linear-gradient(135deg, #0f1630 0%, #1E2A5A 60%, #161f45 100%)",
         boxShadow: "0 4px 30px rgba(10,61,95,0.25)",
         height: 64,
         display: "flex",
@@ -243,7 +243,7 @@ export function TopNav() {
               key={tab.href}
               href={tab.href}
               style={{
-                background: isActive ? "#FF6B35" : "transparent",
+                background: isActive ? "#E8732A" : "transparent",
                 color: isActive ? "white" : "rgba(255,255,255,0.7)",
                 borderRadius: 10,
                 padding: "8px 18px",
@@ -286,7 +286,7 @@ export function TopNav() {
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           style={{
             width: 36, height: 36, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)",
-            background: userAvatarUrl ? "transparent" : "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+            background: userAvatarUrl ? "transparent" : "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
             color: "white", display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 13, fontWeight: 700, cursor: "pointer",
             transition: "all 0.2s", overflow: "hidden", padding: 0,

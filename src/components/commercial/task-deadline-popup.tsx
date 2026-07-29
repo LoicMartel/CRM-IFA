@@ -149,7 +149,7 @@ export function TaskDeadlinePopup() {
             onClick={dismiss}
             style={{
               height: 36, borderRadius: 8,
-              background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)",
+              background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)",
               color: "white", fontSize: 13, fontWeight: 700,
               padding: "0 24px", border: "none", cursor: "pointer",
             }}

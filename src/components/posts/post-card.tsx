@@ -26,7 +26,7 @@ import { CommentSection } from "./comment-section";
 import { RichTextContent } from "./rich-text-editor";
 
 const REACTION_EMOJIS = [
-  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1a6b9c", bg: "#e3f2fd", animation: "reaction-thumbs" },
+  { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1E2A5A", bg: "#e3f2fd", animation: "reaction-thumbs" },
   { key: "love", emoji: "\u2764\uFE0F", label: "J'adore", color: "#e74c3c", bg: "#fce4ec", animation: "reaction-heart" },
   { key: "celebrate", emoji: "\uD83C\uDF89", label: "Bravo", color: "#e67e22", bg: "#fff3e0", animation: "reaction-confetti" },
   { key: "insightful", emoji: "\uD83D\uDCA1", label: "Intéressant", color: "#d4ac0d", bg: "#fffde7", animation: "reaction-bulb" },
@@ -144,7 +144,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
       className="lca-card"
       style={{
         borderRadius: 12,
-        border: post.pinned ? "2px solid #1a6b9c" : "1px solid #dce8f0",
+        border: post.pinned ? "2px solid #1E2A5A" : "1px solid #dce8f0",
         background: "white",
         position: "relative",
         overflow: "hidden",
@@ -183,7 +183,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
             borderRadius: "50%",
             background: author?.avatar_url
               ? `url(${author.avatar_url}) center/cover no-repeat`
-              : "#1a6b9c",
+              : "#1E2A5A",
             color: "white",
             display: "flex",
             alignItems: "center",
@@ -219,7 +219,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
               ) : null;
             })()}
             {post.pinned && (
-              <Pin style={{ width: 14, height: 14, color: "#1a6b9c" }} />
+              <Pin style={{ width: 14, height: 14, color: "#1E2A5A" }} />
             )}
             <span style={{ fontSize: 11, color: "#8399a9", marginLeft: "auto" }}>
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: fr })}
@@ -381,7 +381,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                 border: "1px solid #dce8f0",
                 background: "#f8fbfd",
                 fontSize: 12,
-                color: "#1a6b9c",
+                color: "#1E2A5A",
                 textDecoration: "none",
                 fontWeight: 500,
               }}

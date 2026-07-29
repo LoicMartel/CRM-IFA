@@ -802,7 +802,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                           {group.companyId ? (
                             <span
                               onClick={() => openCompanyEdit(group.companyId, group.companyName)}
-                              style={{ color: "#1a6b9c", textDecoration: "underline", cursor: "pointer" }}
+                              style={{ color: "#1E2A5A", textDecoration: "underline", cursor: "pointer" }}
                             >
                               {group.companyName}
                             </span>
@@ -824,7 +824,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                         borderRight: "1px solid #e8ecf1", cursor: "pointer",
                         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                       }} title={entry.client_name} onClick={() => openDetail(entry)}>
-                        <span style={{ color: "#1a6b9c", textDecoration: "underline" }}>{entry.client_name}</span>
+                        <span style={{ color: "#1E2A5A", textDecoration: "underline" }}>{entry.client_name}</span>
                       </td>
 
                       {/* Funding type - sticky */}
@@ -880,7 +880,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                                   }
                                 }}
                                 style={{
-                                  width: "100%", height: "100%", padding: "6px 8px", border: "2px solid #1a6b9c",
+                                  width: "100%", height: "100%", padding: "6px 8px", border: "2px solid #1E2A5A",
                                   background: "white", textAlign: "right", fontSize: 12, outline: "none",
                                 }}
                               />
@@ -913,7 +913,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                         <td style={{ padding: "4px 8px", textAlign: "center" }}>
                           <div style={{ display: "flex", gap: 2, justifyContent: "center" }}>
                             <button onClick={() => openEditForm(entry)} style={{
-                              background: "none", border: "none", cursor: "pointer", color: "#1a6b9c", padding: 4, borderRadius: 4,
+                              background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4, borderRadius: 4,
                             }} title="Modifier">
                               <Edit className="h-3.5 w-3.5" />
                             </button>
@@ -1059,7 +1059,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                   setPopoverCell(null);
                 }}
                 style={{
-                  background: "#1a6b9c", color: "white", border: "none", cursor: "pointer",
+                  background: "#1E2A5A", color: "white", border: "none", cursor: "pointer",
                   padding: "5px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600,
                 }}
               >
@@ -1196,7 +1196,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
 
             {/* Monthly fill shortcut */}
             <div style={{ padding: "12px 14px", background: "#f0f7ff", borderRadius: 10, border: "1px solid #dce8f0" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#1a6b9c", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#1E2A5A", marginBottom: 8 }}>
                 Remplir tous les mois (mensualisation)
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1298,7 +1298,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px",
                     borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: "none",
-                    background: "#1a6b9c", color: "white", border: "none", cursor: "pointer",
+                    background: "#1E2A5A", color: "white", border: "none", cursor: "pointer",
                   }}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
@@ -1307,7 +1307,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                 <label style={{
                   display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px",
                   borderRadius: 8, fontSize: 13, fontWeight: 600,
-                  background: "#f0f7ff", color: "#1a6b9c", border: "1px solid #dce8f0",
+                  background: "#f0f7ff", color: "#1E2A5A", border: "1px solid #dce8f0",
                   cursor: uploadingDoc ? "wait" : "pointer", opacity: uploadingDoc ? 0.6 : 1,
                 }}>
                   <Upload className="h-3.5 w-3.5" />
@@ -1411,7 +1411,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                         borderBottom: i < detailDocs.length - 1 ? "1px solid #f0f4f8" : "none",
                         background: i % 2 === 0 ? "#fafcfd" : "white",
                       }}>
-                        <FileText className="h-4 w-4" style={{ color: "#1a6b9c", flexShrink: 0 }} />
+                        <FileText className="h-4 w-4" style={{ color: "#1E2A5A", flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 12, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
                           <div style={{ fontSize: 10, color: "#8399a9" }}>
@@ -1419,7 +1419,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                           </div>
                         </div>
                         <button onClick={() => handleDownloadDoc(doc.file_path)} style={{
-                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1a6b9c",
+                          background: "#f0f7ff", border: "none", cursor: "pointer", color: "#1E2A5A",
                           padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center",
                         }} title="Télécharger">
                           <Download className="h-3.5 w-3.5" />

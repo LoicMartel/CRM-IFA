@@ -172,7 +172,7 @@ function Sidebar({
           "flex h-full w-(--sidebar-width) flex-col",
           className
         )}
-        style={{ background: "linear-gradient(180deg, #0a3d5f 0%, #0d4f7a 40%, #1a6b9c 100%)", color: "rgba(255,255,255,0.75)" }}
+        style={{ background: "linear-gradient(180deg, #0f1630 0%, #161f45 40%, #1E2A5A 100%)", color: "rgba(255,255,255,0.75)" }}
         {...props}
       >
         {children}
@@ -192,7 +192,7 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              background: "linear-gradient(180deg, #0a3d5f 0%, #0d4f7a 40%, #1a6b9c 100%)",
+              background: "linear-gradient(180deg, #0f1630 0%, #161f45 40%, #1E2A5A 100%)",
               color: "rgba(255,255,255,0.75)",
             } as React.CSSProperties
           }
@@ -246,7 +246,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
           className="flex size-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
-          style={{ background: "linear-gradient(180deg, #0a3d5f 0%, #0d4f7a 40%, #1a6b9c 100%)", color: "rgba(255,255,255,0.75)" }}
+          style={{ background: "linear-gradient(180deg, #0f1630 0%, #161f45 40%, #1E2A5A 100%)", color: "rgba(255,255,255,0.75)" }}
         >
           {children}
         </div>
@@ -514,7 +514,7 @@ function SidebarMenuButton({
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
   } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const { isMobile, state } = useSidebar()
-  const activeStyle = isActive ? { background: "#FF6B35", color: "white", boxShadow: "0 2px 8px rgba(255,107,53,0.3)", borderRadius: 8 } : {};
+  const activeStyle = isActive ? { background: "#E8732A", color: "white", boxShadow: "0 2px 8px rgba(255,107,53,0.3)", borderRadius: 8 } : {};
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(

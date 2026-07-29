@@ -153,15 +153,15 @@ export function AppSidebar() {
               textAlign: "center", fontFamily: "var(--font-montserrat), 'Montserrat', sans-serif",
               letterSpacing: "-0.02em",
             }}>
-              LA<br />CLOSING<br />ACADÉMIE<span style={{ fontSize: 4.5, verticalAlign: "super" }}>®</span>
+              IFA<br />FORMATIO
             </span>
           </div>
           <div>
             <p style={{ fontWeight: 700, fontSize: 20, color: "white", fontFamily: "var(--font-caveat), 'Caveat', cursive", whiteSpace: "nowrap" }}>
-              La Closing Académie
+              IFA Formatio
             </p>
             <p style={{ fontSize: 17, color: "rgba(255,255,255,0.6)", marginTop: 2, fontFamily: "var(--font-caveat), 'Caveat', cursive", fontStyle: "italic" }}>
-              Vendez comme vous êtes
+              Formez-vous aux metiers du transport
             </p>
           </div>
         </Link>

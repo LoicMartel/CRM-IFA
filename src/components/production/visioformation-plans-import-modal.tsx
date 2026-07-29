@@ -149,7 +149,7 @@ export function VisioformationPlansImportModal({
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Upload style={{ width: 20, height: 20, color: "#1a6b9c" }} />
+            <Upload style={{ width: 20, height: 20, color: "#1E2A5A" }} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a2a3a", margin: 0 }}>
               Importer des plans de formation depuis Visioformation
             </h2>
@@ -182,7 +182,7 @@ export function VisioformationPlansImportModal({
                 onClick={() => fileRef.current?.click()}
                 style={{
                   height: 44, borderRadius: 10, padding: "0 24px",
-                  background: "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 14, fontWeight: 700, border: "none", cursor: "pointer",
                   boxShadow: "0 4px 15px rgba(26,107,156,0.3)",
                 }}
@@ -211,7 +211,7 @@ export function VisioformationPlansImportModal({
               <div style={{
                 padding: "12px 16px", borderRadius: 10, marginBottom: 16,
                 background: "#e8f0fe", border: "1px solid #b3d4fc",
-                fontSize: 13, color: "#0d4f7a",
+                fontSize: 13, color: "#161f45",
               }}>
                 Sélectionnez les plans à importer. Chaque plan sera ouvert un par un dans le formulaire pour compléter les détails (parcours, type, budget, etc.).
               </div>
@@ -242,16 +242,16 @@ export function VisioformationPlansImportModal({
                       <th style={{ padding: "8px 4px", textAlign: "center", width: 30 }}>
                         <input type="checkbox" checked={rows.some((r) => r.companyId) && rows.every((r, i) => !r.companyId || selected.has(i))} onChange={toggleAll} />
                       </th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Entreprise (Visio)</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Sessions</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>VT</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Journées</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Heures</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Mode</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Période</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Apprenants</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c" }}>Formateurs</th>
-                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1a6b9c", minWidth: 220 }}>Entreprise CRM</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Entreprise (Visio)</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Sessions</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>VT</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Journées</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Heures</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Mode</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Période</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Apprenants</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A" }}>Formateurs</th>
+                      <th style={{ padding: "8px 4px", textAlign: "left", fontWeight: 700, color: "#1E2A5A", minWidth: 220 }}>Entreprise CRM</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -278,7 +278,7 @@ export function VisioformationPlansImportModal({
                             </div>
                           </td>
                           <td style={{ padding: "6px 4px", textAlign: "center", color: "#5a6f80", fontWeight: 700 }}>{row.sessionCount}</td>
-                          <td style={{ padding: "6px 4px", textAlign: "center", color: "#0d4f7a" }}>{row.vtCount}</td>
+                          <td style={{ padding: "6px 4px", textAlign: "center", color: "#161f45" }}>{row.vtCount}</td>
                           <td style={{ padding: "6px 4px", textAlign: "center", color: "#e65100" }}>{row.journeeCount}</td>
                           <td style={{ padding: "6px 4px", color: "#5a6f80" }}>{row.totalHours}h</td>
                           <td style={{ padding: "6px 4px" }}>
@@ -349,7 +349,7 @@ export function VisioformationPlansImportModal({
                 disabled={selected.size === 0}
                 style={{
                   height: 40, borderRadius: 8, padding: "0 24px", border: "none",
-                  background: selected.size === 0 ? "#8399a9" : "linear-gradient(135deg, #1a6b9c 0%, #0d4f7a 100%)",
+                  background: selected.size === 0 ? "#8399a9" : "linear-gradient(135deg, #1E2A5A 0%, #161f45 100%)",
                   color: "white", fontSize: 13, fontWeight: 700,
                   cursor: selected.size === 0 ? "default" : "pointer",
                   boxShadow: selected.size === 0 ? "none" : "0 4px 15px rgba(26,107,156,0.3)",

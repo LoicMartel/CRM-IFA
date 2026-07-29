@@ -67,7 +67,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
     () =>
       Mention.configure({
         HTMLAttributes: {
-          style: "color: #1a6b9c; font-weight: 600; background: #e3f2fd; padding: 1px 4px; border-radius: 4px;",
+          style: "color: #1E2A5A; font-weight: 600; background: #e3f2fd; padding: 1px 4px; border-radius: 4px;",
         },
         renderHTML({ options, node }) {
           return [
@@ -118,7 +118,7 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
       Color,
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { style: "color: #1a6b9c; text-decoration: underline;" } }),
+      Link.configure({ openOnClick: false, HTMLAttributes: { style: "color: #1E2A5A; text-decoration: underline;" } }),
       Placeholder.configure({ placeholder }),
       mentionExtension,
       hashtagExtension,
@@ -304,9 +304,9 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
         .tiptap ol { padding-left: 24px; margin: 6px 0; list-style-type: decimal; }
         .tiptap li { margin: 2px 0; display: list-item; }
         .tiptap li p { margin: 0; display: inline; }
-        .tiptap blockquote { border-left: 3px solid #1a6b9c; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
+        .tiptap blockquote { border-left: 3px solid #1E2A5A; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
         .tiptap hr { border: none; border-top: 1px solid #dce8f0; margin: 12px 0; }
-        .tiptap a { color: #1a6b9c; text-decoration: underline; }
+        .tiptap a { color: #1E2A5A; text-decoration: underline; }
         .tiptap mark { border-radius: 2px; padding: 0 2px; }
         .tiptap p { margin: 4px 0; }
       `}</style>
@@ -467,9 +467,9 @@ export function RichTextContent({ html }: { html: string }) {
         .tiptap-content ol { padding-left: 24px; margin: 6px 0; list-style-type: decimal; }
         .tiptap-content li { margin: 2px 0; display: list-item; }
         .tiptap-content li p { margin: 0; display: inline; }
-        .tiptap-content blockquote { border-left: 3px solid #1a6b9c; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
+        .tiptap-content blockquote { border-left: 3px solid #1E2A5A; margin: 8px 0; padding: 4px 14px; color: #5a6f80; background: #f0f4f8; border-radius: 0 6px 6px 0; }
         .tiptap-content hr { border: none; border-top: 1px solid #dce8f0; margin: 12px 0; }
-        .tiptap-content a { color: #1a6b9c; text-decoration: underline; }
+        .tiptap-content a { color: #1E2A5A; text-decoration: underline; }
         .tiptap-content mark { border-radius: 2px; padding: 0 2px; }
         .tiptap-content p { margin: 4px 0; }
       `}</style>

@@ -41,7 +41,7 @@ function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-const PIE_COLORS = ["#1a6b9c", "#FF6B35", "#2ecc71", "#8e44ad", "#e74c3c", "#f39c12", "#1abc9c", "#8399a9", "#3498db", "#d35400"];
+const PIE_COLORS = ["#1E2A5A", "#E8732A", "#2ecc71", "#8e44ad", "#e74c3c", "#f39c12", "#1abc9c", "#8399a9", "#3498db", "#d35400"];
 
 // Ordre = cycle de vie de l'échéance (cf. BillingStatus dans database.ts).
 const STATUS_META: Record<string, { label: string; bg: string; text: string; barColor: string }> = {
@@ -248,14 +248,14 @@ export function RapportsFacturationView({ entries, companies }: {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>#</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortGlobal(nameSortGlobal === "asc" ? "desc" : nameSortGlobal === "desc" ? null : "asc"); setCompanySortGlobal(null); }}>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>#</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortGlobal(nameSortGlobal === "asc" ? "desc" : nameSortGlobal === "desc" ? null : "asc"); setCompanySortGlobal(null); }}>
                     <span className="inline-flex items-center gap-1">Raison sociale <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortGlobal(companySortGlobal === "asc" ? "desc" : companySortGlobal === "desc" ? null : "asc"); setNameSortGlobal(null); }}>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortGlobal(companySortGlobal === "asc" ? "desc" : companySortGlobal === "desc" ? null : "asc"); setNameSortGlobal(null); }}>
                     <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant total</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -338,11 +338,11 @@ export function RapportsFacturationView({ entries, companies }: {
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Clients concernés</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#1a6b9c" }}>{uniqueClients}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{uniqueClients}</div>
           </div>
           <div className="lca-card" style={{ padding: "10px 14px" }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>% du total</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#FF6B35" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>
               {kpis.total > 0 ? `${Math.round((totalAmount / kpis.total) * 100)}%` : "0%"}
             </div>
           </div>
@@ -399,15 +399,15 @@ export function RapportsFacturationView({ entries, companies }: {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortStatus(nameSortStatus === "asc" ? "desc" : nameSortStatus === "desc" ? null : "asc"); setCompanySortStatus(null); }}>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, cursor: "pointer" }} onClick={() => { setNameSortStatus(nameSortStatus === "asc" ? "desc" : nameSortStatus === "desc" ? null : "asc"); setCompanySortStatus(null); }}>
                     <span className="inline-flex items-center gap-1">Raison sociale <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortStatus(companySortStatus === "asc" ? "desc" : companySortStatus === "desc" ? null : "asc"); setNameSortStatus(null); }}>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, cursor: "pointer" }} onClick={() => { setCompanySortStatus(companySortStatus === "asc" ? "desc" : companySortStatus === "desc" ? null : "asc"); setNameSortStatus(null); }}>
                     <span className="inline-flex items-center gap-1">Société <ArrowUpDown className="h-3 w-3" /></span>
                   </TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12 }}>Financement</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "center" }}>Mois</TableHead>
-                  <TableHead style={{ fontWeight: 700, color: "#1a6b9c", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12 }}>Financement</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "center" }}>Mois</TableHead>
+                  <TableHead style={{ fontWeight: 700, color: "#1E2A5A", fontSize: 12, textAlign: "right" }}>Montant</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -479,9 +479,9 @@ export function RapportsFacturationView({ entries, companies }: {
               <button key={tab.key} onClick={() => setSelectedReport(tab.key)} style={{
                 display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
                 borderRadius: 8, fontSize: 13, fontWeight: isActive ? 700 : 500,
-                border: isActive ? "2px solid " + (meta?.text ?? "#1a6b9c") : "1px solid #dce8f0",
+                border: isActive ? "2px solid " + (meta?.text ?? "#1E2A5A") : "1px solid #dce8f0",
                 background: isActive ? (meta?.bg ?? "#f0f7ff") : "white",
-                color: isActive ? (meta?.text ?? "#1a6b9c") : "#5a6a7a",
+                color: isActive ? (meta?.text ?? "#1E2A5A") : "#5a6a7a",
                 cursor: "pointer",
               }}>
                 {tab.icon}

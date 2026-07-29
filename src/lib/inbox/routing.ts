@@ -18,7 +18,7 @@ const DEFAULT_DISPLAY_NAME = "Adam";
 // voiceProfile (brand-voice block) lands at chantier F P2.
 export interface InboxPersona {
   displayName: string;
-  signature: string;        // resolved (never null): row.signature || "{displayName}, Expert La Closing Académie"
+  signature: string;        // resolved (never null): row.signature || "{displayName}, Expert IFA Formatio"
   bookingLink: string;      // resolved (never null): row.booking_link || resolveBookingLink()
   voiceProfile: string | null;
 }
@@ -49,8 +49,8 @@ function buildPersona(row?: AccountRow | null): InboxPersona {
   return {
     displayName,
     signature: row?.signature?.trim() || (displayName === "Adam"
-      ? "Adam, assistant IA de La Closing Académie"
-      : `${displayName}, Expert La Closing Académie`),
+      ? "Adam, assistant IA de IFA Formatio"
+      : `${displayName}, Expert IFA Formatio`),
     bookingLink: row?.booking_link?.trim() || resolveBookingLink(),
     voiceProfile: row?.voice_profile?.trim() || null,
   };

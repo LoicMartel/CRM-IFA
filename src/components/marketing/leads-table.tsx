@@ -37,7 +37,7 @@ function getName(rel: { name: string }[] | { name: string } | null): string | nu
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  lead: { label: "Lead", color: "#1a6b9c", bg: "#e8f4f8" },
+  lead: { label: "Lead", color: "#1E2A5A", bg: "#e8f4f8" },
   contacted: { label: "Contacté", color: "#b8860b", bg: "#fef9e7" },
   booked: { label: "Booké", color: "#2e7d32", bg: "#e8f5e9" },
   rdv_done: { label: "RDV effectué", color: "#1565c0", bg: "#e3f2fd" },
@@ -138,7 +138,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
         <div className="lca-card" style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Meta Ads — Tunnel Book</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#1a6b9c" }}>{tunnelBookCount}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#1E2A5A" }}>{tunnelBookCount}</div>
           </div>
           <BookOpen style={{ width: 16, height: 16, color: "#8399a9" }} />
         </div>
@@ -304,7 +304,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                       style={{
                         display: "inline-flex", alignItems: "center", gap: 3,
                         padding: "3px 7px", borderRadius: 6, border: "1px solid #dce8f0",
-                        background: "white", color: "#1a6b9c", fontSize: 11, fontWeight: 600,
+                        background: "white", color: "#1E2A5A", fontSize: 11, fontWeight: 600,
                         cursor: "pointer", whiteSpace: "nowrap",
                       }}
                     >
