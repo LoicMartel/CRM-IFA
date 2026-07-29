@@ -328,6 +328,7 @@ export function ContactDetail({
     outcome: "" as string,
     rdv_result: "" as "" | "signed" | "not_signed" | "quote_to_send" | "opportunity_detected",
     action_date: "",
+    send_notifications: true,
   });
 
   // Multi-participant state
@@ -526,7 +527,7 @@ export function ContactDetail({
       // Open RDV creation form with the scheduled date from the activity
       const fallbackNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
       setEditingMeetingId(null);
-      setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow });
+      setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow, send_notifications: true });
       setSelectedContactIds([contact.id]);
       setSelectedManagerIds(currentMemberId ? [currentMemberId] : []);
       setRdvOpen(true);
@@ -613,7 +614,7 @@ export function ContactDetail({
   }
 
   function resetRdvState() {
-    setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "" });
+    setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: "", duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: "", send_notifications: true });
     setSelectedContactIds([contact.id]);
     setSelectedManagerIds(currentMemberId ? [currentMemberId] : []);
   }
@@ -716,23 +717,25 @@ export function ContactDetail({
       await insertParticipants(editingMeetingId);
 
       // Reschedule notifications: Google Calendar update + Slack + email
-      try {
-        const notifyRes = await fetch("/api/meetings/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            meetingId: editingMeetingId,
-            contactIds: selectedContactIds,
-            managerIds: selectedManagerIds,
-            isReschedule: true,
-          }),
-        });
-        const notifyData = await notifyRes.json();
-        if (notifyData.results?.length > 0) {
-          const summary = notifyData.results.map((r: any) => `${r.action}: ${r.status}`).join(", ");
-          alert(`RDV modifié ✅\n\nSync: ${summary}`);
-        }
-      } catch {}
+      if (rdvForm.send_notifications) {
+        try {
+          const notifyRes = await fetch("/api/meetings/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              meetingId: editingMeetingId,
+              contactIds: selectedContactIds,
+              managerIds: selectedManagerIds,
+              isReschedule: true,
+            }),
+          });
+          const notifyData = await notifyRes.json();
+          if (notifyData.results?.length > 0) {
+            const summary = notifyData.results.map((r: any) => `${r.action}: ${r.status}`).join(", ");
+            alert(`RDV modifié ✅\n\nSync: ${summary}`);
+          }
+        } catch {}
+      }
     } else {
       // New meeting creation
       const { data: newMeeting, error } = await supabase.from("meetings").insert({
@@ -765,7 +768,7 @@ export function ContactDetail({
       }
 
       // Auto-notify: Google Calendar + Slack/Email for ALL participants
-      if (newMeeting?.id && rdvForm.status === "booked") {
+      if (newMeeting?.id && rdvForm.status === "booked" && rdvForm.send_notifications) {
         try {
           const notifyRes = await fetch("/api/meetings/notify", {
             method: "POST",
@@ -856,6 +859,7 @@ export function ContactDetail({
       outcome: m.outcome ?? "",
       rdv_result: "",
       action_date: m.created_at ? utcToLocal(m.created_at) : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
+      send_notifications: false,
     });
 
     // Load existing participants from junction tables
@@ -936,7 +940,7 @@ export function ContactDetail({
           <Button variant="outline" size="sm" onClick={() => { setEmailForm({ subject: "", body: "" }); setEmailOpen(true); }}>
             <MailPlus className="h-4 w-4 mr-1" /> Envoyer email
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: now }); setSelectedContactIds([contact.id]); setSelectedManagerIds(currentMemberId ? [currentMemberId] : []); setRdvOpen(true); }}>
+          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: now, send_notifications: true }); setSelectedContactIds([contact.id]); setSelectedManagerIds(currentMemberId ? [currentMemberId] : []); setRdvOpen(true); }}>
             <CalendarPlus className="h-4 w-4 mr-1" /> Créer RDV
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "note", title: "", description: "", due_date: "", call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
@@ -2298,6 +2302,19 @@ export function ContactDetail({
               />
               <VoiceButton isRecording={rdvNotesVoice.isRecording} isFormatting={rdvNotesVoice.isFormatting} onClick={rdvNotesVoice.toggleRecording} tone={rdvNotesVoice.tone} onToneChange={rdvNotesVoice.setTone} />
             </div>
+
+            {/* Email de confirmation */}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>
+              <input
+                type="checkbox"
+                checked={rdvForm.send_notifications}
+                onChange={(e) => setRdvForm({ ...rdvForm, send_notifications: e.target.checked })}
+                style={{ accentColor: "#1a6b9c" }}
+              />
+              <span style={{ fontWeight: rdvForm.send_notifications ? 600 : 400, color: rdvForm.send_notifications ? "#1a6b9c" : "#8399a9" }}>
+                {rdvForm.send_notifications ? "Envoyer un email de confirmation au client" : "Pas d'email de confirmation"}
+              </span>
+            </label>
 
             {/* Status - key for post-RDV workflow */}
             <div className="space-y-2">
