@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +21,7 @@ export function ReglagesView({
   fundingTypes,
   marketingProviders,
   expertises,
+  postChannels,
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
@@ -28,6 +29,7 @@ export function ReglagesView({
   fundingTypes: NamedItem[];
   marketingProviders: NamedItem[];
   expertises: NamedItem[];
+  postChannels: { id: string; slug: string; label: string; color_bg: string; color_text: string; is_veille: boolean; display_order: number }[];
 }) {
   return (
     <Tabs defaultValue="sources" className="w-full">
@@ -49,6 +51,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="expertises" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Award style={{ width: 14, height: 14 }} /> Expertises
+        </TabsTrigger>
+        <TabsTrigger value="canaux" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Hash style={{ width: 14, height: 14 }} /> Canaux
         </TabsTrigger>
       </TabsList>
 
@@ -134,6 +139,10 @@ export function ReglagesView({
           emptyMessage="Aucune expertise definie"
           items={expertises}
         />
+      </TabsContent>
+
+      <TabsContent value="canaux" style={{ marginTop: 20 }}>
+        <ChannelsCrudSection channels={postChannels} />
       </TabsContent>
     </Tabs>
   );
@@ -226,6 +235,128 @@ function CrudSection({
                 style={{ background: "none", border: "none", cursor: "pointer", color: deleting === item.id ? "#ccc" : "#c62828", padding: 4 }} title="Supprimer">
                 <Trash2 style={{ width: 14, height: 14 }} />
               </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Section CRUD Canaux (Fil d'actualite) ── */
+
+interface Channel {
+  id: string; slug: string; label: string; color_bg: string; color_text: string; is_veille: boolean; display_order: number;
+}
+
+function ChannelsCrudSection({ channels }: { channels: Channel[] }) {
+  const router = useRouter();
+  const [newLabel, setNewLabel] = useState("");
+  const [newColorBg, setNewColorBg] = useState("#e3f2fd");
+  const [newColorText, setNewColorText] = useState("#1565c0");
+  const [newIsVeille, setNewIsVeille] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Channel | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+
+  async function handleAdd() {
+    const label = newLabel.trim();
+    if (!label || saving) return;
+    setSaving(true);
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    const supabase = createClient();
+    const maxOrder = channels.length > 0 ? Math.max(...channels.map(c => c.display_order)) : 0;
+    const { error } = await supabase.from("post_channels").insert({
+      slug, label, color_bg: newColorBg, color_text: newColorText, is_veille: newIsVeille, display_order: maxOrder + 1,
+    });
+    if (error) alert(error.message.includes("post_channels_slug_key") ? "Ce canal existe deja." : "Erreur : " + error.message);
+    else { setNewLabel(""); router.refresh(); }
+    setSaving(false);
+  }
+
+  async function handleDelete(id: string, label: string) {
+    if (!window.confirm(`Supprimer le canal "${label}" ?`)) return;
+    setDeleting(id);
+    const supabase = createClient();
+    const { error } = await supabase.from("post_channels").delete().eq("id", id);
+    if (error) alert("Impossible de supprimer : " + error.message);
+    else router.refresh();
+    setDeleting(null);
+  }
+
+  async function handleEditSave() {
+    if (!editing || !editLabel.trim()) return;
+    setSaving(true);
+    const supabase = createClient();
+    await supabase.from("post_channels").update({ label: editLabel.trim() }).eq("id", editing.id);
+    setEditing(null);
+    setSaving(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="lca-card" style={{ padding: 24, maxWidth: 700 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <Hash style={{ width: 20, height: 20, color: "#1E2A5A" }} />
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: "#1a2a3a", margin: 0 }}>Canaux du fil d'actualite</h2>
+      </div>
+      <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 16, lineHeight: 1.5 }}>
+        Gerez les canaux disponibles dans le fil d'actualite. Chaque canal peut etre de type "Veille" (regroupe sous le menu Veille).
+      </p>
+
+      {/* Add form */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "end" }}>
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Nom du canal</label>
+          <Input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="Ex: Commercial, RH..." disabled={saving} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Fond</label>
+          <input type="color" value={newColorBg} onChange={(e) => setNewColorBg(e.target.value)} style={{ width: 36, height: 36, border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer" }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Texte</label>
+          <input type="color" value={newColorText} onChange={(e) => setNewColorText(e.target.value)} style={{ width: 36, height: 36, border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer" }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" id="is-veille" checked={newIsVeille} onChange={(e) => setNewIsVeille(e.target.checked)} />
+          <label htmlFor="is-veille" style={{ fontSize: 12, color: "#5a6f80" }}>Veille</label>
+        </div>
+        <Button onClick={handleAdd} disabled={saving || !newLabel.trim()}>
+          <Plus className="h-4 w-4 mr-1" /> Ajouter
+        </Button>
+      </div>
+
+      {/* List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {channels.length === 0 ? (
+          <p style={{ color: "#8399a9", fontSize: 13, textAlign: "center", padding: 20 }}>Aucun canal defini</p>
+        ) : (
+          channels.map((ch) => (
+            <div key={ch.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #f0f4f8" }}>
+              {editing?.id === ch.id ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+                  <Input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleEditSave(); }} style={{ maxWidth: 200 }} autoFocus />
+                  <Button size="sm" onClick={handleEditSave}>OK</Button>
+                  <button onClick={() => setEditing(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", fontSize: 12 }}>Annuler</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ background: ch.color_bg, color: ch.color_text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>{ch.label}</span>
+                  {ch.is_veille && <span style={{ fontSize: 10, color: "#8399a9", fontStyle: "italic" }}>Veille</span>}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" onClick={() => { setEditing(ch); setEditLabel(ch.label); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }} title="Modifier">
+                  <Pencil style={{ width: 14, height: 14 }} />
+                </button>
+                <button type="button" onClick={() => handleDelete(ch.id, ch.label)} disabled={deleting === ch.id}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: deleting === ch.id ? "#ccc" : "#c62828", padding: 4 }} title="Supprimer">
+                  <Trash2 style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
             </div>
           ))
         )}

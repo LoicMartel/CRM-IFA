@@ -15,6 +15,7 @@ export default async function PostsPage() {
     { data: deals },
     { data: orders },
     { data: projectTags },
+    { data: channels },
   ] = await Promise.all([
     supabase
       .from("posts")
@@ -33,6 +34,7 @@ export default async function PostsPage() {
     supabase.from("deals").select("id, name").order("name"),
     supabase.from("orders").select("id, contact_id, contacts!orders_contact_id_fkey(first_name, last_name)").order("created_at", { ascending: false }),
     supabase.from("post_project_tags").select("id, name, is_active").order("name"),
+    supabase.from("post_channels").select("*").order("display_order"),
   ]);
 
   return (
@@ -47,6 +49,7 @@ export default async function PostsPage() {
           deals={deals ?? []}
           orders={orders ?? []}
           projectTags={projectTags ?? []}
+          channels={channels ?? []}
         />
       </div>
     </>

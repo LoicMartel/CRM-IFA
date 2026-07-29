@@ -7,13 +7,14 @@ export const metadata = { title: "Réglages" };
 export default async function ReglagesPage() {
   const supabase = await createClient();
 
-  const [{ data: leadSources }, { data: trainingPrograms }, { data: trainingTypes }, { data: fundingTypes }, { data: marketingProviders }, { data: expertises }] = await Promise.all([
+  const [{ data: leadSources }, { data: trainingPrograms }, { data: trainingTypes }, { data: fundingTypes }, { data: marketingProviders }, { data: expertises }, { data: postChannels }] = await Promise.all([
     supabase.from("lead_sources").select("id, name, created_at").order("name"),
     supabase.from("training_programs").select("id, name, created_at").order("name"),
     supabase.from("training_types").select("id, name, created_at").order("name"),
     supabase.from("funding_types").select("id, name, created_at").order("name"),
     supabase.from("marketing_providers").select("id, name, created_at").order("name"),
     supabase.from("expertises").select("id, name, created_at").order("name"),
+    supabase.from("post_channels").select("*").order("display_order"),
   ]);
 
   return (
@@ -27,6 +28,7 @@ export default async function ReglagesPage() {
           fundingTypes={fundingTypes ?? []}
           marketingProviders={marketingProviders ?? []}
           expertises={expertises ?? []}
+          postChannels={(postChannels ?? []) as any}
         />
       </div>
     </>
