@@ -50,7 +50,7 @@ export function PostsView({
 }: PostsViewProps) {
   const router = useRouter();
   const { isAdmin, isRestrictedExterne } = useCurrentRoles();
-  const [categoryFilter, setCategoryFilter] = useState<PostCategory | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   // Dynamic channels — derive labels, colors, and category lists from DB
   const channelLabels: Record<string, string> = channels.length > 0
