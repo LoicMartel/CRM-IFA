@@ -1657,9 +1657,6 @@ export function CompanyDetail({
                       <Upload className="h-3.5 w-3.5" />{uploadingDoc ? "Envoi..." : "Importer"}
                       <input type="file" style={{ display: "none" }} disabled={uploadingDoc} onChange={handleUploadDealDoc} />
                     </label>
-                    <button style={{ height: 32, borderRadius: 6, background: "white", border: "1px solid #2ecc71", color: "#2e7d32", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      Pennylane
-                    </button>
                   </div>
                   {loadingDealData ? (
                     <div style={{ fontSize: 12, color: "#8399a9", padding: 8 }}>Chargement...</div>

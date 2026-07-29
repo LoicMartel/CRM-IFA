@@ -66,7 +66,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string; d
   a_valider: { bg: "#ffe8b3", text: "#92600a", label: "À valider", definition: "Plan créé, en attente de validation par Naznine (tout le plan en une fois)." },
   planifie: { bg: "#e7e0ff", text: "#5b21b6", label: "Planifié", definition: "Plan validé, échéance programmée jusqu'à sa date d'émission." },
   a_facturer: { bg: "#bdd7ee", text: "#1f4e79", label: "À facturer", definition: "Échéance arrivée à terme, facture à émettre (bascule automatique le jour J)." },
-  facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé", definition: "Facture émise (Pennylane), en attente de paiement." },
+  facture: { bg: "#ffc7ce", text: "#9c0006", label: "Facturé", definition: "Facture émise, en attente de paiement." },
   encaisse: { bg: "#c6efce", text: "#006100", label: "Encaissé", definition: "Facture payée par le client — état final." },
   non_fait: { bg: "#ffffff", text: "#888888", label: "Non fait", definition: "Échéance saisie hors du cycle automatique (état neutre)." },
 };
@@ -300,7 +300,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       alert(`Impossible de facturer : aucun deal lié à "${entryName}". Modifier le plan pour le rattacher à un deal.`);
       return;
     }
-    if (!confirm(`Créer une facture Pennylane pour cette échéance ?\n\nClient: ${entryName}\n\nCette action déclenche le workflow WF-005 qui génère et envoie la facture automatiquement.`)) return;
+    if (!confirm(`Facturer cette échéance ?\n\nClient: ${entryName}\n\nCette action déclenche le workflow WF-005 qui génère et envoie la facture automatiquement.`)) return;
     setFacturing(true);
     try {
       const res = await fetch(`/api/billing-months/${monthId}/facturer`, {
@@ -310,7 +310,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Échec de la facturation");
-      alert(`Facture en cours de génération côté Pennylane.\nLe statut passera en "Facturé" dans quelques secondes.`);
+      alert(`Facture en cours de génération.\nLe statut passera en "Facturé" dans quelques secondes.`);
       setPopoverCell(null);
       setTimeout(() => router.refresh(), 3000);
     } catch (err) {
@@ -1028,7 +1028,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 opacity: facturing ? 0.6 : 1,
               }}
-              title="Génère une facture Pennylane via WF-005 pour cette échéance"
+              title="Facturer cette échéance"
             >
               <Send className="h-3 w-3" />
               {facturing ? "Facturation en cours…" : "Facturer cette échéance"}

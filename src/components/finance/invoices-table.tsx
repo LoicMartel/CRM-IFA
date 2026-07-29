@@ -85,7 +85,7 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [invDocType, setInvDocType] = useState("facture");
 
-  const DOC_TYPES: Record<string, string> = { facture: "Facture", avoir: "Avoir", relance: "Relance", pennylane: "Import Pennylane", autre: "Autre" };
+  const DOC_TYPES: Record<string, string> = { facture: "Facture", avoir: "Avoir", relance: "Relance", pennylane: "Import externe", autre: "Autre" };
   const DOC_COLORS: Record<string, { bg: string; text: string }> = { facture: { bg: "#e8f0fe", text: "#161f45" }, avoir: { bg: "#fce4ec", text: "#c62828" }, relance: { bg: "#fff3e0", text: "#e65100" }, pennylane: { bg: "#e8f5e9", text: "#2e7d32" }, autre: { bg: "#f5f5f5", text: "#555" } };
 
   async function loadInvoiceDocs(invoiceId: string) {
@@ -728,10 +728,6 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                       <Upload className="h-3.5 w-3.5" />{uploadingDoc ? "Envoi..." : "Importer"}
                       <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" style={{ display: "none" }} disabled={uploadingDoc} onChange={(e) => { setInvDocType("facture"); handleUploadInvoiceDoc(e, inv.id); }} />
                     </label>
-                    <button style={{ height: 32, borderRadius: 6, background: "white", border: "1px solid #2ecc71", color: "#2e7d32", fontSize: 12, fontWeight: 600, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%232e7d32' stroke-width='2'%3E%3Cpath d='M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3Cpath d='M9 12h6'/%3E%3Cpath d='M12 9v6'/%3E%3C/svg%3E" alt="" style={{ width: 14, height: 14 }} />
-                      Pennylane
-                    </button>
                   </div>
                   {loadingDocs ? (
                     <div style={{ fontSize: 12, color: "#8399a9", padding: 8 }}>Chargement...</div>
