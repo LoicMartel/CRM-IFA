@@ -1,5 +1,10 @@
 // Types principaux du CRM IFA Formation
-import type { QuoteLineDraft } from "@/lib/adv-quote";
+export type QuoteLineDraft = {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+};
 
 export type TeamMemberRole = "admin" | "sales" | "trainer" | "account_manager" | "finance";
 export type LeadStepStatus = "pending" | "done" | "skipped";

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { X, Calculator, Save, FileDown, Mail, ChevronDown, ChevronUp, Loader2, Plus, Trash2, FileText } from "lucide-react";
 import { computeCotation, CotationRow, CotationResults, MONTH_KEYS, MONTH_LABELS, createRow, rowTotal } from "@/lib/cotation-engine";
 import { useCurrentMember } from "@/lib/use-current-member";
-import { QuoteSendModal } from "@/components/commercial/quote-send-modal";
+// QuoteSendModal removed (N8N/ADV feature)
 
 interface Deal {
   id: string;
@@ -609,15 +609,6 @@ export function CotationModal({ open, onClose, deals, companies, contacts, editQ
       </div>
     </div>
 
-    {showQuoteModal && form.dealId && editQuotation?.id && (
-      <QuoteSendModal
-        dealId={form.dealId}
-        dealName={deals.find((d) => d.id === form.dealId)?.companies?.name ?? form.companyName}
-        fromQuotation={editQuotation.id}
-        onClose={() => setShowQuoteModal(false)}
-        onDone={() => { setShowQuoteModal(false); onSaved?.(); }}
-      />
-    )}
     </>
   );
 }

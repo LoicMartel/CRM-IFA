@@ -23,7 +23,7 @@ import { CotationModal } from "./cotation-modal";
 import { WF009CollectorBlock } from "./wf009-collector-block";
 import { BillingPlanModal } from "@/components/finance/billing-plan-modal";
 import { ConventionModal } from "@/components/finance/convention-modal";
-import { QuoteSendModal } from "./quote-send-modal";
+// QuoteSendModal removed (N8N/ADV feature)
 
 interface Deal {
   id: string;
@@ -1075,14 +1075,6 @@ export function DealsBoard({
           trainingDays={conventionDeal.training_days != null ? Number(conventionDeal.training_days) : null}
           onClose={() => setConventionDeal(null)}
           onDone={() => { setConventionDeal(null); router.refresh(); }}
-        />
-      )}
-      {quoteSendDeal && (
-        <QuoteSendModal
-          dealId={quoteSendDeal.id}
-          dealName={quoteSendDeal.name}
-          onClose={() => setQuoteSendDeal(null)}
-          onDone={() => { setQuoteSendDeal(null); setSelectedDeal(null); router.refresh(); }}
         />
       )}
     </>
