@@ -1,130 +1,158 @@
 /**
- * Fiscal year utilities for IFA Formation.
- * Fiscal year runs September (09) to August (08).
- * Example: FY 2025/2026 = Sept 2025 → Aug 2026.
+ * Fiscal year utilities — shared across the entire CRM.
+ * The fiscal mode is stored in crm_settings (key: 'fiscal_year_mode').
+ * Two modes: "jan-dec" (January→December) and "sep-aug" (September→August).
+ *
+ * Legacy functions (getCurrentFiscalYearStart, etc.) default to "sep-aug"
+ * for backward compatibility. New code should pass mode explicitly.
  */
 
-/** Returns the start year of the current fiscal year. */
-export function getCurrentFiscalYearStart(): number {
-  const now = new Date();
-  return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+export type FiscalMode = "jan-dec" | "sep-aug";
+
+// ── Mode-aware helpers ──────────────────────────────────────────────
+
+function getStartMonthIndex(mode: FiscalMode): number {
+  return mode === "jan-dec" ? 0 : 8; // 0=Jan, 8=Sep
 }
 
-/** Returns the date range for a given fiscal year. */
-export function getFiscalYearRange(fyStart: number): { from: string; to: string } {
+/** Returns the start year of the current fiscal year for a given mode. */
+export function getCurrentFiscalYearStart(mode: FiscalMode = "sep-aug"): number {
+  const now = new Date();
+  const startMonth = getStartMonthIndex(mode);
+  return now.getMonth() >= startMonth ? now.getFullYear() : now.getFullYear() - 1;
+}
+
+/** Returns the 12 fiscal month keys in order (e.g. ["01","02",...,"12"] or ["09","10",...,"08"]). */
+function getFiscalMonthKeys(mode: FiscalMode): string[] {
+  const startMonth = getStartMonthIndex(mode);
+  return Array.from({ length: 12 }, (_, i) => {
+    const m = ((startMonth + i) % 12) + 1;
+    return String(m).padStart(2, "0");
+  });
+}
+
+/** Returns the 12 months of a fiscal year as ISO date strings ("YYYY-MM-01"). */
+export function getFiscalMonths(mode: FiscalMode): string[] {
+  const now = new Date();
+  const startMonth = getStartMonthIndex(mode);
+  const startYear = now.getMonth() >= startMonth ? now.getFullYear() : now.getFullYear() - 1;
+  return Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(startYear, startMonth + i, 1);
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+/** Returns the fiscal year date range { start, end } as ISO date strings. */
+export function getFiscalRange(mode: FiscalMode): { start: string; end: string } {
+  const months = getFiscalMonths(mode);
+  const lastMonth = new Date(months[11]);
+  const end = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
+  return { start: months[0], end: end.toISOString().slice(0, 10) };
+}
+
+/** Returns { from, to } for a given fiscal year start year. */
+export function getFiscalYearRange(fyStart: number, mode: FiscalMode = "sep-aug"): { from: string; to: string } {
+  const startMonth = getStartMonthIndex(mode);
+  const from = new Date(fyStart, startMonth, 1);
+  const to = new Date(fyStart, startMonth + 12, 0); // last day of 12th month
   return {
-    from: `${fyStart}-09-01`,
-    to: `${fyStart + 1}-08-31`,
+    from: from.toISOString().slice(0, 10),
+    to: to.toISOString().slice(0, 10),
   };
 }
 
 /** Returns the date range for the current fiscal year. */
-export function getCurrentFiscalYearRange(): { from: string; to: string } {
-  return getFiscalYearRange(getCurrentFiscalYearStart());
+export function getCurrentFiscalYearRange(mode: FiscalMode = "sep-aug"): { from: string; to: string } {
+  return getFiscalYearRange(getCurrentFiscalYearStart(mode), mode);
 }
 
-/** Returns a display label like "2025/2026". */
-export function getFiscalYearLabel(fyStart: number): string {
+/** Returns a display label like "2025/2026" or "2026". */
+export function getFiscalYearLabel(fyStart: number, mode: FiscalMode = "sep-aug"): string {
+  if (mode === "jan-dec") return String(fyStart);
   return `${fyStart}/${fyStart + 1}`;
 }
 
-/** Returns a database-compatible key like "2025-2026". */
-export function getFiscalYearKey(fyStart: number): string {
+/** Returns a database-compatible key like "2025-2026" or "2026". */
+export function getFiscalYearKey(fyStart: number, mode: FiscalMode = "sep-aug"): string {
+  if (mode === "jan-dec") return String(fyStart);
   return `${fyStart}-${fyStart + 1}`;
 }
 
-/**
- * Returns the fiscal year key ("YYYY-YYYY") for a given month string.
- * @param month A "YYYY-MM" or "YYYY-MM-DD" string. A month >= September (09)
- *              belongs to the fiscal year starting that year; otherwise the previous year.
- */
-export function getFiscalYearKeyForMonth(month: string): string {
+/** Returns the fiscal year key for a given month string. */
+export function getFiscalYearKeyForMonth(month: string, mode: FiscalMode = "sep-aug"): string {
   const [y, m] = month.split("-").map(Number);
-  const startYear = m >= 9 ? y : y - 1;
-  return getFiscalYearKey(startYear);
+  const startMonth = getStartMonthIndex(mode) + 1; // 1-indexed
+  const startYear = m >= startMonth ? y : y - 1;
+  return getFiscalYearKey(startYear, mode);
 }
 
-/** Returns the first day of the current fiscal year (e.g. "2025-09-01"). */
-export function getDefaultCustomFrom(): string {
-  return getFiscalYearRange(getCurrentFiscalYearStart()).from;
+/** Returns the first day of the current fiscal year. */
+export function getDefaultCustomFrom(mode: FiscalMode = "sep-aug"): string {
+  return getFiscalYearRange(getCurrentFiscalYearStart(mode), mode).from;
 }
 
-/** Checks if a "YYYY-MM-DD" date string falls within a given fiscal year. */
-export function isInFiscalYear(dateStr: string, fyStart: number): boolean {
-  const { from, to } = getFiscalYearRange(fyStart);
+/** Checks if a date string falls within a given fiscal year. */
+export function isInFiscalYear(dateStr: string, fyStart: number, mode: FiscalMode = "sep-aug"): boolean {
+  const { from, to } = getFiscalYearRange(fyStart, mode);
   return dateStr >= from && dateStr <= to;
 }
 
-/**
- * Generates fiscal year selector options.
- * @param count Number of options (default 4). Centered around current FY.
- * @returns Array of { value: "2025-2026", label: "2025/2026", startYear: 2025 }
- */
-export function getFiscalYearOptions(count = 4): { value: string; label: string; startYear: number }[] {
-  const current = getCurrentFiscalYearStart();
+/** Generates fiscal year selector options. */
+export function getFiscalYearOptions(count = 4, mode: FiscalMode = "sep-aug"): { value: string; label: string; startYear: number }[] {
+  const current = getCurrentFiscalYearStart(mode);
   const offset = Math.floor(count / 2) - 1;
   return Array.from({ length: count }, (_, i) => {
     const fy = current - offset + i;
-    return { value: getFiscalYearKey(fy), label: getFiscalYearLabel(fy), startYear: fy };
+    return { value: getFiscalYearKey(fy, mode), label: getFiscalYearLabel(fy, mode), startYear: fy };
   });
 }
 
-/** Short French month labels for fiscal year display. */
+// ── Month labels ──────────────────────────────────────────────────
+
 const MONTH_LABELS_SHORT: Record<string, string> = {
-  "09": "sept.", "10": "oct.", "11": "nov.", "12": "déc.",
   "01": "janv.", "02": "févr.", "03": "mars", "04": "avr.",
   "05": "mai", "06": "juin", "07": "juil.", "08": "août",
+  "09": "sept.", "10": "oct.", "11": "nov.", "12": "déc.",
 };
 
 const MONTH_LABELS_FULL: Record<string, string> = {
-  "09": "Septembre", "10": "Octobre", "11": "Novembre", "12": "Décembre",
   "01": "Janvier", "02": "Février", "03": "Mars", "04": "Avril",
   "05": "Mai", "06": "Juin", "07": "Juillet", "08": "Août",
+  "09": "Septembre", "10": "Octobre", "11": "Novembre", "12": "Décembre",
 };
 
-const FISCAL_MONTH_KEYS = ["09", "10", "11", "12", "01", "02", "03", "04", "05", "06", "07", "08"];
-
-/**
- * Returns the 12 fiscal months as date strings ("YYYY-MM-01").
- * @param fyKeyOrStart Either "2025-2026" or 2025
- */
-export function getFiscalMonthDates(fyKeyOrStart: string | number): string[] {
+/** Returns 12 fiscal months as date strings for a given FY start year. */
+export function getFiscalMonthDates(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): string[] {
   const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  return FISCAL_MONTH_KEYS.map((m) => {
-    const yr = parseInt(m, 10) >= 9 ? startYear : startYear + 1;
+  const keys = getFiscalMonthKeys(mode);
+  const startMonthIdx = getStartMonthIndex(mode) + 1;
+  return keys.map((m) => {
+    const mi = parseInt(m, 10);
+    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
     return `${yr}-${m}-01`;
   });
 }
 
-/**
- * Returns the 12 fiscal months with short labels.
- * @param fyKeyOrStart Either "2025-2026" or 2025
- */
-export function getFiscalMonthsWithLabels(fyKeyOrStart: string | number): { key: string; label: string; date: string }[] {
+/** Returns 12 fiscal months with short labels. */
+export function getFiscalMonthsWithLabels(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): { key: string; label: string; date: string }[] {
   const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  return FISCAL_MONTH_KEYS.map((m) => {
-    const yr = parseInt(m, 10) >= 9 ? startYear : startYear + 1;
-    const shortYear = String(yr).slice(-2);
-    return {
-      key: m,
-      label: `${MONTH_LABELS_SHORT[m]} ${shortYear}`,
-      date: `${yr}-${m}-01`,
-    };
+  const keys = getFiscalMonthKeys(mode);
+  const startMonthIdx = getStartMonthIndex(mode) + 1;
+  return keys.map((m) => {
+    const mi = parseInt(m, 10);
+    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
+    return { key: m, label: `${MONTH_LABELS_SHORT[m]} ${String(yr).slice(-2)}`, date: `${yr}-${m}-01` };
   });
 }
 
-/**
- * Returns the 12 fiscal months with full labels (e.g. "Septembre 2025").
- * @param fyKeyOrStart Either "2025-2026" or 2025
- */
-export function getFiscalMonthsFull(fyKeyOrStart: string | number): { key: string; label: string; date: string }[] {
+/** Returns 12 fiscal months with full labels. */
+export function getFiscalMonthsFull(fyKeyOrStart: string | number, mode: FiscalMode = "sep-aug"): { key: string; label: string; date: string }[] {
   const startYear = typeof fyKeyOrStart === "number" ? fyKeyOrStart : parseInt(fyKeyOrStart.split("-")[0], 10);
-  return FISCAL_MONTH_KEYS.map((m) => {
-    const yr = parseInt(m, 10) >= 9 ? startYear : startYear + 1;
-    return {
-      key: m,
-      label: `${MONTH_LABELS_FULL[m]} ${yr}`,
-      date: `${yr}-${m}-01`,
-    };
+  const keys = getFiscalMonthKeys(mode);
+  const startMonthIdx = getStartMonthIndex(mode) + 1;
+  return keys.map((m) => {
+    const mi = parseInt(m, 10);
+    const yr = mi >= startMonthIdx ? startYear : startYear + 1;
+    return { key: m, label: `${MONTH_LABELS_FULL[m]} ${yr}`, date: `${yr}-${m}-01` };
   });
 }

@@ -22,9 +22,10 @@ interface Props {
   targets: R[];
   orders: R[];
   pipe: R[];
+  fiscalMode?: string;
 }
 
-export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
+export function SyntheseSalesContent({ targets, orders, pipe, fiscalMode = "jan-dec" }: Props) {
   const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart());
 
   // Filter orders and targets by selected fiscal year
@@ -129,6 +130,7 @@ export function SyntheseSalesContent({ targets, orders, pipe }: Props) {
         <SalesTargetsEditor
           targets={(fyTargets as any).filter((t: any) => Number(t.target_amount) >= 0).map((t: any) => ({ id: t.id, month: t.month, target_amount: Number(t.target_amount) }))}
           annualTarget={annualTarget}
+          fiscalMode={fiscalMode as any}
         />
         <div className="lca-card" style={{ padding: "10px 14px" }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>CA Commandes</div>
