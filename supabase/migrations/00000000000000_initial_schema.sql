@@ -516,8 +516,15 @@ CREATE TABLE public."invoices" (
   "invoice_name" text,
   "due_date" date,
   PRIMARY KEY ("id"),
-  CONSTRAINT "invoices_funding_type_check" CHECK ((funding_type = ANY (ARRAY['UP FRONT'::text, 'OPCO'::text, 'CPF'::text, 'autre'::text]))),
   CONSTRAINT "invoices_status_check" CHECK ((status = ANY (ARRAY['facturable'::text, 'facture'::text, 'paye'::text])))
+);
+
+CREATE TABLE public."funding_types" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "funding_types_name_key" UNIQUE ("name")
 );
 
 CREATE TABLE public."lead_sources" (

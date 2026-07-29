@@ -73,7 +73,8 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; label: string; d
 
 const FACTURABLE_STATUSES: (BillingStatus | null)[] = ["non_fait", "a_facturer", "planifie", "a_valider", null];
 
-const FUNDING_TYPES = ["UP FRONT", "OPCO", "CPF", "autre"];
+// Funding types chargés dynamiquement depuis la DB (fallback hardcodé)
+const FUNDING_TYPES_FALLBACK = ["UP FRONT", "OPCO", "CPF", "autre"];
 
 const MONTH_LABELS: Record<number, string> = {
   0: "janv", 1: "févr", 2: "mars", 3: "avr", 4: "mai", 5: "juin",
@@ -128,6 +129,14 @@ function fmtCompact(n: number) {
 export function BillingGrid({ entries, companies, deals }: Props) {
   const router = useRouter();
   const { isReadOnly } = useCurrentRoles();
+
+  // Funding types from DB
+  const [FUNDING_TYPES, setFundingTypes] = useState<string[]>(FUNDING_TYPES_FALLBACK);
+  useEffect(() => {
+    createClient().from("funding_types").select("name").order("name").then(({ data }) => {
+      if (data && data.length > 0) setFundingTypes(data.map((r) => r.name));
+    });
+  }, []);
 
   const [search, setSearch] = useState("");
   const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart()));

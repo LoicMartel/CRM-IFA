@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,6 +24,14 @@ export function BillingPlanModal({
     { id: crypto.randomUUID(), month: thisMonth, amount: dealAmount ? String(dealAmount) : "" },
   ]);
   const [saving, setSaving] = useState(false);
+
+  // Funding types from DB
+  const [fundingTypes, setFundingTypesArr] = useState<string[]>(["Direct", "UP FRONT", "OPCO"]);
+  useEffect(() => {
+    createClient().from("funding_types").select("name").order("name").then(({ data }) => {
+      if (data && data.length > 0) setFundingTypesArr(["Direct", ...data.map((r) => r.name)]);
+    });
+  }, []);
 
   // Raisons sociales dropdown
   const [raisonsSociales, setRaisonsSociales] = useState<{ id: string; name: string }[]>([]);
@@ -111,9 +119,9 @@ export function BillingPlanModal({
 
         <label htmlFor="bpm-funding-type" style={{ display: "block", fontSize: 13, marginBottom: 4 }}>Type de financement</label>
         <select id="bpm-funding-type" value={fundingType} onChange={(e) => setFundingType(e.target.value)} style={{ width: "100%", padding: 8, border: "1px solid #cbd5e1", borderRadius: 6, marginBottom: 16 }}>
-          <option value="Direct">Direct</option>
-          <option value="UP FRONT">UP FRONT</option>
-          <option value="OPCO">OPCO</option>
+          {fundingTypes.map((ft) => (
+            <option key={ft} value={ft}>{ft}</option>
+          ))}
         </select>
 
         <label style={{ display: "block", fontSize: 13, marginBottom: 8 }}>Échéances</label>

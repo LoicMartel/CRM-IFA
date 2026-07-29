@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -65,6 +65,14 @@ interface WonDeal {
 export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; wonDeals: WonDeal[] }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
+
+  // Funding types from DB
+  const [fundingTypes, setFundingTypes] = useState<string[]>(["UP FRONT", "OPCO", "CPF", "autre"]);
+  useEffect(() => {
+    createClient().from("funding_types").select("name").order("name").then(({ data }) => {
+      if (data && data.length > 0) setFundingTypes(data.map((r) => r.name));
+    });
+  }, []);
   const [search, setSearch] = useState("");
   const [filterFunding, setFilterFunding] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -277,10 +285,9 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
             onChange={(e) => setFilterFunding(e.target.value)}
           >
             <option value="">Tous financements</option>
-            <option value="UP FRONT">UP FRONT</option>
-            <option value="OPCO">OPCO</option>
-            <option value="CPF">CPF</option>
-            <option value="autre">Autre</option>
+            {fundingTypes.map((ft) => (
+              <option key={ft} value={ft}>{ft}</option>
+            ))}
           </select>
           <select
             className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
@@ -477,11 +484,10 @@ export function InvoicesTable({ invoices, wonDeals }: { invoices: Invoice[]; won
                 }}
               >
                 <option value="">Sélectionner</option>
-                <option value="UP FRONT">UP FRONT</option>
-                <option value="OPCO">OPCO</option>
-                <option value="CPF">CPF</option>
+                {fundingTypes.map((ft) => (
+                  <option key={ft} value={ft}>{ft}</option>
+                ))}
                 <option value="mensuelle">Mensuel</option>
-                <option value="autre">Autre</option>
               </select>
             </div>
 

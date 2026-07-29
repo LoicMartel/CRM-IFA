@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
@@ -17,10 +17,12 @@ export function ReglagesView({
   leadSources,
   trainingPrograms,
   trainingTypes,
+  fundingTypes,
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
   trainingTypes: NamedItem[];
+  fundingTypes: NamedItem[];
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -46,6 +48,17 @@ export function ReglagesView({
         duplicateMessage="Ce type existe déjà."
         emptyMessage="Aucun type défini"
         items={trainingTypes}
+      />
+      <CrudSection
+        icon={<Receipt style={{ width: 20, height: 20, color: "#1a6b9c" }} />}
+        title="Types de financement"
+        description="Gérez les types de financement disponibles dans la facturation."
+        placeholder="Nom du nouveau type de financement..."
+        table="funding_types"
+        uniqueKey="funding_types_name_key"
+        duplicateMessage="Ce type de financement existe déjà."
+        emptyMessage="Aucun type de financement défini"
+        items={fundingTypes}
       />
     </div>
   );
