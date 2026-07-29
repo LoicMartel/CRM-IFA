@@ -3,13 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearLabel, type FiscalMode } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
-const FISCAL_MONTHS = [
+const FISCAL_MONTHS_SEP = [
   { key: "09", label: "sept." }, { key: "10", label: "oct." }, { key: "11", label: "nov." }, { key: "12", label: "déc." },
   { key: "01", label: "janv." }, { key: "02", label: "févr." }, { key: "03", label: "mars" }, { key: "04", label: "avr." },
   { key: "05", label: "mai" }, { key: "06", label: "juin" }, { key: "07", label: "juil." }, { key: "08", label: "août" },
+];
+const FISCAL_MONTHS_JAN = [
+  { key: "01", label: "janv." }, { key: "02", label: "févr." }, { key: "03", label: "mars" }, { key: "04", label: "avr." },
+  { key: "05", label: "mai" }, { key: "06", label: "juin" }, { key: "07", label: "juil." }, { key: "08", label: "août" },
+  { key: "09", label: "sept." }, { key: "10", label: "oct." }, { key: "11", label: "nov." }, { key: "12", label: "déc." },
 ];
 
 function fmt(n: number) {
@@ -21,28 +27,26 @@ function fmtShort(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, monthlyCharges }: {
-  salesTargets: R[]; wonDeals: R[]; billingMonths: R[]; monthlyCharges: R[];
+export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, monthlyCharges, fiscalMode = "sep-aug" }: {
+  salesTargets: R[]; wonDeals: R[]; billingMonths: R[]; monthlyCharges: R[]; fiscalMode?: FiscalMode;
 }) {
   const router = useRouter();
   const [editingCell, setEditingCell] = useState<{ month: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const now = new Date();
-  const defaultFY = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-  const [fyYear, setFyYear] = useState(defaultFY);
+  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart(fiscalMode));
 
-  // Available fiscal years (from 2024 to current+1)
-  const fyOptions = Array.from({ length: 4 }, (_, i) => defaultFY - 2 + i);
+  const fyOptions = getFiscalYearOptions(4, fiscalMode);
+  const FISCAL_MONTHS = fiscalMode === "jan-dec" ? FISCAL_MONTHS_JAN : FISCAL_MONTHS_SEP;
 
   // Build charge map
   const chargeMap: Record<string, R> = {};
   monthlyCharges.forEach((c: R) => { chargeMap[c.month as string] = c; });
 
   // Build month data
-  const monthData = FISCAL_MONTHS.map((m, i) => {
-    const yr = i < 4 ? fyYear : fyYear + 1;
+  const monthData = FISCAL_MONTHS.map((m) => {
+    const yr = fiscalMode === "jan-dec" ? fyYear : (parseInt(m.key, 10) >= 9 ? fyYear : fyYear + 1);
     const mStr = `${yr}-${m.key}`;
     const mLabel = `${m.label}-${String(yr).slice(2)}`;
 
@@ -202,8 +206,8 @@ export function SuiviFinancierView({ salesTargets, wonDeals, billingMonths, mont
           onChange={(e) => setFyYear(parseInt(e.target.value))}
           style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
         >
-          {fyOptions.map(y => (
-            <option key={y} value={y}>{y}/{y + 1}</option>
+          {fyOptions.map(o => (
+            <option key={o.startYear} value={o.startYear}>{o.label}</option>
           ))}
         </select>
       </div>

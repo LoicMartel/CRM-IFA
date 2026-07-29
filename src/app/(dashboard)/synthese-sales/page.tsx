@@ -7,8 +7,7 @@ import { getFiscalMonths, getFiscalRange } from "@/lib/fiscal-year";
 export const metadata = { title: "Synthèse Sales" };
 
 export default async function SyntheseSalesPage() {
-  const supabase = await createClient();
-  const fiscalMode = await getFiscalMode();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
   const fiscalMonths = getFiscalMonths(fiscalMode);
   const { start, end } = getFiscalRange(fiscalMode);
 

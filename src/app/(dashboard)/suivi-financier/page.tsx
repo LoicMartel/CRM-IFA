@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { SuiviFinancierView } from "@/components/finance/suivi-financier-view";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Suivi Financier" };
 
 export default async function SuiviFinancierPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: salesTargets },
@@ -28,6 +29,7 @@ export default async function SuiviFinancierPage() {
           wonDeals={(wonDeals ?? []) as any}
           billingMonths={(billingMonths ?? []) as any}
           monthlyCharges={(monthlyCharges ?? []) as any}
+          fiscalMode={fiscalMode}
         />
       </div>
     </>

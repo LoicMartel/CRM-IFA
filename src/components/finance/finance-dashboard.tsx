@@ -5,15 +5,21 @@ import {
   BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearLabel } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearLabel, type FiscalMode } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
-const FM = [
+const FM_SEP = [
   { key: "09", label: "Sept." }, { key: "10", label: "Oct." }, { key: "11", label: "Nov." }, { key: "12", label: "Déc." },
   { key: "01", label: "Janv." }, { key: "02", label: "Févr." }, { key: "03", label: "Mars" }, { key: "04", label: "Avr." },
   { key: "05", label: "Mai" }, { key: "06", label: "Juin" }, { key: "07", label: "Juil." }, { key: "08", label: "Août" },
 ];
+const FM_JAN = [
+  { key: "01", label: "Janv." }, { key: "02", label: "Févr." }, { key: "03", label: "Mars" }, { key: "04", label: "Avr." },
+  { key: "05", label: "Mai" }, { key: "06", label: "Juin" }, { key: "07", label: "Juil." }, { key: "08", label: "Août" },
+  { key: "09", label: "Sept." }, { key: "10", label: "Oct." }, { key: "11", label: "Nov." }, { key: "12", label: "Déc." },
+];
+function getFM(mode: FiscalMode) { return mode === "jan-dec" ? FM_JAN : FM_SEP; }
 
 function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
@@ -23,10 +29,10 @@ function pct(n: number) {
   return (n * 100).toFixed(2) + "%";
 }
 
-export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [], deliverySessions = [] }: {
-  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[]; deliverySessions?: R[];
+export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, monthlyCharges, salesTargets, monthlyFinances = [], deliverySessions = [], fiscalMode = "sep-aug" }: {
+  wonDeals: R[]; billingMonths: R[]; trainingSessions: R[]; monthlyCharges: R[]; salesTargets: R[]; monthlyFinances?: R[]; deliverySessions?: R[]; fiscalMode?: FiscalMode;
 }) {
-  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart());
+  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart(fiscalMode));
 
   const chargeMap: Record<string, R> = {};
   monthlyCharges.forEach((c: R) => { chargeMap[c.month as string] = c; });
@@ -35,8 +41,8 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
   monthlyFinances.forEach((f: R) => { financeMap[(f.month as string).slice(0, 7)] = f; });
 
   // Build monthly rows
-  const months = FM.map((m, i) => {
-    const yr = i < 4 ? fyYear : fyYear + 1;
+  const months = getFM(fiscalMode).map((m) => {
+    const yr = fiscalMode === "jan-dec" ? fyYear : (parseInt(m.key, 10) >= 9 ? fyYear : fyYear + 1);
     const mStr = `${yr}-${m.key}`;
 
     const commandes = wonDeals.filter((d: R) => ((d.close_date ?? d.created_at) as string).startsWith(mStr)).reduce((s: number, d: R) => s + (Number(d.amount) || 0), 0);
@@ -197,7 +203,7 @@ export function FinanceDashboard({ wonDeals, billingMonths, trainingSessions, mo
           onChange={(e) => setFyYear(Number(e.target.value))}
           style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
         >
-          {getFiscalYearOptions(5).map(o => (
+          {getFiscalYearOptions(5, fiscalMode).map(o => (
             <option key={o.startYear} value={o.startYear}>{o.label}</option>
           ))}
         </select>

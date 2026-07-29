@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { RapportsFacturationView } from "@/components/finance/rapports-facturation-view";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Rapports Facturation" };
 
 export default async function RapportsFacturationPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: entries },
@@ -28,6 +29,7 @@ export default async function RapportsFacturationPage() {
         <RapportsFacturationView
           entries={(entries ?? []) as any}
           companies={(companies ?? []) as any}
+          fiscalMode={fiscalMode}
         />
       </div>
     </>

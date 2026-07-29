@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions, type FiscalMode } from "@/lib/fiscal-year";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -58,11 +58,15 @@ const MONTH_LABELS: Record<number, string> = {
   6: "juil", 7: "août", 8: "sept", 9: "oct", 10: "nov", 11: "déc",
 };
 
-function getFiscalMonths(fy: string): string[] {
+function getFiscalMonths(fy: string, mode: FiscalMode = "sep-aug"): string[] {
   const [startYear] = fy.split("-").map(Number);
   const months: string[] = [];
-  for (let m = 8; m < 12; m++) months.push(`${startYear}-${String(m + 1).padStart(2, "0")}-01`);
-  for (let m = 0; m < 8; m++) months.push(`${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`);
+  if (mode === "jan-dec") {
+    for (let m = 0; m < 12; m++) months.push(`${startYear}-${String(m + 1).padStart(2, "0")}-01`);
+  } else {
+    for (let m = 8; m < 12; m++) months.push(`${startYear}-${String(m + 1).padStart(2, "0")}-01`);
+    for (let m = 0; m < 8; m++) months.push(`${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`);
+  }
   return months;
 }
 
@@ -76,20 +80,21 @@ function monthLabel(dateStr: string): string {
 
 /* ---- Component ---- */
 
-export function RapportsFacturationView({ entries, companies }: {
+export function RapportsFacturationView({ entries, companies, fiscalMode = "sep-aug" }: {
   entries: BillingEntryData[];
   companies: CompanyRef[];
+  fiscalMode?: FiscalMode;
 }) {
   const router = useRouter();
   const [selectedReport, setSelectedReport] = useState("global");
-  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart()));
+  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart(fiscalMode), fiscalMode));
   const [companySortGlobal, setCompanySortGlobal] = useState<"asc" | "desc" | null>(null);
   const [companySortStatus, setCompanySortStatus] = useState<"asc" | "desc" | null>(null);
   const [nameSortGlobal, setNameSortGlobal] = useState<"asc" | "desc" | null>(null);
   const [nameSortStatus, setNameSortStatus] = useState<"asc" | "desc" | null>(null);
 
-  const yearOptions = getFiscalYearOptions(4).map(o => o.value);
-  const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
+  const yearOptions = getFiscalYearOptions(4, fiscalMode).map(o => o.value);
+  const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear, fiscalMode), [fiscalYear, fiscalMode]);
 
   // Filter entries by fiscal year
   const filtered = useMemo(() =>

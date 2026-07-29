@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import type { FiscalMode } from "./fiscal-year";
+import type { FiscalMode } from "@/lib/fiscal-year";
 
 /**
- * Load the fiscal year mode from crm_settings.
- * Returns "jan-dec" as default if not set.
+ * Loads the fiscal year mode from crm_settings (server-side only).
+ * Falls back to "sep-aug" if the setting is missing or the query fails.
  */
 export async function getFiscalMode(): Promise<FiscalMode> {
   const supabase = await createClient();
@@ -12,5 +12,9 @@ export async function getFiscalMode(): Promise<FiscalMode> {
     .select("value")
     .eq("key", "fiscal_year_mode")
     .maybeSingle();
-  return (data?.value as FiscalMode) ?? "jan-dec";
+
+  if (data?.value === "jan-dec" || data?.value === "sep-aug") {
+    return data.value;
+  }
+  return "sep-aug";
 }

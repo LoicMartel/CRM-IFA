@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearKey, getFiscalYearOptions, type FiscalMode } from "@/lib/fiscal-year";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,7 @@ interface Props {
   entries: BillingEntryData[];
   companies: CompanyRef[];
   deals: DealRef[];
+  fiscalMode?: FiscalMode;
 }
 
 /* ---- Constants ---- */
@@ -81,36 +82,48 @@ const MONTH_LABELS: Record<number, string> = {
   6: "juil", 7: "août", 8: "sept", 9: "oct", 10: "nov", 11: "déc",
 };
 
-function getFiscalMonths(fiscalYear: string): { key: string; label: string }[] {
+function getFiscalMonths(fiscalYear: string, mode: FiscalMode = "sep-aug"): { key: string; label: string }[] {
   const [startYear] = fiscalYear.split("-").map(Number);
   const months: { key: string; label: string }[] = [];
-  // Sept to Dec of startYear
-  for (let m = 8; m < 12; m++) {
-    const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
-    months.push({ key: d, label: `${MONTH_LABELS[m]}-${String(startYear).slice(2)}` });
-  }
-  // Jan to Aug of startYear+1
-  for (let m = 0; m < 8; m++) {
-    const d = `${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`;
-    months.push({ key: d, label: `${MONTH_LABELS[m]}-${String(startYear + 1).slice(2)}` });
+  if (mode === "jan-dec") {
+    for (let m = 0; m < 12; m++) {
+      const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${MONTH_LABELS[m]}-${String(startYear).slice(2)}` });
+    }
+  } else {
+    for (let m = 8; m < 12; m++) {
+      const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${MONTH_LABELS[m]}-${String(startYear).slice(2)}` });
+    }
+    for (let m = 0; m < 8; m++) {
+      const d = `${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${MONTH_LABELS[m]}-${String(startYear + 1).slice(2)}` });
+    }
   }
   return months;
 }
 
-function getFiscalMonthsFull(fiscalYear: string): { key: string; label: string }[] {
+function getFiscalMonthsFull(fiscalYear: string, mode: FiscalMode = "sep-aug"): { key: string; label: string }[] {
   const [startYear] = fiscalYear.split("-").map(Number);
   const full: Record<number, string> = {
     0: "Janvier", 1: "Février", 2: "Mars", 3: "Avril", 4: "Mai", 5: "Juin",
     6: "Juillet", 7: "Août", 8: "Septembre", 9: "Octobre", 10: "Novembre", 11: "Décembre",
   };
   const months: { key: string; label: string }[] = [];
-  for (let m = 8; m < 12; m++) {
-    const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
-    months.push({ key: d, label: `${full[m]} ${startYear}` });
-  }
-  for (let m = 0; m < 8; m++) {
-    const d = `${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`;
-    months.push({ key: d, label: `${full[m]} ${startYear + 1}` });
+  if (mode === "jan-dec") {
+    for (let m = 0; m < 12; m++) {
+      const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${full[m]} ${startYear}` });
+    }
+  } else {
+    for (let m = 8; m < 12; m++) {
+      const d = `${startYear}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${full[m]} ${startYear}` });
+    }
+    for (let m = 0; m < 8; m++) {
+      const d = `${startYear + 1}-${String(m + 1).padStart(2, "0")}-01`;
+      months.push({ key: d, label: `${full[m]} ${startYear + 1}` });
+    }
   }
   return months;
 }
@@ -126,7 +139,7 @@ function fmtCompact(n: number) {
 
 /* ---- Component ---- */
 
-export function BillingGrid({ entries, companies, deals }: Props) {
+export function BillingGrid({ entries, companies, deals, fiscalMode = "sep-aug" }: Props) {
   const router = useRouter();
   const { isReadOnly } = useCurrentRoles();
 
@@ -139,7 +152,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   }, []);
 
   const [search, setSearch] = useState("");
-  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart()));
+  const [fiscalYear, setFiscalYear] = useState(() => getFiscalYearKey(getCurrentFiscalYearStart(fiscalMode), fiscalMode));
   const [addOpen, setAddOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<BillingEntryData | null>(null);
 
@@ -194,8 +207,8 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   const [dragGroupIdx, setDragGroupIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear), [fiscalYear]);
-  const fiscalMonthsFull = useMemo(() => getFiscalMonthsFull(fiscalYear), [fiscalYear]);
+  const fiscalMonths = useMemo(() => getFiscalMonths(fiscalYear, fiscalMode), [fiscalYear, fiscalMode]);
+  const fiscalMonthsFull = useMemo(() => getFiscalMonthsFull(fiscalYear, fiscalMode), [fiscalYear, fiscalMode]);
 
   // Filter entries by fiscal year and search
   const filtered = useMemo(() => {
@@ -623,7 +636,7 @@ export function BillingGrid({ entries, companies, deals }: Props) {
   }, [editingCell]);
 
   // Fiscal year options
-  const yearOptions = getFiscalYearOptions(4).map(o => o.value);
+  const yearOptions = getFiscalYearOptions(4, fiscalMode).map(o => o.value);
 
   return (
     <>

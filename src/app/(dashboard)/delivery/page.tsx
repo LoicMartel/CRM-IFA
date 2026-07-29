@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { DeliveryView } from "@/components/production/delivery-view";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Delivery" };
 
 export default async function DeliveryPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const { data: sessions } = await supabase
     .from("sessions")
@@ -22,7 +23,7 @@ export default async function DeliveryPage() {
     <>
       <Header title="Delivery (Sessions réalisées)" />
       <div className="p-6 space-y-6">
-        <DeliveryView sessions={(sessions ?? []) as any} />
+        <DeliveryView sessions={(sessions ?? []) as any} fiscalMode={fiscalMode} />
       </div>
     </>
   );

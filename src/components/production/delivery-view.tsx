@@ -8,7 +8,7 @@ import {
 import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { getCurrentFiscalYearStart, getFiscalYearOptions as getFYOptions, isInFiscalYear } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearOptions as getFYOptions, isInFiscalYear, type FiscalMode } from "@/lib/fiscal-year";
 
 interface DeliverySession {
   id: string;
@@ -37,17 +37,17 @@ function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-function getDeliveryFYOptions() {
-  const options = getFYOptions(5);
+function getDeliveryFYOptions(mode: FiscalMode = "sep-aug") {
+  const options = getFYOptions(5, mode);
   return [
     ...options.map(o => ({ value: String(o.startYear), label: o.label })),
     { value: "", label: "Toutes les ann\u00e9es" },
   ];
 }
 
-export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
+export function DeliveryView({ sessions, fiscalMode = "sep-aug" }: { sessions: DeliverySession[]; fiscalMode?: FiscalMode }) {
   const router = useRouter();
-  const [fiscalYear, setFiscalYear] = useState<string>(String(getCurrentFiscalYearStart()));
+  const [fiscalYear, setFiscalYear] = useState<string>(String(getCurrentFiscalYearStart(fiscalMode)));
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterTrainer, setFilterTrainer] = useState("");
@@ -77,11 +77,11 @@ export function DeliveryView({ sessions }: { sessions: DeliverySession[] }) {
     return "vt";
   }
 
-  const fyOptions = getDeliveryFYOptions();
+  const fyOptions = getDeliveryFYOptions(fiscalMode);
 
   const filtered = sessions.filter(s => {
     // Fiscal year filter
-    if (fiscalYear && !isInFiscalYear(s.session_date, parseInt(fiscalYear))) return false;
+    if (fiscalYear && !isInFiscalYear(s.session_date, parseInt(fiscalYear), fiscalMode)) return false;
 
     const sessionType = getSessionType(s);
     if (filterType && sessionType !== filterType) return false;

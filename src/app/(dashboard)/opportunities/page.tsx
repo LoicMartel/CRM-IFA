@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { OpportunitiesView } from "@/components/commercial/opportunities-view";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Opportunités & Pipe" };
 
 export default async function OpportunitiesPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const { data: deals } = await supabase
     .from("deals")
@@ -17,7 +18,7 @@ export default async function OpportunitiesPage() {
     <>
       <Header title="Opportunités & Pipe" />
       <div className="p-6">
-        <OpportunitiesView deals={(deals ?? []) as any} />
+        <OpportunitiesView deals={(deals ?? []) as any} fiscalMode={fiscalMode} />
       </div>
     </>
   );

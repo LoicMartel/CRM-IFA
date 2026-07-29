@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from "recharts";
-import { getCurrentFiscalYearStart, getFiscalYearOptions } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearOptions, type FiscalMode } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
@@ -17,11 +17,21 @@ const TRAINER_COLORS: Record<string, string> = {
   Iman: "#8e44ad",
 };
 
-const FISCAL_MONTHS = [
+const FISCAL_MONTHS_SEP = [
   { key: "09", label: "Sept." }, { key: "10", label: "Oct." }, { key: "11", label: "Nov." }, { key: "12", label: "Déc." },
   { key: "01", label: "Janv." }, { key: "02", label: "Févr." }, { key: "03", label: "Mars" }, { key: "04", label: "Avr." },
   { key: "05", label: "Mai" }, { key: "06", label: "Juin" }, { key: "07", label: "Juil." }, { key: "08", label: "Août" },
 ];
+
+const FISCAL_MONTHS_JAN = [
+  { key: "01", label: "Janv." }, { key: "02", label: "Févr." }, { key: "03", label: "Mars" }, { key: "04", label: "Avr." },
+  { key: "05", label: "Mai" }, { key: "06", label: "Juin" }, { key: "07", label: "Juil." }, { key: "08", label: "Août" },
+  { key: "09", label: "Sept." }, { key: "10", label: "Oct." }, { key: "11", label: "Nov." }, { key: "12", label: "Déc." },
+];
+
+function getFiscalMonths(mode: FiscalMode) {
+  return mode === "jan-dec" ? FISCAL_MONTHS_JAN : FISCAL_MONTHS_SEP;
+}
 
 function fmt(n: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
@@ -36,13 +46,24 @@ function fmtJ(h: number) {
   return `${j}j`;
 }
 
-// Fiscal year: Sept Y to Aug Y+1
-function getFiscalYearFromStart(y: number) {
+// Fiscal year date range
+function getFiscalYearFromStart(y: number, mode: FiscalMode = "sep-aug") {
+  if (mode === "jan-dec") {
+    return { start: `${y}-01-01`, end: `${y}-12-31`, label: `${y}` };
+  }
   return { start: `${y}-09-01`, end: `${y + 1}-08-31`, label: `${y % 100}/${(y + 1) % 100}` };
 }
 
-function getQuarters(fy: { start: string }) {
+function getQuarters(fy: { start: string }, mode: FiscalMode = "sep-aug") {
   const y = parseInt(fy.start.slice(0, 4));
+  if (mode === "jan-dec") {
+    return [
+      { label: "T1 (Janv-Mars)", start: `${y}-01-01`, end: `${y}-03-31` },
+      { label: "T2 (Avr-Juin)", start: `${y}-04-01`, end: `${y}-06-30` },
+      { label: "T3 (Juil-Sept)", start: `${y}-07-01`, end: `${y}-09-30` },
+      { label: "T4 (Oct-Déc)", start: `${y}-10-01`, end: `${y}-12-31` },
+    ];
+  }
   return [
     { label: "T1 (Sept-Nov)", start: `${y}-09-01`, end: `${y}-11-30` },
     { label: "T2 (Déc-Fév)", start: `${y}-12-01`, end: `${y + 1}-02-28` },
@@ -51,26 +72,27 @@ function getQuarters(fy: { start: string }) {
   ];
 }
 
-function getMonths(fy: { start: string }) {
+function getMonths(fy: { start: string }, fiscalMonths: { key: string; label: string }[], mode: FiscalMode = "sep-aug") {
   const y = parseInt(fy.start.slice(0, 4));
-  return FISCAL_MONTHS.map((m, i) => {
-    const yr = i < 4 ? y : y + 1;
+  return fiscalMonths.map((m, i) => {
+    const yr = mode === "jan-dec" ? y : (i < 4 ? y : y + 1);
     const daysInMonth = new Date(yr, parseInt(m.key), 0).getDate();
     return { label: `${m.label} ${yr}`, start: `${yr}-${m.key}-01`, end: `${yr}-${m.key}-${daysInMonth}` };
   });
 }
 
-export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames, deliverySessions }: { sessions: R[]; servicePlans: R[]; deals: R[]; expertNames?: string[]; deliverySessions?: R[] }) {
+export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames, deliverySessions, fiscalMode = "sep-aug" }: { sessions: R[]; servicePlans: R[]; deals: R[]; expertNames?: string[]; deliverySessions?: R[]; fiscalMode?: FiscalMode }) {
   const TRAINERS = expertNames && expertNames.length > 0 ? expertNames : TRAINERS_FALLBACK;
-  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
-  const fy = useMemo(() => getFiscalYearFromStart(selectedFY), [selectedFY]);
+  const FISCAL_MONTHS = getFiscalMonths(fiscalMode);
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart(fiscalMode));
+  const fy = useMemo(() => getFiscalYearFromStart(selectedFY, fiscalMode), [selectedFY, fiscalMode]);
   const [detailPeriod, setDetailPeriod] = useState("year");
   const [detailIdx, setDetailIdx] = useState(0);
   const [cmdPeriod, setCmdPeriod] = useState("year");
   const [cmdIdx, setCmdIdx] = useState(0);
 
-  const quarters = useMemo(() => getQuarters(fy), [fy.start]);
-  const months = useMemo(() => getMonths(fy), [fy.start]);
+  const quarters = useMemo(() => getQuarters(fy, fiscalMode), [fy.start, fiscalMode]);
+  const months = useMemo(() => getMonths(fy, FISCAL_MONTHS, fiscalMode), [fy.start, FISCAL_MONTHS, fiscalMode]);
 
   // Filter helpers
   function inRange(dateStr: string, start: string, end: string) {
@@ -91,7 +113,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   // ========== GLOBAL COMPUTATIONS (fiscal year) ==========
   const fyStart = fy.start;
-  const fyEnd = `${parseInt(fy.start.slice(0, 4)) + 1}-08-31`;
+  const fyEnd = fy.end;
 
   const fySessions = sessions.filter((s: R) => inRange(s.session_date as string, fyStart, fyEnd));
   const plannedSessions = fySessions.filter((s: R) => s.status === "planned");
@@ -184,7 +206,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
 
   // ========== JOURS DELIVRES PAR MOIS (stacked bar) — from deliverySessions ==========
   const monthlyData = FISCAL_MONTHS.map((m, i) => {
-    const yr = i < 4 ? parseInt(fy.start.slice(0, 4)) : parseInt(fy.start.slice(0, 4)) + 1;
+    const yr = fiscalMode === "jan-dec" ? parseInt(fy.start.slice(0, 4)) : (i < 4 ? parseInt(fy.start.slice(0, 4)) : parseInt(fy.start.slice(0, 4)) + 1);
     const monthStr = `${yr}-${m.key}`;
     const entry: Record<string, any> = { month: m.label };
     activeTrainers.forEach(t => {
@@ -298,7 +320,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
   });
 
   // Period selector component
-  const fyOptions = getFiscalYearOptions(5);
+  const fyOptions = getFiscalYearOptions(5, fiscalMode);
   function PeriodSelector({ mode, setMode, idx, setIdx }: { mode: string; setMode: (v: string) => void; idx: number; setIdx: (v: number) => void }) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -349,7 +371,7 @@ export function SyntheseServiceView({ sessions, servicePlans, deals, expertNames
           onChange={(e) => setSelectedFY(Number(e.target.value))}
           style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
         >
-          {getFiscalYearOptions(5).map(o => (
+          {getFiscalYearOptions(5, fiscalMode).map(o => (
             <option key={o.startYear} value={o.startYear}>{o.label}</option>
           ))}
         </select>

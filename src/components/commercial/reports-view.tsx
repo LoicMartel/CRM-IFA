@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel, type FiscalMode } from "@/lib/fiscal-year";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
@@ -31,7 +31,7 @@ const PIE_COLORS = ["#1E2A5A", "#2ecc71", "#E8732A", "#8399a9", "#1abc9c", "#e74
 const BAR_COLORS = ["#1E2A5A", "#2ecc71", "#E8732A", "#1abc9c"];
 
 export function ReportsView({
-  salesTargets, orders, deals, contacts, activities, meetings, companies, tasks = [],
+  salesTargets, orders, deals, contacts, activities, meetings, companies, tasks = [], fiscalMode = "sep-aug",
 }: {
   salesTargets: R[];
   orders: R[];
@@ -41,6 +41,7 @@ export function ReportsView({
   meetings: R[];
   companies: R[];
   tasks?: R[];
+  fiscalMode?: FiscalMode;
 }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -52,7 +53,7 @@ export function ReportsView({
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [yearlyMode, setYearlyMode] = useState<"full" | "month" | "custom">("full");
-  const [yearlyFrom, setYearlyFrom] = useState(() => getDefaultCustomFrom());
+  const [yearlyFrom, setYearlyFrom] = useState(() => getDefaultCustomFrom(fiscalMode));
   const [yearlyTo, setYearlyTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -512,7 +513,7 @@ export function ReportsView({
             <div style={{ padding: 20 }}>
               <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
                 <div>
-                  <div className="lca-label">Progression annuelle {getFiscalYearLabel(getCurrentFiscalYearStart())}</div>
+                  <div className="lca-label">Progression annuelle {getFiscalYearLabel(getCurrentFiscalYearStart(fiscalMode), fiscalMode)}</div>
                   <div className="lca-sub">{fmt(totalOrders)} réalisés sur {fmt(annualTarget)}</div>
                 </div>
                 <div className="lca-big-pct">{annualPct.toFixed(1)}%</div>
@@ -1871,12 +1872,12 @@ export function ReportsView({
 
       {/* ===== Report: Yearly ===== */}
       {selectedReport === "inbound" && inboundMode === "yearly" && (() => {
-        const fyRange = getCurrentFiscalYearRange();
+        const fyRange = getCurrentFiscalYearRange(fiscalMode);
         const periodStart = yearlyMode === "full" ? fyRange.from : yearlyFrom;
         const periodEnd = yearlyMode === "full" ? fyRange.to : yearlyTo;
 
         const periodLabel = yearlyMode === "full"
-          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
+          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart(fiscalMode), fiscalMode)}`
           : `Du ${new Date(periodStart).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(periodEnd).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
         function isInPeriod(dateStr: string | null | undefined): boolean {
@@ -2812,11 +2813,11 @@ export function ReportsView({
       {selectedReport === "outbound" && outboundMode === "yearly" && (() => {
         function ini(name: string) { return name.split(" ").map(w => w[0]).join("").toUpperCase(); }
 
-        const pyFyRange = getCurrentFiscalYearRange();
+        const pyFyRange = getCurrentFiscalYearRange(fiscalMode);
         const pyStart = yearlyMode === "full" ? pyFyRange.from : yearlyFrom;
         const pyEnd = yearlyMode === "full" ? pyFyRange.to : yearlyTo;
         const pyLabel = yearlyMode === "full"
-          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
+          ? `Année complète ${getFiscalYearLabel(getCurrentFiscalYearStart(fiscalMode), fiscalMode)}`
           : `Du ${new Date(pyStart).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(pyEnd).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
         function isInPY(dateStr: string | null | undefined): boolean {
@@ -3090,7 +3091,7 @@ export function ReportsView({
       {selectedReport === "rdv_types" && (() => {
         // Period filter - supports fiscal, month, custom
         function getRdvPeriod(): { from: string; to: string } {
-          if (yearlyMode === "full") return getCurrentFiscalYearRange();
+          if (yearlyMode === "full") return getCurrentFiscalYearRange(fiscalMode);
           if ((yearlyMode as string) === "month") {
             const [y, m] = selectedMonth.split("-").map(Number);
             const lastDay = new Date(y, m, 0).getDate();
@@ -3106,7 +3107,7 @@ export function ReportsView({
           return d >= rdvPeriod.from && d <= rdvPeriod.to;
         }
 
-        const rdvLabel = yearlyMode === "full" ? `Année fiscale ${getFiscalYearLabel(getCurrentFiscalYearStart())}`
+        const rdvLabel = yearlyMode === "full" ? `Année fiscale ${getFiscalYearLabel(getCurrentFiscalYearStart(fiscalMode), fiscalMode)}`
           : (yearlyMode as string) === "month" ? (() => { const [y, m] = selectedMonth.split("-").map(Number); return new Date(y, m - 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" }); })()
           : `Du ${new Date(yearlyFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })} au ${new Date(yearlyTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 

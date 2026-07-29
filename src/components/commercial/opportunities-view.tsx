@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEAL_STAGE_LABELS } from "@/types/database";
 import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearOptions, getFiscalYearLabel } from "@/lib/fiscal-year";
+import type { FiscalMode } from "@/lib/fiscal-year";
 import type { DealStage } from "@/types/database";
 import Link from "next/link";
 
@@ -36,15 +37,15 @@ const stageColors: Record<string, { bg: string; text: string }> = {
 const OPP_STAGES = ["opportunities"];
 const PIPE_STAGES = ["quote_to_send", "quote_to_validate", "quote_sent", "opco_deposit", "quote_signed"];
 
-export function OpportunitiesView({ deals }: { deals: Deal[] }) {
+export function OpportunitiesView({ deals, fiscalMode = "sep-aug" }: { deals: Deal[]; fiscalMode?: FiscalMode }) {
   const router = useRouter();
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
-  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart(fiscalMode));
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom(fiscalMode));
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -56,7 +57,7 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
   const filtered = deals.filter(d => {
     const date = d.created_at?.split("T")[0] ?? "";
     if (periodMode === "fiscal") {
-      const { from: fyFrom, to: fyTo } = getFiscalYearRange(selectedFY);
+      const { from: fyFrom, to: fyTo } = getFiscalYearRange(selectedFY, fiscalMode);
       if (date < fyFrom || date > fyTo) return false;
     } else if (periodMode === "month") {
       if (!date.startsWith(filterMonth)) return false;
@@ -138,7 +139,7 @@ export function OpportunitiesView({ deals }: { deals: Deal[] }) {
             onChange={(e) => setSelectedFY(Number(e.target.value))}
             style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}
           >
-            {getFiscalYearOptions(5).map(o => (
+            {getFiscalYearOptions(5, fiscalMode).map(o => (
               <option key={o.startYear} value={o.startYear}>{o.label}</option>
             ))}
           </select>

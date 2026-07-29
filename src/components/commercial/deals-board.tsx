@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearLabel, getFiscalYearOptions } from "@/lib/fiscal-year";
+import type { FiscalMode } from "@/lib/fiscal-year";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,13 +113,14 @@ function columnForStage(stage: string): DealStage {
 }
 
 export function DealsBoard({
-  deals, teamMembers, companies, contacts, sources,
+  deals, teamMembers, companies, contacts, sources, fiscalMode = "sep-aug",
 }: {
   deals: Deal[];
   teamMembers: Ref[];
   companies: Ref[];
   contacts: (Ref & { company_id?: string })[];
   sources: Ref[];
+  fiscalMode?: FiscalMode;
 }) {
   const router = useRouter();
   const currentMemberId = useCurrentMember();
@@ -138,12 +140,12 @@ export function DealsBoard({
   const [cotationDealId, setCotationDealId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
-  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart(fiscalMode));
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom(fiscalMode));
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -409,7 +411,7 @@ export function DealsBoard({
 
   // Period filter logic
   const periodRange = (() => {
-    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY);
+    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY, fiscalMode);
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -434,7 +436,7 @@ export function DealsBoard({
   const wonDisplayDeals = displayDeals.filter(d => d.stage === "closed_won");
   const totalWon = wonDisplayDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
-  const periodLabel = periodMode === "fiscal" ? `Année fiscale ${getFiscalYearLabel(selectedFY)}`
+  const periodLabel = periodMode === "fiscal" ? `Année fiscale ${getFiscalYearLabel(selectedFY, fiscalMode)}`
     : periodMode === "month" ? new Date(filterMonth + "-01").toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
     : `${new Date(customFrom).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} — ${new Date(customTo).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}`;
 
@@ -459,7 +461,7 @@ export function DealsBoard({
                 onChange={(e) => setSelectedFY(Number(e.target.value))}
                 style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 12px", fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}
               >
-                {getFiscalYearOptions(5).map(o => (
+                {getFiscalYearOptions(5, fiscalMode).map(o => (
                   <option key={o.startYear} value={o.startYear}>{o.label}</option>
                 ))}
               </select>

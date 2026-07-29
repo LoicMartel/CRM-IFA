@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SalesChart } from "@/components/dashboard/sales-chart";
 import { SalesTargetsEditor } from "@/components/commercial/sales-targets-editor";
-import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearRange } from "@/lib/fiscal-year";
+import { getCurrentFiscalYearStart, getFiscalYearOptions, getFiscalYearRange, type FiscalMode } from "@/lib/fiscal-year";
 
 type R = Record<string, unknown>;
 
@@ -12,25 +12,31 @@ function fmt(n: number | null | undefined) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n) + " €";
 }
 
-const FY_MONTHS = [
+const FY_MONTHS_SEP = [
   { key: "09", label: "sept" }, { key: "10", label: "oct" }, { key: "11", label: "nov" }, { key: "12", label: "déc" },
   { key: "01", label: "janv" }, { key: "02", label: "févr" }, { key: "03", label: "mars" }, { key: "04", label: "avr" },
   { key: "05", label: "mai" }, { key: "06", label: "juin" }, { key: "07", label: "juil" }, { key: "08", label: "août" },
+];
+const FY_MONTHS_JAN = [
+  { key: "01", label: "janv" }, { key: "02", label: "févr" }, { key: "03", label: "mars" }, { key: "04", label: "avr" },
+  { key: "05", label: "mai" }, { key: "06", label: "juin" }, { key: "07", label: "juil" }, { key: "08", label: "août" },
+  { key: "09", label: "sept" }, { key: "10", label: "oct" }, { key: "11", label: "nov" }, { key: "12", label: "déc" },
 ];
 
 interface Props {
   targets: R[];
   orders: R[];
   pipe: R[];
-  fiscalMode?: string;
+  fiscalMode?: FiscalMode;
 }
 
-export function SyntheseSalesContent({ targets, orders, pipe, fiscalMode = "jan-dec" }: Props) {
-  const mode = fiscalMode as import("@/lib/fiscal-year").FiscalMode;
-  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart(mode));
+export function SyntheseSalesContent({ targets, orders, pipe, fiscalMode = "sep-aug" }: Props) {
+  const [fyYear, setFyYear] = useState(() => getCurrentFiscalYearStart(fiscalMode));
 
-  // Filter orders and targets by selected fiscal year using dynamic mode
-  const { from: fyFrom, to: fyTo } = getFiscalYearRange(fyYear, mode);
+  const FY_MONTHS = fiscalMode === "jan-dec" ? FY_MONTHS_JAN : FY_MONTHS_SEP;
+
+  // Filter orders and targets by selected fiscal year
+  const { from: fyFrom, to: fyTo } = getFiscalYearRange(fyYear, fiscalMode);
 
   const fyOrders = orders.filter(d => {
     const date = ((d.close_date ?? d.created_at ?? "") as string).slice(0, 10);
@@ -65,7 +71,7 @@ export function SyntheseSalesContent({ targets, orders, pipe, fiscalMode = "jan-
   let objCum = 0;
   let realCum = 0;
   const chartData = FY_MONTHS.map((m) => {
-    const yr = parseInt(m.key) >= 9 ? fyYear : fyYear + 1;
+    const yr = fiscalMode === "jan-dec" ? fyYear : (parseInt(m.key) >= 9 ? fyYear : fyYear + 1);
     const mStr = `${yr}-${m.key}`;
     const target = fyTargets.find(t => (t.month as string).startsWith(mStr));
     objCum += Number(target?.target_amount) || 0;
@@ -119,7 +125,7 @@ export function SyntheseSalesContent({ targets, orders, pipe, fiscalMode = "jan-
           onChange={(e) => setFyYear(Number(e.target.value))}
           style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 14, fontWeight: 700, color: "#1a2a3a", cursor: "pointer" }}
         >
-          {getFiscalYearOptions(5, mode).map(o => (
+          {getFiscalYearOptions(5, fiscalMode).map(o => (
             <option key={o.startYear} value={o.startYear}>{o.label}</option>
           ))}
         </select>

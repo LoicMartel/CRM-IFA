@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { FinanceDashboard } from "@/components/finance/finance-dashboard";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Dashboard Financier" };
 
 export default async function FinancesPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: wonDeals },
@@ -37,6 +38,7 @@ export default async function FinancesPage() {
           salesTargets={(salesTargets ?? []) as any}
           monthlyFinances={(monthlyFinances ?? []) as any}
           deliverySessions={(deliverySessions ?? []) as any}
+          fiscalMode={fiscalMode}
         />
       </div>
     </>

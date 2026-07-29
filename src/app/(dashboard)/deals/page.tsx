@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 import { DealsBoard } from "@/components/commercial/deals-board";
 
 export const metadata = { title: "Pipeline" };
 
 export default async function DealsPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: deals },
@@ -30,6 +31,7 @@ export default async function DealsPage() {
         companies={companies ?? []}
         contacts={contacts ?? []}
         sources={sources ?? []}
+        fiscalMode={fiscalMode}
       />
     </>
   );

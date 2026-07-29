@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearOptions } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearStart, getFiscalYearRange, getFiscalYearOptions, type FiscalMode } from "@/lib/fiscal-year";
 import {
   Table,
   TableBody,
@@ -74,10 +74,12 @@ export function OrdersTable({
   orders,
   teamMembers,
   sources,
+  fiscalMode = "sep-aug",
 }: {
   orders: Order[];
   teamMembers: TeamMember[];
   sources: Source[];
+  fiscalMode?: FiscalMode;
 }) {
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
@@ -85,12 +87,12 @@ export function OrdersTable({
   const [filterManager, setFilterManager] = useState("");
   const [filterInvoiced, setFilterInvoiced] = useState("all");
   const [periodMode, setPeriodMode] = useState<"fiscal" | "month" | "custom">("fiscal");
-  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart());
+  const [selectedFY, setSelectedFY] = useState(() => getCurrentFiscalYearStart(fiscalMode));
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom());
+  const [customFrom, setCustomFrom] = useState(() => getDefaultCustomFrom(fiscalMode));
   const [customTo, setCustomTo] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -111,7 +113,7 @@ export function OrdersTable({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
 
   const periodRange = (() => {
-    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY);
+    if (periodMode === "fiscal") return getFiscalYearRange(selectedFY, fiscalMode);
     if (periodMode === "month") {
       const [y, m] = filterMonth.split("-").map(Number);
       const lastDay = new Date(y, m, 0).getDate();
@@ -181,7 +183,7 @@ export function OrdersTable({
             onChange={(e) => setSelectedFY(Number(e.target.value))}
             style={{ height: 32, borderRadius: 8, border: "1px solid #dce8f0", background: "white", padding: "0 10px", fontSize: 12, fontWeight: 600, color: "#1a2a3a" }}
           >
-            {getFiscalYearOptions(5).map(o => (
+            {getFiscalYearOptions(5, fiscalMode).map(o => (
               <option key={o.startYear} value={o.startYear}>{o.label}</option>
             ))}
           </select>

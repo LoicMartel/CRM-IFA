@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/server";
 import { ReportsView } from "@/components/commercial/reports-view";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Rapports Commerciaux" };
 
 export default async function ReportsPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: salesTargets },
@@ -69,6 +70,7 @@ export default async function ReportsPage() {
         meetings={meetings ?? []}
         companies={companies ?? []}
         tasks={tasks ?? []}
+        fiscalMode={fiscalMode}
       />
     </>
   );

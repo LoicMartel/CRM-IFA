@@ -1,11 +1,12 @@
 import { Header } from "@/components/layout/header";
 import { BillingGrid } from "@/components/finance/billing-grid";
 import { createClient } from "@/lib/supabase/server";
+import { getFiscalMode } from "@/lib/get-fiscal-mode";
 
 export const metadata = { title: "Facturation" };
 
 export default async function InvoicesPage() {
-  const supabase = await createClient();
+  const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
   const [
     { data: entries },
@@ -35,6 +36,7 @@ export default async function InvoicesPage() {
           entries={entries ?? []}
           companies={companies ?? []}
           deals={deals ?? []}
+          fiscalMode={fiscalMode}
         />
       </div>
     </>
