@@ -527,6 +527,14 @@ CREATE TABLE public."funding_types" (
   CONSTRAINT "funding_types_name_key" UNIQUE ("name")
 );
 
+CREATE TABLE public."expertises" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "name" text NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "expertises_name_key" UNIQUE ("name")
+);
+
 CREATE TABLE public."lead_sources" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "name" text NOT NULL,

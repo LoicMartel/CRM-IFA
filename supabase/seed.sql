@@ -153,6 +153,27 @@ INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "des
 INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "description", "step_type", "step_order", "is_active", "config", "created_at", "updated_at") VALUES ('f9810fac-11ae-4958-8a97-d5578fde429c', 'dd3e8cbf-c5ef-445e-9647-929a9195fdd3', 'create-update-contact', 'Creer contact lead marketing', 'Lifecycle: lead_marketing, lead_status: lead', 'data', 2, TRUE, '{}'::jsonb, '2026-04-11T08:30:09.199Z', '2026-04-11T08:30:09.199Z') ON CONFLICT DO NOTHING;
 INSERT INTO public."automation_steps" ("id", "workflow_id", "slug", "name", "description", "step_type", "step_order", "is_active", "config", "created_at", "updated_at") VALUES ('fa1e4d5a-e144-4b50-8744-0f8681911012', '66100f22-b7ad-4564-9d7e-5fe17292cd9b', 'trigger-notifications', 'Declencher notifications', 'Appel au pipeline /api/meetings/notify', 'notification', 4, TRUE, '{}'::jsonb, '2026-04-11T08:29:41.551Z', '2026-04-11T08:29:41.551Z') ON CONFLICT DO NOTHING;
 
+-- Expertises (configurable depuis Réglages)
+INSERT INTO public."expertises" (name) VALUES ('Inbound') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Outbound') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Stratégie') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Management') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Financements') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Fidélisation') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Pilotage') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Time Management') ON CONFLICT DO NOTHING;
+INSERT INTO public."expertises" (name) VALUES ('Objections') ON CONFLICT DO NOTHING;
+
+-- Sales targets (12 mois glissants)
+INSERT INTO public."sales_targets" (month, target_amount)
+SELECT d::date, 0
+FROM generate_series(
+  date_trunc('month', CURRENT_DATE),
+  date_trunc('month', CURRENT_DATE) + interval '11 months',
+  '1 month'
+) AS d
+ON CONFLICT DO NOTHING;
+
 -- Nurture email sequences
 INSERT INTO public."nurture_sequences" ("id", "slug", "name", "trigger", "anchor", "is_active", "from_account_id", "created_at") VALUES ('0d3bafa2-9f0d-4beb-83d4-b34b487e3f00', 'noshow-r1', 'Relance no-show R1 (lead chaud, 2e RDV manqué)', 'no_show_r1', 'enrollment', TRUE, NULL, '2026-07-07T16:21:11.346Z') ON CONFLICT DO NOTHING;
 INSERT INTO public."nurture_sequences" ("id", "slug", "name", "trigger", "anchor", "is_active", "from_account_id", "created_at") VALUES ('2cb38270-7153-412a-9663-97d188949c35', 'pre-rdv', 'Pré-RDV (garder le lead chaud avant le bilan)', 'booked', 'meeting', TRUE, NULL, '2026-07-07T16:21:11.346Z') ON CONFLICT DO NOTHING;
