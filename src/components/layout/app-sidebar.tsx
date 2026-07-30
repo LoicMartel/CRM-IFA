@@ -124,7 +124,7 @@ function NavSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isRestrictedExterne, canViewReports, canViewFinance, canViewMarketing } = useCurrentRoles();
+  const { isRestrictedExterne, canViewReports, canViewFinance, canViewMarketing, canViewAdmin } = useCurrentRoles();
 
   const visibleCommercialItems = isRestrictedExterne ? [] : commercialItems;
   const visibleProductionItems = isRestrictedExterne
@@ -132,8 +132,10 @@ export function AppSidebar() {
     : productionItemsList;
   const visibleMarketingItems = canViewMarketing ? marketingItems : [];
   const visibleFinanceItems = canViewFinance ? financeItems : [];
-  // Le journal d'emails contient du contenu client (preuve Qualiopi) → masqué aux externes restreints.
-  const visibleAdminItems = isRestrictedExterne ? adminItems.filter((i) => i.href !== "/emails") : adminItems;
+  // Section Admin visible uniquement aux Admin et Dirigeants
+  const visibleAdminItems = canViewAdmin
+    ? (isRestrictedExterne ? adminItems.filter((i) => i.href !== "/emails") : adminItems)
+    : [];
 
   return (
     <Sidebar>
@@ -168,7 +170,7 @@ export function AppSidebar() {
         {visibleCommercialItems.length > 0 && <NavSection label="Commercial" items={visibleCommercialItems} pathname={pathname} />}
         <NavSection label="Production" items={visibleProductionItems} pathname={pathname} />
         {visibleFinanceItems.length > 0 && <NavSection label="Finance" items={visibleFinanceItems} pathname={pathname} />}
-        <NavSection label="Admin" items={visibleAdminItems} pathname={pathname} />
+        {visibleAdminItems.length > 0 && <NavSection label="Admin" items={visibleAdminItems} pathname={pathname} />}
       </SidebarContent>
     </Sidebar>
   );

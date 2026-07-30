@@ -315,6 +315,15 @@ export interface SalesTarget {
   updated_at: string;
 }
 
+export interface UserSalesTarget {
+  id: string;
+  team_member_id: string;
+  month: string;
+  target_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Activity {
   id: string;
   type: ActivityType;

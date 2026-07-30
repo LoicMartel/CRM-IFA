@@ -123,14 +123,24 @@ function getDailyPhrase(phrases: string[]): string {
   return shuffled[dayNum % shuffled.length];
 }
 
+interface UserTargetRow {
+  id: string;
+  team_member_id: string;
+  month: string;
+  target_amount: number;
+}
+
 export function HomeView({
-  memberFirstName, currentMemberId, salesTargets, wonDeals, todayMeetings, todaySessions, todayTasks,
+  memberFirstName, currentMemberId, isAccountManager = false, salesTargets, wonDeals, userTargets = [],
+  todayMeetings, todaySessions, todayTasks,
   upcomingMeetings, upcomingSessions, overdueTasks, allProgressSessions = [],
 }: {
   memberFirstName?: string;
   currentMemberId?: string | null;
+  isAccountManager?: boolean;
   salesTargets: R[];
   wonDeals: R[];
+  userTargets?: UserTargetRow[];
   todayMeetings: R[];
   todaySessions: R[];
   todayTasks: R[];
@@ -359,9 +369,21 @@ export function HomeView({
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const currentMonthLabel = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-  const monthlyCA = wonDeals.filter(d => ((d.close_date || d.created_at) as string ?? "").startsWith(currentMonthStr)).reduce((s, d) => s + (Number(d.amount) || 0), 0);
-  const lastTarget = salesTargets.find(t => (t.month as string ?? "").startsWith(currentMonthStr)) ?? salesTargets[salesTargets.length - 1];
-  const monthTarget = Number(lastTarget?.target_amount) || 80000;
+
+  // If user is an Account Manager with personal targets, filter deals by owner and use personal target
+  const hasPersonalTarget = isAccountManager && userTargets.length > 0;
+  const personalMonthTarget = userTargets.find(t => t.month.startsWith(currentMonthStr));
+
+  const relevantDeals = hasPersonalTarget && currentMemberId
+    ? wonDeals.filter(d => (d.owner_id as string) === currentMemberId)
+    : wonDeals;
+
+  const monthlyCA = relevantDeals.filter(d => ((d.close_date || d.created_at) as string ?? "").startsWith(currentMonthStr)).reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
+  const monthTarget = hasPersonalTarget && personalMonthTarget
+    ? Number(personalMonthTarget.target_amount)
+    : Number((salesTargets.find(t => (t.month as string ?? "").startsWith(currentMonthStr)) ?? salesTargets[salesTargets.length - 1])?.target_amount) || 80000;
+
   const caPct = monthTarget > 0 ? (monthlyCA / monthTarget) * 100 : 0;
 
   const MEETING_COLORS: Record<string, { bg: string; text: string }> = {
@@ -385,7 +407,14 @@ export function HomeView({
         <div style={{ padding: 20 }}>
           <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
             <div>
-              <div className="lca-label" style={{ textTransform: "capitalize" }}>Progression du mois — {currentMonthLabel}</div>
+              <div className="lca-label" style={{ textTransform: "capitalize" }}>
+                Progression du mois — {currentMonthLabel}
+                {hasPersonalTarget && (
+                  <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: "#E8732A", background: "#fff3e0", padding: "2px 8px", borderRadius: 12 }}>
+                    Mon objectif
+                  </span>
+                )}
+              </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
                 <span style={{ fontSize: 22, fontWeight: 800, color: "#E8732A" }}>{fmt(monthlyCA)}</span>
                 <span style={{ fontSize: 13, color: "#8399a9" }}>/ {fmt(monthTarget)}</span>

@@ -19,14 +19,49 @@ export default async function SyntheseSalesPage() {
     await supabase.from("sales_targets").insert(missingMonths.map(m => ({ month: m, target_amount: 0 })));
   }
 
+  // Get current user info
+  const { data: { user } } = await supabase.auth.getUser();
+  let currentMemberId: string | null = null;
+  let currentMemberRoles: string[] = [];
+  if (user) {
+    const { data: member } = await supabase
+      .from("team_members")
+      .select("id, roles")
+      .eq("auth_user_id", user.id)
+      .single();
+    if (member) {
+      currentMemberId = member.id;
+      currentMemberRoles = (member.roles as string[]) ?? [];
+    } else if (user.email) {
+      const { data: byEmail } = await supabase
+        .from("team_members")
+        .select("id, roles")
+        .eq("email", user.email)
+        .single();
+      if (byEmail) {
+        currentMemberId = byEmail.id;
+        currentMemberRoles = (byEmail.roles as string[]) ?? [];
+      }
+    }
+  }
+
+  const isAdmin = currentMemberRoles.includes("Admin") || currentMemberRoles.includes("Dirigeant");
+  const isAccountManager = currentMemberRoles.includes("Account Manager");
+
   const [
     { data: salesTargets },
     { data: wonDeals },
     { data: pipeDeals },
+    { data: userTargets },
+    { data: accountManagers },
   ] = await Promise.all([
     supabase.from("sales_targets").select("*").in("month", fiscalMonths).order("month", { ascending: true }),
     supabase.from("deals").select("*, team_members(first_name, last_name), lead_sources(name)").eq("stage", "closed_won").gte("close_date", start).lte("close_date", end).order("close_date", { ascending: false }),
-    supabase.from("deals").select("id, amount, stage").not("stage", "in", '("closed_won","closed_lost")'),
+    supabase.from("deals").select("id, amount, stage, owner_id").not("stage", "in", '("closed_won","closed_lost")'),
+    supabase.from("user_sales_targets").select("id, team_member_id, month, target_amount").in("month", fiscalMonths),
+    isAdmin
+      ? supabase.from("team_members").select("id, first_name, last_name").contains("roles", ["Account Manager"]).eq("is_active", true).order("first_name")
+      : Promise.resolve({ data: [] }),
   ]);
 
   // Deduplicate targets by month and sort by fiscal order
@@ -46,6 +81,11 @@ export default async function SyntheseSalesPage() {
         orders={wonDeals ?? []}
         pipe={pipeDeals ?? []}
         fiscalMode={fiscalMode}
+        currentMemberId={currentMemberId}
+        isAdmin={isAdmin}
+        isAccountManager={isAccountManager}
+        userTargets={(userTargets ?? []) as any}
+        accountManagers={(accountManagers ?? []) as any}
       />
     </>
   );

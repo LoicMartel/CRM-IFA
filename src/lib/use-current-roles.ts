@@ -88,11 +88,15 @@ export function useCurrentRoles() {
   }, []);
 
   const isAdmin = info?.roles.includes("Admin") ?? false;
+  const isDirigeant = info?.roles.includes("Dirigeant") ?? false;
   const isExterne = info?.roles.includes("Externe") ?? false;
   const perms = info?.permissions ?? DEFAULT_PERMISSIONS;
 
   const isRestrictedExterne = isExterne && !perms.canViewCommercial && !isAdmin;
   const isReadOnly = !perms.canEdit && !isAdmin;
+
+  const canViewAdmin = isAdmin || isDirigeant;
+  const isAccountManager = info?.roles.includes("Account Manager") ?? false;
 
   return {
     memberId: info?.id ?? null,
@@ -100,7 +104,10 @@ export function useCurrentRoles() {
     lastName: info?.lastName ?? "",
     roles: info?.roles ?? [],
     isAdmin,
+    isDirigeant,
     isExterne,
+    isAccountManager,
+    canViewAdmin,
     isRestrictedExterne,
     isReadOnly,
     canDelete: isAdmin || perms.canDelete,
