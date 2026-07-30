@@ -74,7 +74,7 @@ export function ReglagesView({
 
   return (
     <Tabs defaultValue="general" className="w-full">
-      <TabsList>
+      <TabsList style={{ flexWrap: "wrap", height: "auto" }}>
         <TabsTrigger value="general" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Settings style={{ width: 14, height: 14 }} /> Général
         </TabsTrigger>
