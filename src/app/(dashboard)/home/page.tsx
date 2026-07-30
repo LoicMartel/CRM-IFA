@@ -10,37 +10,47 @@ export default async function HomePage() {
   let currentMemberId: string | null = null;
   let memberFirstName = "";
 
+  let memberRoles: string[] = [];
+
   if (user) {
     const { data: member } = await supabase
       .from("team_members")
-      .select("id, first_name")
+      .select("id, first_name, roles")
       .eq("auth_user_id", user.id)
       .single();
 
     if (member) {
       currentMemberId = member.id;
       memberFirstName = member.first_name;
+      memberRoles = (member.roles as string[]) ?? [];
     } else {
       // Fallback by email
       const { data: memberByEmail } = await supabase
         .from("team_members")
-        .select("id, first_name")
+        .select("id, first_name, roles")
         .eq("email", user.email)
         .single();
       if (memberByEmail) {
         currentMemberId = memberByEmail.id;
         memberFirstName = memberByEmail.first_name;
+        memberRoles = (memberByEmail.roles as string[]) ?? [];
       }
     }
   }
 
-  // Sales targets & deals (global, not filtered by member)
+  // Sales targets & deals
+  const isAccountManager = memberRoles.includes("Account Manager");
+
   const [
     { data: salesTargets },
     { data: wonDeals },
+    { data: userTargets },
   ] = await Promise.all([
     supabase.from("sales_targets").select("*").order("month", { ascending: true }),
-    supabase.from("deals").select("id, amount, close_date, created_at").eq("stage", "closed_won").limit(500),
+    supabase.from("deals").select("id, amount, close_date, created_at, owner_id").eq("stage", "closed_won").limit(500),
+    currentMemberId && isAccountManager
+      ? supabase.from("user_sales_targets").select("id, team_member_id, month, target_amount").eq("team_member_id", currentMemberId)
+      : Promise.resolve({ data: [] }),
   ]);
 
   // Personal data — filtered by current member
@@ -176,8 +186,10 @@ export default async function HomePage() {
       <HomeView
         memberFirstName={memberFirstName}
         currentMemberId={currentMemberId}
+        isAccountManager={isAccountManager}
         salesTargets={salesTargets ?? []}
         wonDeals={wonDeals ?? []}
+        userTargets={(userTargets ?? []) as any}
         todayMeetings={todayMeetings}
         todaySessions={todaySessions}
         todayTasks={todayTasks}

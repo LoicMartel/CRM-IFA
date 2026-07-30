@@ -2,17 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 import type { FiscalMode } from "@/lib/fiscal-year";
+import { ObjectifsCommerciauxTab } from "@/components/admin/objectifs-commerciaux-tab";
 
 interface NamedItem {
   id: string;
   name: string;
   created_at: string;
+}
+
+interface AccountManagerOption {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+interface UserTargetRow {
+  id: string;
+  team_member_id: string;
+  month: string;
+  target_amount: number;
 }
 
 export function ReglagesView({
@@ -24,6 +38,8 @@ export function ReglagesView({
   expertises,
   postChannels,
   fiscalMode: initialFiscalMode = "sep-aug",
+  accountManagers = [],
+  userTargets = [],
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
@@ -33,6 +49,8 @@ export function ReglagesView({
   expertises: NamedItem[];
   postChannels: { id: string; slug: string; label: string; color_bg: string; color_text: string; is_veille: boolean; display_order: number }[];
   fiscalMode?: FiscalMode;
+  accountManagers?: AccountManagerOption[];
+  userTargets?: UserTargetRow[];
 }) {
   const router = useRouter();
   const [fiscalMode, setFiscalMode] = useState<FiscalMode>(initialFiscalMode);
@@ -80,6 +98,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="canaux" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Hash style={{ width: 14, height: 14 }} /> Canaux
+        </TabsTrigger>
+        <TabsTrigger value="objectifs" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Target style={{ width: 14, height: 14 }} /> Objectifs Commerciaux
         </TabsTrigger>
       </TabsList>
 
@@ -214,6 +235,14 @@ export function ReglagesView({
 
       <TabsContent value="canaux" style={{ marginTop: 20 }}>
         <ChannelsCrudSection channels={postChannels} />
+      </TabsContent>
+
+      <TabsContent value="objectifs" style={{ marginTop: 20 }}>
+        <ObjectifsCommerciauxTab
+          accountManagers={accountManagers}
+          userTargets={userTargets}
+          fiscalMode={initialFiscalMode}
+        />
       </TabsContent>
     </Tabs>
   );
