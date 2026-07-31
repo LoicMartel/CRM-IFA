@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings, Target } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings, Target, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -101,6 +101,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="objectifs" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Target style={{ width: 14, height: 14 }} /> Objectifs Commerciaux
+        </TabsTrigger>
+        <TabsTrigger value="ressources" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <ExternalLink style={{ width: 14, height: 14 }} /> Ressources
         </TabsTrigger>
       </TabsList>
 
@@ -243,6 +246,10 @@ export function ReglagesView({
           userTargets={userTargets}
           fiscalMode={initialFiscalMode}
         />
+      </TabsContent>
+
+      <TabsContent value="ressources" style={{ marginTop: 20 }}>
+        <ResourceLinksSection />
       </TabsContent>
     </Tabs>
   );
@@ -460,6 +467,219 @@ function ChannelsCrudSection({ channels }: { channels: Channel[] }) {
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Section Ressources ── */
+
+interface ResourceLink {
+  id: string;
+  category: string;
+  name: string;
+  description: string | null;
+  url: string;
+  display_order: number;
+}
+
+const RESOURCE_CATEGORIES = [
+  { value: "commercial", label: "Commercial" },
+  { value: "production", label: "Production" },
+  { value: "marketing", label: "Marketing" },
+  { value: "admin", label: "Administration" },
+];
+
+function ResourceLinksSection() {
+  const router = useRouter();
+  const [links, setLinks] = useState<ResourceLink[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", description: "", url: "", category: "commercial" });
+  const [saving, setSaving] = useState(false);
+
+  useState(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from("resource_links").select("*").order("category").order("display_order");
+      setLinks(data ?? []);
+      setLoaded(true);
+    })();
+  });
+
+  async function handleSave() {
+    if (!form.name.trim() || !form.url.trim()) return;
+    setSaving(true);
+    const supabase = createClient();
+
+    if (editingId) {
+      await supabase.from("resource_links").update({
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        url: form.url.trim(),
+        category: form.category,
+      }).eq("id", editingId);
+    } else {
+      const maxOrder = links.filter(l => l.category === form.category).reduce((max, l) => Math.max(max, l.display_order), -1);
+      await supabase.from("resource_links").insert({
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        url: form.url.trim(),
+        category: form.category,
+        display_order: maxOrder + 1,
+      });
+    }
+
+    const { data } = await supabase.from("resource_links").select("*").order("category").order("display_order");
+    setLinks(data ?? []);
+    setForm({ name: "", description: "", url: "", category: "commercial" });
+    setAdding(false);
+    setEditingId(null);
+    setSaving(false);
+    router.refresh();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer cette ressource ?")) return;
+    const supabase = createClient();
+    await supabase.from("resource_links").delete().eq("id", id);
+    setLinks(links.filter(l => l.id !== id));
+    router.refresh();
+  }
+
+  function startEdit(link: ResourceLink) {
+    setEditingId(link.id);
+    setForm({ name: link.name, description: link.description ?? "", url: link.url, category: link.category });
+    setAdding(true);
+  }
+
+  function cancelForm() {
+    setAdding(false);
+    setEditingId(null);
+    setForm({ name: "", description: "", url: "", category: "commercial" });
+  }
+
+  if (!loaded) return <div style={{ padding: 20, color: "#8399a9", fontSize: 13 }}>Chargement...</div>;
+
+  const grouped = RESOURCE_CATEGORIES.map(cat => ({
+    ...cat,
+    items: links.filter(l => l.category === cat.value),
+  })).filter(g => g.items.length > 0);
+
+  return (
+    <div className="lca-card" style={{ maxWidth: 600 }}>
+      <div className="lca-bar-gradient" />
+      <div style={{ padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <ExternalLink style={{ width: 20, height: 20, color: "#1E2A5A" }} />
+            <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 16, margin: 0 }}>Ressources</h3>
+          </div>
+          {!adding && (
+            <button
+              onClick={() => { setAdding(true); setEditingId(null); setForm({ name: "", description: "", url: "", category: "commercial" }); }}
+              className="lca-btn-primary"
+              style={{ display: "flex", alignItems: "center", gap: 6, height: 32, fontSize: 12, padding: "0 14px" }}
+            >
+              <Plus style={{ width: 14, height: 14 }} /> Ajouter
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 16, lineHeight: 1.5 }}>
+          Configurez les liens rapides qui apparaissent dans les pages Ressources (Commerciales et Pédagogiques).
+          Choisissez la catégorie pour définir où le lien apparaîtra.
+        </p>
+
+        {/* Add/Edit form */}
+        {adding && (
+          <div style={{ background: "#f8fbfd", borderRadius: 10, padding: 16, marginBottom: 16, border: "1px solid #e8ecf1" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1a2a3a", marginBottom: 12 }}>
+              {editingId ? "Modifier la ressource" : "Nouvelle ressource"}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Nom *</label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Ex: ADV, Sales Deck..."
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Catégorie</label>
+                <select
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  style={{ width: "100%", height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13, background: "white" }}
+                >
+                  {RESOURCE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Lien URL *</label>
+              <Input
+                value={form.url}
+                onChange={(e) => setForm({ ...form, url: e.target.value })}
+                placeholder="https://drive.google.com/..."
+              />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", marginBottom: 4, display: "block" }}>Description (optionnel)</label>
+              <Input
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Ex: Supports de présentation"
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <Button variant="outline" onClick={cancelForm}>Annuler</Button>
+              <Button
+                onClick={handleSave}
+                disabled={saving || !form.name.trim() || !form.url.trim()}
+              >
+                {saving ? "..." : editingId ? "Modifier" : "Ajouter"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* List */}
+        {grouped.length === 0 && !adding && (
+          <div style={{ textAlign: "center", padding: "20px 0", color: "#8399a9", fontSize: 13 }}>
+            Aucune ressource configurée.
+          </div>
+        )}
+
+        {grouped.map(group => (
+          <div key={group.value} style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 8 }}>
+              {group.label}
+            </div>
+            <div className="space-y-2">
+              {group.items.map(link => (
+                <div key={link.id} style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                  borderRadius: 8, border: "1px solid #e8ecf1", background: "white",
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{link.name}</div>
+                    {link.description && <div style={{ fontSize: 11, color: "#5a6f80" }}>{link.description}</div>}
+                    <div style={{ fontSize: 11, color: "#8399a9", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link.url}</div>
+                  </div>
+                  <button onClick={() => startEdit(link)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }} title="Modifier">
+                    <Pencil style={{ width: 14, height: 14 }} />
+                  </button>
+                  <button onClick={() => handleDelete(link.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#e74c3c", padding: 4 }} title="Supprimer">
+                    <Trash2 style={{ width: 14, height: 14 }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
