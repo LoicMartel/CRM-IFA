@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calculator, Plus, Pencil, Trash2, Presentation, FileText, FolderOpen, BookOpen } from "lucide-react";
+import { Calculator, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { CotationModal } from "./cotation-modal";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -48,14 +48,33 @@ interface Contact {
   company_id: string | null;
 }
 
+interface ResourceLink {
+  id: string;
+  category: string;
+  name: string;
+  description: string | null;
+  url: string;
+  display_order: number;
+}
+
 interface Props {
   deals: Deal[];
   companies: Company[];
   contacts: Contact[];
   quotations: Quotation[];
+  resourceLinks: ResourceLink[];
 }
 
-export function RessourcesCommercialesView({ deals, companies, contacts, quotations }: Props) {
+const CARD_COLORS = [
+  { bg: "linear-gradient(135deg, #e65100 0%, #E8732A 100%)", border: "#E8732A", shadow: "rgba(255,107,53,0.12)" },
+  { bg: "linear-gradient(135deg, #1e8449 0%, #27ae60 100%)", border: "#27ae60", shadow: "rgba(39,174,96,0.12)" },
+  { bg: "linear-gradient(135deg, #6c3483 0%, #8e44ad 100%)", border: "#8e44ad", shadow: "rgba(142,68,173,0.12)" },
+  { bg: "linear-gradient(135deg, #1a5276 0%, #2980b9 100%)", border: "#2980b9", shadow: "rgba(41,128,185,0.12)" },
+  { bg: "linear-gradient(135deg, #7b341e 0%, #c0392b 100%)", border: "#c0392b", shadow: "rgba(192,57,43,0.12)" },
+  { bg: "linear-gradient(135deg, #1a6b9c 0%, #2196f3 100%)", border: "#2196f3", shadow: "rgba(33,150,243,0.12)" },
+];
+
+export function RessourcesCommercialesView({ deals, companies, contacts, quotations, resourceLinks }: Props) {
   const [cotationOpen, setCotationOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
   const router = useRouter();
@@ -77,6 +96,7 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
     <div className="space-y-8">
       {/* Tool cards */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        {/* Cotation tool (always present) */}
         <div
           onClick={() => { setEditingQuotation(null); setCotationOpen(true); }}
           style={{
@@ -102,117 +122,39 @@ export function RessourcesCommercialesView({ deals, companies, contacts, quotati
           </div>
         </div>
 
-        {/* Sales Deck */}
-        <a
-          href="https://drive.google.com/drive/folders/1xRTBaNRlP7ZLQOtGkMxRd-tvVCwM611y"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
-            border: "1px solid #dce8f0", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", gap: 16,
-            transition: "all 0.15s ease", width: 320, textDecoration: "none",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#E8732A"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(255,107,53,0.12)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
-        >
-          <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #e65100 0%, #E8732A 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Presentation style={{ width: 24, height: 24, color: "white" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Sales Deck</div>
-            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Supports de présentation</div>
-          </div>
-        </a>
-
-        {/* Usecases */}
-        <a
-          href="https://drive.google.com/drive/folders/1GaDw6mswk39rjLTVhEDlqe8gJxf2VNSI"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
-            border: "1px solid #dce8f0", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", gap: 16,
-            transition: "all 0.15s ease", width: 320, textDecoration: "none",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#27ae60"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(39,174,96,0.12)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
-        >
-          <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #1e8449 0%, #27ae60 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <FileText style={{ width: 24, height: 24, color: "white" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Usecases</div>
-            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Cas clients et témoignages</div>
-          </div>
-        </a>
-
-        {/* ADV */}
-        <a
-          href="https://drive.google.com/drive/folders/1hkXPHhw3wiABff8Dlz_PqSv_h8NXP00k"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
-            border: "1px solid #dce8f0", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", gap: 16,
-            transition: "all 0.15s ease", width: 320, textDecoration: "none",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#8e44ad"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(142,68,173,0.12)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
-        >
-          <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #6c3483 0%, #8e44ad 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <FolderOpen style={{ width: 24, height: 24, color: "white" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>ADV</div>
-            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Administration des ventes</div>
-          </div>
-        </a>
-
-        {/* Catalogue */}
-        <a
-          href="https://drive.google.com/drive/folders/1gDgobw5tzawH1HlOmQVXsAF6qaECkUC7"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: "28px 24px", borderRadius: 14, cursor: "pointer",
-            border: "1px solid #dce8f0", background: "white",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", gap: 16,
-            transition: "all 0.15s ease", width: 320, textDecoration: "none",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#2980b9"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(41,128,185,0.12)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
-        >
-          <div style={{
-            width: 48, height: 48, borderRadius: 12,
-            background: "linear-gradient(135deg, #1a5276 0%, #2980b9 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <BookOpen style={{ width: 24, height: 24, color: "white" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>Catalogue</div>
-            <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>Catalogue de formations</div>
-          </div>
-        </a>
+        {/* Dynamic resource links from database */}
+        {resourceLinks.map((link, i) => {
+          const color = CARD_COLORS[i % CARD_COLORS.length];
+          return (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: "28px 24px", borderRadius: 14, cursor: "pointer",
+                border: "1px solid #dce8f0", background: "white",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                display: "flex", alignItems: "center", gap: 16,
+                transition: "all 0.15s ease", width: 320, textDecoration: "none",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = color.border; e.currentTarget.style.boxShadow = `0 4px 16px ${color.shadow}`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#dce8f0"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+            >
+              <div style={{
+                width: 48, height: 48, borderRadius: 12,
+                background: color.bg,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <ExternalLink style={{ width: 24, height: 24, color: "white" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#1a2a3a" }}>{link.name}</div>
+                {link.description && <div style={{ fontSize: 12, color: "#8399a9", marginTop: 2 }}>{link.description}</div>}
+              </div>
+            </a>
+          );
+        })}
       </div>
 
       {/* Saved quotations list */}
