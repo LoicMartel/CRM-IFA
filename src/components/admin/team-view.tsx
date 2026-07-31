@@ -13,23 +13,15 @@ import { clearCurrentMemberCache } from "@/lib/current-member";
 
 type R = Record<string, unknown>;
 
-const ALL_ROLES = [
-  "Expert", "Experte", "Account Manager", "Admin", "Dirigeant",
-  "Coordinatrice Pédagogique", "Marketing Manager", "Ingénieure Pédagogique", "Interne", "Externe",
-];
+interface TeamRoleProp {
+  id: string;
+  name: string;
+  color_bg: string;
+  color_text: string;
+  display_order: number;
+}
 
-const badgeColors: Record<string, { bg: string; text: string }> = {
-  Admin: { bg: "#fce4ec", text: "#c62828" },
-  Expert: { bg: "#e8f0fe", text: "#161f45" },
-  Experte: { bg: "#e8f0fe", text: "#161f45" },
-  "Account Manager": { bg: "#fff3e0", text: "#e65100" },
-  Dirigeant: { bg: "#f3e5f5", text: "#6a1b9a" },
-  "Coordinatrice Pédagogique": { bg: "#e8f5e9", text: "#2e7d32" },
-  "Marketing Manager": { bg: "#fce4ec", text: "#ad1457" },
-  Interne: { bg: "#e3f2fd", text: "#1565c0" },
-  Externe: { bg: "#fff8e1", text: "#f57f17" },
-  "Ingénieure Pédagogique": { bg: "#e0f2f1", text: "#00695c" },
-};
+const DEFAULT_BADGE_COLOR = { bg: "#f5f5f5", text: "#555" };
 
 const TABS = [
   { key: "all", label: "Tous" },
@@ -106,15 +98,43 @@ const emptyForm = {
   mobility: "Toute la France",
 };
 
+const SECTION_PAGES: Record<string, { href: string; label: string }[]> = {
+  canViewMarketing: [
+    { href: "/marketing/leads", label: "Leads" },
+    { href: "/marketing/setting", label: "Setting" },
+    { href: "/marketing/depenses", label: "Depenses Marketing" },
+    { href: "/marketing/rapports", label: "Rapports Marketing" },
+  ],
+  canViewCommercial: [
+    { href: "/agenda-commercial", label: "Agenda Commercial" },
+    { href: "/inbox", label: "Inbox" },
+    { href: "/contacts", label: "Contacts" },
+    { href: "/companies", label: "Entreprises" },
+    { href: "/ressources-commercial", label: "Ressources" },
+    { href: "/deals", label: "Pipeline" },
+    { href: "/opportunities", label: "Opportunites" },
+    { href: "/orders", label: "Commandes (PDCO)" },
+  ],
+  canViewFinance: [
+    { href: "/invoices", label: "Facturation" },
+    { href: "/suivi-financier", label: "Suivi Financier" },
+    { href: "/rapports-facturation", label: "Rapports Facturation" },
+  ],
+};
+
 interface OAuthToken { team_member_id: string; provider: string; provider_email: string | null }
 
-export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expertisesList = [] }: { members: R[]; inactiveMembers?: R[]; oauthTokens?: OAuthToken[]; expertisesList?: string[] }) {
+export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expertisesList = [], teamRoles = [] }: { members: R[]; inactiveMembers?: R[]; oauthTokens?: OAuthToken[]; expertisesList?: string[]; teamRoles?: TeamRoleProp[] }) {
   const router = useRouter();
   const { isAdmin } = useCurrentRoles();
   const [activeTab, setActiveTab] = useState("all");
   const [popup, setPopup] = useState<"create" | "edit" | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const ALL_EXPERTISES = expertisesList.length > 0 ? expertisesList : ALL_EXPERTISES_FALLBACK;
+  const ALL_ROLES = teamRoles.length > 0 ? teamRoles.map(r => r.name) : [];
+  const badgeColors: Record<string, { bg: string; text: string }> = Object.fromEntries(
+    teamRoles.map(r => [r.name, { bg: r.color_bg, text: r.color_text }])
+  );
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -136,11 +156,11 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expe
     if (isAdmin) {
       effective = { ...DEFAULT_PERMISSIONS };
     } else if (Object.keys(dbPerms).length > 0) {
-      effective = { ...DEFAULT_PERMISSIONS, ...dbPerms };
+      effective = { ...DEFAULT_PERMISSIONS, ...dbPerms, pages: dbPerms.pages ?? {} };
     } else if (isExterne) {
-      effective = { canViewCommercial: false, canViewFinance: false, canViewMarketing: false, canViewDashboard: false, canViewReports: false, canEdit: false, canDelete: false, onlyOwnData: true };
+      effective = { canViewCommercial: false, canViewFinance: false, canViewMarketing: false, canViewDashboard: false, canViewReports: false, canEdit: false, canDelete: false, onlyOwnData: true, pages: {} };
     } else {
-      effective = { ...DEFAULT_PERMISSIONS };
+      effective = { ...DEFAULT_PERMISSIONS, pages: {} };
     }
     setPermsForm(effective);
     setPermsMember(member);
@@ -444,7 +464,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expe
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
                     {roles.map(role => {
-                      const bc = badgeColors[role] ?? { bg: "#f5f5f5", text: "#555" };
+                      const bc = badgeColors[role] ?? DEFAULT_BADGE_COLOR;
                       return (
                         <span key={role} style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: bc.bg, color: bc.text }}>
                           {role}
@@ -581,7 +601,7 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expe
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {ALL_ROLES.map(role => {
                     const selected = form.roles.includes(role);
-                    const bc = badgeColors[role] ?? { bg: "#f5f5f5", text: "#555" };
+                    const bc = badgeColors[role] ?? DEFAULT_BADGE_COLOR;
                     return (
                       <button
                         key={role}
@@ -819,25 +839,71 @@ export function TeamView({ members, inactiveMembers = [], oauthTokens = [], expe
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Visibilité</div>
 
                   {([
-                    { key: "canViewMarketing" as const, label: "Section Marketing", desc: "Leads, Suivi Tunnels, Campagnes, Dépenses Marketing, Rapports Marketing" },
-                    { key: "canViewCommercial" as const, label: "Section Commerciale", desc: "Contacts, Entreprises, Pipeline, Opportunités, Commandes" },
+                    { key: "canViewMarketing" as const, label: "Section Marketing", desc: "Leads, Suivi Tunnels, Campagnes, Depenses Marketing, Rapports Marketing" },
+                    { key: "canViewCommercial" as const, label: "Section Commerciale", desc: "Contacts, Entreprises, Pipeline, Opportunites, Commandes" },
                     { key: "canViewFinance" as const, label: "Section Finance", desc: "Facturation, Suivi Financier, Rapports Facturation" },
-                    { key: "canViewDashboard" as const, label: "Dashboard & Synthèses", desc: "Dashboard, Synthèse Commerciale, Synthèse Finances" },
+                    { key: "canViewDashboard" as const, label: "Dashboard & Syntheses", desc: "Dashboard, Synthese Commerciale, Synthese Finances" },
                     { key: "canViewReports" as const, label: "Rapports Commerciaux", desc: "Reports Inbound, Outbound, etc." },
-                  ]).map(({ key, label, desc }) => (
-                    <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={permsForm[key]}
-                        onChange={(e) => setPermsForm({ ...permsForm, [key]: e.target.checked })}
-                        style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1E2A5A", cursor: "pointer" }}
-                      />
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
-                        <div style={{ fontSize: 11, color: "#8399a9" }}>{desc}</div>
+                  ]).map(({ key, label, desc }) => {
+                    const subPages = SECTION_PAGES[key];
+                    return (
+                      <div key={key}>
+                        <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={permsForm[key]}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const newPages = { ...(permsForm.pages ?? {}) };
+                              // When toggling section ON, reset all its sub-pages to true (remove false entries)
+                              // When toggling OFF, clear sub-page entries for that section
+                              if (subPages) {
+                                for (const sp of subPages) {
+                                  if (checked) {
+                                    delete newPages[sp.href];
+                                  } else {
+                                    delete newPages[sp.href];
+                                  }
+                                }
+                              }
+                              setPermsForm({ ...permsForm, [key]: checked, pages: newPages });
+                            }}
+                            style={{ width: 18, height: 18, marginTop: 2, accentColor: "#1E2A5A", cursor: "pointer" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#1a2a3a" }}>{label}</div>
+                            <div style={{ fontSize: 11, color: "#8399a9" }}>{desc}</div>
+                          </div>
+                        </label>
+                        {subPages && permsForm[key] && (
+                          <div style={{ marginLeft: 28, marginTop: 6, display: "flex", flexDirection: "column", gap: 4, paddingLeft: 12, borderLeft: "2px solid #e8ecf1" }}>
+                            {subPages.map((sp) => {
+                              const pageAllowed = permsForm.pages?.[sp.href] !== false;
+                              return (
+                                <label key={sp.href} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={pageAllowed}
+                                    onChange={(e) => {
+                                      const newPages = { ...(permsForm.pages ?? {}) };
+                                      if (e.target.checked) {
+                                        delete newPages[sp.href];
+                                      } else {
+                                        newPages[sp.href] = false;
+                                      }
+                                      setPermsForm({ ...permsForm, pages: newPages });
+                                    }}
+                                    style={{ width: 14, height: 14, accentColor: "#1E2A5A", cursor: "pointer" }}
+                                  />
+                                  <span style={{ fontSize: 12, color: "#5a6f80" }}>{sp.label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </label>
-                  ))}
+                    );
+                  })}
 
                   <div style={{ borderTop: "1px solid #e8ecf1", paddingTop: 12, marginTop: 4 }} />
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 4 }}>Actions</div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings, Target, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Tag, GraduationCap, BookOpen, Receipt, Megaphone, Award, Hash, Pencil, Settings, Target, ExternalLink, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +29,15 @@ interface UserTargetRow {
   target_amount: number;
 }
 
+interface TeamRole {
+  id: string;
+  name: string;
+  color_bg: string;
+  color_text: string;
+  display_order: number;
+  created_at: string;
+}
+
 export function ReglagesView({
   leadSources,
   trainingPrograms,
@@ -40,6 +49,7 @@ export function ReglagesView({
   fiscalMode: initialFiscalMode = "sep-aug",
   accountManagers = [],
   userTargets = [],
+  teamRoles = [],
 }: {
   leadSources: NamedItem[];
   trainingPrograms: NamedItem[];
@@ -51,6 +61,7 @@ export function ReglagesView({
   fiscalMode?: FiscalMode;
   accountManagers?: AccountManagerOption[];
   userTargets?: UserTargetRow[];
+  teamRoles?: TeamRole[];
 }) {
   const router = useRouter();
   const [fiscalMode, setFiscalMode] = useState<FiscalMode>(initialFiscalMode);
@@ -104,6 +115,9 @@ export function ReglagesView({
         </TabsTrigger>
         <TabsTrigger value="ressources" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <ExternalLink style={{ width: 14, height: 14 }} /> Ressources
+        </TabsTrigger>
+        <TabsTrigger value="roles" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Users style={{ width: 14, height: 14 }} /> Roles
         </TabsTrigger>
       </TabsList>
 
@@ -250,6 +264,10 @@ export function ReglagesView({
 
       <TabsContent value="ressources" style={{ marginTop: 20 }}>
         <ResourceLinksSection />
+      </TabsContent>
+
+      <TabsContent value="roles" style={{ marginTop: 20 }}>
+        <RolesCrudSection roles={teamRoles} />
       </TabsContent>
     </Tabs>
   );
@@ -678,6 +696,125 @@ function ResourceLinksSection() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Section CRUD Roles ── */
+
+function RolesCrudSection({ roles }: { roles: TeamRole[] }) {
+  const router = useRouter();
+  const [newName, setNewName] = useState("");
+  const [newColorBg, setNewColorBg] = useState("#e3f2fd");
+  const [newColorText, setNewColorText] = useState("#1565c0");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [editing, setEditing] = useState<TeamRole | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editColorBg, setEditColorBg] = useState("#e3f2fd");
+  const [editColorText, setEditColorText] = useState("#1565c0");
+
+  async function handleAdd() {
+    const name = newName.trim();
+    if (!name || saving) return;
+    setSaving(true);
+    const supabase = createClient();
+    const maxOrder = roles.length > 0 ? Math.max(...roles.map(r => r.display_order)) : 0;
+    const { error } = await supabase.from("team_roles").insert({
+      name, color_bg: newColorBg, color_text: newColorText, display_order: maxOrder + 1,
+    });
+    if (error) alert(error.message.includes("team_roles_name_key") ? "Ce role existe deja." : "Erreur : " + error.message);
+    else { setNewName(""); setNewColorBg("#e3f2fd"); setNewColorText("#1565c0"); router.refresh(); }
+    setSaving(false);
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Supprimer le role "${name}" ?`)) return;
+    setDeleting(id);
+    const supabase = createClient();
+    const { error } = await supabase.from("team_roles").delete().eq("id", id);
+    if (error) alert("Impossible de supprimer : " + error.message);
+    else router.refresh();
+    setDeleting(null);
+  }
+
+  async function handleEditSave() {
+    if (!editing || !editName.trim()) return;
+    setSaving(true);
+    const supabase = createClient();
+    await supabase.from("team_roles").update({
+      name: editName.trim(),
+      color_bg: editColorBg,
+      color_text: editColorText,
+    }).eq("id", editing.id);
+    setEditing(null);
+    setSaving(false);
+    router.refresh();
+  }
+
+  return (
+    <div className="lca-card" style={{ padding: 24, maxWidth: 700 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+        <Users style={{ width: 20, height: 20, color: "#1E2A5A" }} />
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: "#1a2a3a", margin: 0 }}>Roles de l&apos;equipe</h2>
+      </div>
+      <p style={{ fontSize: 13, color: "#8399a9", marginBottom: 16, lineHeight: 1.5 }}>
+        Gerez les roles (badges) disponibles pour les membres de l&apos;equipe. Chaque role a une couleur de fond et de texte.
+      </p>
+
+      {/* Add form */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "end" }}>
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Nom du role</label>
+          <Input value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }} placeholder="Ex: Formateur, Consultant..." disabled={saving} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Fond</label>
+          <input type="color" value={newColorBg} onChange={(e) => setNewColorBg(e.target.value)} style={{ width: 36, height: 36, border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer" }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: "#5a6f80", display: "block", marginBottom: 4 }}>Texte</label>
+          <input type="color" value={newColorText} onChange={(e) => setNewColorText(e.target.value)} style={{ width: 36, height: 36, border: "1px solid #dce8f0", borderRadius: 6, cursor: "pointer" }} />
+        </div>
+        <Button onClick={handleAdd} disabled={saving || !newName.trim()}>
+          <Plus className="h-4 w-4 mr-1" /> Ajouter
+        </Button>
+      </div>
+
+      {/* List */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {roles.length === 0 ? (
+          <p style={{ color: "#8399a9", fontSize: 13, textAlign: "center", padding: 20 }}>Aucun role defini</p>
+        ) : (
+          roles.map((role) => (
+            <div key={role.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #f0f4f8" }}>
+              {editing?.id === role.id ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, flexWrap: "wrap" }}>
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleEditSave(); }} style={{ maxWidth: 200 }} autoFocus />
+                  <input type="color" value={editColorBg} onChange={(e) => setEditColorBg(e.target.value)} style={{ width: 30, height: 30, border: "1px solid #dce8f0", borderRadius: 4, cursor: "pointer" }} />
+                  <input type="color" value={editColorText} onChange={(e) => setEditColorText(e.target.value)} style={{ width: 30, height: 30, border: "1px solid #dce8f0", borderRadius: 4, cursor: "pointer" }} />
+                  <Button size="sm" onClick={handleEditSave}>OK</Button>
+                  <button onClick={() => setEditing(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", fontSize: 12 }}>Annuler</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ background: role.color_bg, color: role.color_text, padding: "3px 12px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>{role.name}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 6 }}>
+                <button type="button" onClick={() => { setEditing(role); setEditName(role.name); setEditColorBg(role.color_bg); setEditColorText(role.color_text); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }} title="Modifier">
+                  <Pencil style={{ width: 14, height: 14 }} />
+                </button>
+                <button type="button" onClick={() => handleDelete(role.id, role.name)} disabled={deleting === role.id}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: deleting === role.id ? "#ccc" : "#c62828", padding: 4 }} title="Supprimer">
+                  <Trash2 style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

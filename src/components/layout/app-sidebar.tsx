@@ -124,14 +124,14 @@ function NavSection({
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isRestrictedExterne, canViewReports, canViewFinance, canViewMarketing, canViewAdmin } = useCurrentRoles();
+  const { isRestrictedExterne, canViewReports, canViewFinance, canViewMarketing, canViewAdmin, permissions } = useCurrentRoles();
 
-  const visibleCommercialItems = isRestrictedExterne ? [] : commercialItems;
+  const visibleCommercialItems = isRestrictedExterne ? [] : commercialItems.filter(i => permissions.pages?.[i.href] !== false);
   const visibleProductionItems = isRestrictedExterne
     ? productionItemsList.filter((i) => i.href !== "/delivery")
     : productionItemsList;
-  const visibleMarketingItems = canViewMarketing ? marketingItems : [];
-  const visibleFinanceItems = canViewFinance ? financeItems : [];
+  const visibleMarketingItems = canViewMarketing ? marketingItems.filter(i => permissions.pages?.[i.href] !== false) : [];
+  const visibleFinanceItems = canViewFinance ? financeItems.filter(i => permissions.pages?.[i.href] !== false) : [];
   // Section Admin visible uniquement aux Admin et Dirigeants
   const visibleAdminItems = canViewAdmin
     ? (isRestrictedExterne ? adminItems.filter((i) => i.href !== "/emails") : adminItems)

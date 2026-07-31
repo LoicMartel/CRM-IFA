@@ -12,6 +12,7 @@ export interface MemberPermissions {
   canEdit: boolean;
   canDelete: boolean;
   onlyOwnData: boolean;
+  pages?: Record<string, boolean>;
 }
 
 export const DEFAULT_PERMISSIONS: MemberPermissions = {
@@ -98,6 +99,14 @@ export function useCurrentRoles() {
   const canViewAdmin = isAdmin || isDirigeant;
   const isAccountManager = info?.roles.includes("Account Manager") ?? false;
 
+  /** Check if a specific page (by href) is allowed. Returns true unless explicitly blocked. */
+  function canViewPage(href: string): boolean {
+    if (isAdmin) return true;
+    // Check page-level permission
+    if (perms.pages?.[href] === false) return false;
+    return true;
+  }
+
   return {
     memberId: info?.id ?? null,
     firstName: info?.firstName ?? "",
@@ -118,6 +127,8 @@ export function useCurrentRoles() {
     canViewReports: isAdmin || perms.canViewReports,
     canViewDashboard: isAdmin || perms.canViewDashboard,
     onlyOwnData: !isAdmin && perms.onlyOwnData,
+    permissions: perms,
+    canViewPage,
     loaded: info !== null,
   };
 }

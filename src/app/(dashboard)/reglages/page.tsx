@@ -8,7 +8,7 @@ export const metadata = { title: "Réglages" };
 export default async function ReglagesPage() {
   const [supabase, fiscalMode] = await Promise.all([createClient(), getFiscalMode()]);
 
-  const [{ data: leadSources }, { data: trainingPrograms }, { data: trainingTypes }, { data: fundingTypes }, { data: marketingProviders }, { data: expertises }, { data: postChannels }, { data: accountManagers }, { data: userTargets }] = await Promise.all([
+  const [{ data: leadSources }, { data: trainingPrograms }, { data: trainingTypes }, { data: fundingTypes }, { data: marketingProviders }, { data: expertises }, { data: postChannels }, { data: accountManagers }, { data: userTargets }, { data: teamRoles }] = await Promise.all([
     supabase.from("lead_sources").select("id, name, created_at").order("name"),
     supabase.from("training_programs").select("id, name, created_at").order("name"),
     supabase.from("training_types").select("id, name, created_at").order("name"),
@@ -18,6 +18,7 @@ export default async function ReglagesPage() {
     supabase.from("post_channels").select("*").order("display_order"),
     supabase.from("team_members").select("id, first_name, last_name").contains("roles", ["Account Manager"]).eq("is_active", true).order("first_name"),
     supabase.from("user_sales_targets").select("id, team_member_id, month, target_amount"),
+    supabase.from("team_roles").select("*").order("display_order"),
   ]);
 
   return (
@@ -35,6 +36,7 @@ export default async function ReglagesPage() {
           fiscalMode={fiscalMode}
           accountManagers={(accountManagers ?? []) as any}
           userTargets={(userTargets ?? []) as any}
+          teamRoles={(teamRoles ?? []) as any}
         />
       </div>
     </>

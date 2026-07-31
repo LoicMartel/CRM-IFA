@@ -5,6 +5,7 @@ import { TopNav } from "@/components/layout/top-nav";
 import { TaskDeadlinePopup } from "@/components/commercial/task-deadline-popup";
 import { LearnerStatusSync } from "@/components/production/learner-status-sync";
 import { ChatBubble } from "@/components/assistant/chat-bubble";
+import { PermissionGuard } from "@/components/layout/permission-guard";
 
 export default function DashboardLayout({
   children,
@@ -18,7 +19,7 @@ export default function DashboardLayout({
           <TopNav />
           <div className="flex flex-1 overflow-hidden">
             <AppSidebar />
-            <main className="flex-1 overflow-auto">{children}</main>
+            <main className="flex-1 overflow-auto"><PermissionGuard>{children}</PermissionGuard></main>
           </div>
         </div>
         <TaskDeadlinePopup />
