@@ -1,17 +1,23 @@
-"use client";
+import { Header } from "@/components/layout/header";
+import { createClient } from "@/lib/supabase/server";
+import { ResourceLinksPage } from "@/components/production/resource-links-page";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+export const metadata = { title: "Ressources Pédagogiques" };
 
-const DRIVE_URL = "https://drive.google.com/drive/folders/1CGOC9B4SoDckO-_JTYhpeadUddV6qDc1";
+export default async function RessourcesPage() {
+  const supabase = await createClient();
+  const { data: resourceLinks } = await supabase
+    .from("resource_links")
+    .select("*")
+    .eq("category", "production")
+    .order("display_order");
 
-export default function RessourcesPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    window.open(DRIVE_URL, "_blank");
-    router.back();
-  }, [router]);
-
-  return null;
+  return (
+    <>
+      <Header title="Ressources Pédagogiques" />
+      <div className="p-6">
+        <ResourceLinksPage resourceLinks={(resourceLinks ?? []) as any} />
+      </div>
+    </>
+  );
 }
