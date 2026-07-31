@@ -485,9 +485,7 @@ interface ResourceLink {
 
 const RESOURCE_CATEGORIES = [
   { value: "commercial", label: "Commercial" },
-  { value: "production", label: "Production" },
-  { value: "marketing", label: "Marketing" },
-  { value: "admin", label: "Administration" },
+  { value: "production", label: "Pédagogique" },
 ];
 
 function ResourceLinksSection() {
