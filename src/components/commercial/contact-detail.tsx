@@ -563,29 +563,50 @@ export function ContactDetail({
     // Exclude originals marked as completed (a result record exists with the final status)
     const mtgs = (remainingMeetings ?? []).filter(m => m.next_step !== "completed");
 
-    // Determine the highest status based on what's left
-    // Priority: signed > rdv_done > booked > contacted > lead
+    // Signed always wins regardless of meeting type
     const hasSigned = mtgs.some(m => m.outcome && m.outcome.includes("Signed") && !m.outcome.includes("Not signed"));
     if (hasSigned) {
       await supabase.from("contacts").update({ lead_status: "signed", lifecycle_stage: "customer" }).eq("id", contact.id);
       return;
     }
 
-    const hasDoneRdv = mtgs.some(m => m.status === "done");
-    if (hasDoneRdv) {
-      await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", contact.id);
-      return;
+    // Group by meeting type: for each type, prefer result (non-booked) over original (booked)
+    const typePriority: Record<string, number> = { "Signed": 6, "R3": 5, "R2": 4, "R1": 3, "R0+R1": 2, "R0": 1 };
+    const byType: Record<string, string> = {};
+    for (const m of mtgs) {
+      const current = byType[m.meeting_type];
+      if (!current || (current === "booked" && m.status !== "booked")) {
+        byType[m.meeting_type] = m.status;
+      }
     }
 
-    const hasBookedRdv = mtgs.some(m => m.status === "booked");
-    if (hasBookedRdv) {
-      const updateData: Record<string, string> = { lead_status: "booked" };
-      // Lead marketing → prospect uniquement si R1 ou supérieur est booked
-      if (contact.lifecycle_stage === "lead_marketing") {
-        const hasR1Plus = mtgs.some(m => m.status === "booked" && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(m.meeting_type));
-        if (hasR1Plus) updateData.lifecycle_stage = "prospect";
+    const sortedTypes = Object.entries(byType)
+      .sort(([a], [b]) => (typePriority[b] || 0) - (typePriority[a] || 0));
+
+    if (sortedTypes.length > 0) {
+      // If any meeting type still has a genuine active booking → booked
+      const hasActiveBooking = sortedTypes.some(([, status]) => status === "booked");
+      if (hasActiveBooking) {
+        const updateData: Record<string, string> = { lead_status: "booked" };
+        if (contact.lifecycle_stage === "lead_marketing") {
+          const bookedType = sortedTypes.find(([, s]) => s === "booked")?.[0];
+          if (bookedType && ["R0+R1", "R1", "R2", "R3", "Signed"].includes(bookedType)) {
+            updateData.lifecycle_stage = "prospect";
+          }
+        }
+        await supabase.from("contacts").update(updateData).eq("id", contact.id);
+        return;
       }
-      await supabase.from("contacts").update(updateData).eq("id", contact.id);
+
+      // Use the highest meeting type's effective status
+      const [, highestStatus] = sortedTypes[0];
+      if (highestStatus === "done") {
+        await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", contact.id);
+      } else if (highestStatus === "no_show") {
+        await supabase.from("contacts").update({ lead_status: "no_show" }).eq("id", contact.id);
+      } else if (highestStatus === "cancelled") {
+        await supabase.from("contacts").update({ lead_status: "cancelled" }).eq("id", contact.id);
+      }
       return;
     }
 
@@ -689,16 +710,23 @@ export function ContactDetail({
         }).catch(() => {});
       }
 
-      // Update ALL selected contacts status
-      if (rdvForm.status === "done" && rdvForm.rdv_result === "signed") {
-        await updateAllContacts({ lead_status: "signed", lifecycle_stage: "customer" });
-      } else if (rdvForm.status === "done") {
-        await updateAllContacts({ lead_status: "rdv_done" });
-      } else if (rdvForm.status === "no_show") {
-        await updateAllContacts({ lead_status: "no_show" });
-      } else if (rdvForm.status === "cancelled") {
-        await updateAllContacts({ lead_status: "cancelled" });
+      // Update status for secondary contacts (simple set)
+      const otherContactIds = selectedContactIds.filter(cid => cid !== contact.id);
+      if (otherContactIds.length > 0) {
+        for (const cid of otherContactIds) {
+          if (rdvForm.status === "done" && rdvForm.rdv_result === "signed") {
+            await supabase.from("contacts").update({ lead_status: "signed", lifecycle_stage: "customer" }).eq("id", cid);
+          } else if (rdvForm.status === "done") {
+            await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", cid);
+          } else if (rdvForm.status === "no_show") {
+            await supabase.from("contacts").update({ lead_status: "no_show" }).eq("id", cid);
+          } else if (rdvForm.status === "cancelled") {
+            await supabase.from("contacts").update({ lead_status: "cancelled" }).eq("id", cid);
+          }
+        }
       }
+      // Recalculate main contact status based on full meeting history
+      await recalculateContactStatus();
     } else if (editingMeetingId) {
       // Simple edit (notes, date, etc.) without status change
       const { error } = await supabase.from("meetings").update({
@@ -1212,7 +1240,7 @@ export function ContactDetail({
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      const nextMeeting = meetings.find((m) => m.status === "booked" && m.next_step !== "completed");
+                      const nextMeeting = meetings.find((m) => m.status === "booked" && m.next_step !== "completed" && !meetings.some(other => other.id !== m.id && other.meeting_type === m.meeting_type && other.status !== "booked"));
                       if (!nextMeeting) return <p style={{ fontSize: 13, color: "#8399a9" }}>Aucun RDV planifié</p>;
                       const mt = meetingTypeColors[nextMeeting.meeting_type] ?? { bg: "#f0f0f0", text: "#666" };
                       return (
@@ -1645,7 +1673,7 @@ export function ContactDetail({
                             </div>
                             {m.notes && <TruncatedText text={m.notes} style={{ fontSize: 12, color: "#8399a9", marginTop: 4 }} />}
                             {m.outcome && <p style={{ fontSize: 12, color: "#161f45", marginTop: 4, fontWeight: 500 }}>Résultat : {m.outcome}</p>}
-                            {m.status === "booked" && m.next_step !== "completed" && (
+                            {m.status === "booked" && m.next_step !== "completed" && !meetings.some(other => other.id !== m.id && other.meeting_type === m.meeting_type && other.status !== "booked") && (
                               <button
                                 onClick={() => openEditMeeting(m)}
                                 style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 10, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}

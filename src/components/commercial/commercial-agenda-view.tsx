@@ -254,6 +254,10 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
           }
         } else if (newStatus === "done") {
           await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", m.contact_id);
+        } else if (newStatus === "no_show") {
+          await supabase.from("contacts").update({ lead_status: "no_show" }).eq("id", m.contact_id);
+        } else if (newStatus === "cancelled") {
+          await supabase.from("contacts").update({ lead_status: "cancelled" }).eq("id", m.contact_id);
         }
       }
 
