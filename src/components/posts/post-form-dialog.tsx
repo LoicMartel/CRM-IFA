@@ -8,12 +8,10 @@ import { useCurrentMember } from "@/lib/use-current-member";
 import { RichTextEditor } from "./rich-text-editor";
 import { extractMentionedIds, extractHashtags, resolveMentionIds, type MentionMember, type CategoryInfo } from "./mention-suggestion";
 import {
-  POST_CATEGORY_LABELS,
   POST_BANNERS,
-  type PostCategory,
+  type PostChannel,
+  channelLabel,
 } from "@/types/database";
-
-const CATEGORIES = Object.entries(POST_CATEGORY_LABELS) as [PostCategory, string][];
 
 function getMemberLabel(id: string | null, members: MentionMember[]): string {
   if (!id) return "Quelqu'un";
@@ -32,6 +30,7 @@ interface PostFormDialogProps {
   onSaved: () => void;
   editPost?: any;
   projectTags: { id: string; name: string; is_active: boolean }[];
+  channels: PostChannel[];
 }
 
 export function PostFormDialog({
@@ -40,14 +39,17 @@ export function PostFormDialog({
   onSaved,
   editPost,
   projectTags,
+  channels,
 }: PostFormDialogProps) {
   const router = useRouter();
   const memberId = useCurrentMember();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const defaultSlug = channels.length > 0 ? channels[0].slug : "annonces_generales";
+
   const [title, setTitle] = useState(editPost?.title ?? "");
   const [content, setContent] = useState(editPost?.content ?? "");
-  const [category, setCategory] = useState<PostCategory>(editPost?.category ?? "annonces_generales");
+  const [category, setCategory] = useState<string>(editPost?.category ?? defaultSlug);
   const [projectTagId, setProjectTagId] = useState(editPost?.project_tag_id ?? "");
   const [banner, setBanner] = useState(editPost?.banner ?? "none");
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
@@ -64,7 +66,7 @@ export function PostFormDialog({
     if (!open) return;
     setTitle(editPost?.title ?? "");
     setContent(editPost?.content ?? "");
-    setCategory(editPost?.category ?? "annonces_generales");
+    setCategory(editPost?.category ?? defaultSlug);
     setProjectTagId(editPost?.project_tag_id ?? "");
     setBanner(editPost?.banner ?? "none");
     setPendingFiles([]);
@@ -463,11 +465,11 @@ export function PostFormDialog({
             <label style={labelStyle}>Catégorie *</label>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value as PostCategory)}
+              onChange={(e) => setCategory(e.target.value)}
               style={inputStyle}
             >
-              {CATEGORIES.map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+              {channels.map((ch) => (
+                <option key={ch.slug} value={ch.slug}>{ch.label}</option>
               ))}
             </select>
           </div>
@@ -546,7 +548,8 @@ export function PostFormDialog({
               onChange={setContent}
               placeholder="Écrivez votre post… (utilisez @ pour mentionner un membre)"
               mentionMembers={mentionMembers}
-              categoryInfo={categoryMemberIds.length > 0 ? { memberIds: categoryMemberIds, key: category, label: POST_CATEGORY_LABELS[category] } : undefined}
+              channels={channels}
+              categoryInfo={categoryMemberIds.length > 0 ? { memberIds: categoryMemberIds, key: category, label: channelLabel(channels, category) } : undefined}
             />
           </div>
 

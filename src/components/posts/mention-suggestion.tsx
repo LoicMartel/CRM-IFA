@@ -10,7 +10,7 @@ import {
 import { createRoot, Root } from "react-dom/client";
 import type { Editor, Range } from "@tiptap/react";
 import type { SuggestionOptions } from "@tiptap/suggestion";
-import { POST_CATEGORY_LABELS, POST_CATEGORY_COLORS, type PostCategory } from "@/types/database";
+import { type PostChannel } from "@/types/database";
 
 export interface MentionMember {
   id: string;
@@ -151,13 +151,12 @@ export interface TagItem {
   color: { bg: string; text: string };
 }
 
-function buildTagItems(): TagItem[] {
+function buildTagItems(channels: PostChannel[]): TagItem[] {
   const items: TagItem[] = [];
 
-  // Post categories
-  for (const [key, label] of Object.entries(POST_CATEGORY_LABELS)) {
-    const colors = POST_CATEGORY_COLORS[key as PostCategory] ?? { bg: "#f0f0f0", text: "#666" };
-    items.push({ id: `cat:${key}`, label, type: "category", color: colors });
+  // Post categories (dynamic from DB)
+  for (const ch of channels) {
+    items.push({ id: `cat:${ch.slug}`, label: ch.label, type: "category", color: { bg: ch.color_bg, text: ch.color_text } });
   }
 
   // Team member roles
@@ -177,8 +176,6 @@ function buildTagItems(): TagItem[] {
 
   return items;
 }
-
-const ALL_TAG_ITEMS = buildTagItems();
 
 interface TagListProps {
   items: TagItem[];
@@ -412,12 +409,13 @@ export function buildMentionSuggestion(
 /**
  * Build the #-tag suggestion plugin configuration for tiptap (categories + roles).
  */
-export function buildTagSuggestion(): Omit<SuggestionOptions, "editor"> {
+export function buildTagSuggestion(channels: PostChannel[]): Omit<SuggestionOptions, "editor"> {
+  const tagItems = buildTagItems(channels);
   return {
     char: "#",
     items: ({ query }: { query: string }) => {
       const q = query.toLowerCase();
-      return ALL_TAG_ITEMS
+      return tagItems
         .filter((t) => t.label.toLowerCase().includes(q))
         .slice(0, 12);
     },

@@ -463,8 +463,29 @@ export const COMPANY_LIFECYCLE_LABELS: Record<CompanyLifecycle, string> = {
   former_customer: "Ancien client",
 };
 
-// Posts feature
-export type PostCategory = "annonces_generales" | "lead_gen" | "commercial" | "pedagogie" | "pilotage_lca" | "admin" | "projets_en_cours" | "veille_reglementaire" | "veille_metiers" | "veille_pedagogie";
+// Posts feature — dynamic channels (source of truth: post_channels table)
+export interface PostChannel {
+  id: string;
+  slug: string;
+  label: string;
+  color_bg: string;
+  color_text: string;
+  is_veille: boolean;
+  display_order: number;
+}
+
+/** Lookup helpers — accept the channels array fetched from DB */
+export function channelLabel(channels: PostChannel[], slug: string): string {
+  return channels.find((c) => c.slug === slug)?.label ?? slug;
+}
+
+export function channelColors(channels: PostChannel[], slug: string): { bg: string; text: string } {
+  const ch = channels.find((c) => c.slug === slug);
+  return ch ? { bg: ch.color_bg, text: ch.color_text } : { bg: "#f0f0f0", text: "#666" };
+}
+
+/** @deprecated — kept for backward compat during migration. Use PostChannel instead. */
+export type PostCategory = string;
 export type PostEntityType = "contact" | "company" | "deal" | "order";
 
 export interface Post {
@@ -539,7 +560,8 @@ export interface CommentAttachment {
   created_at: string;
 }
 
-export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
+/** @deprecated — use channelLabel(channels, slug) instead */
+export const POST_CATEGORY_LABELS: Record<string, string> = {
   annonces_generales: "Annonces Générales",
   lead_gen: "Lead Gen",
   commercial: "Commercial",
@@ -552,7 +574,8 @@ export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   veille_pedagogie: "Pédagogie (Veille)",
 };
 
-export const POST_CATEGORY_COLORS: Record<PostCategory, { bg: string; text: string }> = {
+/** @deprecated — use channelColors(channels, slug) instead */
+export const POST_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   annonces_generales: { bg: "#e3f2fd", text: "#1565c0" },
   lead_gen: { bg: "#fff3e0", text: "#e65100" },
   commercial: { bg: "#e8f5e9", text: "#2e7d32" },

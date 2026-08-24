@@ -12,6 +12,7 @@ import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Mention } from "@tiptap/extension-mention";
 import { buildMentionSuggestion, buildTagSuggestion, type MentionMember, type CategoryInfo } from "@/components/posts/mention-suggestion";
+import { type PostChannel } from "@/types/database";
 import {
   Bold,
   Italic,
@@ -56,11 +57,13 @@ interface RichTextEditorProps {
   placeholder?: string;
   mentionMembers?: MentionMember[];
   categoryInfo?: CategoryInfo;
+  channels?: PostChannel[];
 }
 
 const EMPTY_MENTION_LIST: MentionMember[] = [];
+const EMPTY_CHANNELS: PostChannel[] = [];
 
-export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post...", mentionMembers, categoryInfo }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder = "Écrivez votre post...", mentionMembers, categoryInfo, channels }: RichTextEditorProps) {
   const members = mentionMembers ?? EMPTY_MENTION_LIST;
   const catKey = JSON.stringify(categoryInfo?.memberIds ?? []);
   const mentionExtension = useMemo(
@@ -103,9 +106,10 @@ export function RichTextEditor({ content, onChange, placeholder = "Écrivez votr
             `#${node.attrs.label as string}`,
           ];
         },
-        suggestion: buildTagSuggestion(),
+        suggestion: buildTagSuggestion(channels ?? EMPTY_CHANNELS),
       }),
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [channels]
   );
 
   const editor = useEditor({

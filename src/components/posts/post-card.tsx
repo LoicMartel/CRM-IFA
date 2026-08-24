@@ -17,10 +17,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useCurrentMember } from "@/lib/use-current-member";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import {
-  POST_CATEGORY_LABELS,
-  POST_CATEGORY_COLORS,
   POST_BANNERS,
-  type PostCategory,
+  type PostChannel,
+  channelLabel,
+  channelColors,
 } from "@/types/database";
 import { CommentSection } from "./comment-section";
 import { RichTextContent } from "./rich-text-editor";
@@ -35,13 +35,14 @@ const REACTION_EMOJIS = [
 
 interface PostCardProps {
   post: any;
+  channels: PostChannel[];
   teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   projectTags: { id: string; name: string; is_active: boolean }[];
   onEdit: (post: any) => void;
   onRefresh: () => void;
 }
 
-export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: PostCardProps) {
+export function PostCard({ post, channels, teamMembers, projectTags, onEdit, onRefresh }: PostCardProps) {
   const memberId = useCurrentMember();
   const { isAdmin } = useCurrentRoles();
   const [showAllComments, setShowAllComments] = useState(false);
@@ -56,7 +57,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
   const authorInitials = author ? `${author.first_name[0]}${author.last_name[0]}` : "?";
   const commentCount = post.post_comments?.length ?? 0;
   const attachments = post.post_attachments ?? [];
-  const categoryColors = POST_CATEGORY_COLORS[post.category as PostCategory];
+  const categoryCol = channelColors(channels, post.category);
   const isAuthor = memberId === post.author_id;
   const canManage = isAuthor || isAdmin;
 
@@ -203,12 +204,12 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
                 fontSize: 11,
                 padding: "2px 8px",
                 borderRadius: 20,
-                background: categoryColors?.bg ?? "#f0f0f0",
-                color: categoryColors?.text ?? "#666",
+                background: categoryCol.bg,
+                color: categoryCol.text,
                 fontWeight: 600,
               }}
             >
-              {POST_CATEGORY_LABELS[post.category as PostCategory] ?? post.category}
+              {channelLabel(channels, post.category)}
             </span>
             {post.project_tag_id && (() => {
               const tag = projectTags.find((t) => t.id === post.project_tag_id);
@@ -496,6 +497,7 @@ export function PostCard({ post, teamMembers, projectTags, onEdit, onRefresh }: 
         postAuthorId={post.author_id}
         postTitle={post.title}
         postCategory={post.category}
+        channels={channels}
         teamMembers={teamMembers}
         onCommentCountChange={onRefresh}
         previewCount={4}

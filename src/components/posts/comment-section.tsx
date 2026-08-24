@@ -18,7 +18,7 @@ import {
   type MentionMember,
   type CategoryInfo,
 } from "./mention-suggestion";
-import { POST_CATEGORY_LABELS, type PostCategory } from "@/types/database";
+import { type PostChannel, channelLabel } from "@/types/database";
 
 const REACTION_EMOJIS = [
   { key: "like", emoji: "\uD83D\uDC4D", label: "J'aime", color: "#1E2A5A", bg: "#e3f2fd" },
@@ -33,12 +33,13 @@ interface CommentSectionProps {
   postAuthorId: string;
   postTitle: string;
   postCategory: string;
+  channels: PostChannel[];
   teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onCommentCountChange: () => void;
   previewCount?: number;
 }
 
-export function CommentSection({ postId, postAuthorId, postTitle, postCategory, teamMembers, onCommentCountChange, previewCount = 100 }: CommentSectionProps) {
+export function CommentSection({ postId, postAuthorId, postTitle, postCategory, channels, teamMembers, onCommentCountChange, previewCount = 100 }: CommentSectionProps) {
   const memberId = useCurrentMember();
   const { isAdmin } = useCurrentRoles();
   const [comments, setComments] = useState<any[]>([]);
@@ -76,7 +77,7 @@ export function CommentSection({ postId, postAuthorId, postTitle, postCategory, 
     return {
       memberIds: categoryMemberIds,
       key: postCategory,
-      label: POST_CATEGORY_LABELS[postCategory as PostCategory] ?? postCategory,
+      label: channelLabel(channels, postCategory),
     };
   }, [categoryMemberIds, postCategory]);
 

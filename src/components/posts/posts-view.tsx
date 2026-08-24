@@ -6,26 +6,11 @@ import { Plus, Search, Settings, Trash2, Users, Hash, Pin, ChevronDown, ChevronR
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { createClient } from "@/lib/supabase/client";
 import {
-  POST_CATEGORY_LABELS,
-  POST_CATEGORY_COLORS,
-  type PostCategory,
+  type PostChannel,
+  channelLabel,
 } from "@/types/database";
 import { PostCard } from "./post-card";
 import { PostFormDialog } from "./post-form-dialog";
-
-// Fallback to hardcoded categories if no channels loaded
-const VEILLE_CATEGORIES_FALLBACK: PostCategory[] = ["veille_reglementaire", "veille_metiers", "veille_pedagogie"];
-const MAIN_CATEGORIES_FALLBACK = (Object.keys(POST_CATEGORY_LABELS) as PostCategory[]).filter(c => !VEILLE_CATEGORIES_FALLBACK.includes(c));
-
-export interface PostChannel {
-  id: string;
-  slug: string;
-  label: string;
-  color_bg: string;
-  color_text: string;
-  is_veille: boolean;
-  display_order: number;
-}
 
 interface PostsViewProps {
   posts: any[];
@@ -33,7 +18,7 @@ interface PostsViewProps {
   contacts: { id: string; first_name: string; last_name: string }[];
   companies: { id: string; name: string }[];
   deals: { id: string; name: string }[];
-  channels?: PostChannel[];
+  channels: PostChannel[];
   orders: any[];
   projectTags: { id: string; name: string; is_active: boolean }[];
 }
@@ -46,28 +31,18 @@ export function PostsView({
   deals,
   orders,
   projectTags,
-  channels = [],
+  channels,
 }: PostsViewProps) {
   const router = useRouter();
   const { isAdmin, isRestrictedExterne } = useCurrentRoles();
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  // Dynamic channels — derive labels, colors, and category lists from DB
-  const channelLabels: Record<string, string> = channels.length > 0
-    ? Object.fromEntries(channels.map(c => [c.slug, c.label]))
-    : POST_CATEGORY_LABELS;
-  const channelColors: Record<string, { bg: string; text: string }> = channels.length > 0
-    ? Object.fromEntries(channels.map(c => [c.slug, { bg: c.color_bg, text: c.color_text }]))
-    : POST_CATEGORY_COLORS;
-  const VEILLE_CATEGORIES = channels.length > 0
-    ? channels.filter(c => c.is_veille).map(c => c.slug)
-    : VEILLE_CATEGORIES_FALLBACK as string[];
-  const MAIN_CATEGORIES = channels.length > 0
-    ? channels.filter(c => !c.is_veille).map(c => c.slug)
-    : MAIN_CATEGORIES_FALLBACK as string[];
-  const ALL_CATEGORIES = channels.length > 0
-    ? channels.map(c => c.slug)
-    : Object.keys(POST_CATEGORY_LABELS);
+  // Dynamic channels — derive from DB rows
+  const veilleChannels = useMemo(() => channels.filter((c) => c.is_veille), [channels]);
+  const mainChannels = useMemo(() => channels.filter((c) => !c.is_veille), [channels]);
+  const allSlugs = useMemo(() => channels.map((c) => c.slug), [channels]);
+  const veilleSlugs = useMemo(() => veilleChannels.map((c) => c.slug), [veilleChannels]);
+
   const [authorFilter, setAuthorFilter] = useState("all");
   const [projectTagFilter, setProjectTagFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,9 +79,9 @@ export function PostsView({
   // Count posts per category
   const countByCategory = useMemo(() => {
     const counts: Record<string, number> = { all: posts.length };
-    for (const cat of ALL_CATEGORIES) counts[cat] = posts.filter((p) => p.category === cat).length;
+    for (const cat of allSlugs) counts[cat] = posts.filter((p) => p.category === cat).length;
     return counts;
-  }, [posts]);
+  }, [posts, allSlugs]);
 
   const pinnedCount = posts.filter((p) => p.pinned).length;
   const thisWeek = posts.filter((p) => {
@@ -142,24 +117,23 @@ export function PostsView({
             dotColor="#1E2A5A"
           />
 
-          {MAIN_CATEGORIES.map((cat) => {
-            const colors = channelColors[cat];
-            const isProjects = cat === "projets_en_cours";
-            const isActive = categoryFilter === cat;
+          {mainChannels.map((ch) => {
+            const isProjects = ch.slug === "projets_en_cours";
+            const isActive = categoryFilter === ch.slug;
             return (
-              <div key={cat}>
+              <div key={ch.slug}>
                 <ChannelItem
-                  label={channelLabels[cat]}
-                  count={countByCategory[cat]}
+                  label={ch.label}
+                  count={countByCategory[ch.slug]}
                   active={isActive}
                   onClick={() => {
-                    setCategoryFilter(cat);
+                    setCategoryFilter(ch.slug);
                     if (!isProjects) setProjectTagFilter("all");
                     if (isProjects) setExpandProjects(true);
                     else setExpandProjects(false);
                     setExpandVeille(false);
                   }}
-                  dotColor={colors.text}
+                  dotColor={ch.color_text}
                   expanded={isProjects ? expandProjects : undefined}
                   onToggleExpand={isProjects && projectTags.filter(t => t.is_active).length > 0
                     ? () => setExpandProjects((prev) => !prev)
@@ -190,12 +164,12 @@ export function PostsView({
           {/* Veille group */}
           <ChannelItem
             label="Veille"
-            count={VEILLE_CATEGORIES.reduce((sum, c) => sum + (countByCategory[c] || 0), 0)}
-            active={VEILLE_CATEGORIES.includes(categoryFilter as PostCategory)}
+            count={veilleSlugs.reduce((sum, c) => sum + (countByCategory[c] || 0), 0)}
+            active={veilleSlugs.includes(categoryFilter)}
             onClick={() => {
               setExpandVeille(true);
               setExpandProjects(false);
-              setCategoryFilter(VEILLE_CATEGORIES[0]);
+              if (veilleSlugs.length > 0) setCategoryFilter(veilleSlugs[0]);
               setProjectTagFilter("all");
             }}
             dotColor="#283593"
@@ -204,12 +178,12 @@ export function PostsView({
           />
           {expandVeille && (
             <div style={{ paddingLeft: 20 }}>
-              {VEILLE_CATEGORIES.map((cat) => (
+              {veilleChannels.map((ch) => (
                 <SubChannelItem
-                  key={cat}
-                  label={channelLabels[cat]}
-                  active={categoryFilter === cat}
-                  onClick={() => setCategoryFilter(cat)}
+                  key={ch.slug}
+                  label={ch.label}
+                  active={categoryFilter === ch.slug}
+                  onClick={() => setCategoryFilter(ch.slug)}
                 />
               ))}
             </div>
@@ -252,7 +226,7 @@ export function PostsView({
           borderBottom: "1px solid #e4eaf0", background: "white", flexWrap: "wrap",
         }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: "#1b2a4a", margin: 0, marginRight: 8 }}>
-            {categoryFilter === "all" ? "Tous les posts" : channelLabels[categoryFilter]}
+            {categoryFilter === "all" ? "Tous les posts" : channelLabel(channels, categoryFilter)}
           </h3>
 
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
@@ -301,7 +275,7 @@ export function PostsView({
         <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
           {/* Category / Tag manager panels */}
           {showCategoryManager && isAdmin && (
-            <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} allCategories={ALL_CATEGORIES} channelLabels={channelLabels} channelColors={channelColors} />
+            <CategoryManagerPanel teamMembers={teamMembers} onRefresh={handleRefresh} channels={channels} />
           )}
           {showTagManager && isAdmin && (
             <TagManagerPanel projectTags={projectTags} onRefresh={handleRefresh} />
@@ -322,6 +296,7 @@ export function PostsView({
                   post={post}
                   teamMembers={teamMembers}
                   projectTags={projectTags}
+                  channels={channels}
                   onEdit={(p) => { setEditPost(p); setShowForm(true); }}
                   onRefresh={handleRefresh}
                 />
@@ -340,6 +315,7 @@ export function PostsView({
           onSaved={handleRefresh}
           editPost={editPost}
           projectTags={projectTags}
+          channels={channels}
         />
       )}
     </div>
@@ -448,17 +424,12 @@ function sidebarBtnStyle(active: boolean): React.CSSProperties {
 function CategoryManagerPanel({
   teamMembers,
   onRefresh,
-  allCategories,
-  channelLabels,
-  channelColors,
+  channels,
 }: {
   teamMembers: { id: string; first_name: string; last_name: string; avatar_url?: string | null }[];
   onRefresh: () => void;
-  allCategories: string[];
-  channelLabels: Record<string, string>;
-  channelColors: Record<string, { bg: string; text: string }>;
+  channels: PostChannel[];
 }) {
-  const ALL_CATEGORIES = allCategories;
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [loaded, setLoaded] = useState(false);
 
@@ -517,14 +488,12 @@ function CategoryManagerPanel({
         Les membres assignés à une catégorie recevront une notification quand un post contient <span style={{ color: "#6a1b9a", fontWeight: 600 }}>#Catégorie</span>.
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {ALL_CATEGORIES.map((cat) => {
-          const colors = channelColors[cat];
-          const label = channelLabels[cat];
-          const assigned = assignments[cat] ?? [];
+        {channels.map((ch) => {
+          const assigned = assignments[ch.slug] ?? [];
           return (
-            <div key={cat} style={{ border: "1px solid #e8ecf1", borderRadius: 8, padding: 12, background: "white" }}>
+            <div key={ch.slug} style={{ border: "1px solid #e8ecf1", borderRadius: 8, padding: 12, background: "white" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ background: colors.bg, color: colors.text, padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>{label}</span>
+                <span style={{ background: ch.color_bg, color: ch.color_text, padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>{ch.label}</span>
                 <span style={{ fontSize: 11, color: "#8399a9" }}>{assigned.length} membre{assigned.length !== 1 ? "s" : ""}</span>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -534,7 +503,7 @@ function CategoryManagerPanel({
                     <button
                       key={m.id}
                       type="button"
-                      onClick={() => toggleMember(cat, m.id)}
+                      onClick={() => toggleMember(ch.slug, m.id)}
                       style={{
                         padding: "4px 10px", borderRadius: 999,
                         border: isAssigned ? "2px solid #6a1b9a" : "1px solid #dce8f0",
