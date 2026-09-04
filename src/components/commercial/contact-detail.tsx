@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   User, Mail, Phone, Building2, Edit, Briefcase, Calendar,
   Activity, ArrowLeft, ExternalLink, Linkedin, PhoneCall,
-  MailPlus, CalendarPlus, PlusCircle, Trash2, ClipboardList, GraduationCap,
+  MailPlus, CalendarPlus, PlusCircle, Trash2, ClipboardList, GraduationCap, X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPhone, fmtDuration } from "@/lib/utils";
@@ -190,6 +190,20 @@ interface CompanyDealData extends DealData {
   contacts?: { first_name: string; last_name: string } | null;
 }
 
+const MEETING_TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  R0: { bg: "#ede7f6", text: "#4a148c", border: "#7c4dff" },
+  R1: { bg: "#fce4ec", text: "#c62828", border: "#e74c3c" },
+  R2: { bg: "#e3f2fd", text: "#1565c0", border: "#1a6b9c" },
+  R3: { bg: "#e8f5e9", text: "#2e7d32", border: "#27ae60" },
+};
+
+const RDV_STATUS_LABELS: Record<string, { label: string; bg: string; text: string }> = {
+  booked: { label: "Planifié", bg: "#e8f0fe", text: "#0d4f7a" },
+  done: { label: "Effectué", bg: "#e8f5e9", text: "#2e7d32" },
+  no_show: { label: "No show", bg: "#fce4ec", text: "#c62828" },
+  cancelled: { label: "Annulé", bg: "#f5f5f5", text: "#999" },
+};
+
 export function ContactDetail({
   contact,
   deals,
@@ -271,6 +285,7 @@ export function ContactDetail({
   const notesVoice = useVoiceDictation(() => form.notes, (t) => setForm((f) => ({ ...f, notes: t })));
   const activityVoice = useVoiceDictation(() => activityForm.description, (t) => setActivityForm((f) => ({ ...f, description: t })));
   const rdvNotesVoice = useVoiceDictation(() => rdvForm.notes, (t) => setRdvForm((f) => ({ ...f, notes: t })));
+  const rdvOutcomeVoice = useVoiceDictation(() => rdvForm.outcome, (t) => setRdvForm((f) => ({ ...f, outcome: t })));
   const emailBodyVoice = useVoiceDictation(() => emailForm.body, (t) => setEmailForm((f) => ({ ...f, body: t })));
 
   // Load sender info for email composer + email provider
@@ -318,6 +333,7 @@ export function ContactDetail({
   });
 
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
+  const [editingMeetingOriginalStatus, setEditingMeetingOriginalStatus] = useState<string | null>(null);
   const [rdvForm, setRdvForm] = useState({
     meeting_type: defaultMeetingType as string,
     scheduled_at: "",
@@ -526,7 +542,7 @@ export function ContactDetail({
     if (shouldOpenRdv) {
       // Open RDV creation form with the scheduled date from the activity
       const fallbackNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      setEditingMeetingId(null);
+      setEditingMeetingId(null); setEditingMeetingOriginalStatus(null);
       setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: rdvDateForForm || fallbackNow, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: fallbackNow, send_notifications: true });
       setSelectedContactIds([contact.id]);
       setSelectedManagerIds(currentMemberId ? [currentMemberId] : []);
@@ -678,7 +694,7 @@ export function ContactDetail({
       }
     }
 
-    if (editingMeetingId && (rdvForm.status === "done" || rdvForm.status === "no_show" || rdvForm.status === "cancelled")) {
+    if (editingMeetingId && editingMeetingOriginalStatus === "booked" && (rdvForm.status === "done" || rdvForm.status === "no_show" || rdvForm.status === "cancelled")) {
       // Status changed from booked → done/no_show/cancelled
       // Create a NEW entry with the result
       const { data: resultMeeting, error } = await supabase.from("meetings").insert({
@@ -827,7 +843,7 @@ export function ContactDetail({
       if (existingDeal) {
         setSaving(false);
         setRdvOpen(false);
-        setEditingMeetingId(null);
+        setEditingMeetingId(null); setEditingMeetingOriginalStatus(null);
         resetRdvState();
         router.push(`/deals?edit=${existingDeal.id}`);
         return;
@@ -843,7 +859,7 @@ export function ContactDetail({
 
       setSaving(false);
       setRdvOpen(false);
-      setEditingMeetingId(null);
+      setEditingMeetingId(null); setEditingMeetingOriginalStatus(null);
       resetRdvState();
 
       if (newDeal && !dealError) {
@@ -857,7 +873,7 @@ export function ContactDetail({
 
     setSaving(false);
     setRdvOpen(false);
-    setEditingMeetingId(null);
+    setEditingMeetingId(null); setEditingMeetingOriginalStatus(null);
     resetRdvState();
     router.refresh();
   }
@@ -877,6 +893,7 @@ export function ContactDetail({
 
   async function openEditMeeting(m: MeetingData) {
     setEditingMeetingId(m.id);
+    setEditingMeetingOriginalStatus(m.status);
     setRdvForm({
       meeting_type: m.meeting_type,
       scheduled_at: m.scheduled_at ? utcToLocal(m.scheduled_at) : "",
@@ -968,7 +985,7 @@ export function ContactDetail({
           <Button variant="outline" size="sm" onClick={() => { setEmailForm({ subject: "", body: "" }); setEmailOpen(true); }}>
             <MailPlus className="h-4 w-4 mr-1" /> Envoyer email
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: now, send_notifications: true }); setSelectedContactIds([contact.id]); setSelectedManagerIds(currentMemberId ? [currentMemberId] : []); setRdvOpen(true); }}>
+          <Button variant="outline" size="sm" onClick={() => { const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16); setEditingMeetingId(null); setEditingMeetingOriginalStatus(null); setRdvForm({ meeting_type: defaultMeetingType, scheduled_at: now, duration_minutes: "60", meeting_mode: "visio", notes: "", status: "booked", outcome: "", rdv_result: "", action_date: now, send_notifications: true }); setSelectedContactIds([contact.id]); setSelectedManagerIds(currentMemberId ? [currentMemberId] : []); setRdvOpen(true); }}>
             <CalendarPlus className="h-4 w-4 mr-1" /> Créer RDV
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setEditingActivityId(null); setActivityForm({ type: "note", title: "", description: "", due_date: "", call_result: "", call_outcome: "", rdv_date: "", task_deadline: "" }); setActivityOpen(true); }}>
@@ -2181,14 +2198,13 @@ export function ContactDetail({
         </SheetContent>
       </Sheet>
 
-      {/* RDV Sheet (Create + Edit) */}
-      <Sheet open={rdvOpen} onOpenChange={(open) => {
-        setRdvOpen(open);
-        if (!open) { setEditingMeetingId(null); resetRdvState(); }
+      {/* RDV Sheet (Create only) */}
+      <Sheet open={rdvOpen && !editingMeetingId} onOpenChange={(open) => {
+        if (!open) { setRdvOpen(false); resetRdvState(); }
       }}>
         <SheetContent className="overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{editingMeetingId ? "Modifier le RDV" : "Créer un RDV"}</SheetTitle>
+            <SheetTitle>Créer un RDV</SheetTitle>
           </SheetHeader>
           <div className="space-y-4 mt-6 px-4">
             <div className="space-y-2">
@@ -2210,7 +2226,7 @@ export function ContactDetail({
             <div className="space-y-2">
               <Label>Contacts participants</Label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
-                <span style={{ background: "#e3f2fd", color: "#1E2A5A", padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                <span style={{ background: "#e3f2fd", color: "#1a6b9c", padding: "2px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
                   {contact.first_name} {contact.last_name} (principal)
                 </span>
                 {selectedContactIds.filter(id => id !== contact.id).map(id => {
@@ -2319,123 +2335,220 @@ export function ContactDetail({
               </div>
             </div>
 
-            {/* Notes - always visible, especially for writing during/after RDV */}
             <div className="space-y-2">
               <Label>Notes du RDV</Label>
               <textarea
                 className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 value={rdvForm.notes}
                 onChange={(e) => setRdvForm({ ...rdvForm, notes: e.target.value })}
-                placeholder={editingMeetingId ? "Écrivez vos notes de RDV ici..." : "Objectifs du RDV, points clés..."}
+                placeholder="Objectifs du RDV, points clés..."
               />
               <VoiceButton isRecording={rdvNotesVoice.isRecording} isFormatting={rdvNotesVoice.isFormatting} onClick={rdvNotesVoice.toggleRecording} tone={rdvNotesVoice.tone} onToneChange={rdvNotesVoice.setTone} />
             </div>
 
-            {/* Email de confirmation */}
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", padding: "4px 0" }}>
               <input
                 type="checkbox"
                 checked={rdvForm.send_notifications}
                 onChange={(e) => setRdvForm({ ...rdvForm, send_notifications: e.target.checked })}
-                style={{ accentColor: "#1E2A5A" }}
+                style={{ accentColor: "#1a6b9c" }}
               />
-              <span style={{ fontWeight: rdvForm.send_notifications ? 600 : 400, color: rdvForm.send_notifications ? "#1E2A5A" : "#8399a9" }}>
+              <span style={{ fontWeight: rdvForm.send_notifications ? 600 : 400, color: rdvForm.send_notifications ? "#1a6b9c" : "#8399a9" }}>
                 {rdvForm.send_notifications ? "Envoyer un email de confirmation au client" : "Pas d'email de confirmation"}
               </span>
             </label>
-
-            {/* Status - key for post-RDV workflow */}
-            <div className="space-y-2">
-              <Label>Statut du RDV</Label>
-              {(() => {
-                const isFuture = rdvForm.scheduled_at ? new Date(rdvForm.scheduled_at) > new Date() : false;
-                return (
-                  <>
-                    <select
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                      value={rdvForm.status}
-                      onChange={(e) => setRdvForm({ ...rdvForm, status: e.target.value, rdv_result: "" })}
-                    >
-                      <option value="booked">Planifié</option>
-                      {!isFuture && <option value="done">Effectué (Done)</option>}
-                      {!isFuture && <option value="no_show">No show</option>}
-                      <option value="cancelled">Annulé</option>
-                    </select>
-                    {isFuture && rdvForm.status === "booked" && (
-                      <p style={{ fontSize: 11, color: "#8399a9", marginTop: 4 }}>
-                        Ce RDV est dans le futur — seule l&apos;annulation est possible.
-                      </p>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-
-            {/* If done → show result: signed or not signed */}
-            {rdvForm.status === "done" && (
-              <div className="space-y-2">
-                <Label>Résultat du RDV</Label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-                  value={rdvForm.rdv_result}
-                  onChange={(e) => setRdvForm({ ...rdvForm, rdv_result: e.target.value as typeof rdvForm.rdv_result })}
-                >
-                  <option value="">Sélectionner...</option>
-                  <option value="opportunity_detected">Opportunité détectée</option>
-                  <option value="quote_to_send">Devis à envoyer</option>
-                  <option value="signed">Signed</option>
-                  <option value="not_signed">Not signed</option>
-                </select>
-              </div>
-            )}
-
-            {rdvForm.status === "done" && rdvForm.rdv_result === "signed" && (
-              <div style={{ padding: "10px 14px", background: "#e8f8f0", borderRadius: 8, borderLeft: "4px solid #2ecc71", fontSize: 13, color: "#27ae60", fontWeight: 500 }}>
-                Le contact passera en statut &quot;Signed&quot; et en cycle &quot;Client&quot;.
-              </div>
-            )}
-
-            {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
-              <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1E2A5A", fontSize: 13, color: "#161f45", fontWeight: 500 }}>
-                Un deal sera créé automatiquement et vous serez redirigé vers sa page.
-              </div>
-            )}
-
-            {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
-              <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #E8732A", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
-                Un deal &quot;Devis à envoyer&quot; sera créé et vous serez redirigé vers sa page.
-              </div>
-            )}
-
-            {rdvForm.status === "no_show" && (
-              <div style={{ padding: "10px 14px", background: "#fde8e8", borderRadius: 8, borderLeft: "4px solid #e74c3c", fontSize: 13, color: "#c62828", fontWeight: 500 }}>
-                Le prospect ne s&apos;est pas présenté au rendez-vous.
-              </div>
-            )}
-
-            {/* Outcome text (visible in edit mode) */}
-            {editingMeetingId && (
-              <div className="space-y-2">
-                <Label>Résumé / Outcome</Label>
-                <Input
-                  value={rdvForm.outcome}
-                  onChange={(e) => setRdvForm({ ...rdvForm, outcome: e.target.value })}
-                  placeholder="Résumé du résultat..."
-                />
-              </div>
-            )}
 
             <Button
               onClick={handleSaveRdv}
               disabled={saving || !rdvForm.scheduled_at}
               className="w-full"
-              style={{ background: "#E8732A", color: "white" }}
+              style={{ background: "#FF6B35", color: "white" }}
             >
-              {saving ? "Enregistrement..." : (editingMeetingId ? "Sauvegarder le RDV" : "Créer le RDV")}
+              {saving ? "Enregistrement..." : "Créer le RDV"}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* RDV Suivi Popup (Edit — same style as home page) */}
+      {rdvOpen && editingMeetingId && (() => {
+        const editingMeeting = meetings.find(m => m.id === editingMeetingId);
+        if (!editingMeeting) return null;
+        const tc = MEETING_TYPE_COLORS[rdvForm.meeting_type] ?? MEETING_TYPE_COLORS.R0;
+        const sc = RDV_STATUS_LABELS[rdvForm.status] ?? RDV_STATUS_LABELS.booked;
+        const isFuture = editingMeeting.scheduled_at ? new Date(editingMeeting.scheduled_at as string) > new Date() : false;
+
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) { setRdvOpen(false); setEditingMeetingId(null); setEditingMeetingOriginalStatus(null); resetRdvState(); } }}
+          >
+            <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 580, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
+              {/* Header */}
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3 style={{ fontWeight: 700, fontSize: 16, color: "#1a2a3a", margin: 0 }}>Suivi du RDV</h3>
+                <button onClick={() => { setRdvOpen(false); setEditingMeetingId(null); setEditingMeetingOriginalStatus(null); resetRdvState(); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4 }}>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: 20 }} className="space-y-4">
+                {/* Type de RDV */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Type de RDV *</div>
+                  <select value={rdvForm.meeting_type} onChange={(e) => setRdvForm({ ...rdvForm, meeting_type: e.target.value })}
+                    style={{ height: 36, width: "100%", borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, fontWeight: 600, background: tc.bg, color: tc.text, cursor: "pointer" }}>
+                    <option value="R0">R0 — Qualif.</option>
+                    <option value="R1">R1 — Découverte</option>
+                    <option value="R2">R2 — Solution</option>
+                    <option value="R3">R3 — Négo.</option>
+                  </select>
+                </div>
+
+                {/* Date & Heure de l'action (read-only) */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Date & Heure de l&apos;action</div>
+                  <div style={{ fontSize: 13, color: "#1a2a3a", padding: "8px 12px", background: "#f5f7fa", borderRadius: 8 }}>
+                    {(() => { try { return format(new Date((editingMeeting.created_at ?? editingMeeting.scheduled_at) as string), "dd/MM/yyyy HH:mm", { locale: fr }); } catch { return "—"; } })()}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8399a9", marginTop: 2 }}>Quand cette action a été effectuée</div>
+                </div>
+
+                {/* Date & Heure du RDV planifié (read-only) */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Date & Heure du RDV planifié *</div>
+                  <div style={{ fontSize: 13, color: "#1a2a3a", padding: "8px 12px", background: "#f5f7fa", borderRadius: 8 }}>
+                    {(() => { try { return format(new Date(editingMeeting.scheduled_at as string), "dd/MM/yyyy HH:mm", { locale: fr }); } catch { return "—"; } })()}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8399a9", marginTop: 2 }}>Quand le RDV aura lieu</div>
+                </div>
+
+                {/* Durée + Mode */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Durée</div>
+                    <select value={rdvForm.duration_minutes} onChange={(e) => setRdvForm({ ...rdvForm, duration_minutes: e.target.value })}
+                      style={{ height: 36, width: "100%", borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a", cursor: "pointer" }}>
+                      <option value="15">15 min</option>
+                      <option value="30">30 min</option>
+                      <option value="45">45 min</option>
+                      <option value="60">1h</option>
+                      <option value="90">1h30</option>
+                      <option value="120">2h</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Mode</div>
+                    <select value={rdvForm.meeting_mode} onChange={(e) => setRdvForm({ ...rdvForm, meeting_mode: e.target.value })}
+                      style={{ height: 36, width: "100%", borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, color: "#1a2a3a", cursor: "pointer" }}>
+                      <option value="visio">Visio</option>
+                      <option value="phone">Téléphone</option>
+                      <option value="in_person">En personne</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#5a6f80", marginBottom: 4 }}>Notes du RDV</div>
+                  <textarea
+                    value={rdvForm.notes}
+                    onChange={(e) => setRdvForm({ ...rdvForm, notes: e.target.value })}
+                    placeholder="Écrivez ou dictez vos notes de RDV..."
+                    style={{ width: "100%", minHeight: 100, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
+                  />
+                  <VoiceButton isRecording={rdvNotesVoice.isRecording} isFormatting={rdvNotesVoice.isFormatting} onClick={rdvNotesVoice.toggleRecording} tone={rdvNotesVoice.tone} onToneChange={rdvNotesVoice.setTone} />
+                </div>
+
+                {/* Statut du RDV */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Statut du RDV</div>
+                  <select
+                    value={rdvForm.status}
+                    onChange={(e) => setRdvForm({ ...rdvForm, status: e.target.value, rdv_result: "" })}
+                    style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, fontWeight: 600, background: sc.bg, color: sc.text, cursor: "pointer" }}
+                  >
+                    <option value="booked">Planifié</option>
+                    {!isFuture && <option value="done">Effectué (Done)</option>}
+                    {!isFuture && <option value="no_show">No show</option>}
+                    <option value="cancelled">Annulé</option>
+                  </select>
+                  {isFuture && rdvForm.status === "booked" && (
+                    <p style={{ fontSize: 11, color: "#8399a9", marginTop: 4 }}>Ce RDV est dans le futur — seule l&apos;annulation est possible.</p>
+                  )}
+                </div>
+
+                {/* Résultat du RDV (si done) */}
+                {rdvForm.status === "done" && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Résultat du RDV</div>
+                    <select
+                      value={rdvForm.rdv_result}
+                      onChange={(e) => setRdvForm({ ...rdvForm, rdv_result: e.target.value as typeof rdvForm.rdv_result })}
+                      style={{ height: 36, borderRadius: 8, border: "1px solid #dce8f0", padding: "0 12px", fontSize: 13, fontWeight: 600, color: "#1a2a3a", cursor: "pointer" }}
+                    >
+                      <option value="">Sélectionner...</option>
+                      <option value="opportunity_detected">Opportunité détectée</option>
+                      <option value="quote_to_send">Devis à envoyer</option>
+                      <option value="signed">Signed</option>
+                      <option value="not_signed">Not signed</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Result messages */}
+                {rdvForm.status === "done" && rdvForm.rdv_result === "signed" && (
+                  <div style={{ padding: "10px 14px", background: "#e8f8f0", borderRadius: 8, borderLeft: "4px solid #2ecc71", fontSize: 13, color: "#27ae60", fontWeight: 500 }}>
+                    Le contact passera en statut &quot;Signed&quot; et en cycle &quot;Client&quot;.
+                  </div>
+                )}
+                {rdvForm.status === "done" && rdvForm.rdv_result === "opportunity_detected" && (
+                  <div style={{ padding: "10px 14px", background: "#e3f2fd", borderRadius: 8, borderLeft: "4px solid #1a6b9c", fontSize: 13, color: "#0d4f7a", fontWeight: 500 }}>
+                    Un deal &quot;Opportunité&quot; sera créé automatiquement.
+                  </div>
+                )}
+                {rdvForm.status === "done" && rdvForm.rdv_result === "quote_to_send" && (
+                  <div style={{ padding: "10px 14px", background: "#fff3e0", borderRadius: 8, borderLeft: "4px solid #FF6B35", fontSize: 13, color: "#e65100", fontWeight: 500 }}>
+                    Un deal &quot;Devis à envoyer&quot; sera créé automatiquement.
+                  </div>
+                )}
+                {rdvForm.status === "no_show" && (
+                  <div style={{ padding: "10px 14px", background: "#fde8e8", borderRadius: 8, borderLeft: "4px solid #e74c3c", fontSize: 13, color: "#c62828", fontWeight: 500 }}>
+                    Le prospect ne s&apos;est pas présenté au rendez-vous.
+                  </div>
+                )}
+
+                {/* Outcome (résumé) */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9", marginBottom: 6 }}>Résumé / Outcome</div>
+                  <textarea
+                    value={rdvForm.outcome}
+                    onChange={(e) => setRdvForm({ ...rdvForm, outcome: e.target.value })}
+                    placeholder="Résumé du RDV, prochaine étape..."
+                    style={{ width: "100%", minHeight: 70, borderRadius: 10, border: "1px solid #dce8f0", padding: 12, fontSize: 13, color: "#1a2a3a", resize: "vertical", lineHeight: 1.6, outline: "none" }}
+                  />
+                  <VoiceButton isRecording={rdvOutcomeVoice.isRecording} isFormatting={rdvOutcomeVoice.isFormatting} onClick={rdvOutcomeVoice.toggleRecording} tone={rdvOutcomeVoice.tone} onToneChange={rdvOutcomeVoice.setTone} />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", gap: 10 }}>
+                <button onClick={() => { setRdvOpen(false); setEditingMeetingId(null); setEditingMeetingOriginalStatus(null); resetRdvState(); }} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveRdv}
+                  disabled={saving}
+                  style={{ height: 36, borderRadius: 8, background: "linear-gradient(135deg, #FF6B35 0%, #e65100 100%)", color: "white", fontSize: 13, fontWeight: 700, padding: "0 24px", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+                >
+                  {saving ? "..." : "Sauvegarder le suivi"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {/* Email preview popup */}
       {emailPreview && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
