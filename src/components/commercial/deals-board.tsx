@@ -308,7 +308,7 @@ export function DealsBoard({
     await supabase.from("deals").update({
       stage: targetStage,
       probability: DEAL_STAGE_PROBABILITY[targetStage],
-      close_date: targetStage === "closed_won" ? new Date().toISOString().split("T")[0] : null,
+      close_date: (targetStage === "closed_won" || targetStage === "closed_lost") ? new Date().toISOString().split("T")[0] : null,
       stage_changed_at: new Date().toISOString(),
     }).eq("id", draggedDealId);
 
@@ -370,7 +370,7 @@ export function DealsBoard({
       expected_close_date: form.expected_close_date || null,
       notes: form.notes || null,
     };
-    const closeDate = stage === "closed_won" ? (form.close_date || new Date().toISOString().split("T")[0]) : null;
+    const closeDate = (stage === "closed_won" || stage === "closed_lost") ? (form.close_date || new Date().toISOString().split("T")[0]) : null;
     let savedId: string | null = null;
     if (editingDealId) {
       await supabase.from("deals").update({ ...payload, close_date: closeDate }).eq("id", editingDealId);
@@ -420,9 +420,20 @@ export function DealsBoard({
     return { from: customFrom, to: customTo };
   })();
 
+  const today = new Date().toISOString().slice(0, 10);
   const filteredDeals = deals.filter((d) => {
     const created = (d.created_at as string)?.slice(0, 10) ?? "";
-    return created >= periodRange.from && created <= periodRange.to;
+    const isClosed = ["closed_won", "closed_lost"].includes(d.stage);
+    if (isClosed) {
+      // Deals fermés : placés dans l'année de clôture (close_date), fallback created_at
+      const closeDate = ((d.close_date ?? d.created_at) as string)?.slice(0, 10) ?? "";
+      return closeDate >= periodRange.from && closeDate <= periodRange.to;
+    } else {
+      // Deals en cours : portés sur la période courante uniquement
+      // (ils disparaissent des périodes passées)
+      const isCurrentPeriod = today >= periodRange.from && today <= periodRange.to;
+      return isCurrentPeriod && created <= today;
+    }
   });
 
   // Use filtered deals for display but keep all deals for drag operations
