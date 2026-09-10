@@ -1297,13 +1297,16 @@ export function ReportsView({
           });
 
           // Booked: credit to the rep who made the booking call (activity with "Booké"/"Booked")
+          // Booked: activity with "Booké" OR any meeting assigned to this rep
           const repBookedContactIds = new Set<string>();
           repActivities.forEach((a: R) => {
             if (a.type === "appel" && a.description && (String(a.description).includes("Booké") || String(a.description).includes("Booked"))) {
               if (a.contact_id) repBookedContactIds.add(a.contact_id as string);
             }
           });
-          // Booked = uniquement crédité à la personne qui a fait l'appel de booking (activité "Booké")
+          repMeetings.forEach((m: R) => {
+            if (m.contact_id) repBookedContactIds.add(m.contact_id as string);
+          });
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMeeting[cid];
@@ -1668,7 +1671,7 @@ export function ReportsView({
               if (a.contact_id) repBookedContactIds.add(a.contact_id as string);
             }
           });
-          repMeetings.forEach((m: R) => { if (m.contact_id && (m.status === "booked" || m.status === "done")) repBookedContactIds.add(m.contact_id as string); });
+          repMeetings.forEach((m: R) => { if (m.contact_id) repBookedContactIds.add(m.contact_id as string); });
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMeeting[cid];
@@ -2027,7 +2030,7 @@ export function ReportsView({
               if (a.contact_id) repBookedContactIds.add(a.contact_id as string);
             }
           });
-          repMeetings.forEach((m: R) => { if (m.contact_id && (m.status === "booked" || m.status === "done")) repBookedContactIds.add(m.contact_id as string); });
+          repMeetings.forEach((m: R) => { if (m.contact_id) repBookedContactIds.add(m.contact_id as string); });
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMtg[cid];
