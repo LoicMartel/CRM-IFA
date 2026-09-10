@@ -1285,7 +1285,8 @@ export function ReportsView({
             return f && f >= monthStart && f <= monthEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = contactedThisPeriod.size - newCted;
+          const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
+          const oldCted = oldCtedContacts.size;
 
           // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
@@ -1386,6 +1387,7 @@ export function ReportsView({
             _repOrders: repOrders,
             _newBkdContacts: newBkdContacts,
             _newCtedContacts: newCtedContacts,
+            _oldCtedContacts: oldCtedContacts,
             _newDoneContacts: newDoneContacts,
           };
         });
@@ -1653,7 +1655,8 @@ export function ReportsView({
             return f && f >= weekStart && f <= weekEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = contactedThisPeriod.size - newCted;
+          const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
+          const oldCted = oldCtedContacts.size;
 
           // First-ever meeting date per contact (ALL reps)
           const firstMeeting: Record<string, string> = {};
@@ -1751,6 +1754,7 @@ export function ReportsView({
             _periodSignedDeals: weekSignedDeals,
             _newBkdContacts: newBkdContacts,
             _newCtedContacts: newCtedContacts,
+            _oldCtedContacts: oldCtedContacts,
             _newDoneContacts: newDoneContacts,
           };
         });
@@ -2012,7 +2016,8 @@ export function ReportsView({
             return f && f >= periodStart && f <= periodEnd;
           }));
           const newCted = newCtedContacts.size;
-          const oldCted = contactedThisPeriod.size - newCted;
+          const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
+          const oldCted = oldCtedContacts.size;
 
           // First-ever meeting date per contact (ALL reps)
           const firstMtg: Record<string, string> = {};
@@ -2088,6 +2093,7 @@ export function ReportsView({
             _periodSignedDeals: periodSignedDeals,
             _newBkdContacts: newBkdContacts,
             _newCtedContacts: newCtedContacts,
+            _oldCtedContacts: oldCtedContacts,
             _newDoneContacts: newDoneContacts,
           };
         });
