@@ -1428,7 +1428,7 @@ export function CompanyDetail({
                       {rsLearnersPopup.learnerIds.map((lid) => {
                         const l = learners.find((lr) => s(lr.id) === lid);
                         if (!l) return null;
-                        const name = \`\${s(l.first_name)} \${s(l.last_name)}\`;
+                        const name = `${s(l.first_name)} ${s(l.last_name)}`;
                         const contactMatch = contacts.find((c) =>
                           s(c.first_name).toLowerCase() === s(l.first_name).toLowerCase() &&
                           s(c.last_name).toLowerCase() === s(l.last_name).toLowerCase()
@@ -1438,7 +1438,7 @@ export function CompanyDetail({
                             <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{name}</span>
                             {contactMatch ? (
                               <button
-                                onClick={() => { setRsLearnersPopup(null); router.push(\`/contacts/\${s(contactMatch.id)}\`); }}
+                                onClick={() => { setRsLearnersPopup(null); router.push(`/contacts/${s(contactMatch.id)}`); }}
                                 style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#e3f2fd", color: "#1E2A5A", border: "none", cursor: "pointer" }}
                               >
                                 Voir fiche
