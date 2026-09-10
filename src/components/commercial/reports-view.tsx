@@ -1352,7 +1352,7 @@ export function ReportsView({
 
           const totalBooked = newBkd + oldBked;
           const attendNew = newDone;
-          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
+          const pctAttend = newBkd > 0 ? Math.round((newDone / newBkd) * 100) : 0;
 
           const totalDone = oldDone + newDone;
           const periodSignedDeals = repDeals.filter(d => d.stage === "closed_won" && isInMonth((d.close_date || d.created_at) as string));
@@ -1718,7 +1718,7 @@ export function ReportsView({
 
           const totalBooked = newBkd + oldBked;
           const attendNew = newDone;
-          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
+          const pctAttend = newBkd > 0 ? Math.round((newDone / newBkd) * 100) : 0;
 
           const totalDone = oldDone + newDone;
           const nSigned = weekSignedDeals.length;
@@ -2064,7 +2064,7 @@ export function ReportsView({
           const pctNewCted = monthlyLeads > 0 ? Math.round((newCted / monthlyLeads) * 100) : 0;
           const pctNewBked = newCted > 0 ? Math.round((newBkd / newCted) * 100) : 0;
           const totalBooked = newBkd + oldBked;
-          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
+          const pctAttend = newBkd > 0 ? Math.round((newDone / newBkd) * 100) : 0;
           const totalDone = oldDone + newDone;
           const periodSignedDeals = repDeals.filter(d => d.stage === "closed_won" && isInPeriod((d.close_date || d.created_at) as string));
           const nSigned = periodSignedDeals.length;
