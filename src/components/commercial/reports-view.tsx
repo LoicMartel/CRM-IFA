@@ -173,6 +173,17 @@ export function ReportsView({
     return c?.id ?? (record.contact_id as string | null);
   }
 
+  // Deduplicate meetings by contact_id (keep first occurrence)
+  function uniqueByContact(meetingsList: R[]): R[] {
+    const seen = new Set<string>();
+    return meetingsList.filter(m => {
+      const cid = m.contact_id as string;
+      if (!cid || seen.has(cid)) return false;
+      seen.add(cid);
+      return true;
+    });
+  }
+
   function drillCell(
     value: number | string,
     style: React.CSSProperties,
@@ -1251,7 +1262,7 @@ export function ReportsView({
             if (!firstInteraction[cid] || d < firstInteraction[cid]) firstInteraction[cid] = d;
           });
 
-          // Unique contacts actually reached this period by THIS rep (activities only, not meetings)
+          // Unique contacts actually reached this period by THIS rep (activities + meetings)
           const contactedThisPeriod = new Set<string>();
           repActivities.forEach((a: R) => {
             if (!a.contact_id) return;
@@ -1260,6 +1271,12 @@ export function ReportsView({
               if (desc.includes("Pas de réponse") || desc.includes("Message vocal")) return;
             }
             contactedThisPeriod.add(a.contact_id as string);
+          });
+          // Meetings booked also count as contacted (booking = contact was reached)
+          repMeetings.forEach((m: R) => {
+            if (m.contact_id && (m.status as string) === "booked") {
+              contactedThisPeriod.add(m.contact_id as string);
+            }
           });
 
           // New contacted = first-ever interaction is in this month
@@ -1330,11 +1347,13 @@ export function ReportsView({
           const pctNewCted = monthlyLeads > 0 ? Math.round((newCted / monthlyLeads) * 100) : 0;
           const pctNewBked = newCted > 0 ? Math.round((newBkd / newCted) * 100) : 0;
 
-          const attendNew = repContacts.filter(c => c.lead_status === "lead").length;
-          const pctAttend = monthlyLeads > 0 ? Math.round(((monthlyLeads - attendNew) / monthlyLeads) * 100) : 0;
+          const totalBooked = newBkd + oldBked;
+          const attendNew = newDone;
+          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
 
           const totalDone = oldDone + newDone;
-          const nSigned = repDeals.filter(d => d.stage === "closed_won" && isInMonth((d.close_date || d.created_at) as string)).length;
+          const periodSignedDeals = repDeals.filter(d => d.stage === "closed_won" && isInMonth((d.close_date || d.created_at) as string));
+          const nSigned = periodSignedDeals.length;
           const closingTotal = totalDone > 0 ? Math.round((nSigned / totalDone) * 100) : 0;
           const closingNew = newDone > 0 ? Math.round((nSigned / newDone) * 100) : 0;
 
@@ -1357,6 +1376,7 @@ export function ReportsView({
             closingTotal, closingNew, caHT, avgPrice, gainsPerCts,
             pctBking, pctAttendMkt, pctClosingMkt, pctGoalDone,
             _repContacts: repContactsInPeriod,
+            _periodSignedDeals: periodSignedDeals,
             _repMeetings: repMeetings,
             _doneMeetings: doneMeetings,
             _repDeals: repDeals,
@@ -1448,18 +1468,18 @@ export function ReportsView({
                       <tr key={r.name}>
                         <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
-                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, uniqueByContact((r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Monthly Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
-                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
-                        {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, uniqueByContact((r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
-                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._repDeals as R[]).filter((d: R) => (d.stage as string) === "closed_won").map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
+                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, uniqueByContact(r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._periodSignedDeals as R[]).map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
                         <td style={tdC}>{r.closingTotal}%</td>
                         <td style={tdC}>{r.closingNew}%</td>
                         {drillCell(fmt(r.caHT), { ...tdB, color: "#27ae60" }, `CA HT — ${r.name}`, (r._repOrders as R[]).map((o: R) => ({ label: (o.name as string) ?? "Commande", sublabel: ((o.close_date || o.created_at) as string).slice(0, 10), amount: Number(o.amount) || 0 })))}
@@ -1618,6 +1638,12 @@ export function ReportsView({
             }
             contactedThisPeriod.add(a.contact_id as string);
           });
+          // Meetings done/booked also count as contacted (if you had a meeting, you were contacted)
+          repMeetings.forEach((m: R) => {
+            if (m.contact_id && ["done", "booked"].includes(m.status as string)) {
+              contactedThisPeriod.add(m.contact_id as string);
+            }
+          });
 
           const newCtedContacts = new Set([...contactedThisPeriod].filter(cid => {
             const f = firstInteraction[cid];
@@ -1687,8 +1713,9 @@ export function ReportsView({
           const pctNewCted = monthlyLeads > 0 ? Math.round((newCted / monthlyLeads) * 100) : 0;
           const pctNewBked = newCted > 0 ? Math.round((newBkd / newCted) * 100) : 0;
 
-          const attendNew = repContacts.filter(c => isInWeek(c.created_at as string) && c.lead_status === "lead").length;
-          const pctAttend = monthlyLeads > 0 ? Math.round(((monthlyLeads - attendNew) / monthlyLeads) * 100) : 0;
+          const totalBooked = newBkd + oldBked;
+          const attendNew = newDone;
+          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
 
           const totalDone = oldDone + newDone;
           const nSigned = weekSignedDeals.length;
@@ -1718,6 +1745,7 @@ export function ReportsView({
             _doneMeetings: doneMeetings,
             _repDeals: repDeals,
             _repOrders: repOrders,
+            _periodSignedDeals: weekSignedDeals,
             _newBkdContacts: newBkdContacts,
             _newCtedContacts: newCtedContacts,
             _newDoneContacts: newDoneContacts,
@@ -1815,18 +1843,18 @@ export function ReportsView({
                       <tr key={r.name}>
                         <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
-                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, uniqueByContact((r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Weekly Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
-                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
                         {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
-                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._repDeals as R[]).filter((d: R) => (d.stage as string) === "closed_won").map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
+                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, uniqueByContact(r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._periodSignedDeals as R[]).map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
                         <td style={tdC}>{r.closingTotal}%</td>
                         <td style={tdC}>{r.closingNew}%</td>
                         {drillCell(fmt(r.caHT), { ...tdB, color: "#27ae60" }, `CA HT — ${r.name}`, (r._repOrders as R[]).map((o: R) => ({ label: (o.name as string) ?? "Commande", sublabel: ((o.close_date || o.created_at) as string).slice(0, 10), amount: Number(o.amount) || 0 })))}
@@ -1969,6 +1997,12 @@ export function ReportsView({
             }
             contactedThisPeriod.add(a.contact_id as string);
           });
+          // Meetings booked also count as contacted
+          repMeetings.forEach((m: R) => {
+            if (m.contact_id && (m.status as string) === "booked") {
+              contactedThisPeriod.add(m.contact_id as string);
+            }
+          });
 
           const newCtedContacts = new Set([...contactedThisPeriod].filter(cid => {
             const f = firstInteraction[cid];
@@ -2026,9 +2060,11 @@ export function ReportsView({
           const monthlyLeads = repContactsInPeriod.length;
           const pctNewCted = monthlyLeads > 0 ? Math.round((newCted / monthlyLeads) * 100) : 0;
           const pctNewBked = newCted > 0 ? Math.round((newBkd / newCted) * 100) : 0;
-          const pctAttend = monthlyLeads > 0 ? Math.round(((newCted + oldCted) / monthlyLeads) * 100) : 0;
+          const totalBooked = newBkd + oldBked;
+          const pctAttend = totalBooked > 0 ? Math.round((newDone / totalBooked) * 100) : 0;
           const totalDone = oldDone + newDone;
-          const nSigned = repDeals.filter(d => d.stage === "closed_won" && isInPeriod((d.close_date || d.created_at) as string)).length;
+          const periodSignedDeals = repDeals.filter(d => d.stage === "closed_won" && isInPeriod((d.close_date || d.created_at) as string));
+          const nSigned = periodSignedDeals.length;
           const closingTotal = totalDone > 0 ? Math.round((nSigned / totalDone) * 100) : 0;
           const closingNew = newDone > 0 ? Math.round((nSigned / newDone) * 100) : 0;
           const caHT = repOrders.reduce((s, o) => s + (Number(o.amount) || 0), 0);
@@ -2046,6 +2082,7 @@ export function ReportsView({
             _doneMeetings: doneMtgs,
             _repDeals: repDeals,
             _repOrders: repOrders,
+            _periodSignedDeals: periodSignedDeals,
             _newBkdContacts: newBkdContacts,
             _newCtedContacts: newCtedContacts,
             _newDoneContacts: newDoneContacts,
@@ -2132,18 +2169,18 @@ export function ReportsView({
                       <tr key={r.name}>
                         <td style={{ ...tdL, color: "#1E2A5A" }} title={r.name}>{initials(r.name)}</td>
                         {drillCell(r.oldCted, tdB, `Old Contacted — ${r.name}`, [...new Set([...(r._repMeetings as R[]).map((m: R) => m.contact_id as string)])].filter(cid => !r._newCtedContacts.has(cid)).map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
-                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldBked, tdB, `Old Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => !r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctBked}%</td>
-                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.oldDone, tdB, `Old Done — ${r.name}`, uniqueByContact((r._doneMeetings as R[]).filter((m: R) => !r._newDoneContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         {drillCell(r.monthlyLeads, tdB, `Total Leads — ${r.name}`, (r._repContacts as R[]).map((c: R) => ({ label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` })))}
                         {drillCell(r.newCted, { ...tdHL, fontWeight: 700 }, `New Contacted — ${r.name}`, [...r._newCtedContacts].map(cid => { const c = contacts.find((ct: R) => (ct.id as string) === cid); return c ? { label: `${c.first_name} ${c.last_name}`, sublabel: (c.created_at as string).slice(0, 10), href: `/contacts/${c.id}` } : null; }).filter(Boolean) as any[])}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewCted}%</td>
-                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, (r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.newBkd, { ...tdHL, fontWeight: 700 }, `New Booked — ${r.name}`, uniqueByContact((r._repMeetings as R[]).filter((m: R) => r._newBkdContacts.has(m.contact_id as string))).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={{ ...tdHL, color: "#1E2A5A", fontWeight: 600 }}>{r.pctNewBked}%</td>
                         {drillCell(r.newDone, { ...tdHL, fontWeight: 700 }, `New Done — ${r.name}`, (r._doneMeetings as R[]).filter((m: R) => r._newDoneContacts.has(m.contact_id as string)).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
                         <td style={tdC}>{r.pctAttend}%</td>
-                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, (r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
-                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._repDeals as R[]).filter((d: R) => (d.stage as string) === "closed_won").map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
+                        {drillCell(r.totalDone, tdB, `Total Done — ${r.name}`, uniqueByContact(r._doneMeetings as R[]).map((m: R) => ({ label: getContactNameFromRecord(m), sublabel: `${(m.meeting_type as string)} — ${(m.scheduled_at as string).slice(0, 10)}`, href: getContactIdFromRecord(m) ? `/contacts/${getContactIdFromRecord(m)}` : undefined })))}
+                        {drillCell(r.nSigned, tdB, `Signés — ${r.name}`, (r._periodSignedDeals as R[]).map((d: R) => ({ label: (d.name as string) ?? "Deal", sublabel: ((d.close_date || d.created_at) as string).slice(0, 10), href: `/deals`, amount: Number(d.amount) || 0 })))}
                         <td style={tdC}>{r.closingTotal}%</td>
                         <td style={tdC}>{r.closingNew}%</td>
                         {drillCell(fmt(r.caHT), { ...tdB, color: "#27ae60" }, `CA HT — ${r.name}`, (r._repOrders as R[]).map((o: R) => ({ label: (o.name as string) ?? "Commande", sublabel: ((o.close_date || o.created_at) as string).slice(0, 10), amount: Number(o.amount) || 0 })))}

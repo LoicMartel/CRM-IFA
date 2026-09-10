@@ -246,6 +246,8 @@ export function HomeView({
           }
         } else if (newStatus === "done") {
           await supabase.from("contacts").update({ lead_status: "rdv_done" }).eq("id", m.contact_id as string);
+        } else if (newStatus === "cancelled") {
+          await supabase.from("contacts").update({ lead_status: "cancelled" }).eq("id", m.contact_id as string);
         }
       }
 
