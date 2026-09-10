@@ -1318,12 +1318,14 @@ export function ReportsView({
           const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
           const oldCted = oldCtedContacts.size;
 
-          // First-ever meeting date per contact (ALL reps)
+          // First-ever meeting date per contact (ALL reps) — use earliest of created_at or scheduled_at
           const firstMeeting: Record<string, string> = {};
           meetings.forEach((m: R) => {
             const cid = m.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
-            const d = (m.scheduled_at as string).slice(0, 10);
+            const ds = (m.scheduled_at as string).slice(0, 10);
+            const dc = (m.created_at as string)?.slice(0, 10) ?? ds;
+            const d = dc < ds ? dc : ds;
             if (!firstMeeting[cid] || d < firstMeeting[cid]) firstMeeting[cid] = d;
           });
 
@@ -1695,12 +1697,14 @@ export function ReportsView({
           const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
           const oldCted = oldCtedContacts.size;
 
-          // First-ever meeting date per contact (ALL reps)
+          // First-ever meeting date per contact (ALL reps) — use earliest of created_at or scheduled_at
           const firstMeeting: Record<string, string> = {};
           meetings.forEach((m: R) => {
             const cid = m.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
-            const d = (m.scheduled_at as string).slice(0, 10);
+            const ds = (m.scheduled_at as string).slice(0, 10);
+            const dc = (m.created_at as string)?.slice(0, 10) ?? ds;
+            const d = dc < ds ? dc : ds;
             if (!firstMeeting[cid] || d < firstMeeting[cid]) firstMeeting[cid] = d;
           });
 
