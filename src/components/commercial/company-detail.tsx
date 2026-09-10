@@ -135,6 +135,7 @@ export function CompanyDetail({
   const [rsForm, setRsForm] = useState({ name: "", siret: "", address: s(company.address) || "" });
   const [rsSelectedLearners, setRsSelectedLearners] = useState<Set<string>>(new Set());
   const [rsEditId, setRsEditId] = useState<string | null>(null);
+  const [rsLearnersPopup, setRsLearnersPopup] = useState<{ name: string; learnerIds: string[] } | null>(null);
 
   const loadRaisonsSociales = async () => {
     const supabase = createClient();
@@ -1383,14 +1384,15 @@ export function CompanyDetail({
                               <TableCell style={{ fontSize: 12 }}>{rs.siret || "—"}</TableCell>
                               <TableCell style={{ fontSize: 12 }}>{rs.address || "—"}</TableCell>
                               <TableCell>
-                                {rsLearnerNames.length === 0 ? (
-                                  <span style={{ color: "#7a8bab", fontSize: 12 }}>—</span>
+                                {rs.learner_ids.length === 0 ? (
+                                  <span style={{ color: "#7a8bab", fontSize: 12 }}>0</span>
                                 ) : (
-                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                                    {rsLearnerNames.map((n, i) => (
-                                      <span key={i} style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: "#e8f5e9", color: "#2e7d32" }}>{n}</span>
-                                    ))}
-                                  </div>
+                                  <button
+                                    onClick={() => setRsLearnersPopup({ name: rs.name, learnerIds: rs.learner_ids })}
+                                    style={{ fontSize: 13, fontWeight: 700, padding: "2px 10px", borderRadius: 999, background: "#e8f5e9", color: "#2e7d32", border: "none", cursor: "pointer", textDecoration: "underline dotted" }}
+                                  >
+                                    {rs.learner_ids.length}
+                                  </button>
                                 )}
                               </TableCell>
                               <TableCell style={{ textAlign: "right" }}>
