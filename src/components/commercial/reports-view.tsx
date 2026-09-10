@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel, type FiscalMode } from "@/lib/fiscal-year";
+import { getDefaultCustomFrom, getCurrentFiscalYearRange, getCurrentFiscalYearStart, getFiscalYearLabel, getFiscalYearRange, getFiscalYearOptions, getFiscalMonthsWithLabels, type FiscalMode } from "@/lib/fiscal-year";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { confirmDelete } from "@/lib/confirm-delete";
 import { formatPhone } from "@/lib/utils";
@@ -46,6 +46,7 @@ export function ReportsView({
   const router = useRouter();
   const { isRestrictedExterne, isReadOnly } = useCurrentRoles();
   const [selectedReport, setSelectedReport] = useState("general");
+  const [generalFY, setGeneralFY] = useState(() => getCurrentFiscalYearStart(fiscalMode));
   const [inboundMode, setInboundMode] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [outboundMode, setOutboundMode] = useState<"weekly" | "monthly" | "yearly">("weekly");
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -374,19 +375,30 @@ export function ReportsView({
     router.refresh();
   }
 
-  // ===== Computed data =====
-  // Deduplicate targets by month (YYYY-MM)
+  // ===== Computed data (filtered by selected fiscal year) =====
+  const generalFYRange = getFiscalYearRange(generalFY, fiscalMode);
+  const generalFYLabel = getFiscalYearLabel(generalFY, fiscalMode);
+  const fyMonths = getFiscalMonthsWithLabels(generalFY, fiscalMode);
+
+  function isInGeneralFY(dateStr: string | null | undefined): boolean {
+    if (!dateStr) return false;
+    const d = (dateStr as string).slice(0, 10);
+    return d >= generalFYRange.from && d <= generalFYRange.to;
+  }
+
+  // Deduplicate targets by month (YYYY-MM) and filter to selected FY
   const seenMonths = new Set<string>();
   const targets = salesTargets.filter((t) => {
     const mKey = (t.month as string).slice(0, 7);
     if (seenMonths.has(mKey)) return false;
     seenMonths.add(mKey);
-    return true;
+    const d = (t.month as string).slice(0, 10);
+    return d >= generalFYRange.from && d <= generalFYRange.to;
   });
   const annualTarget = targets.reduce((s, t) => s + (Number(t.target_amount) || 0), 0) || 860000;
 
-  // Won deals (orders prop now contains closed_won deals)
-  const wonDeals = orders;
+  // Won deals filtered by FY
+  const wonDeals = orders.filter(o => isInGeneralFY((o.close_date || o.created_at) as string));
 
   // Cumulative data per month — réalisé from won deals
   const monthlyDetail = targets.filter(t => Number(t.target_amount) > 0).map((t, i, arr) => {
@@ -405,8 +417,7 @@ export function ReportsView({
   const totalOrders = wonDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
   const annualPct = annualTarget > 0 ? (totalOrders / annualTarget) * 100 : 0;
 
-  // Current month (last with actual > 0)
-  // Current month based on actual date, not last month with CA
+  // Current month based on actual date
   const nowDate = new Date();
   const nowMonthEnd = `${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, "0")}-31`;
   const currentIdx = targets.filter(t => Number(t.target_amount) >= 0 && (t.month as string) <= nowMonthEnd).length - 1;
@@ -417,26 +428,25 @@ export function ReportsView({
   const ecart = totalOrders - objCumuleNow;
   const ecartPct = objCumuleNow > 0 ? Math.round(Math.abs(ecart) / objCumuleNow * 100) : 0;
 
-  // Source breakdown
+  // Source breakdown (filtered by FY)
   const sourceMap: Record<string, number> = {};
-  orders.forEach((o) => {
+  wonDeals.forEach((o) => {
     const src = (o.lead_sources as { name: string } | null)?.name ?? "Autre";
-    // Normalize: "Renouvellement" → "Renew"
     const normalized = src === "Renouvellement" ? "Renew" : src;
     sourceMap[normalized] = (sourceMap[normalized] || 0) + (Number(o.amount) || 0);
   });
   const sourceData = Object.entries(sourceMap).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
 
-  // Consultant breakdown
+  // Consultant breakdown (filtered by FY)
   const trainerMap: Record<string, number> = {};
-  orders.forEach((o) => {
+  wonDeals.forEach((o) => {
     const tm = o.team_members as { first_name: string; last_name: string } | null;
     const name = tm ? tm.first_name : "Autre";
     trainerMap[name] = (trainerMap[name] || 0) + (Number(o.amount) || 0);
   });
   const trainerData = Object.entries(trainerMap).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
 
-  // Opportunities vs Pipe
+  // Opportunities vs Pipe (current state, not FY-filtered)
   const oppDeals = deals.filter(d => d.stage === "opportunities");
   const pipeDeals = deals.filter(d => ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"].includes(d.stage as string));
   const oppAmount = oppDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
@@ -446,8 +456,8 @@ export function ReportsView({
     { name: "Pipe", montant: pipeAmount, nombre: pipeDeals.length },
   ];
 
-  // Progress bar months labels
-  const monthLabels = ["S", "O", "N", "D", "J", "F", "M", "A", "M", "J", "J", "A"];
+  // Progress bar months labels (dynamic based on FY)
+  const monthLabels = fyMonths.map(m => m.label.split(".")[0].charAt(0).toUpperCase());
 
   return (
     <div className="p-6 space-y-5">
@@ -480,6 +490,26 @@ export function ReportsView({
 
       {selectedReport === "general" && (
         <>
+          {/* Fiscal year selector */}
+          <div className="flex items-center gap-3" style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#5a6f80" }}>Année fiscale :</span>
+            {getFiscalYearOptions(4, fiscalMode).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setGeneralFY(opt.startYear)}
+                style={{
+                  height: 32, borderRadius: 8, padding: "0 14px", fontSize: 13, cursor: "pointer",
+                  fontWeight: generalFY === opt.startYear ? 700 : 500,
+                  border: `1px solid ${generalFY === opt.startYear ? "#1E2A5A" : "#dce8f0"}`,
+                  background: generalFY === opt.startYear ? "#1E2A5A" : "white",
+                  color: generalFY === opt.startYear ? "white" : "#5a6f80",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {/* 4 KPIs */}
           <div className="grid gap-3 md:grid-cols-4">
             <div className="lca-card">
@@ -524,7 +554,7 @@ export function ReportsView({
             <div style={{ padding: 20 }}>
               <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
                 <div>
-                  <div className="lca-label">Progression annuelle {getFiscalYearLabel(getCurrentFiscalYearStart(fiscalMode), fiscalMode)}</div>
+                  <div className="lca-label">Progression annuelle {generalFYLabel}</div>
                   <div className="lca-sub">{fmt(totalOrders)} réalisés sur {fmt(annualTarget)}</div>
                 </div>
                 <div className="lca-big-pct">{annualPct.toFixed(1)}%</div>
