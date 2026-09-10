@@ -1338,6 +1338,12 @@ export function ReportsView({
           repMeetings.forEach((m: R) => {
             if (m.contact_id) repBookedContactIds.add(m.contact_id as string);
           });
+          // Also count meetings CREATED this month (booking happened this month even if scheduled later)
+          meetings.forEach((m: R) => {
+            if (!m.contact_id || !inboundContactIds.has(m.contact_id as string)) return;
+            if (getTeamMemberName(m) !== repName) return;
+            if (isInMonth(m.created_at as string)) repBookedContactIds.add(m.contact_id as string);
+          });
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMeeting[cid];
@@ -2068,6 +2074,12 @@ export function ReportsView({
             }
           });
           repMeetings.forEach((m: R) => { if (m.contact_id) repBookedContactIds.add(m.contact_id as string); });
+          // Also count meetings CREATED this week (booking happened this week even if scheduled later)
+          meetings.forEach((m: R) => {
+            if (!m.contact_id || !inboundContactIds.has(m.contact_id as string)) return;
+            if (getTeamMemberName(m) !== repName) return;
+            if (isInWeek(m.created_at as string)) repBookedContactIds.add(m.contact_id as string);
+          });
           const bookedByRep = new Set([...repBookedContactIds].filter(cid => inboundContactIds.has(cid)));
           const newBkdContacts = new Set([...bookedByRep].filter(cid => {
             const f = firstMtg[cid];
