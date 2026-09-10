@@ -1413,7 +1413,47 @@ export function CompanyDetail({
                   )}
                 </div>
               </div>
-            </TabsContent>
+                          {/* Popup apprenants raison sociale */}
+              {rsLearnersPopup && (
+                <div
+                  style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  onMouseDown={(e) => { if (e.target === e.currentTarget) setRsLearnersPopup(null); }}
+                >
+                  <div style={{ background: "white", borderRadius: 14, width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+                    <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8ecf1", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <h3 style={{ fontWeight: 700, fontSize: 15, color: "#1a2a3a", margin: 0 }}>Apprenants — {rsLearnersPopup.name}</h3>
+                      <button onClick={() => setRsLearnersPopup(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#8399a9", padding: 4, fontSize: 18 }}>&times;</button>
+                    </div>
+                    <div style={{ padding: 16, maxHeight: 400, overflowY: "auto" }}>
+                      {rsLearnersPopup.learnerIds.map((lid) => {
+                        const l = learners.find((lr) => s(lr.id) === lid);
+                        if (!l) return null;
+                        const name = \`\${s(l.first_name)} \${s(l.last_name)}\`;
+                        const contactMatch = contacts.find((c) =>
+                          s(c.first_name).toLowerCase() === s(l.first_name).toLowerCase() &&
+                          s(c.last_name).toLowerCase() === s(l.last_name).toLowerCase()
+                        );
+                        return (
+                          <div key={lid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f4f8" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{name}</span>
+                            {contactMatch ? (
+                              <button
+                                onClick={() => { setRsLearnersPopup(null); router.push(\`/contacts/\${s(contactMatch.id)}\`); }}
+                                style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#e3f2fd", color: "#1E2A5A", border: "none", cursor: "pointer" }}
+                              >
+                                Voir fiche
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: 11, color: "#8399a9" }}>Pas de fiche contact</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+</TabsContent>
 
             {/* --- Activité (lecture seule, vue 360) --- */}
             <TabsContent value="activity" className="mt-4">
