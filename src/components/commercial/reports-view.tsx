@@ -1682,9 +1682,9 @@ export function ReportsView({
             }
             contactedThisPeriod.add(a.contact_id as string);
           });
-          // Meetings done/booked also count as contacted (if you had a meeting, you were contacted)
+          // Meetings booked also count as contacted (booking = contact was reached)
           repMeetings.forEach((m: R) => {
-            if (m.contact_id && ["done", "booked"].includes(m.status as string)) {
+            if (m.contact_id && (m.status as string) === "booked") {
               contactedThisPeriod.add(m.contact_id as string);
             }
           });
@@ -2061,12 +2061,14 @@ export function ReportsView({
           const oldCtedContacts = new Set([...contactedThisPeriod].filter(cid => !newCtedContacts.has(cid)));
           const oldCted = oldCtedContacts.size;
 
-          // First-ever meeting date per contact (ALL reps)
+          // First-ever meeting date per contact (ALL reps) — use earliest of created_at or scheduled_at
           const firstMtg: Record<string, string> = {};
           meetings.forEach((m: R) => {
             const cid = m.contact_id as string;
             if (!cid || !inboundContactIds.has(cid)) return;
-            const d = (m.scheduled_at as string).slice(0, 10);
+            const ds = (m.scheduled_at as string).slice(0, 10);
+            const dc = (m.created_at as string)?.slice(0, 10) ?? ds;
+            const d = dc < ds ? dc : ds;
             if (!firstMtg[cid] || d < firstMtg[cid]) firstMtg[cid] = d;
           });
 
