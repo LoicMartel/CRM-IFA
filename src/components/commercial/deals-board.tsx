@@ -930,6 +930,15 @@ export function DealsBoard({
 
                   {/* Upload */}
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                    <select
+                      value={docType}
+                      onChange={(e) => setDocType(e.target.value)}
+                      style={{ height: 32, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 8px", fontSize: 12, color: "#1a2a3a", cursor: "pointer" }}
+                    >
+                      {Object.entries(DOC_TYPE_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
                     <label style={{
                       height: 32, borderRadius: 6, background: "#1E2A5A", color: "white", fontSize: 12, fontWeight: 600,
                       padding: "0 14px", display: "flex", alignItems: "center", gap: 6, cursor: uploadingDoc ? "wait" : "pointer",
