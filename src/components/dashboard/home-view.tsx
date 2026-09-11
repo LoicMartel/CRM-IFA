@@ -477,11 +477,11 @@ export function HomeView({
       {/* ===== Vue d'ensemble de la journée ===== */}
       <div className="grid gap-3 md:grid-cols-4">
         <div className="lca-card" style={{ padding: "10px 14px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV aujourd&apos;hui</div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>RDV Sales aujourd&apos;hui</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#1E2A5A" }}>{todayMeetings.length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions aujourd&apos;hui</div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8399a9" }}>Sessions formation aujourd&apos;hui</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#27ae60" }}>{todaySessions.length}</div>
         </div>
         <div className="lca-card" style={{ padding: "10px 14px" }}>
@@ -500,10 +500,10 @@ export function HomeView({
           <div style={{ height: 4, background: "#1E2A5A" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <Calendar className="h-4 w-4" style={{ color: "#1E2A5A" }} /> RDV du jour
+              <Calendar className="h-4 w-4" style={{ color: "#1E2A5A" }} /> RDV Sales du jour
             </h3>
             {todayMeetings.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV aujourd&apos;hui</p>
+              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV Sales aujourd&apos;hui</p>
             ) : (
               <div className="space-y-2">
                 {todayMeetings.map((m: R) => {
@@ -552,10 +552,10 @@ export function HomeView({
           <div style={{ height: 4, background: "#27ae60" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <Video className="h-4 w-4" style={{ color: "#27ae60" }} /> Sessions du jour
+              <Video className="h-4 w-4" style={{ color: "#27ae60" }} /> Sessions formation du jour
             </h3>
             {todaySessions.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucune session aujourd&apos;hui</p>
+              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucune session formation aujourd&apos;hui</p>
             ) : (
               <div className="space-y-2">
                 {todaySessions.map((s: R) => {
@@ -674,10 +674,10 @@ export function HomeView({
           <div style={{ height: 4, background: "#161f45" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <TrendingUp className="h-4 w-4" style={{ color: "#161f45" }} /> Prochains RDV
+              <TrendingUp className="h-4 w-4" style={{ color: "#161f45" }} /> Prochains RDV Sales
             </h3>
             {upcomingMeetings.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV à venir</p>
+              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucun RDV Sales à venir</p>
             ) : (
               <div className="space-y-2">
                 {upcomingMeetings.map((m: R) => {
@@ -701,10 +701,10 @@ export function HomeView({
           <div style={{ height: 4, background: "#2e7d32" }} />
           <div style={{ padding: "16px 20px" }}>
             <h3 style={{ fontWeight: 700, color: "#1a2a3a", fontSize: 15, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <Clock className="h-4 w-4" style={{ color: "#2e7d32" }} /> Prochaines sessions
+              <Clock className="h-4 w-4" style={{ color: "#2e7d32" }} /> Prochaines sessions formation
             </h3>
             {upcomingSessions.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucune session à venir</p>
+              <p style={{ fontSize: 13, color: "#8399a9", textAlign: "center", padding: 20 }}>Aucune session formation à venir</p>
             ) : (
               <div className="space-y-2">
                 {upcomingSessions.map((s: R) => {
