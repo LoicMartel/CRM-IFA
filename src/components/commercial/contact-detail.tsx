@@ -708,6 +708,7 @@ export function ContactDetail({
         contact_id: contact.id,
         company_id: contact.company_id || null,
         assigned_to: primaryManagerId,
+        result_of_meeting_id: editingMeetingId,
       }).select("id").single();
       if (error) { alert("Erreur: " + error.message); }
 

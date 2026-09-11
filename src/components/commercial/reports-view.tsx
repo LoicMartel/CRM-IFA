@@ -262,6 +262,7 @@ export function ReportsView({
         duration_minutes: parseInt(rdvForm.duration_minutes) || 60, meeting_mode: rdvForm.meeting_mode,
         notes: rdvForm.notes || null, outcome: outcomeText || null,
         contact_id: m.contact_id || null, company_id: m.company_id || null, assigned_to: m.assigned_to || null,
+        result_of_meeting_id: m.id,
       });
       await supabase.from("meetings").update({ next_step: "completed" }).eq("id", m.id as string);
       if (m.contact_id) {

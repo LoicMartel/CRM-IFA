@@ -241,6 +241,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
         contact_id: m.contact_id,
         company_id: m.company_id,
         assigned_to: m.assigned_to,
+        result_of_meeting_id: m.id,
       });
       await supabase.from("meetings").update({ next_step: "completed" }).eq("id", m.id);
 
@@ -422,7 +423,7 @@ export function CommercialAgendaView({ meetings, teamMembers, tasks = [] }: { me
         <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 1 }}>{m.duration_minutes} min</div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
           <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 8, background: sc.bg, color: sc.text }}>{sc.label}</span>
-          {m.status === "booked" && (
+          {m.status === "booked" && m.next_step !== "completed" && (
             <button onClick={(e) => { e.stopPropagation(); openMeeting(m); }}
               style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 22, borderRadius: 20, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #E8732A 0%, #e65100 100%)", color: "white", fontSize: 9, fontWeight: 700, padding: "0 10px" }}>
               📋 Suivi rdv

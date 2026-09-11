@@ -28,26 +28,48 @@ export default async function CommercialAgendaPage() {
       .order("due_date", { ascending: true }),
   ]);
 
-  // For meetings closed via report: the original (booked, next_step=completed) keeps the
-  // correct date, and a result record (done/cancelled/no_show) is created with today's date.
-  // Resolve the real outcome onto the original, then remove result duplicates.
+  // Resolve result meetings onto their originals, then remove duplicates.
+  // Prefer result_of_meeting_id link; fall back to heuristic for legacy data.
   const allMeetings = meetings ?? [];
   const resultIds = new Set<string>();
-  const completedMeetings = allMeetings.filter((m: any) => m.next_step === "completed" && m.status === "booked");
+
+  // 1. Link via result_of_meeting_id (new data)
+  const resultsByOriginalId = new Map<string, any>();
+  for (const m of allMeetings) {
+    if ((m as any).result_of_meeting_id) {
+      resultsByOriginalId.set((m as any).result_of_meeting_id, m);
+      resultIds.add(m.id as string);
+    }
+  }
+
+  // 2. Heuristic fallback for legacy data without result_of_meeting_id
+  const completedMeetings = allMeetings.filter((m: any) =>
+    m.next_step === "completed" && m.status === "booked" && !resultsByOriginalId.has(m.id)
+  );
   for (const cm of completedMeetings) {
     const result = allMeetings.find((m: any) =>
       m.id !== cm.id &&
+      !resultIds.has(m.id) &&
       m.contact_id === cm.contact_id &&
       m.meeting_type === cm.meeting_type &&
       ["done", "cancelled", "no_show"].includes(m.status) &&
       new Date(m.created_at) >= new Date(cm.created_at)
     );
     if (result) {
-      (cm as any).status = result.status;
-      (cm as any).outcome = result.outcome;
+      resultsByOriginalId.set(cm.id as string, result);
       resultIds.add(result.id as string);
     }
   }
+
+  // 3. Project result status onto originals
+  for (const [originalId, result] of resultsByOriginalId) {
+    const original = allMeetings.find((m: any) => m.id === originalId);
+    if (original) {
+      (original as any).status = result.status;
+      (original as any).outcome = result.outcome;
+    }
+  }
+
   const cleanMeetings = allMeetings.filter((m: any) => !resultIds.has(m.id as string));
 
   return (

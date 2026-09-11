@@ -218,6 +218,7 @@ export async function GET(req: NextRequest) {
         contacts!meetings_contact_id_fkey(first_name, last_name, companies!contacts_company_id_fkey(name))
       `)
       .eq("status", "booked")
+      .or("next_step.is.null,next_step.neq.completed")
       .gte("scheduled_at", `${yesterday}T00:00:00Z`)
       .lt("scheduled_at", `${today}T00:00:00Z`)
       .not("assigned_to", "is", null);
