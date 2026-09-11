@@ -347,10 +347,10 @@ export function CompanyDetail({
     setSelectedDeal(deal);
     setLoadingDealData(true);
     const supabase = createClient();
-    const companyId = s(company.id);
+    const dealId = s(deal.id);
     const [{ data: entries }, { data: docs }, { data: notifs }] = await Promise.all([
-      companyId
-        ? supabase.from("billing_entries").select("client_name, billing_months(id, amount, month, status)").eq("company_id", companyId)
+      dealId
+        ? supabase.from("billing_entries").select("client_name, billing_months(id, amount, month, status)").eq("deal_id", dealId)
         : Promise.resolve({ data: [] as any[] }),
       supabase.from("deal_documents").select("*").eq("deal_id", s(deal.id)).order("created_at", { ascending: false }),
       supabase.from("notifications").select("id, type, title, body, created_at").eq("related_entity_id", s(deal.id)).eq("related_entity_type", "deal").order("created_at", { ascending: false }),
