@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X, Video, Building2, Copy, Check } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -273,8 +274,8 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
         <div style={{ fontWeight: 600, color: "#1a2a3a", fontSize: 12 }}>{company}</div>
         {program && <div style={{ fontSize: 10, color: "#8399a9" }}>{program}</div>}
         {learners.length > 0 && (
-          <div style={{ fontSize: 10, color: "#5a6f80", marginTop: 2 }}>
-            {learners.map(l => `${l!.first_name} ${l!.last_name}`).join(", ")}
+          <div style={{ fontSize: 10, marginTop: 2 }}>
+            {learners.map((l, i) => (<span key={l!.id}>{i > 0 && ", "}<Link href={`/learners/${l!.id}`} onClick={(e) => e.stopPropagation()} style={{ color: "#1E2A5A", textDecoration: "none" }}>{l!.first_name} {l!.last_name}</Link></span>))}
           </div>
         )}
         {!isVT && s.session_location && (
@@ -671,7 +672,8 @@ export function AgendaView({ sessions, expertNames }: { sessions: AgendaSession[
                 </>
               )}
             </div>
-            <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", display: "flex", justifyContent: "space-between" }}>
+              <Link href={`/learners/${viewLearner.id}`} style={{ height: 36, borderRadius: 8, background: "#1E2A5A", color: "white", fontSize: 13, fontWeight: 600, padding: "0 18px", display: "flex", alignItems: "center", textDecoration: "none" }}>Voir la fiche</Link>
               <button onClick={() => setViewLearner(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>Fermer</button>
             </div>
           </div>

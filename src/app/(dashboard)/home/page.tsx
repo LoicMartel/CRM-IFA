@@ -109,7 +109,7 @@ export default async function HomePage() {
         .order("session_time", { ascending: true }),
 
       // Today tasks assigned to me
-      supabase.from("activities").select("*, contacts:contact_id(first_name, last_name), learners:learner_id(first_name, last_name)")
+      supabase.from("activities").select("*, contacts:contact_id(first_name, last_name), learners:learner_id(id, first_name, last_name)")
         .eq("type", "tâche")
         .eq("is_completed", false)
         .eq("team_member_id", currentMemberId)
@@ -148,7 +148,7 @@ export default async function HomePage() {
         .limit(10),
 
       // Overdue tasks assigned to me
-      supabase.from("activities").select("*, contacts:contact_id(first_name, last_name), learners:learner_id(first_name, last_name)")
+      supabase.from("activities").select("*, contacts:contact_id(first_name, last_name), learners:learner_id(id, first_name, last_name)")
         .eq("type", "tâche")
         .eq("is_completed", false)
         .eq("team_member_id", currentMemberId)

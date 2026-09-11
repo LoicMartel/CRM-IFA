@@ -1095,9 +1095,9 @@ export function CompanyDetail({
                                 {planLearners.map((spl) => {
                                   const learner = spl.learners as { first_name: string; last_name: string } | null;
                                   return learner ? (
-                                    <span key={s(spl.learner_id)} style={{ background: "#e8f0fe", color: "#1565c0", fontSize: 12, padding: "2px 8px", borderRadius: 12 }}>
+                                    <Link key={s(spl.learner_id)} href={`/learners/${s(spl.learner_id)}`} style={{ background: "#e8f0fe", color: "#1565c0", fontSize: 12, padding: "2px 8px", borderRadius: 12, textDecoration: "none" }}>
                                       {learner.first_name} {learner.last_name}
-                                    </span>
+                                    </Link>
                                   ) : null;
                                 })}
                               </div>
@@ -1121,10 +1121,10 @@ export function CompanyDetail({
                               <TableBody>
                                 {trainingSessions.map((ts) => {
                                   const tsLearners = (ts.training_session_learners as R[] ?? []);
-                                  const learnersNames = tsLearners.map((tsl) => {
+                                  const learnersLinks = tsLearners.map((tsl) => {
                                     const l = tsl.learners as { first_name: string; last_name: string } | null;
-                                    return l ? `${l.first_name} ${l.last_name}` : "";
-                                  }).filter(Boolean).join(", ");
+                                    return l ? { id: s(tsl.learner_id), name: `${l.first_name} ${l.last_name}` } : null;
+                                  }).filter(Boolean) as { id: string; name: string }[];
                                   const trainers = (ts.trainers as string[] ?? []).join(", ");
                                   return (
                                     <TableRow key={s(ts.id)}>
@@ -1163,7 +1163,7 @@ export function CompanyDetail({
                                       </TableCell>
                                       <TableCell className="text-right">{fmtDuration(ts.duration_hours as number)}</TableCell>
                                       <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{trainers || "—"}</TableCell>
-                                      <TableCell style={{ fontSize: 11, color: "#7a8bab", maxWidth: 200 }} className="truncate">{learnersNames || "—"}</TableCell>
+                                      <TableCell style={{ fontSize: 11, color: "#7a8bab", maxWidth: 200 }} className="truncate">{learnersLinks.length > 0 ? learnersLinks.map((l, i) => (<span key={l.id}>{i > 0 && ", "}<Link href={`/learners/${l.id}`} style={{ color: "#1E2A5A", textDecoration: "none" }}>{l.name}</Link></span>)) : "—"}</TableCell>
                                       <TableCell style={{ textAlign: "center" }}>
                                         <button
                                           onClick={async () => {
@@ -1219,7 +1219,7 @@ export function CompanyDetail({
                           const tt = l.training_types as { name: string } | null;
                           return (
                             <TableRow key={s(l.id)}>
-                              <TableCell className="font-medium">{s(l.first_name)} {s(l.last_name)}</TableCell>
+                              <TableCell className="font-medium"><Link href={`/learners/${s(l.id)}`} style={{ color: "#1E2A5A", textDecoration: "none" }}>{s(l.first_name)} {s(l.last_name)}</Link></TableCell>
                               <TableCell>{s(l.email) || "—"}</TableCell>
                               <TableCell>{formatPhone(s(l.phone) || null)}</TableCell>
                               <TableCell>{s(l.position) || "—"}</TableCell>
@@ -1447,16 +1447,14 @@ export function CompanyDetail({
                         );
                         return (
                           <div key={lid} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f0f4f8" }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{name}</span>
-                            {contactMatch ? (
+                            <Link href={`/learners/${lid}`} style={{ fontSize: 13, fontWeight: 600, color: "#1E2A5A", textDecoration: "none" }}>{name}</Link>
+                            {contactMatch && (
                               <button
                                 onClick={() => { setRsLearnersPopup(null); router.push(`/contacts/${s(contactMatch.id)}`); }}
                                 style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "#e3f2fd", color: "#1E2A5A", border: "none", cursor: "pointer" }}
                               >
-                                Voir fiche
+                                Voir contact
                               </button>
-                            ) : (
-                              <span style={{ fontSize: 11, color: "#8399a9" }}>Pas de fiche contact</span>
                             )}
                           </div>
                         );

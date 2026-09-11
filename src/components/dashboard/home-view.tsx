@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCurrentRoles } from "@/lib/use-current-roles";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import Link from "next/link";
 import { Calendar, Clock, CheckSquare, CheckCircle, AlertTriangle, Video, MapPin, TrendingUp, X, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
@@ -613,8 +614,7 @@ export function HomeView({
               <div className="space-y-2">
                 {todayTasks.map((t: R) => {
                   const contact = t.contacts as { first_name: string; last_name: string } | null;
-                  const learner = t.learners as { first_name: string; last_name: string } | null;
-                  const who = contact ? `${contact.first_name} ${contact.last_name}` : learner ? `${learner.first_name} ${learner.last_name}` : "";
+                  const learner = t.learners as { id: string; first_name: string; last_name: string } | null;
                   const time = t.due_date ? (() => { try { const raw = t.due_date as string; return raw.includes("T") ? raw.slice(11, 16) : ""; } catch { return ""; } })() : "";
                   return (
                     <div key={t.id as string} onClick={() => openTask(t)} style={{ padding: "10px 12px", borderRadius: 8, background: "#fce4ec", borderLeft: "3px solid #e74c3c", cursor: "pointer" }}>
@@ -622,7 +622,8 @@ export function HomeView({
                         <span style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}>{time ? `${time} · ` : ""}Tâche</span>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a" }}>{t.title as string}</div>
-                      {who && <div style={{ fontSize: 11, color: "#5a6f80" }}>{who}</div>}
+                      {contact && <div style={{ fontSize: 11, color: "#5a6f80" }}>{contact.first_name} {contact.last_name}</div>}
+                      {!contact && learner && <div style={{ fontSize: 11 }}><Link href={`/learners/${learner.id}`} onClick={(e) => e.stopPropagation()} style={{ color: "#1E2A5A", textDecoration: "none" }}>{learner.first_name} {learner.last_name}</Link></div>}
                     </div>
                   );
                 })}
@@ -644,8 +645,7 @@ export function HomeView({
               <div className="space-y-2">
                 {overdueTasks.map((t: R) => {
                   const contact = t.contacts as { first_name: string; last_name: string } | null;
-                  const learner = t.learners as { first_name: string; last_name: string } | null;
-                  const who = contact ? `${contact.first_name} ${contact.last_name}` : learner ? `${learner.first_name} ${learner.last_name}` : "";
+                  const learner = t.learners as { id: string; first_name: string; last_name: string } | null;
                   const deadline = t.task_deadline as string | null;
                   const diffDays = deadline ? Math.floor((new Date().getTime() - new Date(deadline).getTime()) / (1000 * 60 * 60 * 24)) : 0;
                   return (
@@ -656,7 +656,8 @@ export function HomeView({
                           {diffDays}j de retard
                         </span>
                       </div>
-                      {who && <div style={{ fontSize: 11, color: "#5a6f80" }}>{who}</div>}
+                      {contact && <div style={{ fontSize: 11, color: "#5a6f80" }}>{contact.first_name} {contact.last_name}</div>}
+                      {!contact && learner && <div style={{ fontSize: 11 }}><Link href={`/learners/${learner.id}`} onClick={(e) => e.stopPropagation()} style={{ color: "#1E2A5A", textDecoration: "none" }}>{learner.first_name} {learner.last_name}</Link></div>}
                       {deadline && <div style={{ fontSize: 10, color: "#e74c3c" }}>Échéance : {(() => { try { return format(new Date(deadline), "d MMM yyyy", { locale: fr }); } catch { return ""; } })()}</div>}
                     </div>
                   );
@@ -1098,10 +1099,10 @@ export function HomeView({
                     );
                   })() : null}
                   {selectedTask.learners ? (() => {
-                    const l = selectedTask.learners as { first_name: string; last_name: string };
+                    const l = selectedTask.learners as { id: string; first_name: string; last_name: string };
                     return (
                       <div className="flex items-center gap-2">
-                        <span style={{ fontSize: 13, color: "#5a6f80" }}>{l.first_name} {l.last_name}</span>
+                        <Link href={`/learners/${l.id}`} style={{ fontSize: 13, color: "#1E2A5A", textDecoration: "none" }}>{l.first_name} {l.last_name}</Link>
                       </div>
                     );
                   })() : null}

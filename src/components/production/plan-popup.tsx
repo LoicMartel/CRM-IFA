@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Video, Building2, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -252,8 +253,8 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
               <div>
                 <div style={{ fontWeight: 700, color: "#8399a9", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Apprenants ({learners.length})</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {learners.map(l => (
-                    <span key={l!.id} style={{ fontSize: 11, color: "#1a2a3a" }}>{l!.first_name} {l!.last_name}{learners.indexOf(l) < learners.length - 1 ? "," : ""}</span>
+                  {learners.map((l, i) => (
+                    <span key={l!.id} style={{ fontSize: 11 }}>{i > 0 && ", "}<Link href={`/learners/${l!.id}`} style={{ color: "#1E2A5A", textDecoration: "none" }}>{l!.first_name} {l!.last_name}</Link></span>
                   ))}
                 </div>
               </div>
@@ -321,8 +322,8 @@ export function PlanPopup({ planId, onClose }: PlanPopupProps) {
                           </div>
                         )}
                         {sLearners.length > 0 && (
-                          <div style={{ fontSize: 11, color: "#5a6f80", marginTop: 1 }}>
-                            {sLearners.map(l => `${l!.first_name} ${l!.last_name}`).join(", ")}
+                          <div style={{ fontSize: 11, marginTop: 1 }}>
+                            {sLearners.map((l, i) => (<span key={l!.id}>{i > 0 && ", "}<Link href={`/learners/${l!.id}`} style={{ color: "#1E2A5A", textDecoration: "none" }}>{l!.first_name} {l!.last_name}</Link></span>))}
                           </div>
                         )}
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>

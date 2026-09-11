@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useVoiceDictation } from "@/hooks/use-voice-dictation";
 import { VoiceButton } from "@/components/ui/voice-button";
@@ -2428,7 +2429,8 @@ export function PlanningList({
                 </>
               )}
             </div>
-            <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ padding: "14px 20px", borderTop: "1px solid #e8ecf1", background: "#f8fbfd", display: "flex", justifyContent: "space-between" }}>
+              <Link href={`/learners/${viewLearner.id}`} style={{ height: 36, borderRadius: 8, background: "#1E2A5A", color: "white", fontSize: 13, fontWeight: 600, padding: "0 18px", display: "flex", alignItems: "center", textDecoration: "none" }}>Voir la fiche</Link>
               <button onClick={() => setViewLearner(null)} style={{ height: 36, borderRadius: 8, background: "#e8ecf1", color: "#5a6f80", fontSize: 13, fontWeight: 600, padding: "0 18px", border: "none", cursor: "pointer" }}>
                 Fermer
               </button>
