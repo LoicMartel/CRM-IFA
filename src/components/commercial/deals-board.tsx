@@ -973,9 +973,20 @@ export function DealsBoard({
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
                               <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10, background: dtc.bg, color: dtc.text }}>
-                                  {DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}
-                                </span>
+                                <select
+                                  value={doc.document_type}
+                                  onChange={async (e) => {
+                                    const newType = e.target.value;
+                                    const supabase = createClient();
+                                    await supabase.from("deal_documents").update({ document_type: newType }).eq("id", doc.id);
+                                    setDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, document_type: newType } : d));
+                                  }}
+                                  style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 10, background: dtc.bg, color: dtc.text, border: "none", cursor: "pointer", appearance: "auto" }}
+                                >
+                                  {Object.entries(DOC_TYPE_LABELS).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                  ))}
+                                </select>
                                 {doc.file_size && <span style={{ fontSize: 11, color: "#8399a9" }}>{formatFileSize(doc.file_size)}</span>}
                                 <span style={{ fontSize: 11, color: "#8399a9" }}>{new Date(doc.created_at).toLocaleDateString("fr-FR")}</span>
                               </div>
