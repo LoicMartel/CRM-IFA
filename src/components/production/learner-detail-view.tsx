@@ -84,7 +84,7 @@ interface ServicePlanData {
   companies: { name: string } | null;
   training_programs: { name: string } | null;
   training_types: { name: string } | null;
-  training_sessions: { id: string; session_type: string; duration_hours: number | null; status: string }[];
+  training_sessions: { id: string; session_type: string; duration_hours: number | null; status: string; hourly_rate: number | null; is_billable: boolean | null }[];
 }
 
 interface ActivityData {
@@ -320,13 +320,14 @@ export function LearnerDetailView({
 
   // Compute hours consumed per service plan
   function getPlanProgress(plan: ServicePlanData) {
-    const doneSessions = (plan.training_sessions ?? []).filter((s) => s.status === "done");
-    const hoursConsumed = doneSessions.reduce((sum, s) => sum + (s.duration_hours ?? 0), 0);
+    const hr = Number(plan.hourly_rate) || 0;
+    const billableDone = (plan.training_sessions ?? []).filter((s) => (s.status === "done" || s.status === "no_show") && s.is_billable !== false);
+    const hoursConsumed = billableDone.reduce((sum, s) => sum + (s.duration_hours ?? 0), 0);
     const totalSessions = plan.training_sessions?.length ?? 0;
-    const doneSessCount = doneSessions.length;
+    const doneSessCount = billableDone.length;
     const budget = plan.budget ?? 0;
-    const remaining = plan.budget_remaining ?? budget;
-    const consumed = budget - remaining;
+    const consumed = billableDone.reduce((sum, s) => sum + (s.duration_hours ?? 0) * (s.hourly_rate ?? hr), 0);
+    const remaining = budget - consumed;
     const pct = budget > 0 ? Math.min(100, Math.round((consumed / budget) * 100)) : 0;
     return { hoursConsumed, totalSessions, doneSessCount, budget, remaining, consumed, pct };
   }

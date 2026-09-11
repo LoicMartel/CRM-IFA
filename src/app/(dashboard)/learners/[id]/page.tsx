@@ -48,7 +48,7 @@ export default async function LearnerDetailPage({ params }: { params: Promise<{ 
   if (servicePlanIds.length > 0) {
     const { data } = await supabase
       .from("service_plans")
-      .select("*, companies(name), training_programs(name), training_types(name), training_sessions(id, session_type, duration_hours, status)")
+      .select("*, companies(name), training_programs(name), training_types(name), training_sessions(id, session_type, duration_hours, status, hourly_rate, is_billable)")
       .in("id", servicePlanIds);
     servicePlans = data ?? [];
   }
