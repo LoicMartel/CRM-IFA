@@ -1321,9 +1321,21 @@ export function CompanyDetail({
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: tc.bg, color: tc.text }}>
-                                  {typeLabel[doc.document_type] ?? doc.document_type}
-                                </span>
+                                <select
+                                  value={doc.document_type}
+                                  onChange={async (e) => {
+                                    const newType = e.target.value;
+                                    const supabase = createClient();
+                                    const table = doc.source === "deal" ? "deal_documents" : "company_documents";
+                                    await supabase.from(table).update({ document_type: newType }).eq("id", doc.id);
+                                    setCompanyDocs(prev => prev.map(d => (d.id === doc.id && d.source === doc.source) ? { ...d, document_type: newType } : d));
+                                  }}
+                                  style={{ fontSize: 11, fontWeight: 600, padding: "2px 6px", borderRadius: 999, background: tc.bg, color: tc.text, border: "none", cursor: "pointer", appearance: "auto" }}
+                                >
+                                  {Object.entries(typeLabel).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                  ))}
+                                </select>
                               </TableCell>
                               <TableCell style={{ fontSize: 12, color: "#7a8bab" }}>{fmtDate(doc.created_at)}</TableCell>
                               <TableCell style={{ textAlign: "right" }}>
@@ -1714,7 +1726,21 @@ export function CompanyDetail({
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: "#1a2a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.name}</div>
                               <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
-                                <span style={{ fontSize: 10, fontWeight: 600, padding: "1px 8px", borderRadius: 10, background: dtc.bg, color: dtc.text }}>{DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}</span>
+                                <select
+                                  value={doc.document_type}
+                                  onChange={async (e) => {
+                                    const newType = e.target.value;
+                                    const supabase = createClient();
+                                    await supabase.from("deal_documents").update({ document_type: newType }).eq("id", doc.id);
+                                    setDealDocuments(prev => prev.map(d => d.id === doc.id ? { ...d, document_type: newType } : d));
+                                    loadAllDocs();
+                                  }}
+                                  style={{ fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 10, background: dtc.bg, color: dtc.text, border: "none", cursor: "pointer", appearance: "auto" }}
+                                >
+                                  {Object.entries(DOC_TYPE_LABELS).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                  ))}
+                                </select>
                               </div>
                             </div>
                             <button onClick={() => handleDownloadDoc(doc)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1E2A5A", padding: 4 }}><Download className="h-4 w-4" /></button>
