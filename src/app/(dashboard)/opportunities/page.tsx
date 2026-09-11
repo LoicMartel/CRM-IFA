@@ -11,7 +11,7 @@ export default async function OpportunitiesPage() {
   const { data: deals } = await supabase
     .from("deals")
     .select("*, contacts(first_name, last_name), companies(id, name), team_members(first_name, last_name)")
-    .in("stage", ["opportunities", "quote_to_send", "quote_sent", "opco_deposit", "quote_signed"])
+    .in("stage", ["opportunities", "quote_to_send", "quote_to_validate", "quote_sent", "opco_deposit", "quote_signed"])
     .order("created_at", { ascending: false });
 
   return (

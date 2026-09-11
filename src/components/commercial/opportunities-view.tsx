@@ -30,8 +30,10 @@ function fmt(n: number) {
 const stageColors: Record<string, { bg: string; text: string }> = {
   opportunities: { bg: "#e3f2fd", text: "#1565c0" },
   quote_to_send: { bg: "#fff3e0", text: "#e65100" },
+  quote_to_validate: { bg: "#fce4ec", text: "#c62828" },
   quote_sent: { bg: "#f3e5f5", text: "#6a1b9a" },
   opco_deposit: { bg: "#e8f0fe", text: "#161f45" },
+  quote_signed: { bg: "#e8f5e9", text: "#2e7d32" },
 };
 
 const OPP_STAGES = ["opportunities"];
