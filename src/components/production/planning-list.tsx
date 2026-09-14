@@ -629,22 +629,30 @@ export function PlanningList({
   }
 
   // Generate auto title for a session based on current plan context
-  function buildSessionTitle(planId: string, sessionType: "vt" | "journee", learnerIds: string[], trainerNames: string[]): string {
+  function buildSessionTitle(planId: string, sessionType: "vt" | "journee", learnerIds: string[], trainerNames: string[], sessionDate?: string, currentEditId?: string): string {
     const plan = servicePlans.find(p => p.id === planId);
     if (!plan) return "";
     const sessions = (plan.training_sessions ?? []) as TrainingSession[];
     const companyName = plan.companies?.name ?? "";
     const typeLabel = sessionType === "journee" ? "Journée" : "VT";
     const totalForType = sessionType === "vt" ? (plan.vt_planned ?? 0) : (plan.days_planned ?? 0);
-    const existingCount = sessions.filter(s => s.session_type === sessionType && s.status !== "cancelled").length;
-    const nextIndex = existingCount + 1;
+    const sameType = sessions.filter(s => s.session_type === sessionType && s.status !== "cancelled");
+    let sessionIndex: number;
+    if (sessionDate) {
+      // Chronological: exclude current session if editing, then count how many come before this date
+      const others = currentEditId ? sameType.filter(s => s.id !== currentEditId) : sameType;
+      const beforeOrSame = others.filter(s => s.session_date <= sessionDate).length;
+      sessionIndex = beforeOrSame + 1;
+    } else {
+      sessionIndex = sameType.length + 1;
+    }
     const planLearners = (plan.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean);
     const selectedLearnerNames = learnerIds.length > 0
       ? planLearners.filter((l: any) => learnerIds.includes(l.id)).map((l: any) => l.first_name)
       : planLearners.map((l: any) => l.first_name);
     const learnerStr = selectedLearnerNames.join(", ");
     const trainerStr = trainerNames.length > 0 ? " x " + trainerNames.join(", ") : "";
-    return `${typeLabel} ${nextIndex}/${totalForType} ${learnerStr} ${companyName}${trainerStr}`.trim();
+    return `${typeLabel} ${sessionIndex}/${totalForType} ${learnerStr} ${companyName}${trainerStr}`.trim();
   }
 
   async function handleAddSession() {
@@ -756,20 +764,7 @@ export function PlanningList({
     setEditingSessionId(s.id);
     const existingLearnerIds = (s.training_session_learners ?? []).map(sl => sl.learner_id);
     const existingTrainers = s.trainers ?? [];
-    // Build title based on current session position (not +1 since it already exists)
-    const plan = servicePlans.find(p => p.id === planId);
-    const sessions = (plan?.training_sessions ?? []) as TrainingSession[];
-    const sameTypeSessions = sessions.filter(ss => ss.session_type === s.session_type && ss.status !== "cancelled").sort((a, b) => a.session_date.localeCompare(b.session_date));
-    const sessionIdx = sameTypeSessions.findIndex(ss => ss.id === s.id) + 1;
-    const totalForType = s.session_type === "vt" ? (plan?.vt_planned ?? 0) : (plan?.days_planned ?? 0);
-    const typeLabel = s.session_type === "journee" ? "Journée" : "VT";
-    const companyName = plan?.companies?.name ?? "";
-    const planLearners = (plan?.service_plan_learners ?? []).map((spl: any) => spl.learners).filter(Boolean);
-    const learnerNames = existingLearnerIds.length > 0
-      ? planLearners.filter((l: any) => existingLearnerIds.includes(l.id)).map((l: any) => l.first_name)
-      : planLearners.map((l: any) => l.first_name);
-    const trainerStr = existingTrainers.length > 0 ? " x " + existingTrainers.join(", ") : "";
-    const autoTitle = `${typeLabel} ${sessionIdx}/${totalForType} ${learnerNames.join(", ")} ${companyName}${trainerStr}`.trim();
+    const autoTitle = buildSessionTitle(planId, s.session_type, existingLearnerIds, existingTrainers, s.session_date, s.id);
 
     const startTime = (s as any).session_time ? String((s as any).session_time).slice(0, 5) : "09:00";
     const dur = Number(s.duration_hours) || 1;
@@ -2217,14 +2212,14 @@ export function PlanningList({
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Type</div>
                     {/* Le lieu n'est PAS pré-rempli avec le siège : c'est l'adresse de formation qui part sur
                         les convocations, et elle en diffère souvent (bouton de reprise explicite plus bas). */}
-                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
+                    <select value={sessionForm.session_type} onChange={(e) => { const t = e.target.value as "vt" | "journee"; const title = buildSessionTitle(sessionPlanId!, t, sessionForm.learner_ids, sessionForm.trainers, sessionForm.session_date || undefined, editingSessionId || undefined); setSessionForm({ ...sessionForm, session_type: t, duration_hours: t === "journee" ? "8" : "1", session_end_time: t === "journee" ? "17:00" : "17:00", session_location: "", custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }}>
                       <option value="vt">Visio Training (VT)</option>
                       <option value="journee">Journée</option>
                     </select>
                   </div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Date</div>
-                    <input type="date" value={sessionForm.session_date} onChange={(e) => setSessionForm({ ...sessionForm, session_date: e.target.value })} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
+                    <input type="date" value={sessionForm.session_date} onChange={(e) => { const d = e.target.value; const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", sessionForm.learner_ids, sessionForm.trainers, d || undefined, editingSessionId || undefined); setSessionForm({ ...sessionForm, session_date: d, custom_title: title }); }} style={{ height: 34, borderRadius: 6, border: "1px solid #dce8f0", padding: "0 10px", fontSize: 13 }} />
                   </div>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 600, color: "#8399a9", marginBottom: 4 }}>Heure</div>
@@ -2275,13 +2270,13 @@ export function PlanningList({
                       const checked = sessionForm.learner_ids.includes(l.id);
                       return (
                         <label key={l.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#e8f0fe" : "white", border: `1px solid ${checked ? "#1E2A5A" : "#dce8f0"}`, color: checked ? "#161f45" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
-                          <input type="checkbox" checked={checked} onChange={(e) => { const ids = e.target.checked ? [...sessionForm.learner_ids, l.id] : sessionForm.learner_ids.filter(id => id !== l.id); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", ids, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: ids, custom_title: title }); }} style={{ accentColor: "#1E2A5A" }} />
+                          <input type="checkbox" checked={checked} onChange={(e) => { const ids = e.target.checked ? [...sessionForm.learner_ids, l.id] : sessionForm.learner_ids.filter(id => id !== l.id); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", ids, sessionForm.trainers, sessionForm.session_date || undefined, editingSessionId || undefined); setSessionForm({ ...sessionForm, learner_ids: ids, custom_title: title }); }} style={{ accentColor: "#1E2A5A" }} />
                           {l.first_name} {l.last_name}
                         </label>
                       );
                     })}
                     {popupLearners.length > 1 && (
-                      <button onClick={() => { const allIds = popupLearners.map(l => l.id); const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id)); const newIds = allSelected ? [] : allIds; const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", newIds, sessionForm.trainers); setSessionForm({ ...sessionForm, learner_ids: newIds, custom_title: title }); }} style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                      <button onClick={() => { const allIds = popupLearners.map(l => l.id); const allSelected = allIds.every(id => sessionForm.learner_ids.includes(id)); const newIds = allSelected ? [] : allIds; const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", newIds, sessionForm.trainers, sessionForm.session_date || undefined, editingSessionId || undefined); setSessionForm({ ...sessionForm, learner_ids: newIds, custom_title: title }); }} style={{ fontSize: 11, fontWeight: 600, color: "#1E2A5A", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
                         {popupLearners.every(l => sessionForm.learner_ids.includes(l.id)) ? "Tout désélectionner" : "Tout sélectionner"}
                       </button>
                     )}
@@ -2294,7 +2289,7 @@ export function PlanningList({
                       const checked = sessionForm.trainers.includes(t);
                       return (
                         <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer", padding: "4px 10px", borderRadius: 6, background: checked ? "#fff3e0" : "white", border: `1px solid ${checked ? "#E8732A" : "#dce8f0"}`, color: checked ? "#e65100" : "#5a6f80", fontWeight: checked ? 600 : 400 }}>
-                          <input type="checkbox" checked={checked} onChange={(e) => { const trainers = e.target.checked ? [...sessionForm.trainers, t] : sessionForm.trainers.filter(x => x !== t); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", sessionForm.learner_ids, trainers); setSessionForm({ ...sessionForm, trainers, custom_title: title }); }} style={{ accentColor: "#E8732A" }} />
+                          <input type="checkbox" checked={checked} onChange={(e) => { const trainers = e.target.checked ? [...sessionForm.trainers, t] : sessionForm.trainers.filter(x => x !== t); const title = buildSessionTitle(sessionPlanId!, sessionForm.session_type as "vt" | "journee", sessionForm.learner_ids, trainers, sessionForm.session_date || undefined, editingSessionId || undefined); setSessionForm({ ...sessionForm, trainers, custom_title: title }); }} style={{ accentColor: "#E8732A" }} />
                           {t}
                         </label>
                       );
